@@ -31,7 +31,7 @@ body{
 } 
 
 .container {
-    max-width: 1300px;
+    max-width: 1050px;
     margin: auto;
     padding-left: 25px;
     padding-right: 25px;
@@ -130,7 +130,7 @@ p {
 
 .col-3 {
     flex-basis: 30%;
-    max-width: 333px;
+    min-width: 250px;
     margin-bottom: 0px;
 }
 
@@ -142,7 +142,7 @@ p {
 
 .col-4 {
     flex-basis: 25%;
-    max-width: 200;
+    min-width: 200;
     padding: 10px;
     margin-bottom: 50px;
     transition: transform 0.5s;
@@ -225,5 +225,199 @@ font-weight: normal;
 .depoimentos .col-3 {
     text-align: center;
     padding: 40px 19px;
-    box-shadow: 0 0 19 0 rgba(red, green, blue, alpha);
+    box-shadow: 0 0 19px 0 rgba(0,0,0,0.1);
+    cursor: pointer;
+    transition: transform 0.5s;
+}
+
+.depoimentos .col-3:hover {
+    transform: scale(1.1);
+}
+
+
+.depoimentos .col-3 img{
+    width: 50px;
+    border-radius: 50%;
+    margin-top: 19px;
+    border: 2px solid var(--cor-btn);
+}
+
+.depoimento-icone {
+color:var(--cor-padrao);
+font-size: 34px;
+}
+
+.col-3 p {
+    color:var(--cor-fonte-corpo);
+    font-size: 13px;
+    margin: 12px 0;
+}
+
+.depoimentos .col-3 h3{
+    font-size: 16px;
+    font-weight: 600px;
+    color: var(--cor-fonte-corpo);
+
+}
+
+/*- -------------------Marcas-------------------------- -*/
+
+.marcas {
+    margin: 100px auto;
+}
+
+.col-5 {
+    width: 160px;
+    margin: 15px;
+}
+
+.col-5 img {
+    width: 100%;
+    cursor: pointer;
+    filter: grayscale(100%);
+    
+    
+}
+
+.col-5 img:hover {
+    filter: grayscale(0%);
+    
+}
+
+/*- -------------------Rodapé-------------------------- -*/
+
+
+
+
+.rodape {
+    background: var(--cor-fonte-corpo);
+    color: var(--cor-fonte);
+    padding: 60px 0  19px;
+    font-size: 14px;
+}
+
+.rodape p {
+    color: var(--cor-fonte);
+}
+
+.rodape h3 {
+    color: var(--cor-fonte);
+    margin-bottom: 19px;
+
+}
+
+.rodape-col-1, .rodape-col-2, .rodape-col-3, .rodape-col-4 { 
+    min-width: 250px;
+    margin-bottom: 20px;
+
+}
+
+.rodape-col-1{
+    flex-basis: 30px;
+}
+
+
+.rodape-col-2{
+    text-align: center;
+    flex: 1;
+}
+
+.rodape-col-2 img {
+    margin-bottom: 19px;
+    width: 130px;
+    
+}
+
+.rodape-col-3, .rodape-col-4 {
+
+    flex-basis: 12%;
+    text-align: right;
+}
+
+ul{
+    list-style-type:none;
+}
+
+.app-logo{
+    margin-top: 19px;
+}
+
+.app-logo img{
+    width: 190px;
+}
+
+.rodape hr{
+    border: none;
+    height: 1px;
+    background: var(--cor-fonte);
+    margin: 20px 0;
+}
+
+.direitos {
+
+    text-align: center;
+}
+
+
+.menu-celular {
+    width: 25px;
+    margin-left: 19px;
+    display: none;
+}
+
+/*- ------------------- Menu Celular -------------------------- -*/
+
+@media only  screen  and  (max-width: 800px) {
+
+    nav ul{
+         position: absolute;
+         top: 70px;
+         left: 0;
+         background: var(--cor-btn);
+         width: 100%;
+         overflow: hidden;
+         transition: max-height 0.7s;
+    }
+    nav ul li a {
+        color: var(--cor-btn-fonte);
+    }
+
+    nav ul li {
+        display: block;
+        margin-top: 10px;
+        margin-right: 50px;
+    }
+
+    .menu-celular {
+        display: block;
+        cursor: pointer;
+   
+    } 
+    
+}
+
+/*- ------------------- CELULAR ATÉ A MÁXIMA DA TELA DE 600 -------------------------- -*/
+
+@media only  screen  and  (max-width: 600px) {
+    .linha{
+        text-align: center;
+    }
+    .col-2, .col-3, .col-4{
+        flex-basis: 100%;
+    }
+
+    .col-2 h1 {
+        font-size: 30px;
+    }
+
+    .rodape-col-3, .rodape-col-4 {
+
+        text-align: center;
+    }
+
+    .col-4 {
+        font-size: 24px;
+
+    }
+    
 }
