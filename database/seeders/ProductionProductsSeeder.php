@@ -8,6 +8,8 @@ use App\Models\ProductVariation;
 use App\Models\Category;
 use App\Models\Department;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Seeder de Produção - Produtos Principais
@@ -21,6 +23,22 @@ use Illuminate\Support\Str;
  */
 class ProductionProductsSeeder extends Seeder
 {
+    /**
+     * Verifica se a coluna supplier existe e adiciona ao array de dados se necessário
+     * 
+     * @param array $productData Array de dados do produto
+     * @param string|null $supplier Nome do fornecedor (opcional)
+     * @param bool $hasSupplierColumn Se a coluna supplier existe
+     * @return array Array de dados do produto com supplier se aplicável
+     */
+    private function addSupplierToData($productData, $hasSupplierColumn, $supplier = 'SHOPPINGCELL CELULARES')
+    {
+        if ($hasSupplierColumn && !isset($productData['supplier'])) {
+            $productData['supplier'] = $supplier;
+        }
+        return $productData;
+    }
+
     /**
      * Mapeamento de imagens por modelo e cor
      * 
@@ -372,6 +390,34 @@ class ProductionProductsSeeder extends Seeder
         $tabletCategory = Category::where('slug', 'tablets')->first();
         $notebookCategory = Category::where('slug', 'notebooks')->first();
 
+        // Verificar se a coluna supplier existe na tabela products
+        $hasSupplierColumn = Schema::hasColumn('products', 'supplier');
+        if (!$hasSupplierColumn) {
+            $this->command->warn('⚠️  A coluna "supplier" não existe na tabela products. Execute a migration: php artisan migrate');
+            $this->command->warn('⚠️  Produtos serão criados sem o campo supplier.');
+        }
+
+        // Lista de SKUs/modelos que devem ter o fornecedor SHOPPINGCELL CELULARES
+        // Apenas produtos da lista específica fornecida pelo usuário
+        $shoppingCellSkus = [
+            // iPhones da lista
+            'BASE-12', 'BASE-13', 'BASE-13ProMax', 'BASE-14', 'BASE-14ProMax',
+            'BASE-15', 'BASE-15Plus', 'BASE-15ProMax', 'BASE-16E', 'BASE-16',
+            'BASE-16Plus', 'BASE-16Pro', 'BASE-16ProMax', 'BASE-17ProMax',
+            // AirPods
+            'APPLE-AP4-NOANC', 'APPLE-AP4-ANC', 'APPLE-APP2-USB-C', 'APPLE-APMAX',
+            // AirTags
+            'APPLE-AT-001', 'APPLE-AT-PACK4',
+            // Apple Watch
+            'APPLE-AW-SE2-40', 'APPLE-AW-S10-42', 'APPLE-AW-S10-46',
+            // iPads
+            'APPLE-IP10-64', 'APPLE-IP10-256', 'APPLE-IP11-128',
+            'APPLE-IPMINI17P-128', 'APPLE-IPAM2-11-128', 'APPLE-IPAM3-11-128',
+            'APPLE-IPPM4-11-256',
+            // MacBooks
+            'APPLE-MBA15-M3-8-256', 'APPLE-MBA13-M4-16-512', 'APPLE-MBA15-M4-16-256',
+        ];
+
         // Dados completos dos iPhones (do CompleteiPhoneSeeder)
         $iphones = $this->getIphoneModels();
 
@@ -392,8 +438,8 @@ class ProductionProductsSeeder extends Seeder
             $images = $this->getImagesForProduct($iphone['model'], $firstColor);
 
             if (!$baseProduct) {
-                // Criar produto base
-                $baseProduct = Product::create([
+                // Preparar dados do produto
+                $productData = [
                     'name' => $iphone['model'],
                     'slug' => $baseSlug,
                     'description' => $iphone['model'] . ' (' . $iphone['year'] . ') com ' . $iphone['screen'] . ', chip ' . $iphone['processor'] . ' e sistema de câmera ' . $iphone['camera'] . '. Bateria com ' . $iphone['battery'] . '.',
@@ -410,7 +456,6 @@ class ProductionProductsSeeder extends Seeder
                     'is_featured' => in_array($iphone['model'], ['iPhone 16 Pro', 'iPhone 16 Pro Max', 'iPhone 17 Pro', 'iPhone 17 Pro Max']),
                     'brand' => 'Apple',
                     'model' => $iphone['model'],
-                    'supplier' => $iphone['supplier'] ?? 'SHOPPINGCELL CELULARES',
                     'department_id' => $department->id,
                     'images' => $images,
                     'specifications' => [
@@ -424,7 +469,24 @@ class ProductionProductsSeeder extends Seeder
                     ],
                     'weight' => 0.174,
                     'sort_order' => $iphone['year'] - 2010,
-                ]);
+                ];
+                
+                // Adicionar supplier apenas se a coluna existir E o produto estiver na lista
+                $sku = $productData['sku'] ?? '';
+                $shouldHaveSupplier = in_array($sku, $shoppingCellSkus) || 
+                                     strpos($sku, 'BASE-12') === 0 || 
+                                     strpos($sku, 'BASE-13') === 0 || 
+                                     strpos($sku, 'BASE-14') === 0 || 
+                                     strpos($sku, 'BASE-15') === 0 || 
+                                     strpos($sku, 'BASE-16') === 0 || 
+                                     strpos($sku, 'BASE-17ProMax') === 0;
+                
+                if ($shouldHaveSupplier) {
+                    $productData = $this->addSupplierToData($productData, $hasSupplierColumn, 'SHOPPINGCELL CELULARES');
+                }
+                
+                // Criar produto base
+                $baseProduct = Product::create($productData);
 
                 // Associar categoria
                 if ($smartphoneCategory) {
@@ -433,6 +495,20 @@ class ProductionProductsSeeder extends Seeder
 
                 $productCount++;
             } else {
+                // Atualizar produto existente com supplier apenas se estiver na lista
+                $sku = $baseProduct->sku ?? '';
+                $shouldHaveSupplier = in_array($sku, $shoppingCellSkus) || 
+                                     strpos($sku, 'BASE-12') === 0 || 
+                                     strpos($sku, 'BASE-13') === 0 || 
+                                     strpos($sku, 'BASE-14') === 0 || 
+                                     strpos($sku, 'BASE-15') === 0 || 
+                                     strpos($sku, 'BASE-16') === 0 || 
+                                     strpos($sku, 'BASE-17ProMax') === 0;
+                
+                if ($hasSupplierColumn && $shouldHaveSupplier && empty($baseProduct->supplier)) {
+                    $baseProduct->supplier = 'SHOPPINGCELL CELULARES';
+                    $baseProduct->save();
+                }
                 $updatedCount++;
             }
 
@@ -529,9 +605,17 @@ class ProductionProductsSeeder extends Seeder
                 $originalProductData['price'] = round($originalProductData['cost_price'] * 1.20, 2);
             }
             
-            // Adicionar fornecedor se não existir
-            if (!isset($originalProductData['supplier'])) {
+            // Adicionar fornecedor apenas se o produto estiver na lista e a coluna existir
+            $sku = $originalProductData['sku'] ?? '';
+            $shouldHaveSupplier = in_array($sku, $shoppingCellSkus);
+            
+            if ($hasSupplierColumn && $shouldHaveSupplier && !isset($originalProductData['supplier'])) {
                 $originalProductData['supplier'] = 'SHOPPINGCELL CELULARES';
+            }
+            
+            // Remover supplier se a coluna não existir
+            if (!$hasSupplierColumn && isset($originalProductData['supplier'])) {
+                unset($originalProductData['supplier']);
             }
             
             // Criar novo array apenas com campos permitidos usando fillable do model
@@ -544,6 +628,13 @@ class ProductionProductsSeeder extends Seeder
             if ($existingProduct) {
                 // Usar fill() para garantir que apenas campos fillable sejam atualizados
                 $existingProduct->fill($productData);
+                // Garantir que o supplier seja atualizado apenas se estiver na lista
+                $sku = $existingProduct->sku ?? '';
+                $shouldHaveSupplier = in_array($sku, $shoppingCellSkus);
+                
+                if ($hasSupplierColumn && $shouldHaveSupplier && empty($existingProduct->supplier) && isset($productData['supplier'])) {
+                    $existingProduct->supplier = $productData['supplier'];
+                }
                 $existingProduct->save();
                 
                 // Atualizar categoria se necessário
