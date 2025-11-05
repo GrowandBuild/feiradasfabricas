@@ -4,6 +4,7 @@ namespace App\Helpers;
 
 use App\Models\Banner;
 use App\Models\Department;
+use Illuminate\Support\Facades\Storage;
 
 class BannerHelper
 {
@@ -112,7 +113,13 @@ class BannerHelper
             return $imagePath;
         }
 
-        // Se for um arquivo local, retorna com asset()
+        // Se for um arquivo local, usa Storage::url() que é mais confiável
+        // Verifica se o arquivo existe no storage público
+        if (Storage::disk('public')->exists($imagePath)) {
+            return Storage::disk('public')->url($imagePath);
+        }
+        
+        // Fallback para asset() caso o Storage não funcione
         return asset('storage/' . $imagePath);
     }
 

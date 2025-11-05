@@ -40,19 +40,22 @@
                     <a href="{{ $banner->link }}" class="banner-link">
                 @endif
                 
-                <div class="banner-image-container">
+                <div class="banner-image-container" 
+                     style="@if(!$desktopImageUrl && !$mobileImageUrl) background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); @endif">
                     @if($desktopImageUrl && $banner->image)
                         <img src="{{ $desktopImageUrl }}" 
                              alt="{{ $banner->title ?? 'Banner' }}"
                              class="banner-image desktop-image"
-                             loading="lazy">
+                             loading="lazy"
+                             onerror="this.style.display='none'; this.parentElement.style.background='linear-gradient(135deg, #667eea 0%, #764ba2 100%)';">
                     @endif
                     
                     @if($mobileImageUrl && $banner->mobile_image)
                         <img src="{{ $mobileImageUrl }}" 
                              alt="{{ $banner->title ?? 'Banner' }}"
                              class="banner-image mobile-image"
-                             loading="lazy">
+                             loading="lazy"
+                             onerror="this.style.display='none';">
                     @endif
                 
                     @if(!empty($banner->title) || !empty($banner->description))
@@ -159,6 +162,9 @@
     position: relative;
     width: 100%;
     height: 100%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 .banner-image {
