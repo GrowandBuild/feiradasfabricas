@@ -51,6 +51,14 @@ class BannerController extends Controller
 
     public function store(Request $request)
     {
+        // Tratar campos booleanos antes da validação
+        $request->merge([
+            'is_active' => $request->has('is_active') ? 1 : 0,
+            'show_title' => $request->has('show_title') ? 1 : 0,
+            'show_description' => $request->has('show_description') ? 1 : 0,
+            'show_overlay' => $request->has('show_overlay') ? 1 : 0,
+        ]);
+
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
@@ -86,11 +94,31 @@ class BannerController extends Controller
             'banner_height' => 'nullable|string|max:10',
             'banner_padding_top' => 'nullable|integer|min:0|max:100',
             'banner_padding_bottom' => 'nullable|integer|min:0|max:100',
-            'show_title' => 'nullable|boolean',
-            'show_description' => 'nullable|boolean',
-            'show_overlay' => 'nullable|boolean',
+            'show_title' => 'nullable|in:0,1',
+            'show_description' => 'nullable|in:0,1',
+            'show_overlay' => 'nullable|in:0,1',
             'overlay_color' => 'nullable|string|max:20',
             'overlay_opacity' => 'nullable|integer|min:0|max:100',
+        ], [
+            'title.required' => 'O campo título é obrigatório.',
+            'title.max' => 'O título não pode ter mais de 255 caracteres.',
+            'image.required' => 'A imagem desktop é obrigatória.',
+            'image.image' => 'O arquivo deve ser uma imagem.',
+            'image.mimes' => 'A imagem deve ser do tipo: jpeg, png, jpg, gif ou webp.',
+            'image.max' => 'A imagem não pode ter mais de 10MB.',
+            'mobile_image.image' => 'O arquivo mobile deve ser uma imagem.',
+            'mobile_image.mimes' => 'A imagem mobile deve ser do tipo: jpeg, png, jpg, gif ou webp.',
+            'mobile_image.max' => 'A imagem mobile não pode ter mais de 10MB.',
+            'position.required' => 'A posição é obrigatória.',
+            'position.in' => 'A posição deve ser: hero, category, product ou footer.',
+            'target_audience.required' => 'O público-alvo é obrigatório.',
+            'target_audience.in' => 'O público-alvo deve ser: all, b2c ou b2b.',
+            'sort_order.integer' => 'A ordem de exibição deve ser um número inteiro.',
+            'sort_order.min' => 'A ordem de exibição deve ser no mínimo 0.',
+            'starts_at.date' => 'A data de início deve ser uma data válida.',
+            'expires_at.date' => 'A data de término deve ser uma data válida.',
+            'expires_at.after' => 'A data de término deve ser posterior à data de início.',
+            'department_id.exists' => 'O departamento selecionado não existe.',
         ]);
 
         $data = $request->all();
@@ -145,11 +173,19 @@ class BannerController extends Controller
 
     public function update(Request $request, Banner $banner)
     {
+        // Tratar campos booleanos antes da validação
+        $request->merge([
+            'is_active' => $request->has('is_active') ? 1 : 0,
+            'show_title' => $request->has('show_title') ? 1 : 0,
+            'show_description' => $request->has('show_description') ? 1 : 0,
+            'show_overlay' => $request->has('show_overlay') ? 1 : 0,
+        ]);
+
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'link' => 'nullable|string|max:255',
             'position' => 'required|in:hero,category,product,footer',
             'sort_order' => 'nullable|integer|min:0',
@@ -180,11 +216,30 @@ class BannerController extends Controller
             'banner_height' => 'nullable|string|max:10',
             'banner_padding_top' => 'nullable|integer|min:0|max:100',
             'banner_padding_bottom' => 'nullable|integer|min:0|max:100',
-            'show_title' => 'nullable|boolean',
-            'show_description' => 'nullable|boolean',
-            'show_overlay' => 'nullable|boolean',
+            'show_title' => 'nullable|in:0,1',
+            'show_description' => 'nullable|in:0,1',
+            'show_overlay' => 'nullable|in:0,1',
             'overlay_color' => 'nullable|string|max:20',
             'overlay_opacity' => 'nullable|integer|min:0|max:100',
+        ], [
+            'title.required' => 'O campo título é obrigatório.',
+            'title.max' => 'O título não pode ter mais de 255 caracteres.',
+            'image.image' => 'O arquivo deve ser uma imagem.',
+            'image.mimes' => 'A imagem deve ser do tipo: jpeg, png, jpg, gif ou webp.',
+            'image.max' => 'A imagem não pode ter mais de 10MB.',
+            'mobile_image.image' => 'O arquivo mobile deve ser uma imagem.',
+            'mobile_image.mimes' => 'A imagem mobile deve ser do tipo: jpeg, png, jpg, gif ou webp.',
+            'mobile_image.max' => 'A imagem mobile não pode ter mais de 10MB.',
+            'position.required' => 'A posição é obrigatória.',
+            'position.in' => 'A posição deve ser: hero, category, product ou footer.',
+            'target_audience.required' => 'O público-alvo é obrigatório.',
+            'target_audience.in' => 'O público-alvo deve ser: all, b2c ou b2b.',
+            'sort_order.integer' => 'A ordem de exibição deve ser um número inteiro.',
+            'sort_order.min' => 'A ordem de exibição deve ser no mínimo 0.',
+            'starts_at.date' => 'A data de início deve ser uma data válida.',
+            'expires_at.date' => 'A data de término deve ser uma data válida.',
+            'expires_at.after' => 'A data de término deve ser posterior à data de início.',
+            'department_id.exists' => 'O departamento selecionado não existe.',
         ]);
 
         $data = $request->all();
