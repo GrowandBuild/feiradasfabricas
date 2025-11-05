@@ -39,7 +39,10 @@ class DatabaseSeeder extends Seeder
         ]);
         
         // Seeders opcionais de dados de exemplo
-        if ($this->command->option('with-examples') || app()->environment('local')) {
+        // Use variável de ambiente SEED_WITH_EXAMPLES=1 para incluir dados de exemplo
+        $withExamples = app()->environment('local') || env('SEED_WITH_EXAMPLES', false);
+        
+        if ($withExamples) {
             $this->command->info('🎭 Executando seeders de dados de exemplo...');
             
             $this->call([
@@ -47,8 +50,11 @@ class DatabaseSeeder extends Seeder
                 CustomerSeeder::class,
             ]);
             
-            // Seeders específicos de produtos (apenas se solicitado)
-            if ($this->command->option('with-products')) {
+            // Seeders específicos de produtos
+            // Use variável de ambiente SEED_WITH_PRODUCTS=1 para incluir produtos
+            $withProducts = env('SEED_WITH_PRODUCTS', false);
+            
+            if ($withProducts) {
                 $this->command->info('📱 Executando seeders de produtos...');
                 
                 $this->call([
@@ -66,7 +72,7 @@ class DatabaseSeeder extends Seeder
         $this->command->line('   Gerente: gerente@feiradasfabricas.com / gerente123');
         $this->command->line('');
         $this->command->line('💡 Dicas:');
-        $this->command->line('   - Use --with-examples para incluir dados de exemplo');
-        $this->command->line('   - Use --with-products para incluir produtos de exemplo');
+        $this->command->line('   - Configure SEED_WITH_EXAMPLES=1 no .env para incluir dados de exemplo');
+        $this->command->line('   - Configure SEED_WITH_PRODUCTS=1 no .env para incluir produtos de exemplo');
     }
 }
