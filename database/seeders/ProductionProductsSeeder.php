@@ -1551,37 +1551,17 @@ class ProductionProductsSeeder extends Seeder
 
                     // Se houver variação de nome (Pro, Pro+, etc.), criar produto base separado para ela
                     if ($variation) {
-                        // PRIMEIRO: Verificar se já existe produto com este modelo EXATO
-                        $fullModelProduct = Product::where('brand', 'Infinix')
-                            ->where('model', $fullModelName)
-                            ->first();
+                        // Tratar o "+" antes de gerar o slug para evitar duplicatas
+                        // Ex: "Pro+" vira "pro-plus" em vez de "pro"
+                        $slugSafeVariation = str_replace(['+', '(', ')'], ['-plus', '', ''], $variation);
+                        $slugSafeModelName = $baseModelName . ' ' . $slugSafeVariation;
+                        $fullModelSlug = Str::slug('Infinix ' . $slugSafeModelName);
                         
-                        // Se não existir, criar com slug único (tratar "+" para evitar duplicatas)
-                        if (!$fullModelProduct) {
-                            // Tratar o "+" antes de gerar o slug para evitar duplicatas
-                            // Ex: "Pro+" vira "pro-plus" em vez de "pro"
-                            $slugSafeVariation = str_replace(['+', '(', ')'], ['-plus', '', ''], $variation);
-                            $slugSafeModelName = $baseModelName . ' ' . $slugSafeVariation;
-                            $fullModelSlug = Str::slug('Infinix ' . $slugSafeModelName);
-                            
-                            // Verificar se o slug já existe (pode acontecer se foi criado antes)
-                            $existingBySlug = Product::where('slug', $fullModelSlug)->first();
-                            if ($existingBySlug && $existingBySlug->model !== $fullModelName) {
-                                // Se slug existe mas é produto diferente, adicionar sufixo
-                                $counter = 1;
-                                $originalSlug = $fullModelSlug;
-                                while ($existingBySlug && $existingBySlug->model !== $fullModelName) {
-                                    $fullModelSlug = $originalSlug . '-' . $counter;
-                                    $existingBySlug = Product::where('slug', $fullModelSlug)->first();
-                                    $counter++;
-                                }
-                            }
-                            
-                            // Criar produto base
-                            $fullModelImages = $this->getImagesForProduct($fullModelName);
-                            $fullModelProduct = Product::create([
+                        // Usar firstOrCreate para garantir que não cria duplicado
+                        $fullModelProduct = Product::firstOrCreate(
+                            ['slug' => $fullModelSlug],
+                            [
                                 'name' => 'Smartphone Infinix ' . $fullModelName,
-                                'slug' => $fullModelSlug,
                                 'description' => 'Smartphone Infinix ' . $fullModelName . '. Linha ' . strtolower($seriesName) . ' com ' . ($seriesData['specs']['Tela'] ?? 'tela') . ' e sistema ' . ($seriesData['specs']['Sistema'] ?? 'Android'),
                                 'short_description' => 'Infinix ' . $fullModelName . ' - ' . ($seriesData['specs']['Foco'] ?? ''),
                                 'sku' => 'BASE-INF-' . str_replace([' ', '+', '(', ')'], ['-', '', '', ''], $fullModelName),
@@ -1597,24 +1577,27 @@ class ProductionProductsSeeder extends Seeder
                                 'brand' => 'Infinix',
                                 'model' => $fullModelName,
                                 'department_id' => $department->id,
-                                'images' => $fullModelImages,
+                                'images' => $this->getImagesForProduct($fullModelName),
                                 'specifications' => $seriesData['specs'],
                                 'weight' => $seriesData['weight'],
                                 'sort_order' => $seriesData['sort_order'],
-                            ]);
-
-                            if ($category) {
-                                $fullModelProduct->categories()->attach($category->id);
-                            }
-
+                            ]
+                        );
+                        
+                        // Se foi criado agora, associar categoria
+                        if ($fullModelProduct->wasRecentlyCreated && $category) {
+                            $fullModelProduct->categories()->attach($category->id);
                             $productCount++;
+                        } else {
+                            $updatedCount++;
                         }
+                        
                         $productForVariations = $fullModelProduct;
                     } else {
                         // Se não houver variação de nome, usar o produto base
                         $productForVariations = $baseProduct;
                     }
-
+                    
                     $variationSortOrder = 0;
                     foreach ($model['ram'] as $ram) {
                         foreach ($model['storage'] as $storage) {
