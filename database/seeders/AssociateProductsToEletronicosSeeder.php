@@ -23,18 +23,23 @@ class AssociateProductsToEletronicosSeeder extends Seeder
             return;
         }
 
-        // Buscar produtos que não têm departamento associado ou que são de eletrônicos
+        // Lista de marcas de eletrônicos
+        $electronicBrands = ['Apple', 'Samsung', 'Xiaomi', 'Motorola', 'Infinix', 'JBL', 'Oppo', 'Realme', 'Tecno', 'Sony'];
+        
+        // Buscar produtos que são de eletrônicos e que não têm department_id definido
+        // (os seeders InfinixProductsSeeder e OppoProductsSeeder já definem department_id ao criar)
         $products = Product::whereNull('department_id')
-            ->orWhere(function($query) {
-                $query->where('brand', 'LIKE', '%Apple%')
-                      ->orWhere('brand', 'LIKE', '%Samsung%')
-                      ->orWhere('brand', 'LIKE', '%Xiaomi%')
-                      ->orWhere('brand', 'LIKE', '%Motorola%')
-                      ->orWhere('brand', 'LIKE', '%Infinix%')
-                      ->orWhere('brand', 'LIKE', '%JBL%')
-                      ->orWhere('brand', 'LIKE', '%Oppo%')
-                      ->orWhere('brand', 'LIKE', '%Realme%')
-                      ->orWhere('brand', 'LIKE', '%Tecno%');
+            ->where(function($query) use ($electronicBrands) {
+                // Verificar se é uma das marcas de eletrônicos
+                $first = true;
+                foreach ($electronicBrands as $brand) {
+                    if ($first) {
+                        $query->where('brand', 'LIKE', "%{$brand}%");
+                        $first = false;
+                    } else {
+                        $query->orWhere('brand', 'LIKE', "%{$brand}%");
+                    }
+                }
             })
             ->get();
 
