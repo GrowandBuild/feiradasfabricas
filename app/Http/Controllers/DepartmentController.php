@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Department;
 use App\Models\Product;
 use App\Models\Category;
+use App\Models\DepartmentBadge;
 use App\Helpers\BannerHelper;
 
 class DepartmentController extends Controller
@@ -49,6 +50,12 @@ class DepartmentController extends Controller
 
         // Banners do departamento
         $heroBanners = BannerHelper::getBannersForDisplay($department->id, 'hero', 5);
+
+        // Selos de marcas do departamento
+        $departmentBadges = DepartmentBadge::where('department_id', $department->id)
+            ->active()
+            ->ordered()
+            ->get();
 
         // Para eletrônicos, usar a view específica com todos os produtos por marca
         if ($department->slug === 'eletronicos') {
@@ -178,7 +185,8 @@ class DepartmentController extends Controller
                 'tecnoProducts',
                 'categories',
                 'latestProducts',
-                'heroBanners'
+                'heroBanners',
+                'departmentBadges'
             ));
         }
 
@@ -190,7 +198,8 @@ class DepartmentController extends Controller
                 'featuredProducts',
                 'categories',
                 'brandProducts',
-                'heroBanners'
+                'heroBanners',
+                'departmentBadges'
             ));
         }
 
@@ -200,7 +209,8 @@ class DepartmentController extends Controller
             'featuredProducts',
             'categories',
             'brandProducts',
-            'heroBanners'
+            'heroBanners',
+            'departmentBadges'
         ));
     }
 

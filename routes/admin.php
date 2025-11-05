@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\DepartmentController;
+use App\Http\Controllers\Admin\DepartmentBadgeController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -64,6 +65,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Banners
         Route::resource('banners', BannerController::class);
         Route::patch('banners/{banner}/toggle-active', [BannerController::class, 'toggleActive'])->name('banners.toggle-active');
+
+        // Selos de Marcas (Department Badges)
+        Route::resource('department-badges', DepartmentBadgeController::class);
+        Route::patch('department-badges/{departmentBadge}/toggle-active', [DepartmentBadgeController::class, 'toggleActive'])->name('department-badges.toggle-active');
 
         // Configurações
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');

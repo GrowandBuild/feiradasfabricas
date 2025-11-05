@@ -423,8 +423,12 @@
                             <span>Cupons</span>
                         </a>
                         <a class="nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}" href="{{ route('admin.banners.index') }}">
-                            <i class="bi bi-image"></i> 
+                            <i class="bi bi-image"></i>
                             <span>Banners</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('admin.department-badges.*') ? 'active' : '' }}" href="{{ route('admin.department-badges.index') }}">
+                            <i class="bi bi-award"></i>
+                            <span>Selos de Marcas</span>
                         </a>
                         <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                             <i class="bi bi-people"></i> 

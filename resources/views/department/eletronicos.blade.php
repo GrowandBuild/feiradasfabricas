@@ -422,10 +422,10 @@
     }
 
     .section-subtitle {
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         color: var(--elegant-text-light);
         text-align: center;
-        margin-bottom: 20px;
+        margin-bottom: 15px;
         max-width: 600px;
         margin-left: auto;
         margin-right: auto;
@@ -438,46 +438,53 @@
     /* Cards */
     .elegant-card {
         background: var(--elegant-white);
-        border-radius: 10px;
-        padding: 15px;
-        box-shadow: 0 4px 15px rgba(30, 58, 138, 0.06);
+        border-radius: 8px;
+        padding: 12px;
+        box-shadow: 0 3px 12px rgba(30, 58, 138, 0.06);
         transition: all 0.3s ease;
         border: 1px solid rgba(30, 58, 138, 0.05);
         height: 100%;
     }
 
     .elegant-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(30, 58, 138, 0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(30, 58, 138, 0.15);
     }
 
     .card-icon {
-        width: 50px;
-        height: 50px;
+        width: 40px;
+        height: 40px;
         background: linear-gradient(135deg, var(--elegant-blue) 0%, var(--elegant-dark) 100%);
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin: 0 auto 12px;
+        margin: 0 auto 8px;
         color: white;
-        font-size: 1.3rem;
+        font-size: 1.1rem;
     }
 
     .card-title {
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
         color: var(--elegant-dark);
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         text-align: center;
     }
 
     .card-text {
         color: var(--elegant-text-light);
         text-align: center;
-        margin-bottom: 12px;
-        font-size: 0.85rem;
+        margin-bottom: 10px;
+        font-size: 0.8rem;
         line-height: 1.3;
+    }
+
+    /* Botão compacto para cards de categoria */
+    .elegant-card .btn-outline-primary {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+        border-radius: 6px;
     }
 
     /* Product Cards */
@@ -1044,6 +1051,122 @@
 
     @media (max-width: 480px) {
     }
+
+    /* Selos de Marcas (Department Badges) */
+    .badges-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .badge-item {
+        padding: 10px;
+        transition: transform 0.3s ease;
+        flex: 0 0 auto;
+        min-width: 120px;
+    }
+
+    .badge-item:hover {
+        transform: translateY(-5px);
+    }
+
+    .badge-link {
+        text-decoration: none;
+        color: inherit;
+        display: block;
+    }
+
+    .badge-circle {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin: 0 auto 10px;
+        border: 2px solid rgba(30, 58, 138, 0.1);
+        overflow: hidden;
+        background: var(--elegant-white);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(30, 58, 138, 0.08);
+    }
+
+    .badge-item:hover .badge-circle {
+        border-color: var(--elegant-accent);
+        box-shadow: 0 4px 12px rgba(255, 153, 0, 0.2);
+        transform: scale(1.05);
+    }
+
+    .badge-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+
+    .badge-title {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--elegant-text);
+        margin: 0;
+        text-align: center;
+        line-height: 1.3;
+    }
+
+    .badge-item:hover .badge-title {
+        color: var(--elegant-accent);
+    }
+
+    /* Responsive para Selos */
+    @media (max-width: 991px) {
+        .badges-container {
+            gap: 15px;
+        }
+        .badge-item {
+            min-width: 100px;
+        }
+        .badge-circle {
+            width: 80px;
+            height: 80px;
+        }
+        .badge-title {
+            font-size: 0.75rem;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .badges-container {
+            gap: 12px;
+        }
+        .badge-item {
+            min-width: 90px;
+        }
+        .badge-circle {
+            width: 70px;
+            height: 70px;
+        }
+        .badge-title {
+            font-size: 0.7rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .badges-container {
+            gap: 10px;
+        }
+        .badge-item {
+            min-width: 80px;
+        }
+        .badge-circle {
+            width: 60px;
+            height: 60px;
+        }
+        .badge-title {
+            font-size: 0.65rem;
+        }
+    }
 </style>
 @endsection
 
@@ -1142,18 +1265,47 @@
     @endif
 </div>
 
+<!-- Selos de Marcas (Department Badges) -->
+@if($departmentBadges && $departmentBadges->count() > 0)
+<section class="section-elegant" style="padding: 30px 0; background: var(--elegant-white);">
+    <div class="container">
+        <div class="badges-container">
+            @foreach($departmentBadges as $badge)
+                <div class="badge-item text-center">
+                        @if($badge->link)
+                            <a href="{{ $badge->link }}" class="badge-link" title="{{ $badge->title }}">
+                        @else
+                            <div class="badge-link" title="{{ $badge->title }}">
+                        @endif
+                            <div class="badge-circle">
+                                <img src="{{ $badge->image_url }}" 
+                                     alt="{{ $badge->title }}" 
+                                     class="badge-image">
+                            </div>
+                            <p class="badge-title">{{ $badge->title }}</p>
+                        @if($badge->link)
+                            </a>
+                        @else
+                            </div>
+                        @endif
+                    </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
 
 <!-- Categorias -->
 @if($categories && $categories->count() > 0)
-<section class="section-elegant">
+<section class="section-elegant" style="padding: 20px 0;">
     <div class="container">
-        <h2 class="section-title">Nossas Categorias</h2>
-        <p class="section-subtitle">
+        <h2 class="section-title" style="font-size: 1.6rem; margin-bottom: 5px;">Nossas Categorias</h2>
+        <p class="section-subtitle" style="margin-bottom: 12px;">
             Explore nossa ampla gama de produtos em diferentes categorias
         </p>
-        <div class="row">
-            @foreach($categories->take(6) as $category)
-                <div class="col-lg-4 col-md-6 mb-2">
+        <div class="row g-2">
+            @foreach($categories->take(4) as $category)
+                <div class="col-lg-3 col-md-3 col-sm-6 col-6">
                     <div class="elegant-card">
                         <div class="card-icon">
                             <i class="fas fa-laptop"></i>
