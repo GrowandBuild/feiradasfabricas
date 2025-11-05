@@ -47,6 +47,7 @@
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
             box-shadow: var(--shadow-md);
             position: relative;
+            z-index: 10;
         }
 
         .sidebar::before {
@@ -123,6 +124,8 @@
         .main-content {
             background-color: var(--light-bg);
             min-height: 100vh;
+            position: relative;
+            z-index: 1;
         }
 
         .card {

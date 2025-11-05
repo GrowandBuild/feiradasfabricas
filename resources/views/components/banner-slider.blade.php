@@ -64,14 +64,24 @@
                             $titleColor = $banner->text_color ?? '#ffffff';
                             $titleSize = $banner->text_size ?? '2.5rem';
                             $titleAlign = $banner->text_align ?? 'center';
+                            $titleVerticalAlign = $banner->text_vertical_align ?? 'bottom';
                             $titleWeight = $banner->text_font_weight ?? '700';
                             
                             // Estilos da Descrição
                             $descColor = $banner->description_color ?? '#ffffff';
                             $descSize = $banner->description_size ?? '1.2rem';
                             $descAlign = $banner->description_align ?? 'center';
+                            $descVerticalAlign = $banner->description_vertical_align ?? 'bottom';
+                            
+                            // Determinar posição vertical do overlay
+                            $verticalPosition = match($titleVerticalAlign) {
+                                'top' => 'top: 0; bottom: auto; transform: none;',
+                                'center' => 'top: 50%; bottom: auto; transform: translateY(-50%);',
+                                'bottom' => 'bottom: 0; top: auto; transform: none;',
+                                default => 'bottom: 0; top: auto; transform: none;'
+                            };
                         @endphp
-                        <div class="banner-overlay">
+                        <div class="banner-overlay" style="{{ $verticalPosition }}">
                             <div class="banner-content" style="text-align: {{ $titleAlign }};">
                                 @if(!empty($banner->title))
                                     <h2 class="banner-title" 
@@ -193,12 +203,22 @@
 
 .banner-overlay {
     position: absolute;
-    bottom: 0;
     left: 0;
     right: 0;
     background: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
     padding: 3rem 2rem 2rem;
     z-index: 4;
+    width: 100%;
+}
+
+.banner-overlay[style*="top: 0"] {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), transparent);
+    padding: 2rem 2rem 3rem;
+}
+
+.banner-overlay[style*="top: 50%"] {
+    background: rgba(0, 0, 0, 0.6);
+    padding: 2rem;
 }
 
 .banner-content {
