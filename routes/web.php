@@ -1,0 +1,165 @@
+ <?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\HomeController;
+use App\Http\Controllers\Auth\CustomerAuthController;
+use App\Http\Controllers\ContactController;
+
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Here is where you can register web routes for your application. These
+| routes are loaded by the RouteServiceProvider within a group which
+| contains the "web" middleware group. Now create something great!
+|
+*/
+
+// Rotas públicas
+Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/produtos', [HomeController::class, 'products'])->name('products');
+Route::get('/produto/{slug}', [HomeController::class, 'product'])->name('product');
+Route::get('/contato', [ContactController::class, 'index'])->name('contact');
+Route::post('/contato', [ContactController::class, 'send'])->name('contact.send');
+
+// Rotas de departamentos
+Route::prefix('departamento')->name('department.')->group(function () {
+    Route::get('/{slug}', [App\Http\Controllers\DepartmentController::class, 'index'])->name('index');
+    Route::get('/', [App\Http\Controllers\DepartmentController::class, 'list'])->name('list');
+});
+
+// Rota de exemplo para banners
+Route::get('/exemplos/banners', function () {
+    return view('examples.banner-usage');
+})->name('examples.banners');
+
+// Rotas de pagamento
+Route::prefix('payment')->name('payment.')->group(function () {
+    // Notificação do Mercado Pago
+    Route::post('/mercadopago/notification', [App\Http\Controllers\PaymentController::class, 'handleMercadoPagoNotification'])->name('mercadopago.notification');
+    
+    // Webhook do Stripe
+    Route::post('/stripe/webhook', function () {
+        \Log::info('Webhook do Stripe recebido', request()->all());
+        return response()->json(['status' => 'ok']);
+    })->name('stripe.webhook');
+    
+    // Notificação do PagSeguro
+    Route::post('/pagseguro/notification', function () {
+        \Log::info('Notificação do PagSeguro recebida', request()->all());
+        return response()->json(['status' => 'ok']);
+    })->name('pagseguro.notification');
+});
+
+// Rotas de autenticação (B2C e B2B)
+Route::prefix('customer')->name('customer.')->group(function () {
+    // Login
+    Route::get('/login', [CustomerAuthController::class, 'showLoginForm'])->name('login');
+    Route::post('/login', [CustomerAuthController::class, 'login'])->name('login');
+    Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
+    
+    // Registro B2C
+    Route::get('/register', [CustomerAuthController::class, 'showRegisterForm'])->name('register');
+    Route::post('/register', [CustomerAuthController::class, 'register'])->name('register');
+    
+    // Registro B2B
+    Route::get('/register-b2b', [CustomerAuthController::class, 'showB2BRegisterForm'])->name('register.b2b');
+    Route::post('/register-b2b', [CustomerAuthController::class, 'registerB2B'])->name('register.b2b');
+});
+
+// Rotas do carrinho
+Route::prefix('carrinho')->name('cart.')->group(function () {
+    Route::get('/', [App\Http\Controllers\CartController::class, 'index'])->name('index');
+    Route::post('/adicionar', [App\Http\Controllers\CartController::class, 'add'])->name('add');
+    Route::put('/atualizar/{cartItem}', [App\Http\Controllers\CartController::class, 'update'])->name('update');
+    Route::delete('/remover/{cartItem}', [App\Http\Controllers\CartController::class, 'remove'])->name('remove');
+    Route::delete('/limpar', [App\Http\Controllers\CartController::class, 'clear'])->name('clear');
+    Route::get('/contagem', [App\Http\Controllers\CartController::class, 'count'])->name('count');
+    Route::post('/migrar', [App\Http\Controllers\CartController::class, 'migrateToCustomer'])->name('migrate');
+    
+    // Rota para Server-Sent Events (tempo real)
+    Route::get('/stream', function() {
+        return response()->stream(function() {
+            // Configurar headers para SSE
+            echo "data: " . json_encode(['type' => 'connected']) . "\n\n";
+            
+            // Manter conexão viva
+            while (true) {
+                echo "data: " . json_encode(['type' => 'ping']) . "\n\n";
+                ob_flush();
+                flush();
+                sleep(30);
+            }
+        }, 200, [
+            'Content-Type' => 'text/event-stream',
+            'Cache-Control' => 'no-cache',
+            'Connection' => 'keep-alive',
+            'Access-Control-Allow-Origin' => '*',
+            'Access-Control-Allow-Headers' => 'Cache-Control',
+        ]);
+    })->name('cart.stream');
+});
+
+// Rotas de checkout
+Route::prefix('checkout')->name('checkout.')->group(function () {
+    Route::get('/', [App\Http\Controllers\CheckoutController::class, 'index'])->name('index');
+    Route::post('/', [App\Http\Controllers\CheckoutController::class, 'store'])->name('store');
+    Route::get('/payment/{orderNumber}', [App\Http\Controllers\CheckoutController::class, 'payment'])->name('payment');
+    Route::post('/payment/{orderNumber}/process', [App\Http\Controllers\CheckoutController::class, 'processPayment'])->name('payment.process');
+    
+    // Novas rotas seguras
+    Route::get('/payment-temp', [App\Http\Controllers\CheckoutController::class, 'paymentTemp'])->name('payment.temp');
+    Route::post('/payment-temp/process', [App\Http\Controllers\CheckoutController::class, 'processPaymentAndCreateOrder'])->name('payment.process.temp');
+    
+    // Rota para PIX
+    Route::get('/payment-pix', [App\Http\Controllers\CheckoutController::class, 'paymentPix'])->name('payment.pix');
+    
+    // Rota para Boleto
+    Route::get('/payment-boleto', [App\Http\Controllers\CheckoutController::class, 'paymentBoleto'])->name('payment.boleto');
+    
+    // Rota para verificar status de pagamento PIX/Boleto
+    Route::post('/payment-status-temp', [App\Http\Controllers\CheckoutController::class, 'checkPaymentStatusTemp'])->name('payment.status.temp');
+    
+    Route::get('/success/{orderNumber}', [App\Http\Controllers\CheckoutController::class, 'success'])->name('success');
+    Route::get('/status/{orderNumber}', [App\Http\Controllers\CheckoutController::class, 'checkPaymentStatus'])->name('status');
+});
+
+// Rotas de pedidos (requer autenticação)
+Route::prefix('pedidos')->name('orders.')->middleware('auth:customer')->group(function () {
+    Route::get('/', [App\Http\Controllers\OrderController::class, 'index'])->name('index');
+    Route::get('/{order}', [App\Http\Controllers\OrderController::class, 'show'])->name('show');
+    Route::post('/', [App\Http\Controllers\OrderController::class, 'store'])->name('store');
+    Route::post('/{order}/cancelar', [App\Http\Controllers\OrderController::class, 'cancel'])->name('cancel');
+    Route::post('/{order}/reordenar', [App\Http\Controllers\OrderController::class, 'reorder'])->name('reorder');
+    Route::get('/stats/estatisticas', [App\Http\Controllers\OrderController::class, 'stats'])->name('stats');
+});
+
+// Rotas com alias para compatibilidade
+Route::get('/login', [CustomerAuthController::class, 'showLoginForm'])->name('login');
+Route::get('/register', [CustomerAuthController::class, 'showRegisterForm'])->name('register');
+Route::get('/register-b2b', [CustomerAuthController::class, 'showB2BRegisterForm'])->name('register.b2b');
+
+// Incluir rotas administrativas
+require __DIR__.'/admin.php';
+
+// Página de Busca Moderna
+Route::get('/search', function () {
+    return view('search');
+})->name('search');
+
+// API de Busca Avançada
+Route::prefix('api/search')->group(function () {
+    Route::get('/', [App\Http\Controllers\SearchController::class, 'search']);
+    Route::get('/autocomplete', [App\Http\Controllers\SearchController::class, 'autocomplete']);
+    Route::post('/voice', [App\Http\Controllers\SearchController::class, 'voiceSearch']);
+    Route::post('/image', [App\Http\Controllers\SearchController::class, 'imageSearch']);
+    Route::get('/barcode', [App\Http\Controllers\SearchController::class, 'barcodeSearch']);
+});
+
+// Webhooks de pagamento
+Route::prefix('webhooks')->group(function () {
+    Route::post('/mercadopago', [App\Http\Controllers\WebhookController::class, 'mercadoPago']);
+    Route::post('/pagseguro', [App\Http\Controllers\WebhookController::class, 'pagSeguro']);
+    Route::post('/paypal', [App\Http\Controllers\WebhookController::class, 'payPal']);
+});
