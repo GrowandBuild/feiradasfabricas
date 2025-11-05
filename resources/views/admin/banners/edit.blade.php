@@ -44,12 +44,17 @@
 
                     <div class="mb-3">
                         <label for="image" class="form-label">Imagem Desktop</label>
-                        @if($banner->image)
+                        @if($banner->image && !empty($banner->image))
                             <div class="mb-2">
-                                <img src="{{ asset('storage/' . $banner->image) }}" 
+                                <img src="{{ asset('storage/' . $banner->image) }}?v={{ time() }}" 
                                      alt="{{ $banner->title }}" 
                                      class="img-thumbnail" 
-                                     style="max-width: 300px;">
+                                     id="current-image-preview"
+                                     style="max-width: 300px;"
+                                     onerror="this.style.display='none';">
+                                <div class="small text-muted mt-1">
+                                    <i class="bi bi-check-circle text-success"></i> Imagem atual: {{ basename($banner->image) }}
+                                </div>
                             </div>
                             <div class="form-check mb-2">
                                 <input class="form-check-input" 
@@ -61,13 +66,17 @@
                                     <i class="bi bi-trash"></i> Remover imagem desktop
                                 </label>
                             </div>
+                        @else
+                            <div class="alert alert-warning mb-2">
+                                <i class="bi bi-exclamation-triangle"></i> Nenhuma imagem cadastrada
+                            </div>
                         @endif
                         <input type="file" 
                                class="form-control @error('image') is-invalid @enderror" 
                                id="image" 
                                name="image" 
                                accept="image/*">
-                        <small class="text-muted">Deixe em branco para manter a imagem atual. Formatos: JPG, PNG, GIF. Máximo: 2MB</small>
+                        <small class="text-muted">Deixe em branco para manter a imagem atual. Formatos: JPG, PNG, GIF, WEBP. Máximo: 2MB</small>
                         @error('image')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -75,12 +84,17 @@
 
                     <div class="mb-3">
                         <label for="mobile_image" class="form-label">Imagem Mobile (Opcional)</label>
-                        @if($banner->mobile_image)
+                        @if($banner->mobile_image && !empty($banner->mobile_image))
                             <div class="mb-2">
-                                <img src="{{ asset('storage/' . $banner->mobile_image) }}" 
+                                <img src="{{ asset('storage/' . $banner->mobile_image) }}?v={{ time() }}" 
                                      alt="{{ $banner->title }} - Mobile" 
                                      class="img-thumbnail" 
-                                     style="max-width: 200px;">
+                                     id="current-mobile-image-preview"
+                                     style="max-width: 200px;"
+                                     onerror="this.style.display='none';">
+                                <div class="small text-muted mt-1">
+                                    <i class="bi bi-check-circle text-success"></i> Imagem mobile atual: {{ basename($banner->mobile_image) }}
+                                </div>
                             </div>
                             <div class="form-check mb-2">
                                 <input class="form-check-input" 
@@ -91,6 +105,10 @@
                                 <label class="form-check-label text-danger" for="remove_mobile_image">
                                     <i class="bi bi-trash"></i> Remover imagem mobile
                                 </label>
+                            </div>
+                        @else
+                            <div class="small text-muted mb-2">
+                                <i class="bi bi-info-circle"></i> Nenhuma imagem mobile cadastrada. Será usada a imagem desktop.
                             </div>
                         @endif
                         <input type="file" 
@@ -360,4 +378,92 @@
         </div>
     </div>
 </div>
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Preview de imagem desktop antes do upload
+    const imageInput = document.getElementById('image');
+    if (imageInput) {
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Criar ou atualizar preview
+                    let preview = document.getElementById('new-image-preview');
+                    if (!preview) {
+                        preview = document.createElement('img');
+                        preview.id = 'new-image-preview';
+                        preview.className = 'img-thumbnail mt-2';
+                        preview.style.maxWidth = '300px';
+                        imageInput.parentElement.appendChild(preview);
+                    }
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    
+                    // Mostrar mensagem de sucesso
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'alert alert-success mt-2';
+                    successMsg.innerHTML = '<i class="bi bi-check-circle"></i> Nova imagem selecionada: ' + file.name;
+                    const existingMsg = imageInput.parentElement.querySelector('.alert-success');
+                    if (existingMsg) existingMsg.remove();
+                    imageInput.parentElement.appendChild(successMsg);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Preview de imagem mobile antes do upload
+    const mobileImageInput = document.getElementById('mobile_image');
+    if (mobileImageInput) {
+        mobileImageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    // Criar ou atualizar preview
+                    let preview = document.getElementById('new-mobile-image-preview');
+                    if (!preview) {
+                        preview = document.createElement('img');
+                        preview.id = 'new-mobile-image-preview';
+                        preview.className = 'img-thumbnail mt-2';
+                        preview.style.maxWidth = '200px';
+                        mobileImageInput.parentElement.appendChild(preview);
+                    }
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    
+                    // Mostrar mensagem de sucesso
+                    const successMsg = document.createElement('div');
+                    successMsg.className = 'alert alert-success mt-2';
+                    successMsg.innerHTML = '<i class="bi bi-check-circle"></i> Nova imagem mobile selecionada: ' + file.name;
+                    const existingMsg = mobileImageInput.parentElement.querySelector('.alert-success');
+                    if (existingMsg) existingMsg.remove();
+                    mobileImageInput.parentElement.appendChild(successMsg);
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+    
+    // Forçar recarregamento da imagem após atualização bem-sucedida
+    @if(session('success'))
+        // Recarregar a página após 500ms para garantir que a imagem atualizada seja exibida
+        setTimeout(function() {
+            const currentImage = document.getElementById('current-image-preview');
+            const currentMobileImage = document.getElementById('current-mobile-image-preview');
+            if (currentImage) {
+                const src = currentImage.src.split('?')[0];
+                currentImage.src = src + '?v=' + Date.now();
+            }
+            if (currentMobileImage) {
+                const src = currentMobileImage.src.split('?')[0];
+                currentMobileImage.src = src + '?v=' + Date.now();
+            }
+        }, 500);
+    @endif
+});
+</script>
 @endsection

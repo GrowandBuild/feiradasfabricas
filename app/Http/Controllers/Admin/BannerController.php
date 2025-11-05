@@ -54,8 +54,8 @@ class BannerController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'link' => 'nullable|string|max:255',
             'position' => 'required|in:hero,category,product,footer',
             'sort_order' => 'nullable|integer|min:0',
@@ -134,8 +134,8 @@ class BannerController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
             'link' => 'nullable|string|max:255',
             'position' => 'required|in:hero,category,product,footer',
             'sort_order' => 'nullable|integer|min:0',
@@ -206,6 +206,9 @@ class BannerController extends Controller
             // Se não há upload nem remoção, manter o valor atual (não incluir no update)
             unset($data['image']);
         }
+        
+        // Remover campos que não devem ser atualizados diretamente
+        unset($data['remove_image'], $data['remove_mobile_image']);
 
         // Processar imagem mobile
         if ($request->hasFile('mobile_image')) {
@@ -227,10 +230,11 @@ class BannerController extends Controller
             unset($data['mobile_image']);
         }
 
+        // Atualizar o banner
         $banner->update($data);
         
-        // Recarregar o banner para garantir que as alterações estejam refletidas
-        $banner->refresh();
+        // Recarregar o banner do banco de dados para garantir que as alterações estejam refletidas
+        $banner = $banner->fresh();
 
         return redirect()->route('admin.banners.edit', $banner)
                         ->with('success', 'Banner atualizado com sucesso!');

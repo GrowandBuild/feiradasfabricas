@@ -51,7 +51,7 @@
                                required>
                         <small class="text-muted">
                             <strong>📁 Escolha um arquivo da sua área de trabalho</strong><br>
-                            Formatos aceitos: JPG, PNG, GIF. Tamanho máximo: 2MB<br>
+                            Formatos aceitos: JPG, PNG, GIF, WEBP. Tamanho máximo: 2MB<br>
                             Recomendado: 1920x600px para banners principais
                         </small>
                         @error('image')
@@ -521,7 +521,7 @@
                         • Desktop: 1920x600px<br>
                         • Mobile: 768x600px<br>
                         • Máximo: 2MB por imagem<br>
-                        • Formatos: JPG, PNG, GIF
+                        • Formatos: JPG, PNG, GIF, WEBP
                     </small>
                 </div>
             </div>
