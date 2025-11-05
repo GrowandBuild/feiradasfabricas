@@ -54,8 +54,8 @@ class BannerController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
-            'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
+            'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'link' => 'nullable|string|max:255',
             'position' => 'required|in:hero,category,product,footer',
             'sort_order' => 'nullable|integer|min:0',
@@ -107,20 +107,34 @@ class BannerController extends Controller
             }
         }
 
-        // Upload da imagem principal
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('banners', 'public');
+        try {
+            // Upload da imagem principal
+            if ($request->hasFile('image')) {
+                $data['image'] = $request->file('image')->store('banners', 'public');
+            }
+
+            // Upload da imagem mobile
+            if ($request->hasFile('mobile_image')) {
+                $data['mobile_image'] = $request->file('mobile_image')->store('banners', 'public');
+            }
+
+            // Remover campos que não devem ser salvos no banco
+            unset($data['_token'], $data['_method']);
+
+            $banner = Banner::create($data);
+
+            return redirect()->route('admin.banners.index')
+                            ->with('success', 'Banner criado com sucesso!');
+        } catch (\Exception $e) {
+            \Log::error('Erro ao criar banner: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString(),
+                'data' => $data
+            ]);
+
+            return redirect()->back()
+                            ->withInput()
+                            ->withErrors(['error' => 'Erro ao salvar banner: ' . $e->getMessage()]);
         }
-
-        // Upload da imagem mobile
-        if ($request->hasFile('mobile_image')) {
-            $data['mobile_image'] = $request->file('mobile_image')->store('banners', 'public');
-        }
-
-        Banner::create($data);
-
-        return redirect()->route('admin.banners.index')
-                        ->with('success', 'Banner criado com sucesso!');
     }
 
     public function edit(Banner $banner)
@@ -230,14 +244,29 @@ class BannerController extends Controller
             unset($data['mobile_image']);
         }
 
-        // Atualizar o banner
-        $banner->update($data);
-        
-        // Recarregar o banner do banco de dados para garantir que as alterações estejam refletidas
-        $banner = $banner->fresh();
+        try {
+            // Remover campos que não devem ser atualizados diretamente
+            unset($data['_token'], $data['_method']);
 
-        return redirect()->route('admin.banners.edit', $banner)
-                        ->with('success', 'Banner atualizado com sucesso!');
+            // Atualizar o banner
+            $banner->update($data);
+            
+            // Recarregar o banner do banco de dados para garantir que as alterações estejam refletidas
+            $banner = $banner->fresh();
+
+            return redirect()->route('admin.banners.edit', $banner)
+                            ->with('success', 'Banner atualizado com sucesso!');
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar banner: ' . $e->getMessage(), [
+                'banner_id' => $banner->id,
+                'trace' => $e->getTraceAsString(),
+                'data' => $data
+            ]);
+
+            return redirect()->back()
+                            ->withInput()
+                            ->withErrors(['error' => 'Erro ao atualizar banner: ' . $e->getMessage()]);
+        }
     }
 
     public function destroy(Banner $banner)

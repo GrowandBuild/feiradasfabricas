@@ -14,6 +14,18 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-body">
+                @if($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Erro ao atualizar banner:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
                 <form action="{{ route('admin.banners.update', $banner) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
@@ -76,7 +88,7 @@
                                id="image" 
                                name="image" 
                                accept="image/*">
-                        <small class="text-muted">Deixe em branco para manter a imagem atual. Formatos: JPG, PNG, GIF, WEBP. Máximo: 2MB</small>
+                        <small class="text-muted">Deixe em branco para manter a imagem atual. Formatos: JPG, PNG, GIF, WEBP. Máximo: 10MB</small>
                         @error('image')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

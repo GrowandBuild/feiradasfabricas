@@ -14,6 +14,18 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-body">
+                @if($errors->any())
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <strong><i class="bi bi-exclamation-triangle"></i> Erro ao salvar banner:</strong>
+                        <ul class="mb-0 mt-2">
+                            @foreach($errors->all() as $error)
+                                <li>{{ $error }}</li>
+                            @endforeach
+                        </ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                @endif
+
                 <form action="{{ route('admin.banners.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
@@ -43,6 +55,12 @@
 
                     <div class="mb-3">
                         <label for="image" class="form-label">Imagem Desktop *</label>
+                        <div id="image-preview-container" class="mb-2" style="display: none;">
+                            <img id="image-preview" src="" alt="Preview" class="img-thumbnail" style="max-width: 300px; max-height: 200px;">
+                            <div class="small text-success mt-1">
+                                <i class="bi bi-check-circle"></i> <span id="image-filename"></span>
+                            </div>
+                        </div>
                         <input type="file" 
                                class="form-control @error('image') is-invalid @enderror" 
                                id="image" 
@@ -51,7 +69,7 @@
                                required>
                         <small class="text-muted">
                             <strong>📁 Escolha um arquivo da sua área de trabalho</strong><br>
-                            Formatos aceitos: JPG, PNG, GIF, WEBP. Tamanho máximo: 2MB<br>
+                            Formatos aceitos: JPG, PNG, GIF, WEBP. Tamanho máximo: 10MB<br>
                             Recomendado: 1920x600px para banners principais
                         </small>
                         @error('image')
@@ -61,6 +79,12 @@
 
                     <div class="mb-3">
                         <label for="mobile_image" class="form-label">Imagem Mobile (Opcional)</label>
+                        <div id="mobile-image-preview-container" class="mb-2" style="display: none;">
+                            <img id="mobile-image-preview" src="" alt="Preview Mobile" class="img-thumbnail" style="max-width: 200px; max-height: 150px;">
+                            <div class="small text-success mt-1">
+                                <i class="bi bi-check-circle"></i> <span id="mobile-image-filename"></span>
+                            </div>
+                        </div>
                         <input type="file" 
                                class="form-control @error('mobile_image') is-invalid @enderror" 
                                id="mobile_image" 
@@ -520,7 +544,7 @@
                         📁 <strong>Escolha arquivos da sua área de trabalho</strong><br>
                         • Desktop: 1920x600px<br>
                         • Mobile: 768x600px<br>
-                        • Máximo: 2MB por imagem<br>
+                        • Máximo: 10MB por imagem<br>
                         • Formatos: JPG, PNG, GIF, WEBP
                     </small>
                 </div>
@@ -534,6 +558,58 @@
 @section('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
+        // Preview de imagem desktop
+        const imageInput = document.getElementById('image');
+        if (imageInput) {
+            imageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const preview = document.getElementById('image-preview');
+                        const container = document.getElementById('image-preview-container');
+                        const filename = document.getElementById('image-filename');
+                        
+                        if (preview && container && filename) {
+                            preview.src = e.target.result;
+                            filename.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+                            container.style.display = 'block';
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    const container = document.getElementById('image-preview-container');
+                    if (container) container.style.display = 'none';
+                }
+            });
+        }
+
+        // Preview de imagem mobile
+        const mobileImageInput = document.getElementById('mobile_image');
+        if (mobileImageInput) {
+            mobileImageInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const preview = document.getElementById('mobile-image-preview');
+                        const container = document.getElementById('mobile-image-preview-container');
+                        const filename = document.getElementById('mobile-image-filename');
+                        
+                        if (preview && container && filename) {
+                            preview.src = e.target.result;
+                            filename.textContent = file.name + ' (' + (file.size / 1024 / 1024).toFixed(2) + ' MB)';
+                            container.style.display = 'block';
+                        }
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    const container = document.getElementById('mobile-image-preview-container');
+                    if (container) container.style.display = 'none';
+                }
+            });
+        }
+
         // Atualizar valor do slider de opacidade
         const overlayOpacity = document.getElementById('overlay_opacity');
         if (overlayOpacity) {
