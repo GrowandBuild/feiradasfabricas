@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\CartItem;
 use App\Models\Product;
+use App\Models\ProductVariation;
 use App\Models\Customer;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -30,12 +31,32 @@ class CartController extends Controller
         $request->validate([
             'product_id' => 'required|exists:products,id',
             'quantity' => 'required|integer|min:1|max:999',
+            'variation_id' => 'nullable|exists:product_variations,id',
         ]);
 
         $product = Product::findOrFail($request->product_id);
         
-        // Verificar se o produto está disponível
-        if (!$product->in_stock || $product->stock_quantity < $request->quantity) {
+        // Se houver variation_id, usar a variação; caso contrário, usar o produto
+        $variation = null;
+        $price = $product->price;
+        $stockQuantity = $product->stock_quantity;
+        $inStock = $product->in_stock;
+
+        if ($request->variation_id) {
+            $variation = ProductVariation::findOrFail($request->variation_id);
+            if ($variation->product_id !== $product->id) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Variação não pertence a este produto.'
+                ], 400);
+            }
+            $price = $variation->price;
+            $stockQuantity = $variation->stock_quantity;
+            $inStock = $variation->in_stock;
+        }
+        
+        // Verificar se está disponível
+        if (!$inStock || $stockQuantity < $request->quantity) {
             return response()->json([
                 'success' => false,
                 'message' => 'Produto não disponível em estoque suficiente.'
@@ -45,8 +66,9 @@ class CartController extends Controller
         $sessionId = $this->getSessionId();
         $customerId = Auth::guard('customer')->id();
 
-        // Verificar se o item já existe no carrinho
+        // Verificar se o item já existe no carrinho (considerando variação)
         $existingItem = CartItem::where('product_id', $product->id)
+            ->where('product_variation_id', $request->variation_id)
             ->where(function ($query) use ($sessionId, $customerId) {
                 if ($customerId) {
                     $query->where('customer_id', $customerId);
@@ -60,7 +82,7 @@ class CartController extends Controller
             // Atualizar quantidade
             $newQuantity = $existingItem->quantity + $request->quantity;
             
-            if ($newQuantity > $product->stock_quantity) {
+            if ($newQuantity > $stockQuantity) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Quantidade solicitada excede o estoque disponível.'
@@ -75,8 +97,9 @@ class CartController extends Controller
                 'session_id' => $customerId ? null : $sessionId,
                 'customer_id' => $customerId,
                 'product_id' => $product->id,
+                'product_variation_id' => $request->variation_id,
                 'quantity' => $request->quantity,
-                'price' => $product->price,
+                'price' => $price,
             ]);
         }
 

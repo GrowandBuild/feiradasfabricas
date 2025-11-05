@@ -20,6 +20,7 @@ use App\Http\Controllers\ContactController;
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/produtos', [HomeController::class, 'products'])->name('products');
 Route::get('/produto/{slug}', [HomeController::class, 'product'])->name('product');
+Route::get('/produto/{slug}/variacao', [HomeController::class, 'getProductVariation'])->name('product.variation');
 Route::get('/contato', [ContactController::class, 'index'])->name('contact');
 Route::post('/contato', [ContactController::class, 'send'])->name('contact.send');
 

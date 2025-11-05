@@ -85,6 +85,30 @@ class Product extends Model
     }
 
     /**
+     * Relacionamento com variações do produto
+     */
+    public function variations()
+    {
+        return $this->hasMany(ProductVariation::class)->orderBy('sort_order');
+    }
+
+    /**
+     * Relacionamento com variações ativas do produto
+     */
+    public function activeVariations()
+    {
+        return $this->hasMany(ProductVariation::class)->where('is_active', true)->orderBy('sort_order');
+    }
+
+    /**
+     * Verifica se o produto tem variações
+     */
+    public function hasVariations()
+    {
+        return $this->variations()->count() > 0;
+    }
+
+    /**
      * Scope para produtos ativos
      */
     public function scopeActive($query)

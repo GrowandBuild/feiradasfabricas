@@ -7,6 +7,7 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'App\\Console\\Commands\\CheckProductImages' => $baseDir . '/app/Console/Commands/CheckProductImages.php',
+    'App\\Console\\Commands\\CreateStorageLink' => $baseDir . '/app/Console/Commands/CreateStorageLink.php',
     'App\\Console\\Commands\\ProcessEmailQueue' => $baseDir . '/app/Console/Commands/ProcessEmailQueue.php',
     'App\\Console\\Commands\\ProcessFiscalQueue' => $baseDir . '/app/Console/Commands/ProcessFiscalQueue.php',
     'App\\Console\\Commands\\TestImageUrls' => $baseDir . '/app/Console/Commands/TestImageUrls.php',
@@ -76,6 +77,7 @@ return array(
     'App\\Models\\Order' => $baseDir . '/app/Models/Order.php',
     'App\\Models\\OrderItem' => $baseDir . '/app/Models/OrderItem.php',
     'App\\Models\\Product' => $baseDir . '/app/Models/Product.php',
+    'App\\Models\\ProductVariation' => $baseDir . '/app/Models/ProductVariation.php',
     'App\\Models\\Setting' => $baseDir . '/app/Models/Setting.php',
     'App\\Models\\User' => $baseDir . '/app/Models/User.php',
     'App\\Providers\\AppServiceProvider' => $baseDir . '/app/Providers/AppServiceProvider.php',
@@ -216,6 +218,7 @@ return array(
     'Database\\Seeders\\OppoProductsSeeder' => $baseDir . '/database/seeders/OppoProductsSeeder.php',
     'Database\\Seeders\\ProductGallerySeeder' => $baseDir . '/database/seeders/ProductGallerySeeder.php',
     'Database\\Seeders\\ProductSeeder' => $baseDir . '/database/seeders/ProductSeeder.php',
+    'Database\\Seeders\\ProductionProductsSeeder' => $baseDir . '/database/seeders/ProductionProductsSeeder.php',
     'Database\\Seeders\\ProductionSeeder' => $baseDir . '/database/seeders/ProductionSeeder.php',
     'Database\\Seeders\\RealProductsSeeder' => $baseDir . '/database/seeders/RealProductsSeeder.php',
     'Database\\Seeders\\SettingSeeder' => $baseDir . '/database/seeders/SettingSeeder.php',

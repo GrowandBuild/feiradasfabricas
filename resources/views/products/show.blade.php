@@ -97,39 +97,98 @@
                     </p>
                 @endif
 
-                @if($product->sku)
+                @if($product->sku && !$product->hasVariations())
                     <p class="text-muted mb-2">
                         <strong>SKU:</strong> {{ $product->sku }}
                     </p>
                 @endif
 
-                <div class="price-section mb-4">
-                    @if($product->sale_price && $product->sale_price < $product->price)
-                        <div class="d-flex align-items-center">
-                            <span class="h3 text-primary me-3">R$ {{ number_format($product->sale_price, 2, ',', '.') }}</span>
-                            <span class="text-muted text-decoration-line-through me-2">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
-                            <span class="badge bg-danger">
-                                {{ round((($product->price - $product->sale_price) / $product->price) * 100) }}% OFF
-                            </span>
+                @if($product->hasVariations())
+                    <!-- Seletores de Variações -->
+                    <div class="product-variations mb-4">
+                        @php
+                            $variations = $product->activeVariations;
+                            $rams = $variations->pluck('ram')->unique()->filter()->sort()->values();
+                            $storages = $variations->pluck('storage')->unique()->filter()->sort()->values();
+                            $colors = $variations->pluck('color')->unique()->filter()->sort()->values();
+                            $firstVariation = $variations->first();
+                        @endphp
+
+                        @if($rams->count() > 1)
+                            <div class="mb-3">
+                                <label for="variation-ram" class="form-label fw-bold">RAM:</label>
+                                <select id="variation-ram" class="form-select variation-select" data-variation-type="ram">
+                                    <option value="">Selecione a RAM</option>
+                                    @foreach($rams as $ram)
+                                        <option value="{{ $ram }}" {{ $firstVariation && $firstVariation->ram === $ram ? 'selected' : '' }}>
+                                            {{ $ram }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        @if($storages->count() > 1)
+                            <div class="mb-3">
+                                <label for="variation-storage" class="form-label fw-bold">Armazenamento:</label>
+                                <select id="variation-storage" class="form-select variation-select" data-variation-type="storage">
+                                    <option value="">Selecione o Armazenamento</option>
+                                    @foreach($storages as $storage)
+                                        <option value="{{ $storage }}" {{ $firstVariation && $firstVariation->storage === $storage ? 'selected' : '' }}>
+                                            {{ $storage }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        @if($colors->count() > 1)
+                            <div class="mb-3">
+                                <label for="variation-color" class="form-label fw-bold">Cor:</label>
+                                <select id="variation-color" class="form-select variation-select" data-variation-type="color">
+                                    <option value="">Selecione a Cor</option>
+                                    @foreach($colors as $color)
+                                        <option value="{{ $color }}" {{ $firstVariation && $firstVariation->color === $color ? 'selected' : '' }}>
+                                            {{ $color }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        <!-- SKU da Variação Selecionada -->
+                        <div id="variation-sku-display" class="mb-2" style="display: none;">
+                            <p class="text-muted mb-0">
+                                <strong>SKU:</strong> <span id="selected-variation-sku"></span>
+                            </p>
                         </div>
-                    @else
-                        <span class="h3 text-primary">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
-                    @endif
+
+                        <!-- Status de Estoque da Variação -->
+                        <div id="variation-stock-display" class="mb-3" style="display: none;">
+                            <span id="variation-stock-badge" class="badge fs-6"></span>
+                        </div>
+                    </div>
+                @endif
+
+                <div class="price-section mb-4">
+                    <span id="product-price-display" class="h3 text-primary">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
                 </div>
 
-                <div class="stock-status mb-4">
-                    @if($product->stock_quantity > 0)
-                        <span class="badge bg-success fs-6">
-                            <i class="fas fa-check-circle me-1"></i>
-                            Em estoque ({{ $product->stock_quantity }} unidades)
-                        </span>
-                    @else
-                        <span class="badge bg-danger fs-6">
-                            <i class="fas fa-times-circle me-1"></i>
-                            Fora de estoque
-                        </span>
-                    @endif
-                </div>
+                @if(!$product->hasVariations())
+                    <div class="stock-status mb-4">
+                        @if($product->stock_quantity > 0)
+                            <span class="badge bg-success fs-6">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Em estoque ({{ $product->stock_quantity }} unidades)
+                            </span>
+                        @else
+                            <span class="badge bg-danger fs-6">
+                                <i class="fas fa-times-circle me-1"></i>
+                                Fora de estoque
+                            </span>
+                        @endif
+                    </div>
+                @endif
 
                 @if($product->categories->count() > 0)
                     <div class="categories mb-4">
@@ -484,6 +543,109 @@
             navButtons.forEach(btn => btn.style.display = 'none');
             if (imageCounter) imageCounter.style.display = 'none';
         }
+
+        // Inicializar seletores de variações
+        initVariationSelectors();
     });
+
+    // Sistema de variações de produtos
+    @if($product->hasVariations())
+    const productSlug = '{{ $product->slug }}';
+    let selectedVariationId = null;
+
+    function initVariationSelectors() {
+        const variationSelects = document.querySelectorAll('.variation-select');
+        
+        variationSelects.forEach(select => {
+            select.addEventListener('change', function() {
+                updateVariation();
+            });
+        });
+
+        // Carregar primeira variação ao carregar a página
+        updateVariation();
+    }
+
+    function updateVariation() {
+        const ram = document.getElementById('variation-ram')?.value || '';
+        const storage = document.getElementById('variation-storage')?.value || '';
+        const color = document.getElementById('variation-color')?.value || '';
+
+        // Construir URL da API
+        const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
+        if (ram) url.searchParams.append('ram', ram);
+        if (storage) url.searchParams.append('storage', storage);
+        if (color) url.searchParams.append('color', color);
+
+        // Buscar variação
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.variation) {
+                    selectedVariationId = data.variation.id;
+                    
+                    // Atualizar preço
+                    const priceDisplay = document.getElementById('product-price-display');
+                    if (priceDisplay) {
+                        priceDisplay.textContent = 'R$ ' + data.variation.price;
+                    }
+
+                    // Atualizar SKU
+                    const skuDisplay = document.getElementById('variation-sku-display');
+                    const skuSpan = document.getElementById('selected-variation-sku');
+                    if (skuDisplay && skuSpan) {
+                        skuSpan.textContent = data.variation.sku;
+                        skuDisplay.style.display = 'block';
+                    }
+
+                    // Atualizar estoque
+                    const stockDisplay = document.getElementById('variation-stock-display');
+                    const stockBadge = document.getElementById('variation-stock-badge');
+                    if (stockDisplay && stockBadge) {
+                        if (data.variation.in_stock && data.variation.stock_quantity > 0) {
+                            stockBadge.className = 'badge bg-success fs-6';
+                            stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
+                        } else {
+                            stockBadge.className = 'badge bg-danger fs-6';
+                            stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
+                        }
+                        stockDisplay.style.display = 'block';
+                    }
+
+                    // Atualizar atributo data-variation-id no botão de adicionar ao carrinho
+                    const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
+                    if (addToCartBtn) {
+                        addToCartBtn.setAttribute('data-variation-id', data.variation.id);
+                        // Também atualizar no componente add-to-cart
+                        const addToCartComponent = document.querySelector('.add-to-cart-component');
+                        if (addToCartComponent) {
+                            addToCartComponent.setAttribute('data-variation-id', data.variation.id);
+                        }
+                    }
+                } else {
+                    // Variação não encontrada
+                    const priceDisplay = document.getElementById('product-price-display');
+                    if (priceDisplay) {
+                        priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ",", ".") }}';
+                    }
+                    
+                    const skuDisplay = document.getElementById('variation-sku-display');
+                    if (skuDisplay) {
+                        skuDisplay.style.display = 'none';
+                    }
+
+                    const stockDisplay = document.getElementById('variation-stock-display');
+                    if (stockDisplay) {
+                        stockDisplay.style.display = 'none';
+                    }
+
+                    selectedVariationId = null;
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar variação:', error);
+            });
+    }
+    @endif
 </script>
 @endsection

@@ -538,6 +538,7 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
 
     public static $classMap = array (
         'App\\Console\\Commands\\CheckProductImages' => __DIR__ . '/../..' . '/app/Console/Commands/CheckProductImages.php',
+        'App\\Console\\Commands\\CreateStorageLink' => __DIR__ . '/../..' . '/app/Console/Commands/CreateStorageLink.php',
         'App\\Console\\Commands\\ProcessEmailQueue' => __DIR__ . '/../..' . '/app/Console/Commands/ProcessEmailQueue.php',
         'App\\Console\\Commands\\ProcessFiscalQueue' => __DIR__ . '/../..' . '/app/Console/Commands/ProcessFiscalQueue.php',
         'App\\Console\\Commands\\TestImageUrls' => __DIR__ . '/../..' . '/app/Console/Commands/TestImageUrls.php',
@@ -607,6 +608,7 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'App\\Models\\Order' => __DIR__ . '/../..' . '/app/Models/Order.php',
         'App\\Models\\OrderItem' => __DIR__ . '/../..' . '/app/Models/OrderItem.php',
         'App\\Models\\Product' => __DIR__ . '/../..' . '/app/Models/Product.php',
+        'App\\Models\\ProductVariation' => __DIR__ . '/../..' . '/app/Models/ProductVariation.php',
         'App\\Models\\Setting' => __DIR__ . '/../..' . '/app/Models/Setting.php',
         'App\\Models\\User' => __DIR__ . '/../..' . '/app/Models/User.php',
         'App\\Providers\\AppServiceProvider' => __DIR__ . '/../..' . '/app/Providers/AppServiceProvider.php',
@@ -747,6 +749,7 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'Database\\Seeders\\OppoProductsSeeder' => __DIR__ . '/../..' . '/database/seeders/OppoProductsSeeder.php',
         'Database\\Seeders\\ProductGallerySeeder' => __DIR__ . '/../..' . '/database/seeders/ProductGallerySeeder.php',
         'Database\\Seeders\\ProductSeeder' => __DIR__ . '/../..' . '/database/seeders/ProductSeeder.php',
+        'Database\\Seeders\\ProductionProductsSeeder' => __DIR__ . '/../..' . '/database/seeders/ProductionProductsSeeder.php',
         'Database\\Seeders\\ProductionSeeder' => __DIR__ . '/../..' . '/database/seeders/ProductionSeeder.php',
         'Database\\Seeders\\RealProductsSeeder' => __DIR__ . '/../..' . '/database/seeders/RealProductsSeeder.php',
         'Database\\Seeders\\SettingSeeder' => __DIR__ . '/../..' . '/database/seeders/SettingSeeder.php',

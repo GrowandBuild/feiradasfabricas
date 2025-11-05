@@ -85,7 +85,7 @@ class HomeController extends Controller
     {
         $product = Product::active()
             ->where('slug', $slug)
-            ->with(['categories'])
+            ->with(['categories', 'activeVariations'])
             ->firstOrFail();
 
         // Produtos relacionados (mesma categoria)
@@ -99,5 +99,59 @@ class HomeController extends Controller
             ->get();
 
         return view('products.show', compact('product', 'relatedProducts'));
+    }
+
+    /**
+     * Buscar variação de produto por RAM e armazenamento (AJAX)
+     */
+    public function getProductVariation(Request $request, $slug)
+    {
+        $request->validate([
+            'ram' => 'nullable|string',
+            'storage' => 'nullable|string',
+            'color' => 'nullable|string',
+        ]);
+
+        $product = Product::active()
+            ->where('slug', $slug)
+            ->firstOrFail();
+
+        $query = $product->activeVariations();
+
+        if ($request->ram) {
+            $query->where('ram', $request->ram);
+        }
+
+        if ($request->storage) {
+            $query->where('storage', $request->storage);
+        }
+
+        if ($request->color) {
+            $query->where('color', $request->color);
+        }
+
+        $variation = $query->first();
+
+        if (!$variation) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Variação não encontrada',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'variation' => [
+                'id' => $variation->id,
+                'sku' => $variation->sku,
+                'price' => number_format($variation->price, 2, ',', '.'),
+                'b2b_price' => $variation->b2b_price ? number_format($variation->b2b_price, 2, ',', '.') : null,
+                'stock_quantity' => $variation->stock_quantity,
+                'in_stock' => $variation->in_stock,
+                'ram' => $variation->ram,
+                'storage' => $variation->storage,
+                'color' => $variation->color,
+            ],
+        ]);
     }
 }
