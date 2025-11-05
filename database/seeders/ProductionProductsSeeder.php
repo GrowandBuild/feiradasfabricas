@@ -1492,59 +1492,129 @@ class ProductionProductsSeeder extends Seeder
 
         foreach ($series as $seriesName => $seriesData) {
             foreach ($seriesData['models'] as $model) {
+                // Criar produto base único para este modelo (sem variações)
+                // O nome base do modelo é apenas a série + número (ex: "NOTE 40")
+                $baseModelName = $seriesName . ' ' . $model['name'];
+                $baseSlug = Str::slug('Infinix ' . $baseModelName);
+                
+                // Verificar se produto base já existe
+                $baseProduct = Product::where('slug', $baseSlug)
+                    ->where('brand', 'Infinix')
+                    ->where('model', $baseModelName)
+                    ->first();
+
+                $images = $this->getImagesForProduct($baseModelName);
+
+                if (!$baseProduct) {
+                    // Criar produto base (apenas uma vez por modelo)
+                    $baseProduct = Product::create([
+                        'name' => 'Smartphone Infinix ' . $baseModelName,
+                        'slug' => $baseSlug,
+                        'description' => 'Smartphone Infinix ' . $baseModelName . '. Linha ' . strtolower($seriesName) . ' com ' . ($seriesData['specs']['Tela'] ?? 'tela') . ' e sistema ' . ($seriesData['specs']['Sistema'] ?? 'Android'),
+                        'short_description' => 'Infinix ' . $baseModelName . ' - ' . ($seriesData['specs']['Foco'] ?? ''),
+                        'sku' => 'BASE-INF-' . str_replace([' ', '+', '(', ')'], ['-', '', '', ''], $baseModelName),
+                        'price' => round($model['base_price'], 2),
+                        'b2b_price' => round($model['base_price'] * 0.90, 2),
+                        'cost_price' => round($model['base_price'] * 0.65, 2),
+                        'stock_quantity' => 0,
+                        'min_stock' => 3,
+                        'manage_stock' => false,
+                        'in_stock' => true,
+                        'is_active' => true,
+                        'is_featured' => $model['is_featured'] ?? false,
+                        'brand' => 'Infinix',
+                        'model' => $baseModelName,
+                        'department_id' => $department->id,
+                        'images' => $images,
+                        'specifications' => $seriesData['specs'],
+                        'weight' => $seriesData['weight'],
+                        'sort_order' => $seriesData['sort_order'],
+                    ]);
+
+                    // Associar categoria
+                    if ($category) {
+                        $baseProduct->categories()->attach($category->id);
+                    }
+
+                    $productCount++;
+                } else {
+                    $updatedCount++;
+                }
+
+                // Criar variações de produto para cada variação de nome (Pro, Pro+, etc.) e combinação de RAM e armazenamento
                 foreach ($model['variations'] as $variation) {
-                    // Construir nome do modelo: "Zero 2", "Zero 3 Pro", "Note 30", etc.
-                    $modelName = $seriesName . ' ' . $model['name'];
+                    // Construir nome completo do modelo com variação: "NOTE 40 Pro", "NOTE 40 Pro+", etc.
+                    $fullModelName = $baseModelName;
                     if ($variation) {
-                        $modelName .= ' ' . $variation;
+                        $fullModelName .= ' ' . $variation;
                     }
 
-                    // Criar produto base único para este modelo
-                    $baseSlug = Str::slug('Infinix ' . $modelName);
-                    $baseProduct = Product::where('slug', $baseSlug)
-                        ->where('brand', 'Infinix')
-                        ->where('model', $modelName)
-                        ->first();
+                    // Se houver variação de nome (Pro, Pro+, etc.), criar produto base separado para ela
+                    if ($variation) {
+                        // PRIMEIRO: Verificar se já existe produto com este modelo EXATO
+                        $fullModelProduct = Product::where('brand', 'Infinix')
+                            ->where('model', $fullModelName)
+                            ->first();
+                        
+                        // Se não existir, criar com slug único (tratar "+" para evitar duplicatas)
+                        if (!$fullModelProduct) {
+                            // Tratar o "+" antes de gerar o slug para evitar duplicatas
+                            // Ex: "Pro+" vira "pro-plus" em vez de "pro"
+                            $slugSafeVariation = str_replace(['+', '(', ')'], ['-plus', '', ''], $variation);
+                            $slugSafeModelName = $baseModelName . ' ' . $slugSafeVariation;
+                            $fullModelSlug = Str::slug('Infinix ' . $slugSafeModelName);
+                            
+                            // Verificar se o slug já existe (pode acontecer se foi criado antes)
+                            $existingBySlug = Product::where('slug', $fullModelSlug)->first();
+                            if ($existingBySlug && $existingBySlug->model !== $fullModelName) {
+                                // Se slug existe mas é produto diferente, adicionar sufixo
+                                $counter = 1;
+                                $originalSlug = $fullModelSlug;
+                                while ($existingBySlug && $existingBySlug->model !== $fullModelName) {
+                                    $fullModelSlug = $originalSlug . '-' . $counter;
+                                    $existingBySlug = Product::where('slug', $fullModelSlug)->first();
+                                    $counter++;
+                                }
+                            }
+                            
+                            // Criar produto base
+                            $fullModelImages = $this->getImagesForProduct($fullModelName);
+                            $fullModelProduct = Product::create([
+                                'name' => 'Smartphone Infinix ' . $fullModelName,
+                                'slug' => $fullModelSlug,
+                                'description' => 'Smartphone Infinix ' . $fullModelName . '. Linha ' . strtolower($seriesName) . ' com ' . ($seriesData['specs']['Tela'] ?? 'tela') . ' e sistema ' . ($seriesData['specs']['Sistema'] ?? 'Android'),
+                                'short_description' => 'Infinix ' . $fullModelName . ' - ' . ($seriesData['specs']['Foco'] ?? ''),
+                                'sku' => 'BASE-INF-' . str_replace([' ', '+', '(', ')'], ['-', '', '', ''], $fullModelName),
+                                'price' => round($model['base_price'], 2),
+                                'b2b_price' => round($model['base_price'] * 0.90, 2),
+                                'cost_price' => round($model['base_price'] * 0.65, 2),
+                                'stock_quantity' => 0,
+                                'min_stock' => 3,
+                                'manage_stock' => false,
+                                'in_stock' => true,
+                                'is_active' => true,
+                                'is_featured' => $model['is_featured'] ?? false,
+                                'brand' => 'Infinix',
+                                'model' => $fullModelName,
+                                'department_id' => $department->id,
+                                'images' => $fullModelImages,
+                                'specifications' => $seriesData['specs'],
+                                'weight' => $seriesData['weight'],
+                                'sort_order' => $seriesData['sort_order'],
+                            ]);
 
-                    $images = $this->getImagesForProduct($modelName);
+                            if ($category) {
+                                $fullModelProduct->categories()->attach($category->id);
+                            }
 
-                    if (!$baseProduct) {
-                        // Criar produto base
-                        $baseProduct = Product::create([
-                            'name' => 'Smartphone Infinix ' . $modelName,
-                            'slug' => $baseSlug,
-                            'description' => 'Smartphone Infinix ' . $modelName . '. Linha ' . strtolower($seriesName) . ' com ' . ($seriesData['specs']['Tela'] ?? 'tela') . ' e sistema ' . ($seriesData['specs']['Sistema'] ?? 'Android'),
-                            'short_description' => 'Infinix ' . $modelName . ' - ' . ($seriesData['specs']['Foco'] ?? ''),
-                            'sku' => 'BASE-INF-' . str_replace([' ', '+', '(', ')'], ['-', '', '', ''], $modelName),
-                            'price' => round($model['base_price'], 2),
-                            'b2b_price' => round($model['base_price'] * 0.90, 2),
-                            'cost_price' => round($model['base_price'] * 0.65, 2),
-                            'stock_quantity' => 0,
-                            'min_stock' => 3,
-                            'manage_stock' => false,
-                            'in_stock' => true,
-                            'is_active' => true,
-                            'is_featured' => $model['is_featured'] ?? false,
-                            'brand' => 'Infinix',
-                            'model' => $modelName,
-                            'department_id' => $department->id,
-                            'images' => $images,
-                            'specifications' => $seriesData['specs'],
-                            'weight' => $seriesData['weight'],
-                            'sort_order' => $seriesData['sort_order'],
-                        ]);
-
-                        // Associar categoria
-                        if ($category) {
-                            $baseProduct->categories()->attach($category->id);
+                            $productCount++;
                         }
-
-                        $productCount++;
+                        $productForVariations = $fullModelProduct;
                     } else {
-                        $updatedCount++;
+                        // Se não houver variação de nome, usar o produto base
+                        $productForVariations = $baseProduct;
                     }
 
-                    // Criar variações para cada combinação de RAM e armazenamento
                     $variationSortOrder = 0;
                     foreach ($model['ram'] as $ram) {
                         foreach ($model['storage'] as $storage) {
@@ -1572,8 +1642,9 @@ class ProductionProductsSeeder extends Seeder
                             $finalB2BPrice = $finalPrice * 0.90;
                             $finalCostPrice = $finalPrice * 0.65;
 
-                            // Gerar SKU para variação
-                            $skuBase = str_replace([' ', '+', '(', ')'], ['-', '', '', ''], $modelName);
+                            // Gerar SKU para variação (usar fullModelName se houver variação, senão baseModelName)
+                            $modelNameForSku = $variation ? $fullModelName : $baseModelName;
+                            $skuBase = str_replace([' ', '+', '(', ')'], ['-', '', '', ''], $modelNameForSku);
                             $variationSku = 'INF-' . $seriesName . '-' . $skuBase . '-' . str_replace('GB', '', $ram) . '-' . str_replace('GB', '', $storage);
 
                             // Verificar se variação já existe
@@ -1581,7 +1652,7 @@ class ProductionProductsSeeder extends Seeder
 
                             if (!$existingVariation) {
                                 ProductVariation::create([
-                                    'product_id' => $baseProduct->id,
+                                    'product_id' => $productForVariations->id,
                                     'ram' => $ram,
                                     'storage' => $storage,
                                     'sku' => $variationSku,
@@ -1596,8 +1667,8 @@ class ProductionProductsSeeder extends Seeder
                             }
 
                             // Atualizar preço base do produto para o menor preço disponível
-                            if ($variationSortOrder === 1 || $baseProduct->price > $finalPrice) {
-                                $baseProduct->update(['price' => round($finalPrice, 2)]);
+                            if ($variationSortOrder === 1 || $productForVariations->price > $finalPrice) {
+                                $productForVariations->update(['price' => round($finalPrice, 2)]);
                             }
                         }
                     }
