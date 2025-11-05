@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('banners', function (Blueprint $table) {
-            $table->string('text_vertical_align')->default('bottom')->after('text_align'); // top, center, bottom
-            $table->string('description_vertical_align')->default('bottom')->after('description_align'); // top, center, bottom
+            $table->string('text_vertical_align')->default('bottom'); // top, center, bottom
+            $table->string('description_vertical_align')->default('bottom'); // top, center, bottom
         });
     }
 
