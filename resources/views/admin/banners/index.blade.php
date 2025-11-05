@@ -193,10 +193,13 @@
                                 </td>
                                 <td>
                                     <div class="btn-group" role="group">
-                                        <a href="{{ route('admin.banners.edit', $banner) }}" 
-                                           class="btn btn-outline-primary btn-sm" title="Editar">
+                                        <button type="button" 
+                                                class="btn btn-outline-primary btn-sm edit-banner-btn" 
+                                                title="Editar"
+                                                data-banner-id="{{ $banner->id }}"
+                                                data-banner-title="{{ $banner->title }}">
                                             <i class="bi bi-pencil"></i>
-                                        </a>
+                                        </button>
                                         <form action="{{ route('admin.banners.destroy', $banner) }}" 
                                               method="POST" class="d-inline"
                                               onsubmit="return confirm('Tem certeza que deseja excluir este banner?')">
@@ -230,5 +233,313 @@
         @endif
     </div>
 </div>
+
+<!-- Modal de Edição -->
+<div class="modal fade" id="editBannerModal" tabindex="-1" aria-labelledby="editBannerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editBannerModalLabel">
+                    <i class="bi bi-pencil"></i> Editar Banner
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="editBannerModalBody">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Carregando formulário...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast para notificações -->
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
+    <div id="toast-notification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            <strong class="me-auto">Notificação</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toast-message">
+            <!-- Mensagem será inserida aqui -->
+        </div>
+    </div>
+</div>
+
+@endsection
+
+@section('styles')
+<style>
+    #editBannerModal .modal-dialog {
+        max-width: 90%;
+    }
+    
+    #editBannerModal .modal-body {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+    
+    #editBannerModal .form-control-color {
+        width: 50px;
+        height: 40px;
+    }
+    
+    #editBannerModal .nav-tabs .nav-link {
+        color: #495057;
+    }
+    
+    #editBannerModal .nav-tabs .nav-link.active {
+        color: #0d6efd;
+        font-weight: 600;
+    }
+</style>
+@endsection
+
+@section('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editModal = new bootstrap.Modal(document.getElementById('editBannerModal'));
+    const modalBody = document.getElementById('editBannerModalBody');
+    const editBannerForm = document.getElementById('banner-edit-form');
+    const toastEl = document.getElementById('toast-notification');
+    const toastMessage = document.getElementById('toast-message');
+    const toast = new bootstrap.Toast(toastEl);
+
+    // Event listener para botões de editar
+    document.querySelectorAll('.edit-banner-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const bannerId = this.dataset.bannerId;
+            const bannerTitle = this.dataset.bannerTitle;
+            
+            // Atualizar título do modal
+            document.getElementById('editBannerModalLabel').innerHTML = 
+                `<i class="bi bi-pencil"></i> Editar Banner: ${bannerTitle}`;
+            
+            // Mostrar loading
+            modalBody.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                    <p class="mt-3 text-muted">Carregando formulário...</p>
+                </div>
+            `;
+            
+            // Abrir modal
+            editModal.show();
+            
+            // Carregar formulário via AJAX
+            fetch(`{{ route('admin.banners.edit', ':id') }}`.replace(':id', bannerId), {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Erro ao carregar formulário');
+                }
+                return response.text();
+            })
+            .then(html => {
+                modalBody.innerHTML = html;
+                
+                // Inicializar abas do Bootstrap se existirem
+                const tabElements = modalBody.querySelectorAll('[data-bs-toggle="tab"]');
+                if (tabElements.length > 0) {
+                    tabElements.forEach(tab => {
+                        tab.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            const target = this.getAttribute('data-bs-target');
+                            const tabPane = modalBody.querySelector(target);
+                            if (tabPane) {
+                                // Remover active de todas as abas
+                                modalBody.querySelectorAll('.nav-link').forEach(link => {
+                                    link.classList.remove('active');
+                                });
+                                modalBody.querySelectorAll('.tab-pane').forEach(pane => {
+                                    pane.classList.remove('active', 'show');
+                                });
+                                // Adicionar active na aba clicada
+                                this.classList.add('active');
+                                tabPane.classList.add('active', 'show');
+                            }
+                        });
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <strong>Erro ao carregar formulário:</strong> ${error.message}
+                    </div>
+                `;
+            });
+        });
+    });
+
+    // Event listener para submit do formulário (usando delegação de eventos)
+    document.addEventListener('submit', function(e) {
+        if (e.target && e.target.id === 'banner-edit-form') {
+            e.preventDefault();
+            
+            const form = e.target;
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            
+            // Desabilitar botão e mostrar loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando...';
+            
+            // Enviar via AJAX
+            fetch(form.action, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(response => {
+                return response.json().then(data => {
+                    if (!response.ok) {
+                        throw { data, status: response.status };
+                    }
+                    return data;
+                });
+            })
+            .then(data => {
+                if (data.success) {
+                    // Mostrar mensagem de sucesso
+                    toastMessage.innerHTML = data.message;
+                    toastEl.querySelector('.toast-header i').className = 'bi bi-check-circle-fill text-success me-2';
+                    toast.show();
+                    
+                    // Fechar modal
+                    editModal.hide();
+                    
+                    // Recarregar página após 1 segundo para atualizar a tabela
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 1000);
+                } else {
+                    // Mostrar erros
+                    let errorHtml = '<ul class="mb-0">';
+                    if (data.errors) {
+                        Object.keys(data.errors).forEach(key => {
+                            data.errors[key].forEach(error => {
+                                errorHtml += `<li>${error}</li>`;
+                            });
+                        });
+                    } else {
+                        errorHtml += `<li>${data.message || 'Erro desconhecido'}</li>`;
+                    }
+                    errorHtml += '</ul>';
+                    
+                    // Remover erros anteriores se existirem
+                    const existingError = form.querySelector('.alert-danger');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+                    
+                    // Mostrar erros no topo do formulário
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    errorDiv.innerHTML = `
+                        <strong><i class="bi bi-exclamation-triangle"></i> Erro ao atualizar banner:</strong>
+                        ${errorHtml}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    form.insertBefore(errorDiv, form.firstChild);
+                    
+                    // Scroll para o topo do formulário
+                    form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Reabilitar botão
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                
+                // Se for erro de validação (tem data.errors)
+                if (error.data && error.data.errors) {
+                    // Mostrar erros de validação
+                    let errorHtml = '<ul class="mb-0">';
+                    Object.keys(error.data.errors).forEach(key => {
+                        error.data.errors[key].forEach(err => {
+                            errorHtml += `<li>${err}</li>`;
+                        });
+                    });
+                    errorHtml += '</ul>';
+                    
+                    // Remover erros anteriores se existirem
+                    const existingError = form.querySelector('.alert-danger');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+                    
+                    // Mostrar erros no topo do formulário
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    errorDiv.innerHTML = `
+                        <strong><i class="bi bi-exclamation-triangle"></i> Erro de validação:</strong>
+                        ${errorHtml}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    form.insertBefore(errorDiv, form.firstChild);
+                } else {
+                    // Erro genérico
+                    // Remover erros anteriores se existirem
+                    const existingError = form.querySelector('.alert-danger');
+                    if (existingError) {
+                        existingError.remove();
+                    }
+                    
+                    // Mostrar erro no formulário
+                    const errorDiv = document.createElement('div');
+                    errorDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    errorDiv.innerHTML = `
+                        <strong><i class="bi bi-exclamation-triangle"></i> Erro ao salvar banner:</strong>
+                        <ul class="mb-0"><li>${error.data?.message || error.message || 'Erro ao salvar banner. Tente novamente.'}</li></ul>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    form.insertBefore(errorDiv, form.firstChild);
+                }
+                
+                // Scroll para o topo do formulário
+                form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                
+                // Reabilitar botão
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        }
+    });
+
+    // Limpar conteúdo do modal ao fechar
+    editModal._element.addEventListener('hidden.bs.modal', function() {
+        modalBody.innerHTML = `
+            <div class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+                <p class="mt-3 text-muted">Carregando formulário...</p>
+            </div>
+        `;
+    });
+});
+</script>
 @endsection
 

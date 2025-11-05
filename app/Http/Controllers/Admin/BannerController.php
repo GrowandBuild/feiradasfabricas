@@ -170,6 +170,13 @@ class BannerController extends Controller
     public function edit(Banner $banner)
     {
         $departments = Department::active()->ordered()->get();
+        
+        // Se for requisição AJAX, retornar apenas o formulário (para modal)
+        if (request()->ajax()) {
+            return view('admin.banners.edit-form', compact('banner', 'departments'));
+        }
+        
+        // Caso contrário, retornar a view completa (fallback)
         return view('admin.banners.edit', compact('banner', 'departments'));
     }
 
@@ -183,7 +190,8 @@ class BannerController extends Controller
             'show_overlay' => $request->has('show_overlay') ? 1 : 0,
         ]);
 
-        $request->validate([
+        try {
+            $validated = $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
@@ -245,6 +253,17 @@ class BannerController extends Controller
             'expires_at.after' => 'A data de término deve ser posterior à data de início.',
             'department_id.exists' => 'O departamento selecionado não existe.',
         ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            // Se for requisição AJAX, retornar JSON com erros de validação
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erro de validação',
+                    'errors' => $e->errors()
+                ], 422);
+            }
+            throw $e;
+        }
 
         $data = $request->all();
         $data['is_active'] = $request->has('is_active');
@@ -303,15 +322,24 @@ class BannerController extends Controller
             unset($data['mobile_image']);
         }
 
+        // Remover campos que não devem ser atualizados diretamente
+        unset($data['_token'], $data['_method']);
+        
         try {
-            // Remover campos que não devem ser atualizados diretamente
-            unset($data['_token'], $data['_method']);
-
             // Atualizar o banner
             $banner->update($data);
             
             // Recarregar o banner do banco de dados para garantir que as alterações estejam refletidas
             $banner = $banner->fresh();
+
+            // Se for requisição AJAX, retornar JSON
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Banner atualizado com sucesso!',
+                    'banner' => $banner
+                ]);
+            }
 
             return redirect()->route('admin.banners.edit', $banner)
                             ->with('success', 'Banner atualizado com sucesso!');
@@ -321,6 +349,15 @@ class BannerController extends Controller
                 'trace' => $e->getTraceAsString(),
                 'data' => $data
             ]);
+
+            // Se for requisição AJAX, retornar JSON com erro
+            if ($request->ajax()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erro ao atualizar banner: ' . $e->getMessage(),
+                    'errors' => ['error' => $e->getMessage()]
+                ], 422);
+            }
 
             return redirect()->back()
                             ->withInput()
