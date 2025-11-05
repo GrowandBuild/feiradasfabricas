@@ -379,14 +379,9 @@
 
             <!-- Navbar content -->
             <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Search Bar -->
-                <div class="search-bar mx-auto">
-                    <form action="{{ route('search') }}" method="GET">
-                        <input type="text" class="form-control" name="q" placeholder="Procurar na Feira das Fábricas" value="{{ request('q') }}">
-                        <button type="submit">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </form>
+                <!-- Live Search Component -->
+                <div class="mx-auto">
+                    @include('components.live-search')
                 </div>
 
                 <!-- Header Icons -->

@@ -124,6 +124,36 @@ class ProductionProductsSeeder extends Seeder
                     'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
                 ],
             ],
+            // Oppo - Série Find X
+            'Oppo Find X' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
+            // Oppo - Série Reno
+            'Oppo Reno' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
+            // Oppo - Série A
+            'Oppo A' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
+            // Oppo - Série F
+            'Oppo F' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
+            // Oppo - Série K
+            'Oppo K' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
         ];
     }
 
@@ -177,6 +207,36 @@ class ProductionProductsSeeder extends Seeder
         if (strpos($model, 'GT') === 0) {
             if (isset($images['Infinix GT']['default'])) {
                 return $images['Infinix GT']['default'];
+            }
+        }
+        
+        // Para Oppo, tentar por série (ex: "Find X5" -> "Oppo Find X")
+        if (strpos($model, 'Find') === 0 || strpos($model, 'FIND') === 0) {
+            if (isset($images['Oppo Find X']['default'])) {
+                return $images['Oppo Find X']['default'];
+            }
+        }
+        if (strpos($model, 'Reno') === 0 || strpos($model, 'RENO') === 0) {
+            if (isset($images['Oppo Reno']['default'])) {
+                return $images['Oppo Reno']['default'];
+            }
+        }
+        // Para Oppo série A (A1, A2, A3, etc.)
+        if (preg_match('/^A\d+/', $model)) {
+            if (isset($images['Oppo A']['default'])) {
+                return $images['Oppo A']['default'];
+            }
+        }
+        // Para Oppo série F (F1, F3, F5, etc.)
+        if (preg_match('/^F\d+/', $model)) {
+            if (isset($images['Oppo F']['default'])) {
+                return $images['Oppo F']['default'];
+            }
+        }
+        // Para Oppo série K (K1, K3, K5, etc.)
+        if (preg_match('/^K\d+/', $model)) {
+            if (isset($images['Oppo K']['default'])) {
+                return $images['Oppo K']['default'];
             }
         }
         
@@ -392,6 +452,9 @@ class ProductionProductsSeeder extends Seeder
 
         // Adicionar produtos Infinix (todas as séries) com variações
         $this->createInfinixProductsWithVariations($department, $smartphoneCategory, $productCount, $updatedCount);
+        
+        // Adicionar produtos Oppo (todas as séries) com variações
+        $this->createOppoProductsWithVariations($department, $smartphoneCategory, $productCount, $updatedCount);
         
         // Os valores de $productCount e $updatedCount são atualizados por referência na função
 

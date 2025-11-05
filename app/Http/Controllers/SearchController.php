@@ -115,6 +115,89 @@ class SearchController extends Controller
         return response()->json($suggestions);
     }
 
+    /**
+     * Busca Live Search - Retorna produtos formatados para exibição em tempo real
+     */
+    public function liveSearch(Request $request)
+    {
+        $query = $request->get('q', '');
+        $limit = $request->get('limit', 8);
+        
+        if (strlen($query) < 2) {
+            return response()->json([
+                'products' => [],
+                'total' => 0,
+            ]);
+        }
+
+        // Buscar produtos ativos e em estoque
+        $products = Product::where('is_active', true)
+            ->where('in_stock', true)
+            ->where(function($q) use ($query) {
+                $q->where('name', 'like', "%{$query}%")
+                  ->orWhere('description', 'like', "%{$query}%")
+                  ->orWhere('short_description', 'like', "%{$query}%")
+                  ->orWhere('brand', 'like', "%{$query}%")
+                  ->orWhere('model', 'like', "%{$query}%")
+                  ->orWhere('sku', 'like', "%{$query}%");
+            })
+            ->orderByRaw("
+                CASE 
+                    WHEN name LIKE ? THEN 1
+                    WHEN name LIKE ? THEN 2
+                    WHEN brand LIKE ? THEN 3
+                    ELSE 4
+                END
+            ", ["{$query}%", "%{$query}%", "%{$query}%"])
+            ->limit($limit)
+            ->get(['id', 'name', 'slug', 'short_description', 'description', 'price', 'brand', 'images']);
+
+        // Formatar produtos para resposta
+        $formattedProducts = $products->map(function($product) {
+            // Processar imagens
+            $images = [];
+            if ($product->images) {
+                if (is_string($product->images)) {
+                    $decoded = json_decode($product->images, true);
+                    $images = is_array($decoded) ? $decoded : [$product->images];
+                } elseif (is_array($product->images)) {
+                    $images = $product->images;
+                }
+            }
+            
+            // Converter URLs relativas para absolutas se necessário
+            $formattedImages = [];
+            foreach ($images as $image) {
+                if (empty($image)) {
+                    $formattedImages[] = url('images/no-image.png');
+                } elseif (strpos($image, 'http') === 0 || strpos($image, 'https') === 0) {
+                    $formattedImages[] = $image;
+                } elseif (strpos($image, '/') === 0) {
+                    $formattedImages[] = url(ltrim($image, '/'));
+                } else {
+                    $formattedImages[] = url('storage/' . $image);
+                }
+            }
+
+            return [
+                'id' => $product->id,
+                'name' => $product->name,
+                'slug' => $product->slug,
+                'short_description' => $product->short_description,
+                'description' => $product->description,
+                'price' => (float) $product->price,
+                'brand' => $product->brand,
+                'images' => $formattedImages,
+            ];
+        });
+
+        return response()->json([
+            'products' => $formattedProducts,
+            'total' => $formattedProducts->count(),
+            'query' => $query,
+        ]);
+    }
+
     public function voiceSearch(Request $request)
     {
         $audioFile = $request->file('audio');

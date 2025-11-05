@@ -153,6 +153,7 @@ Route::get('/search', function () {
 Route::prefix('api/search')->group(function () {
     Route::get('/', [App\Http\Controllers\SearchController::class, 'search']);
     Route::get('/autocomplete', [App\Http\Controllers\SearchController::class, 'autocomplete']);
+    Route::get('/live', [App\Http\Controllers\SearchController::class, 'liveSearch']);
     Route::post('/voice', [App\Http\Controllers\SearchController::class, 'voiceSearch']);
     Route::post('/image', [App\Http\Controllers\SearchController::class, 'imageSearch']);
     Route::get('/barcode', [App\Http\Controllers\SearchController::class, 'barcodeSearch']);
