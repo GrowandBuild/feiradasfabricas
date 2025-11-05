@@ -346,20 +346,31 @@ class ProductionProductsSeeder extends Seeder
         $otherAppleProducts = $this->getOtherAppleProducts($department);
         
         foreach ($otherAppleProducts as $productData) {
+            // Extrair categoria antes de criar/atualizar produto
+            $categorySlug = $productData['category'] ?? null;
+            unset($productData['category']);
+            
             $existingProduct = Product::where('sku', $productData['sku'])->first();
             
             if ($existingProduct) {
                 $existingProduct->update($productData);
+                // Atualizar categoria se necessário
+                if ($categorySlug) {
+                    $category = Category::where('slug', $categorySlug)->first();
+                    if ($category && !$existingProduct->categories()->where('categories.id', $category->id)->exists()) {
+                        $existingProduct->categories()->attach($category->id);
+                    }
+                }
                 $updatedCount++;
             } else {
                 $product = Product::create($productData);
                 
                 // Associar categoria
-                $categorySlug = $productData['category'];
-                unset($productData['category']);
-                $category = Category::where('slug', $categorySlug)->first();
-                if ($category) {
-                    $product->categories()->attach($category->id);
+                if ($categorySlug) {
+                    $category = Category::where('slug', $categorySlug)->first();
+                    if ($category) {
+                        $product->categories()->attach($category->id);
+                    }
                 }
                 
                 $productCount++;
