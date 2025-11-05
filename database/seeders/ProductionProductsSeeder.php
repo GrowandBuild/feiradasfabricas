@@ -345,10 +345,24 @@ class ProductionProductsSeeder extends Seeder
         // Adicionar outros produtos Apple (do RealProductsSeeder)
         $otherAppleProducts = $this->getOtherAppleProducts($department);
         
-        foreach ($otherAppleProducts as $productData) {
+        foreach ($otherAppleProducts as $originalProductData) {
             // Extrair categoria antes de criar/atualizar produto
-            $categorySlug = $productData['category'] ?? null;
-            unset($productData['category']);
+            $categorySlug = $originalProductData['category'] ?? null;
+            
+            // Criar novo array apenas com campos permitidos (remover 'category' explicitamente)
+            $productData = [];
+            $allowedFields = [
+                'name', 'slug', 'description', 'short_description', 'sku', 'price', 'b2b_price', 'cost_price',
+                'stock_quantity', 'min_stock', 'manage_stock', 'in_stock', 'is_active', 'is_featured',
+                'brand', 'model', 'images', 'specifications', 'weight', 'length', 'width', 'height',
+                'sort_order', 'department_id'
+            ];
+            
+            foreach ($allowedFields as $field) {
+                if (isset($originalProductData[$field])) {
+                    $productData[$field] = $originalProductData[$field];
+                }
+            }
             
             $existingProduct = Product::where('sku', $productData['sku'])->first();
             
