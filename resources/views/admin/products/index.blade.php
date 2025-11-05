@@ -140,9 +140,9 @@
                                              class="rounded shadow-sm" 
                                              style="width: 60px; height: 60px; object-fit: cover;">
                                     @else
-                                        <div class="bg-light rounded d-flex align-items-center justify-content-center shadow-sm" 
+                                        <div class="d-flex align-items-center justify-content-center" 
                                              style="width: 60px; height: 60px;">
-                                            <i class="bi bi-image text-muted"></i>
+                                            <i class="bi bi-image" style="font-size: 1.5rem; color: #fd7e14;"></i>
                                         </div>
                                     @endif
                                 </td>
@@ -150,7 +150,6 @@
                                     <div class="d-flex align-items-start">
                                         <div>
                                             <h6 class="mb-1 fw-semibold">{{ $product->name }}</h6>
-                                            <small class="text-muted">{{ Str::limit($product->description, 60) }}</small>
                                             @if($product->is_featured)
                                                 <div class="mt-1">
                                                     <span class="badge bg-warning">

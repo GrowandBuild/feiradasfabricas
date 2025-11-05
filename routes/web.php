@@ -144,11 +144,6 @@ Route::get('/register-b2b', [CustomerAuthController::class, 'showB2BRegisterForm
 // Incluir rotas administrativas
 require __DIR__.'/admin.php';
 
-// Página de Busca Moderna
-Route::get('/search', function () {
-    return view('search');
-})->name('search');
-
 // API de Busca Avançada
 Route::prefix('api/search')->group(function () {
     Route::get('/', [App\Http\Controllers\SearchController::class, 'search']);

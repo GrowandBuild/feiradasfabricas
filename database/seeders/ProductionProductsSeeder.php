@@ -1756,6 +1756,288 @@ class ProductionProductsSeeder extends Seeder
     }
 
     /**
+     * Criar produtos Oppo base com variações (RAM + Armazenamento)
+     * Segue a mesma metodologia do Infinix
+     */
+    private function createOppoProductsWithVariations($department, $category, &$productCount, &$updatedCount)
+    {
+        // Definir séries e modelos Oppo
+        $series = [
+            'Find X' => [
+                'models' => [
+                    ['name' => 'X', 'variations' => [''], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 3999.00, 'is_featured' => true],
+                    ['name' => 'X2', 'variations' => [''], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 4299.00, 'is_featured' => true],
+                    ['name' => 'X3', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 4599.00, 'is_featured' => true],
+                    ['name' => 'X5', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 4999.00, 'is_featured' => true],
+                    ['name' => 'X6', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['256GB', '512GB'], 'base_price' => 5299.00, 'is_featured' => true],
+                    ['name' => 'X7', 'variations' => ['', 'Pro', 'Ultra'], 'ram' => ['12GB'], 'storage' => ['256GB', '512GB'], 'base_price' => 5599.00, 'is_featured' => true],
+                    ['name' => 'X8', 'variations' => ['', 'Pro'], 'ram' => ['12GB'], 'storage' => ['256GB', '512GB'], 'base_price' => 5999.00, 'is_featured' => true],
+                ],
+                'specs' => ['Série' => 'Find X', 'Tela' => 'AMOLED 6.7"-6.9"', 'Câmera' => 'Até 200MP', 'Carregamento' => 'Até 80W SuperVOOC', 'Bateria' => '4500-5000mAh', 'Sistema' => 'Android (ColorOS)', 'Foco' => 'Premium - Inovação e design superior'],
+                'weight' => 0.200,
+                'sort_order' => 100,
+            ],
+            'Reno' => [
+                'models' => [
+                    ['name' => '2', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1999.00, 'is_featured' => false],
+                    ['name' => '3', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 2199.00, 'is_featured' => false],
+                    ['name' => '4', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 2399.00, 'is_featured' => false],
+                    ['name' => '5', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 2599.00, 'is_featured' => true],
+                    ['name' => '6', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 2799.00, 'is_featured' => true],
+                    ['name' => '7', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 2999.00, 'is_featured' => true],
+                    ['name' => '8', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 3199.00, 'is_featured' => true],
+                    ['name' => '9', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 3399.00, 'is_featured' => true],
+                    ['name' => '10', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 3599.00, 'is_featured' => true],
+                    ['name' => '11', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 3799.00, 'is_featured' => true],
+                    ['name' => '12', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 3999.00, 'is_featured' => true],
+                    ['name' => '13', 'variations' => ['', 'Pro'], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB', '512GB'], 'base_price' => 4199.00, 'is_featured' => true],
+                ],
+                'specs' => ['Série' => 'Reno', 'Tela' => 'AMOLED 6.4"-6.7"', 'Câmera' => 'Até 100MP', 'Carregamento' => 'Até 67W SuperVOOC', 'Bateria' => '4500-5000mAh', 'Sistema' => 'Android (ColorOS)', 'Foco' => 'Médio-Alto - Fotografia e design'],
+                'weight' => 0.195,
+                'sort_order' => 200,
+            ],
+            'A' => [
+                'models' => [
+                    ['name' => '15', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 799.00, 'is_featured' => false],
+                    ['name' => '17', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 899.00, 'is_featured' => false],
+                    ['name' => '18', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 999.00, 'is_featured' => false],
+                    ['name' => '19', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 1099.00, 'is_featured' => false],
+                    ['name' => '31', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 1199.00, 'is_featured' => false],
+                    ['name' => '54', 'variations' => [''], 'ram' => ['4GB', '6GB', '8GB'], 'storage' => ['64GB', '128GB', '256GB'], 'base_price' => 1299.00, 'is_featured' => false],
+                    ['name' => '57', 'variations' => [''], 'ram' => ['4GB', '6GB', '8GB'], 'storage' => ['64GB', '128GB', '256GB'], 'base_price' => 1399.00, 'is_featured' => false],
+                    ['name' => '58', 'variations' => [''], 'ram' => ['4GB', '6GB', '8GB'], 'storage' => ['64GB', '128GB', '256GB'], 'base_price' => 1499.00, 'is_featured' => false],
+                    ['name' => '74', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1599.00, 'is_featured' => false],
+                    ['name' => '77', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1699.00, 'is_featured' => false],
+                    ['name' => '78', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1799.00, 'is_featured' => true],
+                    ['name' => '79', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1899.00, 'is_featured' => true],
+                    ['name' => '80', 'variations' => [''], 'ram' => ['8GB', '12GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1999.00, 'is_featured' => true],
+                    ['name' => '96', 'variations' => [''], 'ram' => ['8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1999.00, 'is_featured' => true],
+                    ['name' => '98', 'variations' => [''], 'ram' => ['8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 2099.00, 'is_featured' => true],
+                ],
+                'specs' => ['Série' => 'A', 'Tela' => '6.1"-6.7"', 'Bateria' => '4000-5000mAh', 'Carregamento' => 'Até 33W', 'Sistema' => 'Android (ColorOS)', 'Foco' => 'Médio - Custo-benefício'],
+                'weight' => 0.190,
+                'sort_order' => 300,
+            ],
+            'F' => [
+                'models' => [
+                    ['name' => '1', 'variations' => [''], 'ram' => ['4GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 599.00, 'is_featured' => false],
+                    ['name' => '3', 'variations' => [''], 'ram' => ['4GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 699.00, 'is_featured' => false],
+                    ['name' => '5', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 799.00, 'is_featured' => false],
+                    ['name' => '7', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 899.00, 'is_featured' => false],
+                    ['name' => '9', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 999.00, 'is_featured' => false],
+                    ['name' => '11', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 1099.00, 'is_featured' => false],
+                    ['name' => '15', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 1199.00, 'is_featured' => false],
+                    ['name' => '17', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 1299.00, 'is_featured' => false],
+                    ['name' => '19', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1399.00, 'is_featured' => false],
+                    ['name' => '21', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1499.00, 'is_featured' => true],
+                ],
+                'specs' => ['Série' => 'F', 'Tela' => '6.1"-6.4"', 'Bateria' => '4000-4500mAh', 'Carregamento' => 'Até 33W', 'Sistema' => 'Android (ColorOS)', 'Foco' => 'Entrada - Acessível e funcional'],
+                'weight' => 0.185,
+                'sort_order' => 400,
+            ],
+            'K' => [
+                'models' => [
+                    ['name' => '1', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 699.00, 'is_featured' => false],
+                    ['name' => '3', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 799.00, 'is_featured' => false],
+                    ['name' => '5', 'variations' => [''], 'ram' => ['4GB', '6GB'], 'storage' => ['64GB', '128GB'], 'base_price' => 899.00, 'is_featured' => false],
+                    ['name' => '9', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1099.00, 'is_featured' => false],
+                    ['name' => '10', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1199.00, 'is_featured' => false],
+                    ['name' => '11', 'variations' => [''], 'ram' => ['6GB', '8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1299.00, 'is_featured' => true],
+                    ['name' => '12', 'variations' => ['', 'Plus'], 'ram' => ['8GB'], 'storage' => ['128GB', '256GB'], 'base_price' => 1399.00, 'is_featured' => true],
+                ],
+                'specs' => ['Série' => 'K', 'Tela' => '6.1"-6.7"', 'Bateria' => '4000-5000mAh', 'Carregamento' => 'Até 33W', 'Sistema' => 'Android (ColorOS)', 'Foco' => 'Acessível - Boa performance'],
+                'weight' => 0.187,
+                'sort_order' => 500,
+            ],
+        ];
+
+        foreach ($series as $seriesName => $seriesData) {
+            foreach ($seriesData['models'] as $model) {
+                // Criar produto base único para este modelo
+                $baseModelName = $seriesName . ' ' . $model['name'];
+                $baseSlug = Str::slug('Oppo ' . $baseModelName);
+                
+                $images = $this->getImagesForProduct($baseModelName);
+
+                // Gerar SKU único para o produto base
+                $baseSku = 'BASE-OPPO-' . str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $baseModelName);
+                
+                // Verificar se produto base já existe por SKU ou slug
+                $baseProduct = Product::where(function($q) use ($baseSku, $baseSlug) {
+                        $q->where('sku', $baseSku)
+                          ->orWhere('slug', $baseSlug);
+                    })
+                    ->where('brand', 'Oppo')
+                    ->where('model', $baseModelName)
+                    ->first();
+                
+                if (!$baseProduct) {
+                    // Criar produto base (apenas uma vez por modelo)
+                    $baseProduct = Product::create([
+                        'name' => 'Smartphone Oppo ' . $baseModelName,
+                        'slug' => $baseSlug,
+                        'description' => 'Smartphone Oppo ' . $baseModelName . '. Linha ' . strtolower($seriesName) . ' com ' . ($seriesData['specs']['Tela'] ?? 'tela') . ' e sistema ' . ($seriesData['specs']['Sistema'] ?? 'Android'),
+                        'short_description' => 'Oppo ' . $baseModelName . ' - ' . ($seriesData['specs']['Foco'] ?? ''),
+                        'sku' => $baseSku,
+                        'price' => round($model['base_price'], 2),
+                        'b2b_price' => round($model['base_price'] * 0.90, 2),
+                        'cost_price' => round($model['base_price'] * 0.65, 2),
+                        'stock_quantity' => 0,
+                        'min_stock' => 3,
+                        'manage_stock' => false,
+                        'in_stock' => true,
+                        'is_active' => true,
+                        'is_featured' => $model['is_featured'] ?? false,
+                        'brand' => 'Oppo',
+                        'model' => $baseModelName,
+                        'department_id' => $department->id,
+                        'images' => $images,
+                        'specifications' => $seriesData['specs'],
+                        'weight' => $seriesData['weight'],
+                        'sort_order' => $seriesData['sort_order'],
+                    ]);
+
+                    // Associar categoria
+                    if ($category) {
+                        $baseProduct->categories()->attach($category->id);
+                    }
+
+                    $productCount++;
+                } else {
+                    $updatedCount++;
+                }
+
+                // Criar variações de produto para cada variação de nome (Pro, etc.) e combinação de RAM e armazenamento
+                foreach ($model['variations'] as $variation) {
+                    // Construir nome completo do modelo com variação: "Find X5 Pro", "Reno 9 Pro", etc.
+                    $fullModelName = $baseModelName;
+                    if ($variation) {
+                        $fullModelName .= ' ' . $variation;
+                    }
+
+                    // Se houver variação de nome (Pro, etc.), criar produto base separado para ela
+                    if ($variation) {
+                        $slugSafeVariation = str_replace(['+', '(', ')'], ['-plus', '', ''], $variation);
+                        $slugSafeModelName = $baseModelName . ' ' . $slugSafeVariation;
+                        $fullModelSlug = Str::slug('Oppo ' . $slugSafeModelName);
+                        
+                        // Gerar SKU único para o produto com variação
+                        $fullModelSku = 'BASE-OPPO-' . str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $fullModelName);
+                        
+                        // Verificar se produto já existe por SKU ou slug
+                        $existingFullModelProduct = Product::where(function($q) use ($fullModelSku, $fullModelSlug) {
+                                $q->where('sku', $fullModelSku)
+                                  ->orWhere('slug', $fullModelSlug);
+                            })
+                            ->first();
+                        
+                        if (!$existingFullModelProduct) {
+                            // Criar produto com variação
+                            $fullModelProduct = Product::create([
+                                'name' => 'Smartphone Oppo ' . $fullModelName,
+                                'slug' => $fullModelSlug,
+                                'description' => 'Smartphone Oppo ' . $fullModelName . '. Linha ' . strtolower($seriesName) . ' com ' . ($seriesData['specs']['Tela'] ?? 'tela') . ' e sistema ' . ($seriesData['specs']['Sistema'] ?? 'Android'),
+                                'short_description' => 'Oppo ' . $fullModelName . ' - ' . ($seriesData['specs']['Foco'] ?? ''),
+                                'sku' => $fullModelSku,
+                                'price' => round($model['base_price'], 2),
+                                'b2b_price' => round($model['base_price'] * 0.90, 2),
+                                'cost_price' => round($model['base_price'] * 0.65, 2),
+                                'stock_quantity' => 0,
+                                'min_stock' => 3,
+                                'manage_stock' => false,
+                                'in_stock' => true,
+                                'is_active' => true,
+                                'is_featured' => $model['is_featured'] ?? false,
+                                'brand' => 'Oppo',
+                                'model' => $fullModelName,
+                                'department_id' => $department->id,
+                                'images' => $this->getImagesForProduct($fullModelName),
+                                'specifications' => $seriesData['specs'],
+                                'weight' => $seriesData['weight'],
+                                'sort_order' => $seriesData['sort_order'],
+                            ]);
+                            
+                            // Associar categoria
+                            if ($category) {
+                                $fullModelProduct->categories()->attach($category->id);
+                            }
+                            
+                            $productCount++;
+                            $productForVariations = $fullModelProduct;
+                        } else {
+                            // Produto já existe, usar o existente
+                            $fullModelProduct = $existingFullModelProduct;
+                            $updatedCount++;
+                            $productForVariations = $fullModelProduct;
+                        }
+                    } else {
+                        // Se não houver variação de nome, usar o produto base
+                        $productForVariations = $baseProduct;
+                    }
+                    
+                    $variationSortOrder = 0;
+                    foreach ($model['ram'] as $ram) {
+                        foreach ($model['storage'] as $storage) {
+                            // Calcular preços
+                            $storageMultiplier = match($storage) {
+                                '32GB' => 1.0,
+                                '64GB' => 1.15,
+                                '128GB' => 1.0,
+                                '256GB' => 1.25,
+                                '512GB' => 1.5,
+                                default => 1.0
+                            };
+
+                            $ramMultiplier = match($ram) {
+                                '2GB' => 1.0,
+                                '3GB' => 1.10,
+                                '4GB' => 1.0,
+                                '6GB' => 1.0,
+                                '8GB' => 1.0,
+                                '12GB' => 1.15,
+                                default => 1.0
+                            };
+
+                            $finalPrice = $model['base_price'] * $storageMultiplier * $ramMultiplier;
+                            $finalB2BPrice = $finalPrice * 0.90;
+                            $finalCostPrice = $finalPrice * 0.65;
+
+                            // Gerar SKU para variação (usar fullModelName se houver variação, senão baseModelName)
+                            $modelNameForSku = $variation ? $fullModelName : $baseModelName;
+                            $skuBase = str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $modelNameForSku);
+                            $variationSku = 'OPPO-' . str_replace(' ', '-', $seriesName) . '-' . $skuBase . '-' . str_replace('GB', '', $ram) . '-' . str_replace('GB', '', $storage);
+
+                            // Verificar se variação já existe
+                            $existingVariation = ProductVariation::where('sku', $variationSku)->first();
+
+                            if (!$existingVariation) {
+                                ProductVariation::create([
+                                    'product_id' => $productForVariations->id,
+                                    'ram' => $ram,
+                                    'storage' => $storage,
+                                    'sku' => $variationSku,
+                                    'price' => round($finalPrice, 2),
+                                    'b2b_price' => round($finalB2BPrice, 2),
+                                    'cost_price' => round($finalCostPrice, 2),
+                                    'stock_quantity' => rand(5, 40),
+                                    'in_stock' => true,
+                                    'is_active' => true,
+                                    'sort_order' => $variationSortOrder++,
+                                ]);
+                            }
+
+                            // Atualizar preço base do produto para o menor preço disponível
+                            if ($variationSortOrder === 1 || $productForVariations->price > $finalPrice) {
+                                $productForVariations->update(['price' => round($finalPrice, 2)]);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Garantir que as categorias necessárias existam
      */
     private function ensureCategories()

@@ -1,7 +1,7 @@
 {{-- Componente Live Search - Busca Instantânea --}}
-<div class="live-search-wrapper position-relative">
-    <div class="search-bar">
-        <form action="{{ route('search') }}" method="GET" id="liveSearchForm" class="live-search-form">
+<div class="live-search-wrapper">
+    <div class="live-search-container">
+        <form action="{{ route('products') }}" method="GET" id="liveSearchForm" class="live-search-form">
             <input 
                 type="text" 
                 class="form-control live-search-input" 
@@ -31,7 +31,7 @@
             </div>
             
             <div class="live-search-footer">
-                <a href="{{ route('search') }}" class="text-decoration-none">
+                <a href="{{ route('products') }}" class="text-decoration-none">
                     Ver todos os resultados
                     <i class="fas fa-arrow-right ms-1"></i>
                 </a>
@@ -44,87 +44,122 @@
 .live-search-wrapper {
     max-width: 600px;
     margin: 0 auto;
+    position: relative !important;
+    z-index: 1000;
+}
+
+.live-search-container {
+    position: relative !important;
+    width: 100%;
+    overflow: visible !important;
 }
 
 .live-search-form {
     display: flex;
     position: relative;
     background: white;
-    border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-md);
-    overflow: visible;
+    border-radius: 50px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1), 0 2px 4px rgba(0, 0, 0, 0.06) !important;
+    overflow: visible !important;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    border: 2px solid transparent;
+    border: none !important;
+    gap: 0;
 }
 
 .live-search-form:focus-within {
-    box-shadow: var(--shadow-xl);
-    transform: translateY(-2px);
-    border-color: var(--accent-color);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15), 0 2px 6px rgba(0, 0, 0, 0.1) !important;
+    transform: translateY(-1px);
 }
 
 .live-search-input {
     flex: 1;
-    border: none;
-    padding: 16px 24px;
+    border: none !important;
+    padding: 16px 28px;
     background: transparent;
     font-size: 15px;
     font-weight: 500;
     outline: none;
-    color: var(--text-dark);
+    color: #1e293b;
     font-family: 'Inter', sans-serif;
+    border-radius: 50px 0 0 50px !important;
+}
+
+.live-search-input:focus {
+    box-shadow: none;
+    border: none;
 }
 
 .live-search-input::placeholder {
-    color: var(--text-muted);
+    color: #94a3b8;
     font-weight: 400;
 }
 
 .live-search-submit {
-    background: linear-gradient(135deg, var(--secondary-color) 0%, #ff8c42 100%);
+    background: #FF9900 !important;
     color: white;
-    border: none;
-    padding: 16px 24px;
+    border: none !important;
+    padding: 16px 28px;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--shadow-md);
     font-weight: 600;
+    border-radius: 0 50px 50px 0 !important;
+    box-shadow: none !important;
+    min-width: 60px;
 }
 
 .live-search-submit:hover {
-    background: linear-gradient(135deg, #ff8c42 0%, var(--secondary-color) 100%);
-    transform: scale(1.02);
-    box-shadow: var(--shadow-lg);
+    background: #FFAA00 !important;
+    transform: none;
+    box-shadow: none !important;
+}
+
+.live-search-submit:active {
+    background: #E68800 !important;
+    transform: scale(0.98);
 }
 
 .live-search-submit i {
-    font-size: 16px;
+    font-size: 18px;
+    color: white;
 }
 
 /* Dropdown de resultados */
 .live-search-results {
-    position: absolute;
-    top: calc(100% + 8px);
-    left: 0;
-    right: 0;
-    background: white;
-    border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-xl);
-    z-index: 1000;
-    max-height: 600px;
+    position: absolute !important;
+    top: calc(100% + 10px) !important;
+    left: 0 !important;
+    right: 0 !important;
+    background: white !important;
+    border-radius: 20px !important;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    z-index: 9999 !important;
+    max-height: 500px;
     overflow-y: auto;
-    border: 1px solid var(--border-color);
+    border: none !important;
+    margin-top: 0;
+    padding: 12px;
+    backdrop-filter: blur(10px);
 }
 
 .live-search-loading {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
-    color: var(--text-muted);
+    padding: 2.5rem;
+    color: #64748b;
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.live-search-loading .spinner-border {
+    width: 1.2rem;
+    height: 1.2rem;
+    border-width: 2px;
+    border-color: #FF9900;
+    border-right-color: transparent;
 }
 
 .live-search-content {
@@ -134,32 +169,42 @@
 .live-search-item {
     display: flex;
     align-items: center;
-    padding: 1rem;
-    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    border-radius: 12px !important;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
     text-decoration: none;
     color: inherit;
-    border-bottom: 1px solid var(--border-color);
+    border: none;
+    margin-bottom: 4px;
+    background: transparent;
 }
 
 .live-search-item:last-child {
-    border-bottom: none;
+    margin-bottom: 0;
 }
 
 .live-search-item:hover {
-    background: #f8fafc;
-    transform: translateX(4px);
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    transform: translateX(6px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .live-search-item-image {
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
     object-fit: cover;
-    border-radius: var(--radius-md);
-    margin-right: 1rem;
+    border-radius: 10px !important;
+    margin-right: 14px;
     flex-shrink: 0;
-    background: #f1f5f9;
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.25s ease;
+}
+
+.live-search-item:hover .live-search-item-image {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .live-search-item-content {
@@ -170,22 +215,25 @@
 .live-search-item-name {
     font-weight: 600;
     font-size: 0.95rem;
-    color: var(--text-dark);
-    margin-bottom: 0.25rem;
+    color: #1e293b;
+    margin-bottom: 4px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    line-height: 1.4;
+    letter-spacing: -0.01em;
 }
 
 .live-search-item-description {
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    margin-bottom: 0.5rem;
+    font-size: 0.8rem;
+    color: #64748b;
+    margin-bottom: 6px;
     display: -webkit-box;
     -webkit-line-clamp: 1;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    line-height: 1.3;
 }
 
 .live-search-item-footer {
@@ -196,64 +244,89 @@
 }
 
 .live-search-item-brand {
-    font-size: 0.8rem;
-    color: var(--text-muted);
+    font-size: 0.75rem;
+    color: #94a3b8;
     font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 .live-search-item-price {
     font-weight: 700;
-    font-size: 1.1rem;
-    color: var(--secondary-color);
+    font-size: 1.15rem;
+    color: #FF9900;
+    letter-spacing: -0.02em;
 }
 
 .live-search-no-results {
-    padding: 2rem;
+    padding: 3rem 2rem;
     text-align: center;
-    color: var(--text-muted);
+    color: #64748b;
 }
 
 .live-search-no-results i {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
-    opacity: 0.5;
+    font-size: 2.5rem;
+    margin-bottom: 0.75rem;
+    opacity: 0.4;
+    color: #94a3b8;
+}
+
+.live-search-no-results p {
+    font-size: 0.95rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+    color: #475569;
+}
+
+.live-search-no-results small {
+    font-size: 0.85rem;
+    color: #94a3b8;
 }
 
 .live-search-footer {
-    padding: 1rem;
-    border-top: 1px solid var(--border-color);
+    padding: 12px 16px;
+    border-top: 1px solid #e2e8f0;
     text-align: center;
-    background: #f8fafc;
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-radius: 0 0 16px 16px;
+    margin: 0 -8px -8px -8px;
 }
 
 .live-search-footer a {
-    color: var(--secondary-color);
+    color: #FF9900;
     font-weight: 600;
     font-size: 0.9rem;
     transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .live-search-footer a:hover {
-    color: var(--accent-color);
+    color: #FFAA00;
+    transform: translateX(2px);
 }
 
 /* Scrollbar personalizada */
 .live-search-results::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
 }
 
 .live-search-results::-webkit-scrollbar-track {
-    background: #f1f5f9;
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    background: transparent;
+    border-radius: 0 0 16px 16px;
 }
 
 .live-search-results::-webkit-scrollbar-thumb {
-    background: var(--text-muted);
-    border-radius: 3px;
+    background: #cbd5e1;
+    border-radius: 4px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
 }
 
 .live-search-results::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-color);
+    background: #94a3b8;
+    background-clip: padding-box;
 }
 
 /* Mobile */
@@ -275,11 +348,24 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 Live Search inicializado');
+    
     const searchInput = document.getElementById('liveSearchInput');
     const searchResults = document.getElementById('liveSearchResults');
     const searchContent = document.getElementById('liveSearchContent');
     const searchLoading = document.getElementById('liveSearchLoading');
     const searchForm = document.getElementById('liveSearchForm');
+    
+    if (!searchInput || !searchResults || !searchContent) {
+        console.error('❌ Elementos do Live Search não encontrados!');
+        return;
+    }
+    
+    console.log('✅ Elementos encontrados:', {
+        input: !!searchInput,
+        results: !!searchResults,
+        content: !!searchContent
+    });
     
     let searchTimeout;
     let currentRequest = null;
@@ -309,28 +395,40 @@ document.addEventListener('DOMContentLoaded', function() {
         const controller = new AbortController();
         currentRequest = controller;
         
+        console.log('🔍 Buscando:', query, 'URL:', url.toString());
+        
         fetch(url.toString(), {
             method: 'GET',
             headers: {
                 'Accept': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
+                'X-Requested-With': 'XMLHttpRequest',
+                'Content-Type': 'application/json'
             },
             signal: controller.signal
         })
-        .then(response => response.json())
+        .then(response => {
+            console.log('📥 Resposta recebida:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('📦 Dados recebidos:', data);
             currentRequest = null;
             searchLoading.style.display = 'none';
             
             if (data.products && data.products.length > 0) {
+                console.log('✅ Produtos encontrados:', data.products.length);
                 displayResults(data.products);
             } else {
+                console.log('❌ Nenhum produto encontrado');
                 displayNoResults();
             }
         })
         .catch(error => {
             if (error.name !== 'AbortError') {
-                console.error('Erro na busca:', error);
+                console.error('❌ Erro na busca:', error);
                 currentRequest = null;
                 searchLoading.style.display = 'none';
                 displayError();
@@ -418,12 +516,23 @@ document.addEventListener('DOMContentLoaded', function() {
     // Event listener no input
     searchInput.addEventListener('input', function(e) {
         const query = e.target.value.trim();
+        console.log('⌨️ Input digitado:', query);
         
         clearTimeout(searchTimeout);
         
         searchTimeout = setTimeout(() => {
+            console.log('⏱️ Executando busca após debounce...');
             searchProducts(query);
         }, 300); // Debounce de 300ms
+    });
+    
+    // Event listener para debug
+    searchInput.addEventListener('focus', function() {
+        console.log('👁️ Input focado');
+        const query = searchInput.value.trim();
+        if (query.length >= 2) {
+            searchResults.style.display = 'block';
+        }
     });
     
     // Fechar dropdown ao clicar fora
