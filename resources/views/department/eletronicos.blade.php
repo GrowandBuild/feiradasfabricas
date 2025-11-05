@@ -942,7 +942,7 @@
     #realmeCarousel .carousel-indicators,
     #tecnoCarousel .carousel-indicators {
         bottom: -30px;
-        margin-bottom: 0;
+        margin-bottom: 20px;
     }
 
     #infinixCarousel .carousel-indicators button,
@@ -1764,7 +1764,7 @@
             </div>
             
             <!-- Botão Ver Todos os Produtos Infinix -->
-            <section class="section-elegant" style="padding: 15px 0;">
+            <section class="section-elegant" style="padding: 35px 0 15px 0;">
                 <div class="container">
                     <div class="text-center">
                         <a href="{{ route('products', ['brand' => 'Infinix']) }}" class="btn elegant-btn">
