@@ -58,7 +58,9 @@ class DepartmentController extends Controller
                 ->where('brand', 'Apple')
                 ->inStock()
                 ->with(['categories'])
-                ->take(8)
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get();
 
             $samsungProducts = $department->products()
@@ -66,7 +68,9 @@ class DepartmentController extends Controller
                 ->where('brand', 'Samsung')
                 ->inStock()
                 ->with(['categories'])
-                ->take(6)
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get();
 
             $xiaomiProducts = $department->products()
@@ -74,7 +78,9 @@ class DepartmentController extends Controller
                 ->where('brand', 'Xiaomi')
                 ->inStock()
                 ->with(['categories'])
-                ->take(6)
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get();
 
             $motorolaProducts = $department->products()
@@ -82,7 +88,9 @@ class DepartmentController extends Controller
                 ->where('brand', 'Motorola')
                 ->inStock()
                 ->with(['categories'])
-                ->take(6)
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get();
 
             $infinixProducts = $department->products()
@@ -90,7 +98,9 @@ class DepartmentController extends Controller
                 ->where('brand', 'Infinix')
                 ->inStock()
                 ->with(['categories'])
-                ->take(6)
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get();
 
             $jblProducts = $department->products()
@@ -98,7 +108,9 @@ class DepartmentController extends Controller
                 ->where('brand', 'JBL')
                 ->inStock()
                 ->with(['categories'])
-                ->take(6)
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get();
 
             $oppoProducts = $department->products()
@@ -106,7 +118,9 @@ class DepartmentController extends Controller
                 ->where('brand', 'Oppo')
                 ->inStock()
                 ->with(['categories'])
-                ->take(6)
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get();
 
             $realmeProducts = $department->products()
@@ -114,7 +128,9 @@ class DepartmentController extends Controller
                 ->where('brand', 'Realme')
                 ->inStock()
                 ->with(['categories'])
-                ->take(6)
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get();
 
             $tecnoProducts = $department->products()
@@ -122,7 +138,9 @@ class DepartmentController extends Controller
                 ->where('brand', 'Tecno')
                 ->inStock()
                 ->with(['categories'])
-                ->take(6)
+                ->orderBy('is_featured', 'desc')
+                ->orderBy('sort_order')
+                ->orderBy('name')
                 ->get();
 
             // Produtos mais recentes
