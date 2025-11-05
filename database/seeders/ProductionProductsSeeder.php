@@ -1497,14 +1497,20 @@ class ProductionProductsSeeder extends Seeder
                 $baseModelName = $seriesName . ' ' . $model['name'];
                 $baseSlug = Str::slug('Infinix ' . $baseModelName);
                 
-                // Verificar se produto base já existe
-                $baseProduct = Product::where('slug', $baseSlug)
+                $images = $this->getImagesForProduct($baseModelName);
+
+                // Gerar SKU único para o produto base
+                $baseSku = 'BASE-INF-' . str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $baseModelName);
+                
+                // Verificar se produto base já existe por SKU ou slug
+                $baseProduct = Product::where(function($q) use ($baseSku, $baseSlug) {
+                        $q->where('sku', $baseSku)
+                          ->orWhere('slug', $baseSlug);
+                    })
                     ->where('brand', 'Infinix')
                     ->where('model', $baseModelName)
                     ->first();
-
-                $images = $this->getImagesForProduct($baseModelName);
-
+                
                 if (!$baseProduct) {
                     // Criar produto base (apenas uma vez por modelo)
                     $baseProduct = Product::create([
@@ -1512,7 +1518,7 @@ class ProductionProductsSeeder extends Seeder
                         'slug' => $baseSlug,
                         'description' => 'Smartphone Infinix ' . $baseModelName . '. Linha ' . strtolower($seriesName) . ' com ' . ($seriesData['specs']['Tela'] ?? 'tela') . ' e sistema ' . ($seriesData['specs']['Sistema'] ?? 'Android'),
                         'short_description' => 'Infinix ' . $baseModelName . ' - ' . ($seriesData['specs']['Foco'] ?? ''),
-                        'sku' => 'BASE-INF-' . str_replace([' ', '+', '(', ')'], ['-', '', '', ''], $baseModelName),
+                        'sku' => $baseSku,
                         'price' => round($model['base_price'], 2),
                         'b2b_price' => round($model['base_price'] * 0.90, 2),
                         'cost_price' => round($model['base_price'] * 0.65, 2),
@@ -1557,14 +1563,24 @@ class ProductionProductsSeeder extends Seeder
                         $slugSafeModelName = $baseModelName . ' ' . $slugSafeVariation;
                         $fullModelSlug = Str::slug('Infinix ' . $slugSafeModelName);
                         
-                        // Usar firstOrCreate para garantir que não cria duplicado
-                        $fullModelProduct = Product::firstOrCreate(
-                            ['slug' => $fullModelSlug],
-                            [
+                        // Gerar SKU único para o produto com variação
+                        $fullModelSku = 'BASE-INF-' . str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $fullModelName);
+                        
+                        // Verificar se produto já existe por SKU ou slug
+                        $existingFullModelProduct = Product::where(function($q) use ($fullModelSku, $fullModelSlug) {
+                                $q->where('sku', $fullModelSku)
+                                  ->orWhere('slug', $fullModelSlug);
+                            })
+                            ->first();
+                        
+                        if (!$existingFullModelProduct) {
+                            // Criar produto com variação
+                            $fullModelProduct = Product::create([
                                 'name' => 'Smartphone Infinix ' . $fullModelName,
+                                'slug' => $fullModelSlug,
                                 'description' => 'Smartphone Infinix ' . $fullModelName . '. Linha ' . strtolower($seriesName) . ' com ' . ($seriesData['specs']['Tela'] ?? 'tela') . ' e sistema ' . ($seriesData['specs']['Sistema'] ?? 'Android'),
                                 'short_description' => 'Infinix ' . $fullModelName . ' - ' . ($seriesData['specs']['Foco'] ?? ''),
-                                'sku' => 'BASE-INF-' . str_replace([' ', '+', '(', ')'], ['-', '', '', ''], $fullModelName),
+                                'sku' => $fullModelSku,
                                 'price' => round($model['base_price'], 2),
                                 'b2b_price' => round($model['base_price'] * 0.90, 2),
                                 'cost_price' => round($model['base_price'] * 0.65, 2),
@@ -1581,18 +1597,21 @@ class ProductionProductsSeeder extends Seeder
                                 'specifications' => $seriesData['specs'],
                                 'weight' => $seriesData['weight'],
                                 'sort_order' => $seriesData['sort_order'],
-                            ]
-                        );
-                        
-                        // Se foi criado agora, associar categoria
-                        if ($fullModelProduct->wasRecentlyCreated && $category) {
-                            $fullModelProduct->categories()->attach($category->id);
+                            ]);
+                            
+                            // Associar categoria
+                            if ($category) {
+                                $fullModelProduct->categories()->attach($category->id);
+                            }
+                            
                             $productCount++;
+                            $productForVariations = $fullModelProduct;
                         } else {
+                            // Produto já existe, usar o existente
+                            $fullModelProduct = $existingFullModelProduct;
                             $updatedCount++;
+                            $productForVariations = $fullModelProduct;
                         }
-                        
-                        $productForVariations = $fullModelProduct;
                     } else {
                         // Se não houver variação de nome, usar o produto base
                         $productForVariations = $baseProduct;
@@ -1627,7 +1646,7 @@ class ProductionProductsSeeder extends Seeder
 
                             // Gerar SKU para variação (usar fullModelName se houver variação, senão baseModelName)
                             $modelNameForSku = $variation ? $fullModelName : $baseModelName;
-                            $skuBase = str_replace([' ', '+', '(', ')'], ['-', '', '', ''], $modelNameForSku);
+                            $skuBase = str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $modelNameForSku);
                             $variationSku = 'INF-' . $seriesName . '-' . $skuBase . '-' . str_replace('GB', '', $ram) . '-' . str_replace('GB', '', $storage);
 
                             // Verificar se variação já existe

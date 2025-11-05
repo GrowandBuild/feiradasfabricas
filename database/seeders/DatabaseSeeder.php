@@ -55,12 +55,11 @@ class DatabaseSeeder extends Seeder
             $withProducts = env('SEED_WITH_PRODUCTS', false);
             
             if ($withProducts) {
-                $this->command->info('📱 Executando seeders de produtos...');
+                $this->command->info('📱 Executando seeder de produtos de produção...');
                 
+                // Apenas o ProductionProductsSeeder é responsável por carregar produtos no site
                 $this->call([
-                    CompleteiPhoneSeeder::class,
-                    MissingiPhoneSeeder::class,
-                    iPhoneImagesSeeder::class,
+                    ProductionProductsSeeder::class,
                 ]);
             }
         }
