@@ -1055,17 +1055,20 @@
     /* Selos de Marcas (Department Badges) */
     .badges-container {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         justify-content: center;
         align-items: center;
-        gap: 20px;
+        gap: 15px;
+        overflow-x: auto;
+        padding: 10px 0;
     }
 
     .badge-item {
         padding: 10px;
         transition: transform 0.3s ease;
-        flex: 0 0 auto;
-        min-width: 120px;
+        flex: 1 1 auto;
+        min-width: 80px;
+        max-width: 120px;
     }
 
     .badge-item:hover {
@@ -1079,8 +1082,9 @@
     }
 
     .badge-circle {
-        width: 100px;
-        height: 100px;
+        width: 100%;
+        aspect-ratio: 1;
+        max-width: 100px;
         border-radius: 50%;
         margin: 0 auto 10px;
         border: 2px solid rgba(30, 58, 138, 0.1);
@@ -1122,14 +1126,13 @@
     /* Responsive para Selos */
     @media (max-width: 991px) {
         .badges-container {
-            gap: 15px;
+            gap: 12px;
         }
         .badge-item {
-            min-width: 100px;
+            max-width: 100px;
         }
         .badge-circle {
-            width: 80px;
-            height: 80px;
+            max-width: 80px;
         }
         .badge-title {
             font-size: 0.75rem;
@@ -1138,14 +1141,13 @@
 
     @media (max-width: 768px) {
         .badges-container {
-            gap: 12px;
+            gap: 10px;
         }
         .badge-item {
-            min-width: 90px;
+            max-width: 90px;
         }
         .badge-circle {
-            width: 70px;
-            height: 70px;
+            max-width: 70px;
         }
         .badge-title {
             font-size: 0.7rem;
@@ -1154,14 +1156,13 @@
 
     @media (max-width: 480px) {
         .badges-container {
-            gap: 10px;
+            gap: 8px;
         }
         .badge-item {
-            min-width: 80px;
+            max-width: 80px;
         }
         .badge-circle {
-            width: 60px;
-            height: 60px;
+            max-width: 60px;
         }
         .badge-title {
             font-size: 0.65rem;
