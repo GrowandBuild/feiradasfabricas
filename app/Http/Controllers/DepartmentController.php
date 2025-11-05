@@ -59,7 +59,8 @@ class DepartmentController extends Controller
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_featured', 'desc')
-                ->orderBy('sort_order')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('sort_order', 'desc')
                 ->orderBy('name')
                 ->get();
 
@@ -69,7 +70,8 @@ class DepartmentController extends Controller
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_featured', 'desc')
-                ->orderBy('sort_order')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('sort_order', 'desc')
                 ->orderBy('name')
                 ->get();
 
@@ -79,7 +81,8 @@ class DepartmentController extends Controller
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_featured', 'desc')
-                ->orderBy('sort_order')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('sort_order', 'desc')
                 ->orderBy('name')
                 ->get();
 
@@ -89,7 +92,8 @@ class DepartmentController extends Controller
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_featured', 'desc')
-                ->orderBy('sort_order')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('sort_order', 'desc')
                 ->orderBy('name')
                 ->get();
 
@@ -99,7 +103,8 @@ class DepartmentController extends Controller
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_featured', 'desc')
-                ->orderBy('sort_order')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('sort_order', 'desc')
                 ->orderBy('name')
                 ->get();
 
@@ -109,7 +114,8 @@ class DepartmentController extends Controller
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_featured', 'desc')
-                ->orderBy('sort_order')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('sort_order', 'desc')
                 ->orderBy('name')
                 ->get();
 
@@ -119,7 +125,8 @@ class DepartmentController extends Controller
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_featured', 'desc')
-                ->orderBy('sort_order')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('sort_order', 'desc')
                 ->orderBy('name')
                 ->get();
 
@@ -129,7 +136,8 @@ class DepartmentController extends Controller
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_featured', 'desc')
-                ->orderBy('sort_order')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('sort_order', 'desc')
                 ->orderBy('name')
                 ->get();
 
@@ -139,7 +147,8 @@ class DepartmentController extends Controller
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_featured', 'desc')
-                ->orderBy('sort_order')
+                ->orderBy('created_at', 'desc')
+                ->orderBy('sort_order', 'desc')
                 ->orderBy('name')
                 ->get();
 
