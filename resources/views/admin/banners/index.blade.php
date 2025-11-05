@@ -233,49 +233,35 @@
         @endif
     </div>
 </div>
-
-<!-- Modal de Edição -->
-<div class="modal fade" id="editBannerModal" tabindex="-1" aria-labelledby="editBannerModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="editBannerModalLabel">
-                    <i class="bi bi-pencil"></i> Editar Banner
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="editBannerModalBody">
-                <div class="text-center py-5">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="visually-hidden">Carregando...</span>
-                    </div>
-                    <p class="mt-3 text-muted">Carregando formulário...</p>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Toast para notificações -->
-<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;">
-    <div id="toast-notification" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
-        <div class="toast-header">
-            <i class="bi bi-check-circle-fill text-success me-2"></i>
-            <strong class="me-auto">Notificação</strong>
-            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
-        </div>
-        <div class="toast-body" id="toast-message">
-            <!-- Mensagem será inserida aqui -->
-        </div>
-    </div>
-</div>
-
 @endsection
+
+@include('admin.banners.modal-edit')
 
 @section('styles')
 <style>
+    /* Garantir que o modal fique acima de tudo */
+    .modal-backdrop.show {
+        z-index: 9998 !important;
+        opacity: 0.5;
+    }
+    
+    #editBannerModal {
+        z-index: 9999 !important;
+    }
+    
+    #editBannerModal.show {
+        display: block !important;
+    }
+    
     #editBannerModal .modal-dialog {
         max-width: 90%;
+        z-index: 10000 !important;
+        margin: 1.75rem auto;
+    }
+    
+    #editBannerModal .modal-content {
+        position: relative;
+        z-index: 10001 !important;
     }
     
     #editBannerModal .modal-body {
