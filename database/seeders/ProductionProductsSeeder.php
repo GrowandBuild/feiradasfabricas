@@ -349,25 +349,21 @@ class ProductionProductsSeeder extends Seeder
             // Extrair categoria antes de criar/atualizar produto
             $categorySlug = $originalProductData['category'] ?? null;
             
-            // Criar novo array apenas com campos permitidos (remover 'category' explicitamente)
-            $productData = [];
-            $allowedFields = [
-                'name', 'slug', 'description', 'short_description', 'sku', 'price', 'b2b_price', 'cost_price',
-                'stock_quantity', 'min_stock', 'manage_stock', 'in_stock', 'is_active', 'is_featured',
-                'brand', 'model', 'images', 'specifications', 'weight', 'length', 'width', 'height',
-                'sort_order', 'department_id'
-            ];
+            // Remover 'category' do array antes de passar para create/update
+            unset($originalProductData['category']);
             
-            foreach ($allowedFields as $field) {
-                if (isset($originalProductData[$field])) {
-                    $productData[$field] = $originalProductData[$field];
-                }
-            }
+            // Criar novo array apenas com campos permitidos usando fillable do model
+            $product = new Product();
+            $fillableFields = $product->getFillable();
+            $productData = array_intersect_key($originalProductData, array_flip($fillableFields));
             
             $existingProduct = Product::where('sku', $productData['sku'])->first();
             
             if ($existingProduct) {
-                $existingProduct->update($productData);
+                // Usar fill() para garantir que apenas campos fillable sejam atualizados
+                $existingProduct->fill($productData);
+                $existingProduct->save();
+                
                 // Atualizar categoria se necessário
                 if ($categorySlug) {
                     $category = Category::where('slug', $categorySlug)->first();
@@ -377,13 +373,16 @@ class ProductionProductsSeeder extends Seeder
                 }
                 $updatedCount++;
             } else {
-                $product = Product::create($productData);
+                // Usar fill() e save() em vez de create() para garantir que apenas campos fillable sejam usados
+                $newProduct = new Product();
+                $newProduct->fill($productData);
+                $newProduct->save();
                 
                 // Associar categoria
                 if ($categorySlug) {
                     $category = Category::where('slug', $categorySlug)->first();
                     if ($category) {
-                        $product->categories()->attach($category->id);
+                        $newProduct->categories()->attach($category->id);
                     }
                 }
                 
