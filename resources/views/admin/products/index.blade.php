@@ -135,10 +135,11 @@
                             <tr>
                                 <td class="text-center">
                                     @if($product->first_image)
-                                        <img src="{{ asset('storage/' . $product->first_image) }}" 
+                                        <img src="{{ $product->first_image }}" 
                                              alt="{{ $product->name }}" 
                                              class="rounded shadow-sm" 
-                                             style="width: 60px; height: 60px; object-fit: cover;">
+                                             style="width: 60px; height: 60px; object-fit: cover;"
+                                             onerror="this.onerror=null; this.src='{{ asset('images/no-image.svg') }}';">
                                     @else
                                         <div class="d-flex align-items-center justify-content-center" 
                                              style="width: 60px; height: 60px;">

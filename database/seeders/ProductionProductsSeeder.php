@@ -154,6 +154,36 @@ class ProductionProductsSeeder extends Seeder
                     'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
                 ],
             ],
+            // Samsung - Série Galaxy S
+            'Samsung Galaxy S' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
+            // Samsung - Série Galaxy Note
+            'Samsung Galaxy Note' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
+            // Samsung - Série Galaxy A
+            'Samsung Galaxy A' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
+            // Samsung - Série Galaxy M
+            'Samsung Galaxy M' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
+            // Samsung - Série Galaxy Z
+            'Samsung Galaxy Z' => [
+                'default' => [
+                    'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&h=800&fit=crop',
+                ],
+            ],
         ];
     }
 
@@ -237,6 +267,33 @@ class ProductionProductsSeeder extends Seeder
         if (preg_match('/^K\d+/', $model)) {
             if (isset($images['Oppo K']['default'])) {
                 return $images['Oppo K']['default'];
+            }
+        }
+        
+        // Para Samsung, tentar por série (ex: "Galaxy S23" -> "Samsung Galaxy S")
+        if (preg_match('/^Galaxy\s+S\d+/i', $model) || preg_match('/^S\d+/', $model)) {
+            if (isset($images['Samsung Galaxy S']['default'])) {
+                return $images['Samsung Galaxy S']['default'];
+            }
+        }
+        if (preg_match('/^Galaxy\s+Note\s+\d+/i', $model) || preg_match('/^Note\s+\d+/i', $model)) {
+            if (isset($images['Samsung Galaxy Note']['default'])) {
+                return $images['Samsung Galaxy Note']['default'];
+            }
+        }
+        if (preg_match('/^Galaxy\s+A\d+/i', $model) || preg_match('/^A\d+/', $model)) {
+            if (isset($images['Samsung Galaxy A']['default'])) {
+                return $images['Samsung Galaxy A']['default'];
+            }
+        }
+        if (preg_match('/^Galaxy\s+M\d+/i', $model) || preg_match('/^M\d+/', $model)) {
+            if (isset($images['Samsung Galaxy M']['default'])) {
+                return $images['Samsung Galaxy M']['default'];
+            }
+        }
+        if (preg_match('/^Galaxy\s+Z\d+/i', $model) || preg_match('/^Z\d+/', $model)) {
+            if (isset($images['Samsung Galaxy Z']['default'])) {
+                return $images['Samsung Galaxy Z']['default'];
             }
         }
         
@@ -450,6 +507,9 @@ class ProductionProductsSeeder extends Seeder
             }
         }
 
+        // Adicionar produtos Samsung (todas as séries) com variações
+        $this->createSamsungProductsWithVariations($department, $smartphoneCategory, $productCount, $updatedCount);
+        
         // Adicionar produtos Infinix (todas as séries) com variações
         $this->createInfinixProductsWithVariations($department, $smartphoneCategory, $productCount, $updatedCount);
         
