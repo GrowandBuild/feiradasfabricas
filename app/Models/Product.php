@@ -27,6 +27,7 @@ class Product extends Model
         'is_featured',
         'brand',
         'model',
+        'supplier',
         'images',
         'specifications',
         'weight',
@@ -255,5 +256,24 @@ class Product extends Model
     public function isLowStock($threshold = 10)
     {
         return $this->current_stock <= $threshold;
+    }
+
+    /**
+     * Verifica se o produto tem badge de lista (tem fornecedor definido)
+     */
+    public function hasListBadge()
+    {
+        return !empty($this->supplier);
+    }
+
+    /**
+     * Obtém o texto do badge de lista
+     */
+    public function getListBadgeText()
+    {
+        if ($this->hasListBadge()) {
+            return '📋 Lista';
+        }
+        return null;
     }
 }

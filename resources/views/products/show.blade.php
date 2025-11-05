@@ -89,11 +89,24 @@
         <!-- Informações do Produto -->
         <div class="col-md-6">
             <div class="product-details">
-                <h1 class="h2 mb-3">{{ $product->name }}</h1>
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <h1 class="h2 mb-0">{{ $product->name }}</h1>
+                    @if($product->hasListBadge())
+                        <span class="badge bg-info" style="font-size: 0.875rem;">
+                            📋 Lista
+                        </span>
+                    @endif
+                </div>
                 
                 @if($product->brand)
                     <p class="text-muted mb-2">
                         <strong>Marca:</strong> {{ $product->brand }}
+                    </p>
+                @endif
+                
+                @if($product->supplier)
+                    <p class="text-muted mb-2">
+                        <strong>Fornecedor:</strong> {{ $product->supplier }}
                     </p>
                 @endif
 

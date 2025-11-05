@@ -11,9 +11,19 @@
 <form method="POST" action="{{ route('customer.register.b2b') }}">
     @csrf
 
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i>
-        <strong>Importante:</strong> Após o cadastro, sua conta será analisada e você receberá um e-mail de confirmação em até 24 horas.
+    <div class="alert alert-info border-start border-4 border-info">
+        <div class="d-flex align-items-start">
+            <i class="fas fa-info-circle me-3 mt-1"></i>
+            <div>
+                <strong>Processo de Cadastro B2B</strong>
+                <ul class="mb-0 mt-2">
+                    <li>Preencha todos os dados obrigatórios da empresa</li>
+                    <li>Sua conta será analisada pela nossa equipe</li>
+                    <li>Você receberá um e-mail de confirmação em até <strong>24 horas</strong></li>
+                    <li>Após a aprovação, você terá acesso a <strong>preços especiais B2B</strong></li>
+                </ul>
+            </div>
+        </div>
     </div>
 
     <h6 class="text-primary mb-3">Dados Pessoais</h6>
@@ -116,8 +126,14 @@
             <label for="cnpj" class="form-label">
                 CNPJ <span class="required">*</span>
             </label>
-            <input id="cnpj" type="text" class="form-control @error('cnpj') is-invalid @enderror" 
-                   name="cnpj" value="{{ old('cnpj') }}" required placeholder="00.000.000/0000-00">
+            <div class="input-group">
+                <input id="cnpj" type="text" class="form-control @error('cnpj') is-invalid @enderror" 
+                       name="cnpj" value="{{ old('cnpj') }}" required placeholder="00.000.000/0000-00" maxlength="18">
+                <button type="button" class="btn btn-outline-secondary" id="btnValidateCnpj" title="Validar CNPJ">
+                    <i class="fas fa-check-circle"></i>
+                </button>
+            </div>
+            <div id="cnpjFeedback" class="small mt-1"></div>
             @error('cnpj')
                 <div class="invalid-feedback">
                     {{ $message }}
@@ -170,13 +186,41 @@
     <hr class="my-4">
     <h6 class="text-primary mb-3">Endereço da Empresa</h6>
 
+    <div class="row">
+        <div class="col-md-8 mb-3">
+            <label for="address" class="form-label">
+                Endereço <span class="required">*</span>
+            </label>
+            <input id="address" type="text" class="form-control @error('address') is-invalid @enderror" 
+                   name="address" value="{{ old('address') }}" required>
+            @error('address')
+                <div class="invalid-feedback">
+                    {{ $message }}
+                </div>
+            @enderror
+        </div>
+        
+        <div class="col-md-4 mb-3">
+            <label for="number" class="form-label">
+                Número <span class="required">*</span>
+            </label>
+            <input id="number" type="text" class="form-control @error('number') is-invalid @enderror" 
+                   name="number" value="{{ old('number') }}" required>
+            @error('number')
+                <div class="invalid-feedback">
+                    {{ $message }}
+                </div>
+            @enderror
+        </div>
+    </div>
+    
     <div class="mb-3">
-        <label for="address" class="form-label">
-            Endereço <span class="required">*</span>
+        <label for="complement" class="form-label">
+            Complemento
         </label>
-        <input id="address" type="text" class="form-control @error('address') is-invalid @enderror" 
-               name="address" value="{{ old('address') }}" required>
-        @error('address')
+        <input id="complement" type="text" class="form-control @error('complement') is-invalid @enderror" 
+               name="complement" value="{{ old('complement') }}" placeholder="Apto, Sala, Bloco, etc.">
+        @error('complement')
             <div class="invalid-feedback">
                 {{ $message }}
             </div>
@@ -257,8 +301,16 @@
             <label for="zip_code" class="form-label">
                 CEP <span class="required">*</span>
             </label>
-            <input id="zip_code" type="text" class="form-control @error('zip_code') is-invalid @enderror" 
-                   name="zip_code" value="{{ old('zip_code') }}" required placeholder="00000-000">
+            <div class="input-group">
+                <input id="zip_code" type="text" class="form-control @error('zip_code') is-invalid @enderror" 
+                       name="zip_code" value="{{ old('zip_code') }}" required placeholder="00000-000" maxlength="10">
+                <button type="button" class="btn btn-outline-secondary" id="btnSearchCep" title="Buscar CEP">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            <div id="cepLoading" class="text-muted small mt-1" style="display: none;">
+                <i class="fas fa-spinner fa-spin"></i> Buscando endereço...
+            </div>
             @error('zip_code')
                 <div class="invalid-feedback">
                     {{ $message }}
@@ -287,32 +339,165 @@
     </p>
 </div>
 
+@push('scripts')
 <script>
-// Máscara para CNPJ
-document.getElementById('cnpj').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    value = value.replace(/^(\d{2})(\d)/, '$1.$2');
-    value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-    value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
-    value = value.replace(/(\d{4})(\d)/, '$1-$2');
-    e.target.value = value;
-});
+document.addEventListener('DOMContentLoaded', function() {
+    // Máscara para CNPJ
+    const cnpjInput = document.getElementById('cnpj');
+    cnpjInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 14) {
+            value = value.replace(/^(\d{2})(\d)/, '$1.$2');
+            value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
+            value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
+            value = value.replace(/(\d{4})(\d)/, '$1-$2');
+        }
+        e.target.value = value;
+    });
 
-// Máscara para telefone
-document.getElementById('phone').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length <= 11) {
-        value = value.replace(/^(\d{2})(\d)/, '($1) $2');
-        value = value.replace(/(\d{4,5})(\d{4})$/, '$1-$2');
+    // Validação de CNPJ
+    document.getElementById('btnValidateCnpj').addEventListener('click', function() {
+        const cnpj = cnpjInput.value.replace(/\D/g, '');
+        const feedback = document.getElementById('cnpjFeedback');
+        
+        if (cnpj.length !== 14) {
+            feedback.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>CNPJ deve ter 14 dígitos</span>';
+            cnpjInput.classList.add('is-invalid');
+            return;
+        }
+
+        if (validateCNPJ(cnpj)) {
+            feedback.innerHTML = '<span class="text-success"><i class="fas fa-check-circle me-1"></i>CNPJ válido</span>';
+            cnpjInput.classList.remove('is-invalid');
+            cnpjInput.classList.add('is-valid');
+        } else {
+            feedback.innerHTML = '<span class="text-danger"><i class="fas fa-times-circle me-1"></i>CNPJ inválido</span>';
+            cnpjInput.classList.remove('is-valid');
+            cnpjInput.classList.add('is-invalid');
+        }
+    });
+
+    // Função de validação de CNPJ
+    function validateCNPJ(cnpj) {
+        cnpj = cnpj.replace(/[^\d]+/g, '');
+        
+        if (cnpj.length !== 14) return false;
+        
+        // Elimina CNPJs conhecidos como inválidos
+        if (/^(\d)\1+$/.test(cnpj)) return false;
+        
+        // Validação dos dígitos verificadores
+        let length = cnpj.length - 2;
+        let numbers = cnpj.substring(0, length);
+        let digits = cnpj.substring(length);
+        let sum = 0;
+        let pos = length - 7;
+        
+        for (let i = length; i >= 1; i--) {
+            sum += numbers.charAt(length - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        
+        let result = sum % 11 < 2 ? 0 : 11 - sum % 11;
+        if (result != digits.charAt(0)) return false;
+        
+        length = length + 1;
+        numbers = cnpj.substring(0, length);
+        sum = 0;
+        pos = length - 7;
+        
+        for (let i = length; i >= 1; i--) {
+            sum += numbers.charAt(length - i) * pos--;
+            if (pos < 2) pos = 9;
+        }
+        
+        result = sum % 11 < 2 ? 0 : 11 - sum % 11;
+        if (result != digits.charAt(1)) return false;
+        
+        return true;
     }
-    e.target.value = value;
-});
 
-// Máscara para CEP
-document.getElementById('zip_code').addEventListener('input', function(e) {
-    let value = e.target.value.replace(/\D/g, '');
-    value = value.replace(/^(\d{5})(\d)/, '$1-$2');
-    e.target.value = value;
+    // Máscara para telefone
+    document.getElementById('phone').addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+            value = value.replace(/^(\d{2})(\d)/, '($1) $2');
+            value = value.replace(/(\d{4,5})(\d{4})$/, '$1-$2');
+        }
+        e.target.value = value;
+    });
+
+    // Máscara para CEP
+    const zipCodeInput = document.getElementById('zip_code');
+    zipCodeInput.addEventListener('input', function(e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 8) {
+            value = value.replace(/^(\d{5})(\d)/, '$1-$2');
+        }
+        e.target.value = value;
+    });
+
+    // Busca automática de CEP via ViaCEP
+    document.getElementById('btnSearchCep').addEventListener('click', searchCEP);
+    zipCodeInput.addEventListener('blur', function() {
+        const cep = zipCodeInput.value.replace(/\D/g, '');
+        if (cep.length === 8) {
+            searchCEP();
+        }
+    });
+
+    function searchCEP() {
+        const cep = zipCodeInput.value.replace(/\D/g, '');
+        const loading = document.getElementById('cepLoading');
+        
+        if (cep.length !== 8) {
+            alert('CEP deve ter 8 dígitos');
+            return;
+        }
+
+        loading.style.display = 'block';
+        
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                
+                if (data.erro) {
+                    alert('CEP não encontrado');
+                    return;
+                }
+
+                document.getElementById('address').value = data.logradouro || '';
+                document.getElementById('neighborhood').value = data.bairro || '';
+                document.getElementById('city').value = data.localidade || '';
+                document.getElementById('state').value = data.uf || '';
+                
+                // Focar no campo número após preencher
+                document.getElementById('number').focus();
+            })
+            .catch(error => {
+                loading.style.display = 'none';
+                console.error('Erro ao buscar CEP:', error);
+                alert('Erro ao buscar CEP. Tente novamente.');
+            });
+    }
+
+    // Validação em tempo real do formulário
+    const form = document.querySelector('form');
+    const submitBtn = form.querySelector('button[type="submit"]');
+    
+    form.addEventListener('submit', function(e) {
+        const cnpj = cnpjInput.value.replace(/\D/g, '');
+        if (cnpj.length === 14 && !validateCNPJ(cnpj)) {
+            e.preventDefault();
+            alert('Por favor, verifique o CNPJ. Ele parece ser inválido.');
+            cnpjInput.focus();
+            return false;
+        }
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Processando...';
+    });
 });
 </script>
-@endsection
+@endpush

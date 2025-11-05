@@ -151,6 +151,12 @@ class CustomerAuthController extends Controller
      */
     public function registerB2B(Request $request)
     {
+        // Validar CNPJ
+        $cnpj = preg_replace('/\D/', '', $request->cnpj);
+        if (strlen($cnpj) !== 14 || !$this->validateCNPJ($cnpj)) {
+            return back()->withErrors(['cnpj' => 'CNPJ inválido. Por favor, verifique o número.'])->withInput();
+        }
+
         $request->validate([
             'first_name' => 'required|string|max:255',
             'last_name' => 'required|string|max:255',
@@ -163,6 +169,8 @@ class CustomerAuthController extends Controller
             'contact_person' => 'required|string|max:255',
             'department' => 'nullable|string|max:255',
             'address' => 'required|string|max:255',
+            'number' => 'required|string|max:20',
+            'complement' => 'nullable|string|max:255',
             'neighborhood' => 'required|string|max:255',
             'city' => 'required|string|max:255',
             'state' => 'required|string|max:2',
@@ -182,6 +190,8 @@ class CustomerAuthController extends Controller
             'contact_person' => $request->contact_person,
             'department' => $request->department,
             'address' => $request->address,
+            'number' => $request->number,
+            'complement' => $request->complement,
             'neighborhood' => $request->neighborhood,
             'city' => $request->city,
             'state' => $request->state,
@@ -190,7 +200,60 @@ class CustomerAuthController extends Controller
             'is_active' => true,
         ]);
 
-        return redirect()->route('home')->with('success', 'Sua solicitação de conta B2B foi enviada! Aguarde a aprovação.');
+        // TODO: Enviar email de notificação para admin sobre novo cadastro B2B
+        
+        return redirect()->route('home')->with('success', 'Sua solicitação de conta B2B foi enviada com sucesso! Nossa equipe analisará seu cadastro e você receberá um e-mail de confirmação em até 24 horas.');
+    }
+
+    /**
+     * Valida CNPJ
+     */
+    private function validateCNPJ($cnpj)
+    {
+        $cnpj = preg_replace('/[^\d]/', '', $cnpj);
+        
+        if (strlen($cnpj) !== 14) {
+            return false;
+        }
+        
+        // Elimina CNPJs conhecidos como inválidos
+        if (preg_match('/(\d)\1{13}/', $cnpj)) {
+            return false;
+        }
+        
+        // Validação dos dígitos verificadores
+        $length = strlen($cnpj) - 2;
+        $numbers = substr($cnpj, 0, $length);
+        $digits = substr($cnpj, $length);
+        $sum = 0;
+        $pos = $length - 7;
+        
+        for ($i = $length; $i >= 1; $i--) {
+            $sum += $numbers[$length - $i] * $pos--;
+            if ($pos < 2) $pos = 9;
+        }
+        
+        $result = $sum % 11 < 2 ? 0 : 11 - $sum % 11;
+        if ($result != $digits[0]) {
+            return false;
+        }
+        
+        $length = $length + 1;
+        $numbers = substr($cnpj, 0, $length);
+        $sum = 0;
+        $pos = $length - 7;
+        
+        for ($i = $length; $i >= 1; $i--) {
+            $sum += $numbers[$length - $i] * $pos--;
+            if ($pos < 2) $pos = 9;
+        }
+        
+        $result = $sum % 11 < 2 ? 0 : 11 - $sum % 11;
+        if ($result != $digits[1]) {
+            return false;
+        }
+        
+        return true;
     }
 
     /**

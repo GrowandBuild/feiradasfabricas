@@ -1361,6 +1361,11 @@
                                             @if($product->is_featured)
                                                 <div class="product-badge">Destaque</div>
                                             @endif
+                                            @if($product->hasListBadge())
+                                                <div class="product-badge" style="background-color: #0dcaf0; color: #000; top: 10px; left: 10px;">
+                                                    📋 Lista
+                                                </div>
+                                            @endif
                                         </div>
                                         <div class="product-info">
                                             <h6 class="product-title">{{ $product->name }}</h6>
@@ -1460,6 +1465,11 @@
                                                      alt="{{ $product->name }}">
                                             @endif
                                             <div class="product-badge apple-badge">Apple</div>
+                                            @if($product->hasListBadge())
+                                                <div class="product-badge" style="background-color: #0dcaf0; color: #000; top: 10px; left: 10px;">
+                                                    📋 Lista
+                                                </div>
+                                            @endif
                                         </div>
                                         <div class="product-info">
                                             <h6 class="product-title">{{ $product->name }}</h6>
@@ -1560,6 +1570,11 @@
                                                      alt="{{ $product->name }}">
                                             @endif
                                             <div class="product-badge brand-badge">Samsung</div>
+                                            @if($product->hasListBadge())
+                                                <div class="product-badge" style="background-color: #0dcaf0; color: #000; top: 10px; left: 10px;">
+                                                    📋 Lista
+                                                </div>
+                                            @endif
                                         </div>
                                         <div class="product-info">
                                             <h6 class="product-title">{{ $product->name }}</h6>
@@ -1660,6 +1675,11 @@
                                                      alt="{{ $product->name }}">
                                             @endif
                                             <div class="product-badge brand-badge">Xiaomi</div>
+                                            @if($product->hasListBadge())
+                                                <div class="product-badge" style="background-color: #0dcaf0; color: #000; top: 10px; left: 10px;">
+                                                    📋 Lista
+                                                </div>
+                                            @endif
                                         </div>
                                         <div class="product-info">
                                             <h6 class="product-title">{{ $product->name }}</h6>
@@ -1760,6 +1780,11 @@
                                                      alt="{{ $product->name }}">
                                             @endif
                                             <div class="product-badge brand-badge">Motorola</div>
+                                            @if($product->hasListBadge())
+                                                <div class="product-badge" style="background-color: #0dcaf0; color: #000; top: 10px; left: 10px;">
+                                                    📋 Lista
+                                                </div>
+                                            @endif
                                         </div>
                                         <div class="product-info">
                                             <h6 class="product-title">{{ $product->name }}</h6>
@@ -1862,6 +1887,11 @@
                                                          alt="{{ $product->name }}">
                                                 @endif
                                                 <div class="product-badge brand-badge">Infinix</div>
+                                                @if($product->hasListBadge())
+                                                    <div class="product-badge" style="background-color: #0dcaf0; color: #000; top: 10px; left: 10px;">
+                                                        📋 Lista
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="product-info">
                                                 <h6 class="product-title">{{ $product->name }}</h6>
@@ -1971,6 +2001,11 @@
                                                      alt="{{ $product->name }}">
                                             @endif
                                             <div class="product-badge brand-badge">JBL</div>
+                                            @if($product->hasListBadge())
+                                                <div class="product-badge" style="background-color: #0dcaf0; color: #000; top: 10px; left: 10px;">
+                                                    📋 Lista
+                                                </div>
+                                            @endif
                                         </div>
                                         <div class="product-info">
                                             <h6 class="product-title">{{ $product->name }}</h6>
@@ -2071,6 +2106,11 @@
                                                          alt="{{ $product->name }}">
                                                 @endif
                                                 <div class="product-badge brand-badge">Oppo</div>
+                                                @if($product->hasListBadge())
+                                                    <div class="product-badge" style="background-color: #0dcaf0; color: #000; top: 10px; left: 10px;">
+                                                        📋 Lista
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="product-info">
                                                 <h6 class="product-title">{{ $product->name }}</h6>
@@ -2180,6 +2220,11 @@
                                                          alt="{{ $product->name }}">
                                                 @endif
                                                 <div class="product-badge brand-badge">Realme</div>
+                                                @if($product->hasListBadge())
+                                                    <div class="product-badge" style="background-color: #0dcaf0; color: #000; top: 10px; left: 10px;">
+                                                        📋 Lista
+                                                    </div>
+                                                @endif
                                             </div>
                                             <div class="product-info">
                                                 <h6 class="product-title">{{ $product->name }}</h6>

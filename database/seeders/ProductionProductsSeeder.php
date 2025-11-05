@@ -410,6 +410,7 @@ class ProductionProductsSeeder extends Seeder
                     'is_featured' => in_array($iphone['model'], ['iPhone 16 Pro', 'iPhone 16 Pro Max', 'iPhone 17 Pro', 'iPhone 17 Pro Max']),
                     'brand' => 'Apple',
                     'model' => $iphone['model'],
+                    'supplier' => $iphone['supplier'] ?? 'SHOPPINGCELL CELULARES',
                     'department_id' => $department->id,
                     'images' => $images,
                     'specifications' => [
@@ -449,9 +450,16 @@ class ProductionProductsSeeder extends Seeder
                         default => 1.0
                     };
 
-                    $finalPrice = $iphone['base_price'] * $storageMultiplier;
-                    $finalB2BPrice = $finalPrice - $iphone['b2b_discount'];
-                    $finalCostPrice = $iphone['cost_price'] * $storageMultiplier;
+                    // Se o modelo tiver preços customizados, usar diretamente
+                    if (isset($iphone['custom_prices'][$storage][$color])) {
+                        $finalCostPrice = $iphone['custom_prices'][$storage][$color];
+                    } else {
+                        $finalCostPrice = $iphone['cost_price'] * $storageMultiplier;
+                    }
+                    
+                    // Calcular preços com margem de lucro: B2B 10%, B2C 20%
+                    $finalB2BPrice = round($finalCostPrice * 1.10, 2);
+                    $finalPrice = round($finalCostPrice * 1.20, 2);
 
                     // Gerar SKU único para variação
                     $colorCode = match($color) {
@@ -514,6 +522,17 @@ class ProductionProductsSeeder extends Seeder
             
             // Remover 'category' do array antes de passar para create/update
             unset($originalProductData['category']);
+            
+            // Calcular preços com margem de lucro: B2B 10%, B2C 20%
+            if (isset($originalProductData['cost_price'])) {
+                $originalProductData['b2b_price'] = round($originalProductData['cost_price'] * 1.10, 2);
+                $originalProductData['price'] = round($originalProductData['cost_price'] * 1.20, 2);
+            }
+            
+            // Adicionar fornecedor se não existir
+            if (!isset($originalProductData['supplier'])) {
+                $originalProductData['supplier'] = 'SHOPPINGCELL CELULARES';
+            }
             
             // Criar novo array apenas com campos permitidos usando fillable do model
             $product = new Product();
@@ -703,7 +722,12 @@ class ProductionProductsSeeder extends Seeder
                 'screen' => '6.1" Super Retina XDR',
                 'processor' => 'A14 Bionic',
                 'camera' => '12MP + 12MP',
-                'battery' => 'Até 17h de conversação'
+                'battery' => 'Até 17h de conversação',
+                'custom_prices' => [
+                    '128GB' => [
+                        'White' => 2580.00, // CPO
+                    ]
+                ]
             ],
             // iPhone 12 Pro (2020)
             [
@@ -752,14 +776,20 @@ class ProductionProductsSeeder extends Seeder
                 'model' => 'iPhone 13',
                 'year' => 2021,
                 'storages' => ['128GB', '256GB', '512GB'],
-                'colors' => ['Pink', 'Blue', 'Midnight', 'Starlight', 'Red'],
+                'colors' => ['Pink', 'Blue', 'Midnight', 'Starlight', 'Red', 'White', 'Black'],
                 'base_price' => 5099.00,
                 'b2b_discount' => 200.00,
                 'cost_price' => 4300.00,
                 'screen' => '6.1" Super Retina XDR',
                 'processor' => 'A15 Bionic',
                 'camera' => '12MP + 12MP',
-                'battery' => 'Até 19h de conversação'
+                'battery' => 'Até 19h de conversação',
+                'custom_prices' => [
+                    '128GB' => [
+                        'White' => 2750.00,
+                        'Black' => 2750.00,
+                    ]
+                ]
             ],
             // iPhone 13 Pro (2021)
             [
@@ -794,14 +824,20 @@ class ProductionProductsSeeder extends Seeder
                 'model' => 'iPhone 14',
                 'year' => 2022,
                 'storages' => ['128GB', '256GB', '512GB'],
-                'colors' => ['Blue', 'Purple', 'Midnight', 'Starlight', 'Red', 'Yellow'],
+                'colors' => ['Blue', 'Purple', 'Midnight', 'Starlight', 'Red', 'Yellow', 'Black', 'White'],
                 'base_price' => 5499.00,
                 'b2b_discount' => 200.00,
                 'cost_price' => 4700.00,
                 'screen' => '6.1" Super Retina XDR',
                 'processor' => 'A15 Bionic',
                 'camera' => '12MP + 12MP',
-                'battery' => 'Até 20h de conversação'
+                'battery' => 'Até 20h de conversação',
+                'custom_prices' => [
+                    '128GB' => [
+                        'Black' => 3300.00,
+                        'White' => 3300.00,
+                    ]
+                ]
             ],
             // iPhone 14 Plus (2022)
             [
@@ -857,7 +893,14 @@ class ProductionProductsSeeder extends Seeder
                 'screen' => '6.1" Super Retina XDR',
                 'processor' => 'A16 Bionic',
                 'camera' => '48MP + 12MP',
-                'battery' => 'Até 20h de conversação'
+                'battery' => 'Até 20h de conversação',
+                'custom_prices' => [
+                    '128GB' => [
+                        'Blue' => 3700.00,
+                        'Pink' => 3700.00,
+                        'Black' => 3700.00,
+                    ]
+                ]
             ],
             // iPhone 15 Plus (2023)
             [
@@ -871,7 +914,13 @@ class ProductionProductsSeeder extends Seeder
                 'screen' => '6.7" Super Retina XDR',
                 'processor' => 'A16 Bionic',
                 'camera' => '48MP + 12MP',
-                'battery' => 'Até 26h de conversação'
+                'battery' => 'Até 26h de conversação',
+                'custom_prices' => [
+                    '128GB' => [
+                        'Green' => 4000.00,
+                        'Blue' => 4000.00,
+                    ]
+                ]
             ],
             // iPhone 15 Pro (2023)
             [
@@ -891,7 +940,7 @@ class ProductionProductsSeeder extends Seeder
             [
                 'model' => 'iPhone 15 Pro Max',
                 'year' => 2023,
-                'storages' => ['256GB', '512GB', '1TB'],
+                'storages' => ['128GB', '256GB', '512GB', '1TB'],
                 'colors' => ['Natural Titanium', 'Blue Titanium', 'White Titanium', 'Black Titanium'],
                 'base_price' => 7999.00,
                 'b2b_discount' => 300.00,
@@ -899,7 +948,14 @@ class ProductionProductsSeeder extends Seeder
                 'screen' => '6.7" Super Retina XDR com ProMotion',
                 'processor' => 'A17 Pro',
                 'camera' => '48MP + 12MP + 12MP + LiDAR',
-                'battery' => 'Até 29h de conversação'
+                'battery' => 'Até 29h de conversação',
+                'custom_prices' => [
+                    '512GB' => [
+                        'Natural Titanium' => 6150.00, // CPO
+                        'Blue Titanium' => 6150.00, // CPO
+                        'White Titanium' => 6150.00, // CPO
+                    ]
+                ]
             ],
             // iPhone 16 (2024)
             [
@@ -913,7 +969,32 @@ class ProductionProductsSeeder extends Seeder
                 'screen' => '6.1" Super Retina XDR',
                 'processor' => 'A18',
                 'camera' => '48MP + 12MP',
-                'battery' => 'Até 20h de conversação'
+                'battery' => 'Até 20h de conversação',
+                'custom_prices' => [
+                    '128GB' => [
+                        'Black' => 4680.00,
+                    ]
+                ]
+            ],
+            // iPhone 16E (2024)
+            [
+                'model' => 'iPhone 16E',
+                'year' => 2024,
+                'storages' => ['128GB', '256GB'],
+                'colors' => ['Black', 'White'],
+                'base_price' => 5799.00,
+                'b2b_discount' => 200.00,
+                'cost_price' => 4800.00,
+                'screen' => '6.1" Super Retina XDR',
+                'processor' => 'A18',
+                'camera' => '48MP + 12MP',
+                'battery' => 'Até 20h de conversação',
+                'custom_prices' => [
+                    '256GB' => [
+                        'Black' => 4450.00,
+                        'White' => 4450.00,
+                    ]
+                ]
             ],
             // iPhone 16 Plus (2024)
             [
@@ -934,28 +1015,58 @@ class ProductionProductsSeeder extends Seeder
                 'model' => 'iPhone 16 Pro',
                 'year' => 2024,
                 'storages' => ['128GB', '256GB', '512GB', '1TB'],
-                'colors' => ['Natural Titanium', 'White Titanium', 'Black Titanium', 'Rose Titanium'],
+                'colors' => ['Natural Titanium', 'White Titanium', 'Black Titanium', 'Rose Titanium', 'Desert Titanium'],
                 'base_price' => 7999.00,
                 'b2b_discount' => 300.00,
                 'cost_price' => 7000.00,
                 'screen' => '6.1" Super Retina XDR com ProMotion',
                 'processor' => 'A18 Pro',
                 'camera' => '48MP + 12MP + 12MP + LiDAR',
-                'battery' => 'Até 23h de conversação'
+                'battery' => 'Até 23h de conversação',
+                'custom_prices' => [
+                    '128GB' => [
+                        'Natural Titanium' => 5750.00,
+                        'Desert Titanium' => 5750.00,
+                        'Black Titanium' => 5750.00,
+                    ],
+                    '256GB' => [
+                        'Desert Titanium' => 6550.00,
+                        'Natural Titanium' => 6550.00,
+                    ]
+                ]
             ],
             // iPhone 16 Pro Max (2024)
             [
                 'model' => 'iPhone 16 Pro Max',
                 'year' => 2024,
-                'storages' => ['256GB', '512GB', '1TB'],
-                'colors' => ['Natural Titanium', 'White Titanium', 'Black Titanium', 'Rose Titanium'],
+                'storages' => ['128GB', '256GB', '512GB', '1TB'],
+                'colors' => ['Natural Titanium', 'White Titanium', 'Black Titanium', 'Rose Titanium', 'Desert Titanium'],
                 'base_price' => 8499.00,
                 'b2b_discount' => 300.00,
                 'cost_price' => 7500.00,
                 'screen' => '6.7" Super Retina XDR com ProMotion',
                 'processor' => 'A18 Pro',
                 'camera' => '48MP + 12MP + 12MP + LiDAR',
-                'battery' => 'Até 29h de conversação'
+                'battery' => 'Até 29h de conversação',
+                'custom_prices' => [
+                    '256GB' => [
+                        'Black Titanium' => 6700.00,
+                        'Natural Titanium' => 6700.00,
+                        'White Titanium' => 6750.00,
+                        'Desert Titanium' => 7000.00,
+                    ],
+                    '512GB' => [
+                        'Desert Titanium' => 8300.00,
+                        'Natural Titanium' => 8300.00,
+                        'Black Titanium' => 8300.00,
+                    ],
+                    '1TB' => [
+                        'Desert Titanium' => 8900.00,
+                        'Black Titanium' => 8900.00,
+                        'Natural Titanium' => 8900.00,
+                        'White Titanium' => 9100.00,
+                    ]
+                ]
             ],
             // iPhone 17 (2025)
             [
@@ -1004,14 +1115,22 @@ class ProductionProductsSeeder extends Seeder
                 'model' => 'iPhone 17 Pro Max',
                 'year' => 2025,
                 'storages' => ['256GB', '512GB', '1TB'],
-                'colors' => ['Natural Titanium', 'White Titanium', 'Black Titanium', 'Rose Titanium'],
+                'colors' => ['Natural Titanium', 'White Titanium', 'Black Titanium', 'Rose Titanium', 'Silver', 'Orange'],
                 'base_price' => 8999.00,
                 'b2b_discount' => 300.00,
                 'cost_price' => 8000.00,
                 'screen' => '6.7" Super Retina XDR com ProMotion',
                 'processor' => 'A19 Pro',
                 'camera' => '48MP + 12MP + 12MP + LiDAR',
-                'battery' => 'Até 30h de conversação'
+                'battery' => 'Até 30h de conversação',
+                'custom_prices' => [
+                    '256GB' => [
+                        'Silver' => 12900.00,
+                    ],
+                    '512GB' => [
+                        'Orange' => 14400.00,
+                    ]
+                ]
             ],
         ];
     }
@@ -1024,15 +1143,66 @@ class ProductionProductsSeeder extends Seeder
         $images = $this->getProductImages();
         
         return [
+            // AirPods
             [
-                'name' => 'Apple AirPods Pro (2ª geração)',
-                'slug' => 'apple-airpods-pro-2gen',
-                'description' => 'Apple AirPods Pro com cancelamento ativo de ruído, áudio espacial e carregamento sem fio. Chip H2 para melhor qualidade de som.',
+                'name' => 'AirPods 4 sem ANC',
+                'slug' => 'airpods-4-sem-anc',
+                'description' => 'AirPods 4 sem cancelamento ativo de ruído. Áudio de alta qualidade e design confortável.',
+                'short_description' => 'AirPods 4 sem cancelamento de ruído.',
+                'sku' => 'APPLE-AP4-NOANC',
+                'cost_price' => 900.00,
+                'stock_quantity' => 20,
+                'min_stock' => 10,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => false,
+                'brand' => 'Apple',
+                'model' => 'AirPods 4',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('AirPods Pro 2'),
+                'specifications' => [
+                    'Cancelamento de Ruído' => 'Não',
+                    'Áudio Espacial' => 'Sim',
+                    'Resistência' => 'IPX4',
+                ],
+                'weight' => 0.050,
+                'sort_order' => 1,
+                'category' => 'audio'
+            ],
+            [
+                'name' => 'AirPods 4 ANC',
+                'slug' => 'airpods-4-anc',
+                'description' => 'AirPods 4 com cancelamento ativo de ruído. Áudio espacial e carregamento sem fio.',
+                'short_description' => 'AirPods 4 com cancelamento de ruído.',
+                'sku' => 'APPLE-AP4-ANC',
+                'cost_price' => 1200.00,
+                'stock_quantity' => 20,
+                'min_stock' => 10,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'AirPods 4 ANC',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('AirPods Pro 2'),
+                'specifications' => [
+                    'Cancelamento de Ruído' => 'Sim',
+                    'Áudio Espacial' => 'Sim',
+                    'Resistência' => 'IPX4',
+                ],
+                'weight' => 0.056,
+                'sort_order' => 2,
+                'category' => 'audio'
+            ],
+            [
+                'name' => 'AirPods Pro 2 USB-C',
+                'slug' => 'airpods-pro-2-usb-c',
+                'description' => 'Apple AirPods Pro com cancelamento ativo de ruído, áudio espacial e carregamento USB-C. Chip H2 para melhor qualidade de som.',
                 'short_description' => 'AirPods Pro com cancelamento de ruído e áudio espacial.',
-                'sku' => 'APPLE-APP2-001',
-                'price' => 2299.00,
-                'b2b_price' => 2099.00,
-                'cost_price' => 1800.00,
+                'sku' => 'APPLE-APP2-USB-C',
+                'cost_price' => 1300.00,
                 'stock_quantity' => 25,
                 'min_stock' => 10,
                 'manage_stock' => true,
@@ -1040,7 +1210,7 @@ class ProductionProductsSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'brand' => 'Apple',
-                'model' => 'AirPods Pro 2',
+                'model' => 'AirPods Pro 2 USB-C',
                 'department_id' => $department->id,
                 'images' => $this->getImagesForProduct('AirPods Pro 2'),
                 'specifications' => [
@@ -1049,20 +1219,44 @@ class ProductionProductsSeeder extends Seeder
                     'Cancelamento de Ruído' => 'Sim',
                     'Áudio Espacial' => 'Sim',
                     'Resistência' => 'IPX4',
-                    'Carregamento' => 'Sem fio + Lightning'
+                    'Carregamento' => 'USB-C'
                 ],
                 'weight' => 0.056,
                 'sort_order' => 3,
                 'category' => 'audio'
             ],
             [
-                'name' => 'Capa Apple iPhone 15 Pro - Silicone',
-                'slug' => 'capa-apple-iphone-15-pro-silicone',
-                'description' => 'Capa oficial Apple em silicone para iPhone 15 Pro. Proteção premium com acabamento macio e suave ao toque.',
-                'short_description' => 'Capa oficial Apple em silicone para iPhone 15 Pro.',
-                'sku' => 'APPLE-CAP-IP15P',
-                'price' => 399.00,
-                'b2b_price' => 349.00,
+                'name' => 'AirPods Max',
+                'slug' => 'airpods-max',
+                'description' => 'AirPods Max com cancelamento ativo de ruído e áudio espacial. Design premium com drivers de alta fidelidade.',
+                'short_description' => 'AirPods Max com cancelamento de ruído.',
+                'sku' => 'APPLE-APMAX',
+                'cost_price' => 3400.00,
+                'stock_quantity' => 10,
+                'min_stock' => 5,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'AirPods Max',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('AirPods Pro 2'),
+                'specifications' => [
+                    'Cancelamento de Ruído' => 'Sim',
+                    'Áudio Espacial' => 'Sim',
+                    'Bateria' => 'Até 20h',
+                ],
+                'weight' => 0.384,
+                'sort_order' => 4,
+                'category' => 'audio'
+            ],
+            [
+                'name' => 'AirTag',
+                'slug' => 'airtag',
+                'description' => 'AirTag para localizar seus objetos. Integrado com a rede Encontrar.',
+                'short_description' => 'AirTag para localizar objetos.',
+                'sku' => 'APPLE-AT-001',
                 'cost_price' => 250.00,
                 'stock_quantity' => 50,
                 'min_stock' => 20,
@@ -1071,30 +1265,75 @@ class ProductionProductsSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => false,
                 'brand' => 'Apple',
-                'model' => 'Capa Silicone',
+                'model' => 'AirTag',
                 'department_id' => $department->id,
-                'images' => $this->getImagesForProduct('Capa Silicone'),
+                'images' => $this->getImagesForProduct('AirPods Pro 2'),
                 'specifications' => [
-                    'Material' => 'Silicone',
-                    'Compatibilidade' => 'iPhone 15 Pro',
-                    'Cores' => 'Diversas',
-                    'Proteção' => 'Traseira e laterais',
-                    'MagSafe' => 'Compatível',
-                    'Garantia' => '1 ano'
+                    'Bateria' => '1 ano',
+                    'Rede' => 'Encontrar',
                 ],
-                'weight' => 0.030,
-                'sort_order' => 4,
+                'weight' => 0.011,
+                'sort_order' => 5,
                 'category' => 'acessorios'
             ],
             [
-                'name' => 'iPad Air (5ª geração) - 256GB',
-                'slug' => 'ipad-air-5gen-256gb',
-                'description' => 'iPad Air com chip M1, tela Liquid Retina de 10.9", compatível com Apple Pencil (2ª geração) e Magic Keyboard.',
-                'short_description' => 'iPad Air com chip M1 e tela Liquid Retina 10.9".',
-                'sku' => 'APPLE-IPA5-256',
-                'price' => 4999.00,
-                'b2b_price' => 4699.00,
-                'cost_price' => 4000.00,
+                'name' => 'AirTag Pack 4',
+                'slug' => 'airtag-pack-4',
+                'description' => 'Pack com 4 AirTags para localizar seus objetos. Integrado com a rede Encontrar.',
+                'short_description' => 'Pack com 4 AirTags.',
+                'sku' => 'APPLE-AT-PACK4',
+                'cost_price' => 600.00,
+                'stock_quantity' => 30,
+                'min_stock' => 10,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => false,
+                'brand' => 'Apple',
+                'model' => 'AirTag Pack 4',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('AirPods Pro 2'),
+                'specifications' => [
+                    'Quantidade' => '4 unidades',
+                    'Bateria' => '1 ano cada',
+                ],
+                'weight' => 0.044,
+                'sort_order' => 6,
+                'category' => 'acessorios'
+            ],
+            // Apple Watch
+            [
+                'name' => 'Apple Watch SE 2 40mm',
+                'slug' => 'apple-watch-se-2-40mm',
+                'description' => 'Apple Watch SE 2 com tela de 40mm. Recursos essenciais de saúde e fitness.',
+                'short_description' => 'Apple Watch SE 2 40mm.',
+                'sku' => 'APPLE-AW-SE2-40',
+                'cost_price' => 1500.00,
+                'stock_quantity' => 15,
+                'min_stock' => 5,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => false,
+                'brand' => 'Apple',
+                'model' => 'Watch SE 2',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('AirPods Pro 2'),
+                'specifications' => [
+                    'Tela' => '40mm',
+                    'Série' => 'SE 2',
+                ],
+                'weight' => 0.030,
+                'sort_order' => 10,
+                'category' => 'acessorios'
+            ],
+            [
+                'name' => 'Apple Watch S10 42mm',
+                'slug' => 'apple-watch-s10-42mm',
+                'description' => 'Apple Watch Série 10 com tela de 42mm. Recursos avançados de saúde.',
+                'short_description' => 'Apple Watch S10 42mm.',
+                'sku' => 'APPLE-AW-S10-42',
+                'cost_price' => 2200.00,
                 'stock_quantity' => 12,
                 'min_stock' => 5,
                 'manage_stock' => true,
@@ -1102,30 +1341,125 @@ class ProductionProductsSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'brand' => 'Apple',
-                'model' => 'iPad Air 5',
+                'model' => 'Watch S10',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('AirPods Pro 2'),
+                'specifications' => [
+                    'Tela' => '42mm',
+                    'Série' => '10',
+                ],
+                'weight' => 0.035,
+                'sort_order' => 11,
+                'category' => 'acessorios'
+            ],
+            [
+                'name' => 'Apple Watch S10 46mm',
+                'slug' => 'apple-watch-s10-46mm',
+                'description' => 'Apple Watch Série 10 com tela de 46mm. Recursos avançados de saúde.',
+                'short_description' => 'Apple Watch S10 46mm.',
+                'sku' => 'APPLE-AW-S10-46',
+                'cost_price' => 2300.00,
+                'stock_quantity' => 12,
+                'min_stock' => 5,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'Watch S10',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('AirPods Pro 2'),
+                'specifications' => [
+                    'Tela' => '46mm',
+                    'Série' => '10',
+                ],
+                'weight' => 0.040,
+                'sort_order' => 12,
+                'category' => 'acessorios'
+            ],
+            // iPads
+            [
+                'name' => 'iPad 10 64GB',
+                'slug' => 'ipad-10-64gb',
+                'description' => 'iPad 10 com 64GB de armazenamento. Tela Liquid Retina de 10.9".',
+                'short_description' => 'iPad 10 64GB.',
+                'sku' => 'APPLE-IP10-64',
+                'cost_price' => 2150.00,
+                'stock_quantity' => 15,
+                'min_stock' => 5,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => false,
+                'brand' => 'Apple',
+                'model' => 'iPad 10',
                 'department_id' => $department->id,
                 'images' => $this->getImagesForProduct('iPad Air 5'),
                 'specifications' => [
                     'Tela' => '10.9" Liquid Retina',
-                    'Chip' => 'M1',
-                    'Armazenamento' => '256GB',
-                    'Sistema' => 'iPadOS 17',
-                    'Apple Pencil' => 'Compatível (2ª geração)',
-                    'Magic Keyboard' => 'Compatível'
+                    'Armazenamento' => '64GB',
                 ],
-                'weight' => 0.461,
-                'sort_order' => 5,
+                'weight' => 0.477,
+                'sort_order' => 20,
                 'category' => 'tablets'
             ],
             [
-                'name' => 'MacBook Air M2 - 256GB',
-                'slug' => 'macbook-air-m2-256gb',
-                'description' => 'MacBook Air com chip M2, tela Liquid Retina de 13.6", 8GB RAM e design ultrafino. Perfeito para produtividade e criatividade.',
-                'short_description' => 'MacBook Air com chip M2 e tela Liquid Retina 13.6".',
-                'sku' => 'APPLE-MBA-M2-256',
-                'price' => 8999.00,
-                'b2b_price' => 8499.00,
-                'cost_price' => 7500.00,
+                'name' => 'iPad 10 256GB',
+                'slug' => 'ipad-10-256gb',
+                'description' => 'iPad 10 com 256GB de armazenamento. Tela Liquid Retina de 10.9".',
+                'short_description' => 'iPad 10 256GB.',
+                'sku' => 'APPLE-IP10-256',
+                'cost_price' => 2550.00,
+                'stock_quantity' => 12,
+                'min_stock' => 5,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => false,
+                'brand' => 'Apple',
+                'model' => 'iPad 10',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('iPad Air 5'),
+                'specifications' => [
+                    'Tela' => '10.9" Liquid Retina',
+                    'Armazenamento' => '256GB',
+                ],
+                'weight' => 0.477,
+                'sort_order' => 21,
+                'category' => 'tablets'
+            ],
+            [
+                'name' => 'iPad 11 128GB',
+                'slug' => 'ipad-11-128gb',
+                'description' => 'iPad 11 com 128GB de armazenamento. Tela Liquid Retina de 10.9".',
+                'short_description' => 'iPad 11 128GB.',
+                'sku' => 'APPLE-IP11-128',
+                'cost_price' => 2300.00,
+                'stock_quantity' => 15,
+                'min_stock' => 5,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'iPad 11',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('iPad Air 5'),
+                'specifications' => [
+                    'Tela' => '10.9" Liquid Retina',
+                    'Armazenamento' => '128GB',
+                ],
+                'weight' => 0.477,
+                'sort_order' => 22,
+                'category' => 'tablets'
+            ],
+            [
+                'name' => 'iPad mini 17 Pro 128GB',
+                'slug' => 'ipad-mini-17-pro-128gb',
+                'description' => 'iPad mini 17 Pro com 128GB de armazenamento. Tela Liquid Retina de 8.3".',
+                'short_description' => 'iPad mini 17 Pro 128GB.',
+                'sku' => 'APPLE-IPMINI17P-128',
+                'cost_price' => 3100.00,
                 'stock_quantity' => 10,
                 'min_stock' => 3,
                 'manage_stock' => true,
@@ -1133,19 +1467,175 @@ class ProductionProductsSeeder extends Seeder
                 'is_active' => true,
                 'is_featured' => true,
                 'brand' => 'Apple',
-                'model' => 'MacBook Air M2',
+                'model' => 'iPad mini 17 Pro',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('iPad Air 5'),
+                'specifications' => [
+                    'Tela' => '8.3" Liquid Retina',
+                    'Armazenamento' => '128GB',
+                ],
+                'weight' => 0.293,
+                'sort_order' => 23,
+                'category' => 'tablets'
+            ],
+            [
+                'name' => 'iPad Air M2 11 128GB',
+                'slug' => 'ipad-air-m2-11-128gb',
+                'description' => 'iPad Air com chip M2, tela de 11" e 128GB de armazenamento.',
+                'short_description' => 'iPad Air M2 11" 128GB.',
+                'sku' => 'APPLE-IPAM2-11-128',
+                'cost_price' => 3500.00,
+                'stock_quantity' => 10,
+                'min_stock' => 3,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'iPad Air M2',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('iPad Air 5'),
+                'specifications' => [
+                    'Tela' => '11" Liquid Retina',
+                    'Chip' => 'M2',
+                    'Armazenamento' => '128GB',
+                ],
+                'weight' => 0.462,
+                'sort_order' => 24,
+                'category' => 'tablets'
+            ],
+            [
+                'name' => 'iPad Air M3 11 128GB',
+                'slug' => 'ipad-air-m3-11-128gb',
+                'description' => 'iPad Air com chip M3, tela de 11" e 128GB de armazenamento.',
+                'short_description' => 'iPad Air M3 11" 128GB.',
+                'sku' => 'APPLE-IPAM3-11-128',
+                'cost_price' => 3750.00,
+                'stock_quantity' => 10,
+                'min_stock' => 3,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'iPad Air M3',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('iPad Air 5'),
+                'specifications' => [
+                    'Tela' => '11" Liquid Retina',
+                    'Chip' => 'M3',
+                    'Armazenamento' => '128GB',
+                ],
+                'weight' => 0.462,
+                'sort_order' => 25,
+                'category' => 'tablets'
+            ],
+            [
+                'name' => 'iPad Pro M4 11 256GB',
+                'slug' => 'ipad-pro-m4-11-256gb',
+                'description' => 'iPad Pro com chip M4, tela de 11" e 256GB de armazenamento.',
+                'short_description' => 'iPad Pro M4 11" 256GB.',
+                'sku' => 'APPLE-IPPM4-11-256',
+                'cost_price' => 6450.00,
+                'stock_quantity' => 8,
+                'min_stock' => 3,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'iPad Pro M4',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('iPad Air 5'),
+                'specifications' => [
+                    'Tela' => '11" Liquid Retina',
+                    'Chip' => 'M4',
+                    'Armazenamento' => '256GB',
+                ],
+                'weight' => 0.444,
+                'sort_order' => 26,
+                'category' => 'tablets'
+            ],
+            // MacBooks
+            [
+                'name' => 'MacBook Air 15 M3 8GB 256GB',
+                'slug' => 'macbook-air-15-m3-8gb-256gb',
+                'description' => 'MacBook Air 15" com chip M3, 8GB RAM e 256GB SSD.',
+                'short_description' => 'MacBook Air 15" M3 8GB 256GB.',
+                'sku' => 'APPLE-MBA15-M3-8-256',
+                'cost_price' => 7300.00,
+                'stock_quantity' => 8,
+                'min_stock' => 3,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'MacBook Air 15 M3',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('MacBook Air M2'),
+                'specifications' => [
+                    'Tela' => '15" Liquid Retina',
+                    'Chip' => 'M3',
+                    'RAM' => '8GB',
+                    'Armazenamento' => '256GB SSD',
+                ],
+                'weight' => 1.51,
+                'sort_order' => 30,
+                'category' => 'notebooks'
+            ],
+            [
+                'name' => 'MacBook Air 13 M4 16GB 512GB',
+                'slug' => 'macbook-air-13-m4-16gb-512gb',
+                'description' => 'MacBook Air 13" com chip M4, 16GB RAM e 512GB SSD.',
+                'short_description' => 'MacBook Air 13" M4 16GB 512GB.',
+                'sku' => 'APPLE-MBA13-M4-16-512',
+                'cost_price' => 7600.00,
+                'stock_quantity' => 8,
+                'min_stock' => 3,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'MacBook Air 13 M4',
                 'department_id' => $department->id,
                 'images' => $this->getImagesForProduct('MacBook Air M2'),
                 'specifications' => [
                     'Tela' => '13.6" Liquid Retina',
-                    'Chip' => 'M2',
-                    'RAM' => '8GB',
-                    'Armazenamento' => '256GB SSD',
-                    'Sistema' => 'macOS Ventura',
-                    'Bateria' => 'Até 18 horas'
+                    'Chip' => 'M4',
+                    'RAM' => '16GB',
+                    'Armazenamento' => '512GB SSD',
                 ],
                 'weight' => 1.24,
-                'sort_order' => 6,
+                'sort_order' => 31,
+                'category' => 'notebooks'
+            ],
+            [
+                'name' => 'MacBook Air 15 M4 16GB 256GB',
+                'slug' => 'macbook-air-15-m4-16gb-256gb',
+                'description' => 'MacBook Air 15" com chip M4, 16GB RAM e 256GB SSD.',
+                'short_description' => 'MacBook Air 15" M4 16GB 256GB.',
+                'sku' => 'APPLE-MBA15-M4-16-256',
+                'cost_price' => 7600.00,
+                'stock_quantity' => 8,
+                'min_stock' => 3,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'MacBook Air 15 M4',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('MacBook Air M2'),
+                'specifications' => [
+                    'Tela' => '15" Liquid Retina',
+                    'Chip' => 'M4',
+                    'RAM' => '16GB',
+                    'Armazenamento' => '256GB SSD',
+                ],
+                'weight' => 1.51,
+                'sort_order' => 32,
                 'category' => 'notebooks'
             ],
         ];

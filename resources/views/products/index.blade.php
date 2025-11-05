@@ -146,6 +146,14 @@
                                             </span>
                                         </div>
                                     @endif
+                                    
+                                    @if($product->hasListBadge())
+                                        <div class="position-absolute top-0 start-0 m-2">
+                                            <span class="badge bg-info" style="font-size: 0.75rem;">
+                                                📋 Lista
+                                            </span>
+                                        </div>
+                                    @endif
                                 </div>
                                 
                                 <div class="card-body d-flex flex-column">

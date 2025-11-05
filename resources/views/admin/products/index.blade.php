@@ -91,6 +91,22 @@
                     <option value="out" {{ request('stock_status') === 'out' ? 'selected' : '' }}>Sem Estoque</option>
                 </select>
             </div>
+            <div class="col-md-2">
+                <label class="form-label">
+                    <i class="bi bi-truck me-1"></i>Fornecedor
+                </label>
+                <select name="supplier" class="form-select">
+                    <option value="">Todos</option>
+                    @php
+                        $suppliers = \App\Models\Product::distinct()->whereNotNull('supplier')->pluck('supplier')->filter()->sort();
+                    @endphp
+                    @foreach($suppliers as $supplier)
+                        <option value="{{ $supplier }}" {{ request('supplier') == $supplier ? 'selected' : '' }}>
+                            {{ $supplier }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
             <div class="col-md-1 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary w-100" title="Filtrar">
                     <i class="bi bi-search"></i>
@@ -98,7 +114,7 @@
             </div>
         </form>
         
-        @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status']))
+        @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status', 'supplier']))
             <div class="mt-3 d-flex align-items-center">
                 <span class="text-muted me-2">Filtros ativos:</span>
                 <a href="{{ route('admin.products.index') }}" class="btn btn-sm btn-outline-secondary">
@@ -151,13 +167,18 @@
                                     <div class="d-flex align-items-start">
                                         <div>
                                             <h6 class="mb-1 fw-semibold">{{ $product->name }}</h6>
-                                            @if($product->is_featured)
-                                                <div class="mt-1">
+                                            <div class="mt-1 d-flex flex-wrap gap-1">
+                                                @if($product->is_featured)
                                                     <span class="badge bg-warning">
                                                         <i class="bi bi-star-fill me-1"></i>Destaque
                                                     </span>
-                                                </div>
-                                            @endif
+                                                @endif
+                                                @if($product->hasListBadge())
+                                                    <span class="badge bg-info" title="Produto de lista - Fornecedor: {{ $product->supplier }}">
+                                                        📋 Lista
+                                                    </span>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
@@ -262,14 +283,14 @@
                 </div>
                 <h5 class="text-muted mb-3">Nenhum produto encontrado</h5>
                 <p class="text-muted mb-4">
-                    @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status']))
+                    @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status', 'supplier']))
                         Nenhum produto corresponde aos filtros aplicados.
                     @else
                         Comece criando seu primeiro produto para a loja.
                     @endif
                 </p>
                 <div class="d-flex gap-2 justify-content-center">
-                    @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status']))
+                    @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status', 'supplier']))
                         <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left me-1"></i> Limpar Filtros
                         </a>

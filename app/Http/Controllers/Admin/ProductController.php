@@ -48,6 +48,10 @@ class ProductController extends Controller
             }
         }
 
+        if ($request->filled('supplier')) {
+            $query->where('supplier', $request->supplier);
+        }
+
         $products = $query->paginate(20);
         $categories = Category::all();
 
