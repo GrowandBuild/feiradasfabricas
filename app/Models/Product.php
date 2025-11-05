@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class Product extends Model
 {
@@ -164,11 +165,20 @@ class Product extends Model
         $images = $this->images;
         if (is_array($images) && !empty($images)) {
             $firstImage = $images[0];
-            // Se for um caminho relativo, adicionar o asset()
-            if (strpos($firstImage, 'http') !== 0) {
+            
+            // Se for uma URL completa, retornar diretamente
+            if (strpos($firstImage, 'http') === 0 || strpos($firstImage, 'https') === 0) {
+                return $firstImage;
+            }
+            
+            // Se for um caminho relativo, usar Storage::url() que gera a URL correta
+            // Isso funciona tanto com link simbólico quanto sem ele em produção
+            try {
+                return Storage::disk('public')->url($firstImage);
+            } catch (\Exception $e) {
+                // Fallback para asset() se houver algum problema
                 return asset('storage/' . $firstImage);
             }
-            return $firstImage;
         }
         return asset('images/no-image.svg'); // Imagem padrão
     }
@@ -181,11 +191,18 @@ class Product extends Model
         $images = $this->images ?? [];
         if (is_array($images)) {
             return array_map(function($image) {
-                // Se for um caminho relativo, adicionar o asset()
-                if (strpos($image, 'http') !== 0) {
+                // Se for uma URL completa, retornar diretamente
+                if (strpos($image, 'http') === 0 || strpos($image, 'https') === 0) {
+                    return $image;
+                }
+                
+                // Se for um caminho relativo, usar Storage::url() que gera a URL correta
+                try {
+                    return Storage::disk('public')->url($image);
+                } catch (\Exception $e) {
+                    // Fallback para asset() se houver algum problema
                     return asset('storage/' . $image);
                 }
-                return $image;
             }, $images);
         }
         return [];

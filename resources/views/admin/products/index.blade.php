@@ -244,8 +244,15 @@
             </div>
 
             <!-- Paginação -->
-            <div class="d-flex justify-content-center mt-4">
-                {{ $products->appends(request()->query())->links() }}
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-3 border-top">
+                <div class="mb-3 mb-md-0">
+                    <p class="text-muted mb-0">
+                        Mostrando <strong>{{ $products->firstItem() ?? 0 }}</strong> a <strong>{{ $products->lastItem() ?? 0 }}</strong> de <strong>{{ $products->total() }}</strong> resultados
+                    </p>
+                </div>
+                <div>
+                    {{ $products->appends(request()->query())->links('pagination::bootstrap-4') }}
+                </div>
             </div>
         @else
             <div class="text-center py-5">
