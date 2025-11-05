@@ -377,7 +377,7 @@
     $heroBanners = BannerHelper::getGlobalBanners('hero', 1);
 @endphp
 @if($heroBanners->count() == 0)
-<div class Rede>"hero-section">
+<div class="hero-section">
     <div class="container">
         <div class="hero-content">
             <h1 class="hero-title">Feira das Fábricas</h1>
