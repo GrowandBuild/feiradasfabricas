@@ -558,15 +558,31 @@ class DeliveryService
     private function calculateMelhorEnvioShipping($originData, $destinationData, $packageData)
     {
         try {
-            $email = setting('melhor_envio_email');
             $token = setting('melhor_envio_token');
             $sandbox = setting('melhor_envio_sandbox', true);
             
-            if (empty($email) || empty($token)) {
-                return [
-                    'success' => false,
-                    'error' => 'Credenciais do Melhor Envio não configuradas'
-                ];
+            if (empty($token)) {
+                // Tentar obter token se não tiver
+                $clientId = setting('melhor_envio_client_id');
+                $clientSecret = setting('melhor_envio_client_secret');
+                
+                if (empty($clientId) || empty($clientSecret)) {
+                    return [
+                        'success' => false,
+                        'error' => 'Token ou credenciais do Melhor Envio não configuradas'
+                    ];
+                }
+                
+                // Obter token
+                $tokenResult = $this->obtainMelhorEnvioToken($clientId, $clientSecret);
+                if (!$tokenResult['success']) {
+                    return [
+                        'success' => false,
+                        'error' => 'Não foi possível obter token: ' . ($tokenResult['message'] ?? 'Erro desconhecido')
+                    ];
+                }
+                
+                $token = setting('melhor_envio_token');
             }
 
             $baseUrl = $sandbox 
@@ -629,6 +645,45 @@ class DeliveryService
             return [
                 'success' => false,
                 'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obter token do Melhor Envio usando Client ID e Secret
+     */
+    private function obtainMelhorEnvioToken($clientId, $clientSecret)
+    {
+        $sandbox = setting('melhor_envio_sandbox', true);
+        $baseUrl = $sandbox 
+            ? 'https://sandbox.melhorenvio.com.br'
+            : 'https://www.melhorenvio.com.br';
+
+        try {
+            $response = Http::asForm()->post($baseUrl . '/oauth/token', [
+                'grant_type' => 'client_credentials',
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $token = $data['access_token'] ?? null;
+                
+                if ($token) {
+                    setting(['melhor_envio_token' => $token]);
+                    return ['success' => true, 'token' => $token];
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Erro ao obter token: ' . $response->body()
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erro ao obter token: ' . $e->getMessage()
             ];
         }
     }

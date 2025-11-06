@@ -406,16 +406,25 @@ class SettingController extends Controller
 
     private function testMelhorEnvioConnection()
     {
-        $email = setting('melhor_envio_email');
+        $clientId = setting('melhor_envio_client_id');
+        $clientSecret = setting('melhor_envio_client_secret');
         $token = setting('melhor_envio_token');
         
-        if (empty($email) || empty($token)) {
-            return [
-                'success' => false,
-                'message' => 'Email ou Token do Melhor Envio não configurados'
-            ];
+        // Se tiver token, usar token. Se não, tentar obter token com Client ID e Secret
+        if (empty($token)) {
+            if (empty($clientId) || empty($clientSecret)) {
+                return [
+                    'success' => false,
+                    'message' => 'Client ID e Client Secret do Melhor Envio não configurados. ' .
+                        'Configure o Client ID e Client Secret ou realize a autorização OAuth para obter um token.'
+                ];
+            }
+            
+            // Tentar obter token usando Client ID e Secret (client credentials)
+            return $this->obtainMelhorEnvioToken($clientId, $clientSecret);
         }
 
+        // Testar conexão usando o token
         $sandbox = setting('melhor_envio_sandbox', true);
         $baseUrl = $sandbox 
             ? 'https://sandbox.melhorenvio.com.br/api/v2/me'
@@ -483,6 +492,52 @@ class SettingController extends Controller
             return [
                 'success' => false,
                 'message' => 'Erro ao conectar com Melhor Envio: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Obter token do Melhor Envio usando Client ID e Secret
+     */
+    private function obtainMelhorEnvioToken($clientId, $clientSecret)
+    {
+        $sandbox = setting('melhor_envio_sandbox', true);
+        $baseUrl = $sandbox 
+            ? 'https://sandbox.melhorenvio.com.br'
+            : 'https://www.melhorenvio.com.br';
+
+        try {
+            // Tentar obter token usando client credentials
+            $response = Http::asForm()->post($baseUrl . '/oauth/token', [
+                'grant_type' => 'client_credentials',
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $token = $data['access_token'] ?? null;
+                
+                if ($token) {
+                    // Salvar token automaticamente
+                    setting(['melhor_envio_token' => $token]);
+                    
+                    return [
+                        'success' => true,
+                        'message' => 'Token obtido e conexão estabelecida com sucesso!'
+                    ];
+                }
+            }
+
+            return [
+                'success' => false,
+                'message' => 'Não foi possível obter token. Verifique se o Client ID e Client Secret estão corretos. ' .
+                    'Ou realize a autorização OAuth através do painel do Melhor Envio.'
+            ];
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erro ao obter token: ' . $e->getMessage()
             ];
         }
     }

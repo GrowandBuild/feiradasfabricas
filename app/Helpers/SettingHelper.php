@@ -95,7 +95,8 @@ class SettingHelper
             ],
             'melhor_envio' => [
                 'enabled' => self::isEnabled('melhor_envio_enabled'),
-                'email' => self::get('melhor_envio_email'),
+                'client_id' => self::get('melhor_envio_client_id'),
+                'client_secret' => self::get('melhor_envio_client_secret'),
                 'token' => self::get('melhor_envio_token'),
                 'sandbox' => self::isEnabled('melhor_envio_sandbox', true)
             ]

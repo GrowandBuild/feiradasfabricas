@@ -469,14 +469,20 @@
                                             </div>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="melhor_envio_email" class="form-label">Email</label>
-                                            <input type="email" class="form-control" id="melhor_envio_email" 
-                                                   value="{{ setting('melhor_envio_email', '') }}" placeholder="email@exemplo.com">
+                                            <label for="melhor_envio_client_id" class="form-label">Client ID</label>
+                                            <input type="text" class="form-control" id="melhor_envio_client_id" 
+                                                   value="{{ setting('melhor_envio_client_id', '') }}" placeholder="Client ID do Melhor Envio">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="melhor_envio_token" class="form-label">Token</label>
+                                            <label for="melhor_envio_client_secret" class="form-label">Client Secret</label>
+                                            <input type="password" class="form-control" id="melhor_envio_client_secret" 
+                                                   value="{{ setting('melhor_envio_client_secret', '') }}" placeholder="Client Secret do Melhor Envio">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="melhor_envio_token" class="form-label">Token (Opcional - obtido via OAuth)</label>
                                             <input type="password" class="form-control" id="melhor_envio_token" 
-                                                   value="{{ setting('melhor_envio_token', '') }}" placeholder="Token do Melhor Envio">
+                                                   value="{{ setting('melhor_envio_token', '') }}" placeholder="Token de acesso (gerado automaticamente)">
+                                            <small class="form-text text-muted">O token será gerado automaticamente após autorização OAuth</small>
                                         </div>
                                         <div class="mb-3">
                                             <label for="melhor_envio_sandbox" class="form-label">Ambiente</label>
@@ -1335,7 +1341,7 @@ function getDeliveryFields(provider) {
         'total_express': ['total_express_enabled', 'total_express_api_key', 'total_express_sandbox'],
         'jadlog': ['jadlog_enabled', 'jadlog_cnpj', 'jadlog_api_key', 'jadlog_sandbox'],
         'loggi': ['loggi_enabled', 'loggi_api_key', 'loggi_sandbox'],
-        'melhor_envio': ['melhor_envio_enabled', 'melhor_envio_email', 'melhor_envio_token', 'melhor_envio_sandbox']
+        'melhor_envio': ['melhor_envio_enabled', 'melhor_envio_client_id', 'melhor_envio_client_secret', 'melhor_envio_token', 'melhor_envio_sandbox']
     };
     return fields[provider] || [];
 }
