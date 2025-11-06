@@ -382,6 +382,36 @@
                 margin-left: 0;
             }
         }
+
+        /* CORREÇÃO GLOBAL: Garantir que backdrops fiquem SEMPRE atrás dos modais */
+        .modal-backdrop {
+            z-index: 1040 !important;
+            position: fixed !important;
+        }
+
+        .modal-backdrop.show {
+            z-index: 1040 !important;
+        }
+
+        .modal {
+            z-index: 1050 !important;
+            position: fixed !important;
+        }
+
+        .modal.show {
+            z-index: 1050 !important;
+            display: block !important;
+        }
+
+        .modal-dialog {
+            z-index: 1055 !important;
+            position: relative !important;
+        }
+
+        .modal-content {
+            z-index: 1056 !important;
+            position: relative !important;
+        }
     </style>
     @yield('styles')
 </head>

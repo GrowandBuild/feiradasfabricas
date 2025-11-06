@@ -239,29 +239,10 @@
 
 @section('styles')
 <style>
-    /* Garantir que o modal fique acima de tudo */
-    .modal-backdrop.show {
-        z-index: 9998 !important;
-        opacity: 0.5;
-    }
-    
-    #editBannerModal {
-        z-index: 9999 !important;
-    }
-    
-    #editBannerModal.show {
-        display: block !important;
-    }
-    
+    /* Estilos específicos para o modal de banner */
     #editBannerModal .modal-dialog {
         max-width: 90%;
-        z-index: 10000 !important;
         margin: 1.75rem auto;
-    }
-    
-    #editBannerModal .modal-content {
-        position: relative;
-        z-index: 10001 !important;
     }
     
     #editBannerModal .modal-body {

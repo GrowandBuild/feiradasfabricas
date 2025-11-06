@@ -453,53 +453,10 @@
 
 @section('styles')
 <style>
-    /* Garantir que os modais fiquem acima de tudo - mesmo padrão do modal de banner */
-    .modal-backdrop.show {
-        z-index: 9998 !important;
-        opacity: 0.5;
-    }
-    
-    /* Modal de Variações */
-    #variationsModal {
-        z-index: 9999 !important;
-    }
-    
-    #variationsModal.show {
-        display: block !important;
-    }
-    
-    #variationsModal .modal-dialog {
-        z-index: 10000 !important;
-        margin: 1.75rem auto;
-    }
-    
-    #variationsModal .modal-content {
-        position: relative;
-        z-index: 10001 !important;
-    }
-    
+    /* Estilos específicos para os modais de produtos */
     #variationsModal .modal-body {
         max-height: calc(100vh - 200px);
         overflow-y: auto;
-    }
-    
-    /* Modal de Imagens */
-    #imagesModal {
-        z-index: 9999 !important;
-    }
-    
-    #imagesModal.show {
-        display: block !important;
-    }
-    
-    #imagesModal .modal-dialog {
-        z-index: 10000 !important;
-        margin: 1.75rem auto;
-    }
-    
-    #imagesModal .modal-content {
-        position: relative;
-        z-index: 10001 !important;
     }
     
     #imagesModal .modal-body {
