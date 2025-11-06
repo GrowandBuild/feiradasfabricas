@@ -296,64 +296,213 @@
 
     /* Responsividade Simplificada */
     @media (max-width: 768px) {
+        .hero-section {
+            min-height: 50vh;
+            padding: 2rem 0;
+        }
+
         .hero-title {
-            font-size: 2.5rem;
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+        }
+        
+        .hero-subtitle {
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
         }
         
         .hero-actions {
             flex-direction: column;
-            align-items: center;
+            align-items: stretch;
+            gap: 0.75rem;
         }
         
         .btn-primary,
         .btn-secondary {
             width: 100%;
-            max-width: 300px;
+            max-width: 100%;
             justify-content: center;
+            padding: 0.9rem 1.5rem;
+            font-size: 1rem;
+        }
+        
+        .section {
+            padding: 2.5rem 0;
+        }
+
+        .section-title {
+            font-size: 1.75rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .section-subtitle {
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+        
+        .department-card {
+            margin-bottom: 1.5rem;
+        }
+
+        .department-image {
+            height: 180px;
+        }
+
+        .department-overlay {
+            padding: 1.25rem;
+        }
+
+        .department-title {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .department-description {
+            font-size: 0.9rem;
+            margin-bottom: 1.25rem;
         }
         
         .department-stats {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1.25rem;
         }
-        
-        .section-title {
-            font-size: 2rem;
+
+        .stat-number {
+            font-size: 1rem;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
         }
         
         .b2b-title {
+            font-size: 1.75rem;
+        }
+
+        .b2b-description {
+            font-size: 1rem;
+        }
+
+        .b2b-section {
+            padding: 2rem 1.5rem;
+        }
+
+        .feature-card {
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .feature-icon {
             font-size: 2rem;
+        }
+
+        .feature-title {
+            font-size: 1.15rem;
+        }
+
+        .feature-description {
+            font-size: 0.9rem;
         }
     }
 
     @media (max-width: 480px) {
+        .hero-section {
+            min-height: 40vh;
+            padding: 1.5rem 0;
+        }
+
         .hero-title {
-            font-size: 2rem;
+            font-size: 1.75rem;
         }
         
         .hero-subtitle {
-            font-size: 1rem;
+            font-size: 0.9rem;
         }
         
         .btn-primary,
         .btn-secondary {
-            padding: 0.8rem 1.5rem;
-            font-size: 1rem;
+            padding: 0.8rem 1.25rem;
+            font-size: 0.95rem;
+        }
+        
+        .section {
+            padding: 2rem 0;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+        }
+
+        .section-subtitle {
+            font-size: 0.85rem;
+        }
+        
+        .department-image {
+            height: 160px;
+        }
+
+        .department-overlay {
+            padding: 1rem;
+        }
+
+        .department-title {
+            font-size: 1.1rem;
+        }
+
+        .department-description {
+            font-size: 0.85rem;
         }
         
         .department-stats {
             grid-template-columns: 1fr;
+            gap: 0.5rem;
         }
-        
-        .department-overlay {
-            padding: 1.5rem;
+
+        .stat-item {
+            padding: 0.75rem;
+        }
+
+        .stat-number {
+            font-size: 0.95rem;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
         }
         
         .feature-card {
-            padding: 1.5rem;
+            padding: 1.25rem;
+        }
+
+        .feature-icon {
+            font-size: 1.75rem;
+        }
+
+        .feature-title {
+            font-size: 1.05rem;
+        }
+
+        .feature-description {
+            font-size: 0.85rem;
         }
         
         .b2b-section {
-            padding: 2rem 1.5rem;
+            padding: 1.5rem 1rem;
+        }
+
+        .b2b-title {
+            font-size: 1.5rem;
+        }
+
+        .b2b-description {
+            font-size: 0.9rem;
+        }
+
+        .b2b-btn {
+            padding: 0.9rem 1.5rem;
+            font-size: 0.95rem;
+            width: 100%;
         }
     }
 </style>

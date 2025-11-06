@@ -108,6 +108,152 @@
     .payment-method input[type="radio"] {
         margin-right: 0.5rem;
     }
+
+    /* Responsividade Mobile */
+    @media (max-width: 768px) {
+        .checkout-page {
+            padding: 1rem 0;
+        }
+
+        .container {
+            padding-left: 1rem;
+            padding-right: 1rem;
+        }
+
+        /* Layout mobile - resumo primeiro */
+        .col-lg-8 {
+            order: 2;
+            margin-top: 1.5rem;
+        }
+
+        .col-lg-4 {
+            order: 1;
+        }
+
+        .checkout-card {
+            border-radius: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .checkout-header {
+            padding: 1.25rem;
+        }
+
+        .checkout-title {
+            font-size: 1.25rem;
+        }
+
+        .p-4 {
+            padding: 1.25rem !important;
+        }
+
+        h5 {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            padding: 0.7rem 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .row .col-md-6,
+        .row .col-md-3 {
+            margin-bottom: 1rem;
+        }
+
+        .payment-method {
+            padding: 0.9rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .payment-method label {
+            font-size: 0.9rem;
+        }
+
+        .btn-checkout {
+            padding: 0.9rem 1.5rem;
+            font-size: 1rem;
+        }
+
+        .order-summary {
+            padding: 1.25rem;
+        }
+
+        .summary-item {
+            font-size: 0.9rem;
+        }
+
+        .summary-total {
+            font-size: 1.1rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .checkout-page {
+            padding: 0.75rem 0;
+        }
+
+        .container {
+            padding-left: 0.75rem;
+            padding-right: 0.75rem;
+        }
+
+        .checkout-header {
+            padding: 1rem;
+        }
+
+        .checkout-title {
+            font-size: 1.1rem;
+        }
+
+        .p-4 {
+            padding: 1rem !important;
+        }
+
+        h5 {
+            font-size: 1rem;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+        }
+
+        .form-control {
+            padding: 0.6rem 0.65rem;
+            font-size: 0.85rem;
+        }
+
+        .payment-method {
+            padding: 0.75rem;
+        }
+
+        .payment-method label {
+            font-size: 0.85rem;
+        }
+
+        .btn-checkout {
+            padding: 0.8rem 1.25rem;
+            font-size: 0.95rem;
+        }
+
+        .order-summary {
+            padding: 1rem;
+        }
+
+        .summary-item {
+            font-size: 0.85rem;
+        }
+
+        .summary-total {
+            font-size: 1rem;
+        }
+    }
 </style>
 @endsection
 

@@ -346,6 +346,158 @@
             min-width: 35px;
         }
     }
+
+    /* Responsividade Mobile */
+    @media (max-width: 768px) {
+        .container.py-5 {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1.5rem !important;
+        }
+
+        /* Filtros mobile - colapsar ou mover para cima */
+        .col-lg-3 {
+            order: 2;
+            margin-bottom: 1.5rem;
+        }
+
+        .col-lg-9 {
+            order: 1;
+        }
+
+        .card {
+            border-radius: 0.5rem;
+        }
+
+        .card-header {
+            padding: 0.75rem 1rem;
+        }
+
+        .card-header h5 {
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .form-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control,
+        .form-select {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .btn {
+            padding: 0.6rem 1rem;
+            font-size: 0.9rem;
+        }
+
+        /* Grid de produtos mobile */
+        .col-lg-4.col-md-6 {
+            margin-bottom: 1rem;
+        }
+
+        .product-card {
+            margin-bottom: 0;
+        }
+
+        .card-img-top-container {
+            height: 200px !important;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .card-title {
+            font-size: 0.95rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .card-footer {
+            padding: 0.75rem 1rem;
+        }
+
+        .card-footer .btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        /* Resultados e filtros ativos */
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .active-filters .badge {
+            font-size: 0.7rem;
+            padding: 0.35rem 0.6rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        h1.h2 {
+            font-size: 1.5rem;
+        }
+
+        .text-muted {
+            font-size: 0.85rem;
+        }
+
+        .col-lg-3 {
+            margin-bottom: 1rem;
+        }
+
+        .card-header {
+            padding: 0.6rem 0.75rem;
+        }
+
+        .card-body {
+            padding: 0.75rem;
+        }
+
+        .form-control,
+        .form-select {
+            padding: 0.5rem 0.6rem;
+            font-size: 0.85rem;
+        }
+
+        .btn {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .card-img-top-container {
+            height: 180px !important;
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+        }
+
+        .price-section .h6 {
+            font-size: 1rem;
+        }
+
+        .price-section small {
+            font-size: 0.75rem;
+        }
+
+        .stock-status small {
+            font-size: 0.7rem;
+        }
+    }
 </style>
 @endsection
 

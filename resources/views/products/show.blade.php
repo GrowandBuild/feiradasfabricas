@@ -433,19 +433,190 @@
     
     /* Responsividade */
     @media (max-width: 768px) {
+        .container.py-5 {
+            padding-top: 1.5rem !important;
+            padding-bottom: 1.5rem !important;
+        }
+
+        .breadcrumb {
+            font-size: 0.85rem;
+            margin-bottom: 1rem;
+        }
+
+        .breadcrumb-item {
+            font-size: 0.85rem;
+        }
+
+        /* Galeria mobile */
+        .col-md-6 {
+            margin-bottom: 1.5rem;
+        }
+
+        .main-image-wrapper {
+            min-height: 250px;
+        }
+
+        .main-image {
+            max-height: 350px !important;
+        }
+
         .gallery-nav {
             opacity: 1;
-            width: 35px;
-            height: 35px;
+            width: 32px;
+            height: 32px;
+            font-size: 0.75rem;
         }
         
         .thumbnail-img {
             width: 60px !important;
             height: 60px !important;
         }
-        
+
+        .thumbnails-wrapper {
+            gap: 0.5rem;
+        }
+
+        .image-counter {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+
+        /* Informações do produto mobile */
+        .product-details h1.h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .product-details .text-muted {
+            font-size: 0.9rem;
+        }
+
+        .product-variations {
+            margin-bottom: 1.5rem;
+        }
+
+        .product-variations .form-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .product-variations .form-select {
+            padding: 0.6rem 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .price-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .price-section .h3 {
+            font-size: 1.75rem;
+        }
+
+        .stock-status {
+            margin-bottom: 1.5rem;
+        }
+
+        .stock-status .badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .categories {
+            margin-bottom: 1.5rem;
+        }
+
+        .categories .badge {
+            font-size: 0.8rem;
+            padding: 0.35rem 0.6rem;
+        }
+
+        .description {
+            margin-bottom: 1.5rem;
+        }
+
+        .description h5 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .description p {
+            font-size: 0.9rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .action-buttons .btn {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+        }
+
+        /* Produtos relacionados mobile */
+        .row.mt-5 {
+            margin-top: 2rem !important;
+        }
+
+        .row.mt-5 h3 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .col-lg-3.col-md-4.col-sm-6 {
+            margin-bottom: 1rem;
+        }
+
+        .product-card .card-img-top-container {
+            height: 180px !important;
+        }
+
+        .product-card .card-title {
+            font-size: 0.9rem;
+        }
+    }
+
+    @media (max-width: 480px) {
+        .breadcrumb {
+            font-size: 0.75rem;
+        }
+
+        .main-image-wrapper {
+            min-height: 220px;
+        }
+
         .main-image {
-            max-height: 400px !important;
+            max-height: 300px !important;
+        }
+
+        .gallery-nav {
+            width: 28px;
+            height: 28px;
+        }
+
+        .thumbnail-img {
+            width: 50px !important;
+            height: 50px !important;
+        }
+
+        .product-details h1.h2 {
+            font-size: 1.35rem;
+        }
+
+        .price-section .h3 {
+            font-size: 1.5rem;
+        }
+
+        .action-buttons .btn {
+            padding: 0.7rem 0.9rem;
+            font-size: 0.9rem;
+        }
+
+        .product-card .card-img-top-container {
+            height: 160px !important;
         }
     }
     

@@ -379,11 +379,93 @@
                 padding-top: 0.5rem;
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
             }
+
+            /* Footer Mobile */
+            .footer {
+                padding: 2rem 0 1rem;
+            }
+
+            .footer .row > div {
+                margin-bottom: 1.5rem;
+            }
+
+            .footer h5, .footer h6 {
+                font-size: 1rem;
+                margin-bottom: 0.75rem;
+            }
+
+            .footer ul {
+                margin-bottom: 0;
+            }
+
+            .footer ul li {
+                margin-bottom: 0.5rem;
+            }
+
+            .footer .text-end {
+                text-align: center !important;
+                margin-top: 1rem;
+            }
+
+            /* Container mobile */
+            .container {
+                padding-left: 1rem;
+                padding-right: 1rem;
+            }
+
+            /* Espaçamentos gerais mobile */
+            main {
+                padding: 0;
+            }
+
+            .py-5 {
+                padding-top: 2rem !important;
+                padding-bottom: 2rem !important;
+            }
+
+            .mb-4 {
+                margin-bottom: 1.5rem !important;
+            }
+
+            .mb-5 {
+                margin-bottom: 2rem !important;
+            }
         }
 
         @media (max-width: 480px) {
             .logo-img {
-                height: 35px;
+                height: 28px;
+            }
+
+            .header-icon {
+                font-size: 1.1rem;
+                padding: 6px;
+            }
+
+            .footer {
+                padding: 1.5rem 0 1rem;
+            }
+
+            .footer h5 {
+                font-size: 0.95rem;
+            }
+
+            .footer h6 {
+                font-size: 0.85rem;
+            }
+
+            .footer ul li a {
+                font-size: 0.85rem;
+            }
+
+            .container {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+
+            .py-5 {
+                padding-top: 1.5rem !important;
+                padding-bottom: 1.5rem !important;
             }
         }
 
@@ -507,6 +589,9 @@
                     <a href="#" class="header-icon" title="Lista de Desejos">
                         <i class="fas fa-list"></i>
                     </a>
+                    <a href="{{ route('cart.index') }}" class="header-icon" title="Carrinho">
+                        <i class="fas fa-shopping-cart"></i>
+                    </a>
                     @auth('customer')
                         @php
                             $user = Auth::guard('customer')->user();
@@ -572,9 +657,6 @@
                             <i class="fas fa-user"></i>
                         </a>
                     @endauth
-                    <a href="{{ route('cart.index') }}" class="header-icon" title="Carrinho">
-                        <i class="fas fa-shopping-cart"></i>
-                    </a>
                 </div>
             </div>
         </div>
