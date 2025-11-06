@@ -243,8 +243,11 @@ function renderExistingImages(images, featuredImage) {
         const previewImg = document.getElementById('currentFeaturedImagePreview');
         const imageName = document.getElementById('currentFeaturedImageName');
         
+        // Extrair caminho limpo da imagem
+        const cleanFeaturedPath = extractImagePath(featuredImage) || featuredImage;
         previewImg.src = featuredImage + '?v=' + Date.now();
         previewImg.style.display = 'block';
+        previewImg.setAttribute('data-image-path', cleanFeaturedPath);
         
         // Extrair nome do arquivo da URL
         const fileName = featuredImage.split('/').pop().split('?')[0];
@@ -264,7 +267,12 @@ function renderExistingImages(images, featuredImage) {
     additionalList.innerHTML = '';
     
     // Filtrar imagens adicionais (todas exceto a de destaque)
-    const additionalImages = images.filter(img => img !== featuredImage);
+    // Comparar usando caminhos limpos para evitar problemas com URLs diferentes
+    const featuredPath = featuredImage ? extractImagePath(featuredImage) : null;
+    const additionalImages = images.filter(img => {
+        const imgPath = extractImagePath(img);
+        return imgPath !== featuredPath;
+    });
     
     if (additionalImages.length > 0) {
         additionalContainer.style.display = 'block';
@@ -272,9 +280,10 @@ function renderExistingImages(images, featuredImage) {
         
         additionalImages.forEach((image, index) => {
             const fileName = image.split('/').pop().split('?')[0];
+            const cleanPath = extractImagePath(image) || image;
             const col = document.createElement('div');
             col.className = 'col-md-3 mb-2 image-item-container';
-            col.setAttribute('data-image-path', image);
+            col.setAttribute('data-image-path', cleanPath);
             col.innerHTML = `
                 <div class="position-relative">
                     <img src="${image}?v=${Date.now()}" 
@@ -287,14 +296,14 @@ function renderExistingImages(images, featuredImage) {
                     <div class="form-check mt-2">
                         <input class="form-check-input remove-additional-image" 
                                type="checkbox" 
-                               data-image-path="${image}"
+                               data-image-path="${cleanPath}"
                                id="remove_additional_${index}"
-                               onchange="removeImageImmediately(this, '${image}')">
+                               onchange="removeImageImmediately(this, '${cleanPath}')">
                         <label class="form-check-label text-danger small" for="remove_additional_${index}">
                             <i class="bi bi-trash"></i> Remover
                         </label>
                     </div>
-                    <input type="hidden" name="existing_additional_images[]" value="${image}" class="existing-additional-image-input">
+                    <input type="hidden" name="existing_additional_images[]" value="${cleanPath}" class="existing-additional-image-input">
                 </div>
             `;
             additionalList.appendChild(col);
@@ -342,23 +351,36 @@ function saveImages() {
     const removeFeatured = document.getElementById('remove_featured_image');
     if (!removeFeatured || !removeFeatured.checked) {
         const currentFeatured = document.getElementById('currentFeaturedImagePreview');
-        if (currentFeatured && currentFeatured.src) {
-            // Extrair caminho da imagem de destaque
-            const featuredPath = extractImagePath(currentFeatured.src);
+        if (currentFeatured && currentFeatured.src && currentFeatured.style.display !== 'none') {
+            // Usar o atributo data-image-path se disponível, senão extrair do src
+            let featuredPath = currentFeatured.getAttribute('data-image-path');
+            if (!featuredPath) {
+                featuredPath = extractImagePath(currentFeatured.src);
+            }
             if (featuredPath) {
                 formData.append('existing_featured_image', featuredPath);
+                console.log('Imagem de destaque mantida:', featuredPath);
             }
         }
     }
     
-    // Adicionar imagens adicionais existentes que não foram marcadas para remover
-    const removeCheckboxes = document.querySelectorAll('.remove-additional-image:not(:checked)');
-    removeCheckboxes.forEach(checkbox => {
-        const imagePath = checkbox.getAttribute('data-image-path');
+    // Adicionar TODAS as imagens adicionais existentes que não foram marcadas para remover
+    // Usar os inputs hidden que foram criados ao renderizar as imagens
+    const existingAdditionalInputs = document.querySelectorAll('.existing-additional-image-input');
+    existingAdditionalInputs.forEach(input => {
+        const imagePath = input.value;
         if (imagePath) {
-            const extractedPath = extractImagePath(imagePath);
-            if (extractedPath) {
-                formData.append('existing_additional_images[]', extractedPath);
+            // Verificar se esta imagem não foi marcada para remover
+            const container = input.closest('.image-item-container');
+            if (container) {
+                const removeCheckbox = container.querySelector('.remove-additional-image');
+                if (!removeCheckbox || !removeCheckbox.checked) {
+                    const extractedPath = extractImagePath(imagePath);
+                    if (extractedPath) {
+                        formData.append('existing_additional_images[]', extractedPath);
+                        console.log('Imagem adicional mantida:', extractedPath);
+                    }
+                }
             }
         }
     });
@@ -626,6 +648,11 @@ function removeImageImmediately(checkbox, imagePath) {
                 container.style.transition = 'opacity 0.3s';
                 container.style.opacity = '0';
                 setTimeout(() => {
+                    // Remover o input hidden também para que não seja enviado no próximo save
+                    const hiddenInput = container.querySelector('.existing-additional-image-input');
+                    if (hiddenInput) {
+                        hiddenInput.remove();
+                    }
                     container.remove();
                     
                     // Verificar se não há mais imagens

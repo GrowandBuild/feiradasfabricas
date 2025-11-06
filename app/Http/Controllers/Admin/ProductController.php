@@ -909,16 +909,19 @@ class ProductController extends Controller
                 if ($featuredImage->isValid()) {
                     $path = $featuredImage->store('products', 'public');
                     $imagePaths[] = $path; // Adicionar como primeira imagem
+                    \Log::info('Nova imagem de destaque adicionada', ['path' => $path]);
                 }
             } elseif (!$removeFeatured && $request->has('existing_featured_image')) {
                 // Manter imagem de destaque existente
                 $existingFeatured = $this->extractImagePath($request->existing_featured_image);
                 if ($existingFeatured) {
                     $imagePaths[] = $existingFeatured;
+                    \Log::info('Imagem de destaque mantida', ['path' => $existingFeatured]);
                 }
             }
             
             // 2. Processar imagens adicionais existentes (que não foram marcadas para remover)
+            // IMPORTANTE: Manter TODAS as imagens adicionais existentes que não foram removidas
             if ($request->has('existing_additional_images') && is_array($request->existing_additional_images)) {
                 foreach ($request->existing_additional_images as $image) {
                     if (empty($image)) {
@@ -928,6 +931,7 @@ class ProductController extends Controller
                     $extractedPath = $this->extractImagePath($image);
                     if ($extractedPath && !in_array($extractedPath, $imagePaths)) {
                         $imagePaths[] = $extractedPath;
+                        \Log::info('Imagem adicional mantida', ['path' => $extractedPath]);
                     }
                 }
             }
@@ -938,9 +942,15 @@ class ProductController extends Controller
                     if ($image->isValid()) {
                         $path = $image->store('products', 'public');
                         $imagePaths[] = $path;
+                        \Log::info('Nova imagem adicional adicionada', ['path' => $path]);
                     }
                 }
             }
+            
+            \Log::info('Total de imagens após processamento', [
+                'total' => count($imagePaths),
+                'paths' => $imagePaths
+            ]);
             
             // 4. Atualizar produto
             $product->update(['images' => $imagePaths]);
