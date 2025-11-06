@@ -422,6 +422,7 @@ class SettingController extends Controller
             : 'https://www.melhorenvio.com.br/api/v2/me';
 
         try {
+            // Testar conexão usando o endpoint de informações do usuário
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $token,
                 'Accept' => 'application/json',
@@ -429,15 +430,53 @@ class SettingController extends Controller
                 'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
             ])->get($baseUrl);
 
+            // Se o endpoint /me não funcionar, tentar outro endpoint
+            if (!$response->successful() && $response->status() === 401) {
+                // Tentar endpoint alternativo para verificar token
+                $altUrl = $sandbox 
+                    ? 'https://sandbox.melhorenvio.com.br/api/v2/me/cart'
+                    : 'https://www.melhorenvio.com.br/api/v2/me/cart';
+                
+                $altResponse = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
+                ])->get($altUrl);
+
+                if ($altResponse->successful() || $altResponse->status() === 200) {
+                    return [
+                        'success' => true,
+                        'message' => 'Conexão com Melhor Envio estabelecida com sucesso'
+                    ];
+                }
+            }
+
             if ($response->successful()) {
+                $data = $response->json();
                 return [
                     'success' => true,
-                    'message' => 'Conexão com Melhor Envio estabelecida com sucesso'
+                    'message' => 'Conexão com Melhor Envio estabelecida com sucesso' . 
+                        (isset($data['name']) ? ' - Usuário: ' . $data['name'] : '')
                 ];
             } else {
+                $errorData = $response->json();
+                $errorMessage = isset($errorData['message']) 
+                    ? $errorData['message'] 
+                    : $response->body();
+                
+                // Se for erro de autenticação, dar mensagem mais clara
+                if ($response->status() === 401) {
+                    return [
+                        'success' => false,
+                        'message' => 'Token inválido ou expirado. Verifique se o token está correto e se não expirou. ' . 
+                            'Se necessário, gere um novo token no painel do Melhor Envio.'
+                    ];
+                }
+                
                 return [
                     'success' => false,
-                    'message' => 'Falha na conexão com Melhor Envio: ' . $response->body()
+                    'message' => 'Falha na conexão com Melhor Envio: ' . $errorMessage
                 ];
             }
         } catch (\Exception $e) {
