@@ -108,7 +108,12 @@
         }
 
         .mobile-header-top {
+            display: none;
             width: 100%;
+        }
+
+        .mobile-logo {
+            display: none;
         }
 
         .navbar-content {
@@ -308,19 +313,26 @@
             }
 
             /* Mobile: Logo ao lado do search, search menor */
+            .navbar-brand {
+                display: none !important;
+            }
+
+            .mobile-logo {
+                display: flex !important;
+                font-size: 1.2rem;
+                margin-right: 1rem !important;
+            }
+
             .mobile-header-top {
+                display: flex !important;
                 flex-direction: row;
                 align-items: center;
                 margin-bottom: 0.5rem;
-            }
-
-            .navbar-brand {
-                font-size: 1.2rem;
-                margin-right: 0.5rem !important;
+                width: 100%;
             }
 
             .mobile-search-wrapper {
-                display: block;
+                display: block !important;
                 flex: 1;
                 max-width: none;
                 min-width: 0;
@@ -332,7 +344,7 @@
             }
 
             .desktop-search-wrapper {
-                display: none;
+                display: none !important;
             }
 
             .search-bar {
@@ -449,16 +461,10 @@
     <!-- Header -->
     <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container">
-            <!-- Logo and Search (Mobile) / Logo only (Desktop) -->
-            <div class="d-flex align-items-center flex-grow-1 mobile-header-top">
-                <a class="navbar-brand me-3" href="{{ route('home') }}">
-                    <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" class="logo-img">
-                </a>
-                <!-- Live Search Component (Mobile - ao lado da logo) -->
-                <div class="mobile-search-wrapper">
-                    @include('components.live-search')
-                </div>
-            </div>
+            <!-- Logo -->
+            <a class="navbar-brand" href="{{ route('home') }}">
+                <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" class="logo-img">
+            </a>
 
             <!-- Navbar content (sempre aberto) -->
             <div class="navbar-content">
@@ -467,16 +473,39 @@
                     @include('components.live-search')
                 </div>
 
+                <!-- Mobile: Logo and Search wrapper -->
+                <div class="mobile-header-top">
+                    <a class="navbar-brand mobile-logo" href="{{ route('home') }}">
+                        <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" class="logo-img">
+                    </a>
+                    <!-- Live Search Component (Mobile - ao lado da logo) -->
+                    <div class="mobile-search-wrapper">
+                        @include('components.live-search')
+                    </div>
+                </div>
+
                 <!-- Header Icons -->
                 <div class="header-icons ms-auto">
                     <a href="#" class="header-icon" title="Loja">
                         <i class="fas fa-store"></i>
+                    </a>
+                    <a href="#" class="header-icon" title="Favoritos">
+                        <i class="fas fa-heart"></i>
                     </a>
                     <a href="#" class="header-icon" title="Notificações">
                         <i class="fas fa-bell"></i>
                     </a>
                     <a href="{{ route('contact') }}" class="header-icon" title="Suporte">
                         <i class="fas fa-headphones"></i>
+                    </a>
+                    <a href="#" class="header-icon" title="Histórico">
+                        <i class="fas fa-history"></i>
+                    </a>
+                    <a href="#" class="header-icon" title="Comparar">
+                        <i class="fas fa-balance-scale"></i>
+                    </a>
+                    <a href="#" class="header-icon" title="Lista de Desejos">
+                        <i class="fas fa-list"></i>
                     </a>
                     @auth('customer')
                         @php
