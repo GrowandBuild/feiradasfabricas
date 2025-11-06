@@ -410,34 +410,36 @@ class SettingController extends Controller
         $clientSecret = setting('melhor_envio_client_secret');
         $token = setting('melhor_envio_token');
         
-        // Se tiver token, usar token. Se não, tentar obter token com Client ID e Secret
-        if (empty($token)) {
-            if (empty($clientId) || empty($clientSecret)) {
-                return [
-                    'success' => false,
-                    'message' => 'Client ID e Client Secret do Melhor Envio não configurados. ' .
-                        'Configure o Client ID e Client Secret ou realize a autorização OAuth para obter um token.'
-                ];
-            }
-            
-            // Tentar obter token usando Client ID e Secret (client credentials)
-            return $this->obtainMelhorEnvioToken($clientId, $clientSecret);
+        if (empty($clientId) || empty($clientSecret)) {
+            return [
+                'success' => false,
+                'message' => 'Client ID e Client Secret do Melhor Envio não configurados'
+            ];
         }
 
-        // Testar conexão usando o token
         $sandbox = setting('melhor_envio_sandbox', true);
         $baseUrl = $sandbox 
             ? 'https://sandbox.melhorenvio.com.br/api/v2/me'
             : 'https://www.melhorenvio.com.br/api/v2/me';
 
         try {
-            // Testar conexão usando o endpoint de informações do usuário
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-                'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
-            ])->get($baseUrl);
+            // Tentar primeiro com Basic Auth (Client ID e Secret)
+            $response = Http::withBasicAuth($clientId, $clientSecret)
+                ->withHeaders([
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
+                ])->get($baseUrl);
+            
+            // Se Basic Auth não funcionar e tiver token, tentar com Bearer token
+            if (!$response->successful() && !empty($token)) {
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
+                ])->get($baseUrl);
+            }
 
             // Se o endpoint /me não funcionar, tentar outro endpoint
             if (!$response->successful() && $response->status() === 401) {
@@ -496,51 +498,6 @@ class SettingController extends Controller
         }
     }
 
-    /**
-     * Obter token do Melhor Envio usando Client ID e Secret
-     */
-    private function obtainMelhorEnvioToken($clientId, $clientSecret)
-    {
-        $sandbox = setting('melhor_envio_sandbox', true);
-        $baseUrl = $sandbox 
-            ? 'https://sandbox.melhorenvio.com.br'
-            : 'https://www.melhorenvio.com.br';
-
-        try {
-            // Tentar obter token usando client credentials
-            $response = Http::asForm()->post($baseUrl . '/oauth/token', [
-                'grant_type' => 'client_credentials',
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                $token = $data['access_token'] ?? null;
-                
-                if ($token) {
-                    // Salvar token automaticamente
-                    setting(['melhor_envio_token' => $token]);
-                    
-                    return [
-                        'success' => true,
-                        'message' => 'Token obtido e conexão estabelecida com sucesso!'
-                    ];
-                }
-            }
-
-            return [
-                'success' => false,
-                'message' => 'Não foi possível obter token. Verifique se o Client ID e Client Secret estão corretos. ' .
-                    'Ou realize a autorização OAuth através do painel do Melhor Envio.'
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Erro ao obter token: ' . $e->getMessage()
-            ];
-        }
-    }
 
     public function store(Request $request)
     {

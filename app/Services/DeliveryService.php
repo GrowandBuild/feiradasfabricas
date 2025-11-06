@@ -558,43 +558,37 @@ class DeliveryService
     private function calculateMelhorEnvioShipping($originData, $destinationData, $packageData)
     {
         try {
+            $clientId = setting('melhor_envio_client_id');
+            $clientSecret = setting('melhor_envio_client_secret');
             $token = setting('melhor_envio_token');
             $sandbox = setting('melhor_envio_sandbox', true);
             
-            if (empty($token)) {
-                // Tentar obter token se não tiver
-                $clientId = setting('melhor_envio_client_id');
-                $clientSecret = setting('melhor_envio_client_secret');
-                
-                if (empty($clientId) || empty($clientSecret)) {
-                    return [
-                        'success' => false,
-                        'error' => 'Token ou credenciais do Melhor Envio não configuradas'
-                    ];
-                }
-                
-                // Obter token
-                $tokenResult = $this->obtainMelhorEnvioToken($clientId, $clientSecret);
-                if (!$tokenResult['success']) {
-                    return [
-                        'success' => false,
-                        'error' => 'Não foi possível obter token: ' . ($tokenResult['message'] ?? 'Erro desconhecido')
-                    ];
-                }
-                
-                $token = setting('melhor_envio_token');
+            if (empty($clientId) || empty($clientSecret)) {
+                return [
+                    'success' => false,
+                    'error' => 'Client ID e Client Secret do Melhor Envio não configurados'
+                ];
             }
 
             $baseUrl = $sandbox 
                 ? 'https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate'
                 : 'https://www.melhorenvio.com.br/api/v2/me/shipment/calculate';
 
-            $response = Http::withHeaders([
-                'Authorization' => 'Bearer ' . $token,
+            // Usar Basic Auth se não tiver token, ou Bearer token se tiver
+            $http = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Content-Type' => 'application/json',
                 'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
-            ])->post($baseUrl, [
+            ]);
+
+            // Se tiver token, usar Bearer. Se não, usar Basic Auth
+            if (!empty($token)) {
+                $http = $http->withToken($token);
+            } else {
+                $http = $http->withBasicAuth($clientId, $clientSecret);
+            }
+
+            $response = $http->post($baseUrl, [
                 'from' => [
                     'postal_code' => preg_replace('/[^0-9]/', '', $originData['cep'])
                 ],
@@ -649,42 +643,4 @@ class DeliveryService
         }
     }
 
-    /**
-     * Obter token do Melhor Envio usando Client ID e Secret
-     */
-    private function obtainMelhorEnvioToken($clientId, $clientSecret)
-    {
-        $sandbox = setting('melhor_envio_sandbox', true);
-        $baseUrl = $sandbox 
-            ? 'https://sandbox.melhorenvio.com.br'
-            : 'https://www.melhorenvio.com.br';
-
-        try {
-            $response = Http::asForm()->post($baseUrl . '/oauth/token', [
-                'grant_type' => 'client_credentials',
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                $token = $data['access_token'] ?? null;
-                
-                if ($token) {
-                    setting(['melhor_envio_token' => $token]);
-                    return ['success' => true, 'token' => $token];
-                }
-            }
-
-            return [
-                'success' => false,
-                'message' => 'Erro ao obter token: ' . $response->body()
-            ];
-        } catch (\Exception $e) {
-            return [
-                'success' => false,
-                'message' => 'Erro ao obter token: ' . $e->getMessage()
-            ];
-        }
-    }
 }
