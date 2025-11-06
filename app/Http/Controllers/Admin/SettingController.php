@@ -71,6 +71,8 @@ class SettingController extends Controller
                 return $this->testJadlogConnection();
             case 'loggi':
                 return $this->testLoggiConnection();
+            case 'melhor_envio':
+                return $this->testMelhorEnvioConnection();
             default:
                 return [
                     'success' => false,
@@ -398,6 +400,50 @@ class SettingController extends Controller
             return [
                 'success' => false,
                 'message' => 'Erro ao conectar com Loggi: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    private function testMelhorEnvioConnection()
+    {
+        $email = setting('melhor_envio_email');
+        $token = setting('melhor_envio_token');
+        
+        if (empty($email) || empty($token)) {
+            return [
+                'success' => false,
+                'message' => 'Email ou Token do Melhor Envio não configurados'
+            ];
+        }
+
+        $sandbox = setting('melhor_envio_sandbox', true);
+        $baseUrl = $sandbox 
+            ? 'https://sandbox.melhorenvio.com.br/api/v2/me'
+            : 'https://www.melhorenvio.com.br/api/v2/me';
+
+        try {
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
+            ])->get($baseUrl);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'message' => 'Conexão com Melhor Envio estabelecida com sucesso'
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'message' => 'Falha na conexão com Melhor Envio: ' . $response->body()
+                ];
+            }
+        } catch (\Exception $e) {
+            return [
+                'success' => false,
+                'message' => 'Erro ao conectar com Melhor Envio: ' . $e->getMessage()
             ];
         }
     }

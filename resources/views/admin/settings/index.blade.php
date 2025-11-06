@@ -443,6 +443,57 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Melhor Envio -->
+                            <div class="col-lg-6 mb-4">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="bg-danger bg-opacity-10 rounded-circle p-3 me-3">
+                                                <i class="bi bi-box-seam text-danger fs-4"></i>
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">Melhor Envio</h6>
+                                                <small class="text-muted">Plataforma de envios integrada</small>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Status</label>
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input" type="checkbox" id="melhor_envio_enabled" 
+                                                       {{ setting('melhor_envio_enabled', false) ? 'checked' : '' }}
+                                                       onchange="updateStatusText('melhor_envio_enabled')">
+                                                <label class="form-check-label" for="melhor_envio_enabled" id="melhor_envio_enabled_label">
+                                                    {{ setting('melhor_envio_enabled', false) ? 'Ativo' : 'Inativo' }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="melhor_envio_email" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="melhor_envio_email" 
+                                                   value="{{ setting('melhor_envio_email', '') }}" placeholder="email@exemplo.com">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="melhor_envio_token" class="form-label">Token</label>
+                                            <input type="password" class="form-control" id="melhor_envio_token" 
+                                                   value="{{ setting('melhor_envio_token', '') }}" placeholder="Token do Melhor Envio">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="melhor_envio_sandbox" class="form-label">Ambiente</label>
+                                            <select class="form-select" id="melhor_envio_sandbox">
+                                                <option value="1" {{ setting('melhor_envio_sandbox', true) ? 'selected' : '' }}>Sandbox (Teste)</option>
+                                                <option value="0" {{ !setting('melhor_envio_sandbox', true) ? 'selected' : '' }}>Produção</option>
+                                            </select>
+                                        </div>
+                                        <button class="btn btn-danger btn-sm" onclick="saveDeliveryConfig('melhor_envio')">
+                                            <i class="bi bi-check-lg me-1"></i>Salvar
+                                        </button>
+                                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="testDeliveryConnection('melhor_envio')">
+                                            <i class="bi bi-wifi me-1"></i>Testar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -1283,7 +1334,8 @@ function getDeliveryFields(provider) {
         'correios': ['correios_enabled', 'correios_codigo_empresa', 'correios_senha', 'correios_cep_origem'],
         'total_express': ['total_express_enabled', 'total_express_api_key', 'total_express_sandbox'],
         'jadlog': ['jadlog_enabled', 'jadlog_cnpj', 'jadlog_api_key', 'jadlog_sandbox'],
-        'loggi': ['loggi_enabled', 'loggi_api_key', 'loggi_sandbox']
+        'loggi': ['loggi_enabled', 'loggi_api_key', 'loggi_sandbox'],
+        'melhor_envio': ['melhor_envio_enabled', 'melhor_envio_email', 'melhor_envio_token', 'melhor_envio_sandbox']
     };
     return fields[provider] || [];
 }

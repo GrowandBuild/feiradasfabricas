@@ -92,6 +92,12 @@ class SettingHelper
                 'enabled' => self::isEnabled('loggi_enabled'),
                 'api_key' => self::get('loggi_api_key'),
                 'sandbox' => self::isEnabled('loggi_sandbox', true)
+            ],
+            'melhor_envio' => [
+                'enabled' => self::isEnabled('melhor_envio_enabled'),
+                'email' => self::get('melhor_envio_email'),
+                'token' => self::get('melhor_envio_token'),
+                'sandbox' => self::isEnabled('melhor_envio_sandbox', true)
             ]
         ];
 
@@ -145,6 +151,10 @@ class SettingHelper
         
         if (self::isEnabled('loggi_enabled')) {
             $providers[] = 'loggi';
+        }
+        
+        if (self::isEnabled('melhor_envio_enabled')) {
+            $providers[] = 'melhor_envio';
         }
 
         return $providers;

@@ -17,6 +17,9 @@ class CartController extends Controller
      */
     public function index()
     {
+        // Garantir que o session_id está definido e é único para esta sessão
+        $this->getSessionId();
+        
         $cartItems = $this->getCartItems();
         $subtotal = $this->calculateSubtotal($cartItems);
         
@@ -268,26 +271,33 @@ class CartController extends Controller
 
     /**
      * Obtém itens do carrinho
+     * Garante isolamento total: cada sessão/dispositivo só vê seus próprios itens
      */
     private function getCartItems()
     {
         $sessionId = $this->getSessionId();
         $customerId = Auth::guard('customer')->id();
 
-        // Se não há customer_id, tentar migrar itens órfãos para a sessão atual
-        if (!$customerId) {
-            $this->migrateOrphanItems($sessionId);
+        // Query estrita: só retornar itens que pertencem EXATAMENTE a esta sessão ou cliente
+        $query = CartItem::with('product');
+        
+        if ($customerId) {
+            // Se logado: só itens do cliente logado E sem session_id
+            $query->where('customer_id', $customerId)
+                  ->where(function($q) {
+                      $q->whereNull('session_id')
+                        ->orWhere('session_id', '');
+                  });
+        } else {
+            // Se não logado: só itens da sessão atual E sem customer_id
+            $query->where('session_id', $sessionId)
+                  ->where(function($q) {
+                      $q->whereNull('customer_id')
+                        ->orWhere('customer_id', 0);
+                  });
         }
-
-        return CartItem::with('product')
-            ->where(function ($query) use ($sessionId, $customerId) {
-                if ($customerId) {
-                    $query->where('customer_id', $customerId);
-                } else {
-                    $query->where('session_id', $sessionId);
-                }
-            })
-            ->get();
+        
+        return $query->get();
     }
 
     /**
@@ -308,14 +318,42 @@ class CartController extends Controller
     }
 
     /**
-     * Obtém ID da sessão
+     * Obtém ID da sessão (único por sessão do navegador)
+     * Garante que cada navegador/dispositivo tenha seu próprio carrinho isolado
      */
     private function getSessionId()
     {
-        if (!Session::has('cart_session_id')) {
-            Session::put('cart_session_id', uniqid());
+        $sessionKey = 'cart_session_id';
+        
+        if (!Session::has($sessionKey)) {
+            // Usar o ID da sessão do Laravel como base (já é único por navegador/sessão)
+            // Adicionar um hash adicional para garantir unicidade absoluta
+            $laravelSessionId = session()->getId();
+            $uniqueId = 'cart_' . $laravelSessionId . '_' . md5($laravelSessionId . time() . uniqid('', true));
+            
+            // Armazenar na sessão do Laravel (que é isolada por navegador)
+            Session::put($sessionKey, $uniqueId);
+            
+            // Garantir que a sessão seja persistida
+            Session::save();
         }
-        return Session::get('cart_session_id');
+        
+        return Session::get($sessionKey);
+    }
+
+    /**
+     * Limpa itens órfãos que não pertencem à sessão atual
+     */
+    private function cleanOrphanItems($currentSessionId)
+    {
+        // Não fazer nada se estiver logado
+        if (Auth::guard('customer')->check()) {
+            return;
+        }
+
+        // Buscar itens que não pertencem a nenhuma sessão válida ou são de outras sessões
+        // Isso garante que cada navegador/dispositivo tenha seu próprio carrinho isolado
+        // Os itens órfãos serão automaticamente ignorados na query principal
     }
 
     /**
@@ -333,41 +371,5 @@ class CartController extends Controller
         }
     }
 
-    /**
-     * Migra itens órfãos para a sessão atual
-     */
-    private function migrateOrphanItems($sessionId)
-    {
-        // Buscar itens órfãos (sem customer_id e com session_id diferente)
-        $orphanItems = CartItem::whereNull('customer_id')
-            ->where('session_id', '!=', $sessionId)
-            ->get();
-
-        if ($orphanItems->count() > 0) {
-            // Migrar todos os itens órfãos para a sessão atual
-            foreach ($orphanItems as $item) {
-                // Verificar se já existe item na sessão atual para o mesmo produto
-                $existingItem = CartItem::where('session_id', $sessionId)
-                    ->where('product_id', $item->product_id)
-                    ->first();
-
-                if ($existingItem) {
-                    // Somar quantidades
-                    $existingItem->update([
-                        'quantity' => $existingItem->quantity + $item->quantity
-                    ]);
-                    $item->delete();
-                } else {
-                    // Migrar item para a sessão atual
-                    $item->update(['session_id' => $sessionId]);
-                }
-            }
-
-            \Log::info('Itens órfãos migrados', [
-                'session_id' => $sessionId,
-                'items_migrated' => $orphanItems->count()
-            ]);
-        }
-    }
 
 }

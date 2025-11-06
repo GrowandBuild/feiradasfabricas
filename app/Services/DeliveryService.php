@@ -515,6 +515,8 @@ class DeliveryService
                 return $this->calculateJadlogShipping($originData, $destinationData, $packageData);
             case 'loggi':
                 return $this->calculateLoggiShipping($originData, $destinationData, $packageData);
+            case 'melhor_envio':
+                return $this->calculateMelhorEnvioShipping($originData, $destinationData, $packageData);
             default:
                 return [
                     'success' => false,
@@ -542,7 +544,92 @@ class DeliveryService
         if (setting('loggi_enabled', false)) {
             $providers[] = 'loggi';
         }
+        
+        if (setting('melhor_envio_enabled', false)) {
+            $providers[] = 'melhor_envio';
+        }
 
         return $providers;
+    }
+
+    /**
+     * Calcular frete via Melhor Envio
+     */
+    private function calculateMelhorEnvioShipping($originData, $destinationData, $packageData)
+    {
+        try {
+            $email = setting('melhor_envio_email');
+            $token = setting('melhor_envio_token');
+            $sandbox = setting('melhor_envio_sandbox', true);
+            
+            if (empty($email) || empty($token)) {
+                return [
+                    'success' => false,
+                    'error' => 'Credenciais do Melhor Envio não configuradas'
+                ];
+            }
+
+            $baseUrl = $sandbox 
+                ? 'https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate'
+                : 'https://www.melhorenvio.com.br/api/v2/me/shipment/calculate';
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $token,
+                'Accept' => 'application/json',
+                'Content-Type' => 'application/json',
+                'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
+            ])->post($baseUrl, [
+                'from' => [
+                    'postal_code' => preg_replace('/[^0-9]/', '', $originData['cep'])
+                ],
+                'to' => [
+                    'postal_code' => preg_replace('/[^0-9]/', '', $destinationData['cep'])
+                ],
+                'products' => [
+                    [
+                        'id' => '1',
+                        'width' => $packageData['width'] ?? 20,
+                        'height' => $packageData['height'] ?? 20,
+                        'length' => $packageData['length'] ?? 20,
+                        'weight' => $packageData['weight'] ?? 1,
+                        'insurance_value' => $packageData['value'] ?? 0,
+                        'quantity' => 1
+                    ]
+                ],
+                'services' => '1,2,3,4,17' // Correios PAC, SEDEX, etc.
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $options = [];
+                
+                if (isset($data['data']) && is_array($data['data'])) {
+                    foreach ($data['data'] as $service) {
+                        $options[] = [
+                            'name' => $service['name'] ?? 'Melhor Envio',
+                            'price' => (float) ($service['price'] ?? 0),
+                            'delivery_time' => (int) ($service['delivery_time'] ?? 0),
+                            'company' => $service['company']['name'] ?? 'Melhor Envio'
+                        ];
+                    }
+                }
+                
+                return [
+                    'success' => true,
+                    'options' => $options
+                ];
+            } else {
+                return [
+                    'success' => false,
+                    'error' => 'Erro ao calcular frete via Melhor Envio'
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao calcular frete Melhor Envio: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
     }
 }

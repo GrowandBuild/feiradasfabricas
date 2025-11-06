@@ -160,3 +160,10 @@ Route::prefix('webhooks')->group(function () {
     Route::post('/pagseguro', [App\Http\Controllers\WebhookController::class, 'pagSeguro']);
     Route::post('/paypal', [App\Http\Controllers\WebhookController::class, 'payPal']);
 });
+
+// Rotas de OAuth/Callback para integrações
+Route::prefix('auth')->name('auth.')->group(function () {
+    // Callback genérico para OAuth (Melhor Envio, APIs de pagamento, etc.)
+    Route::get('/callback', [App\Http\Controllers\Auth\OAuthController::class, 'callback'])->name('callback');
+    Route::get('/redirect', [App\Http\Controllers\Auth\OAuthController::class, 'redirect'])->name('redirect');
+});
