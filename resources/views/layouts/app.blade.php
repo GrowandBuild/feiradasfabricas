@@ -97,6 +97,27 @@
             margin: 0 auto;
         }
 
+        .mobile-search-wrapper {
+            display: none;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .desktop-search-wrapper {
+            display: block;
+        }
+
+        .mobile-header-top {
+            width: 100%;
+        }
+
+        .navbar-content {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            flex-wrap: wrap;
+        }
+
         .search-bar form {
             display: flex;
             position: relative;
@@ -271,7 +292,7 @@
 
         @media (max-width: 768px) {
             .logo-img {
-                height: 40px;
+                height: 30px;
             }
             
             .hero-section {
@@ -284,6 +305,67 @@
             
             .header-icons {
                 gap: 0.5rem;
+            }
+
+            /* Mobile: Logo ao lado do search, search menor */
+            .mobile-header-top {
+                flex-direction: row;
+                align-items: center;
+                margin-bottom: 0.5rem;
+            }
+
+            .navbar-brand {
+                font-size: 1.2rem;
+                margin-right: 0.5rem !important;
+            }
+
+            .mobile-search-wrapper {
+                display: block;
+                flex: 1;
+                max-width: none;
+                min-width: 0;
+            }
+
+            .mobile-search-wrapper .live-search-wrapper {
+                max-width: 100%;
+                margin: 0;
+            }
+
+            .desktop-search-wrapper {
+                display: none;
+            }
+
+            .search-bar {
+                max-width: 100%;
+            }
+
+            .search-bar form {
+                border-radius: var(--radius-md);
+            }
+
+            .search-bar input {
+                padding: 10px 16px;
+                font-size: 14px;
+            }
+
+            .search-bar button {
+                padding: 10px 16px;
+            }
+
+            .search-bar button i {
+                font-size: 14px;
+            }
+
+            .navbar-content {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .header-icons {
+                justify-content: center;
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
             }
         }
 
@@ -367,20 +449,21 @@
     <!-- Header -->
     <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container">
-            <!-- Logo -->
-            <a class="navbar-brand" href="{{ route('home') }}">
-                <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" class="logo-img">
-            </a>
+            <!-- Logo and Search (Mobile) / Logo only (Desktop) -->
+            <div class="d-flex align-items-center flex-grow-1 mobile-header-top">
+                <a class="navbar-brand me-3" href="{{ route('home') }}">
+                    <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" class="logo-img">
+                </a>
+                <!-- Live Search Component (Mobile - ao lado da logo) -->
+                <div class="mobile-search-wrapper">
+                    @include('components.live-search')
+                </div>
+            </div>
 
-            <!-- Mobile toggle -->
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                <span class="navbar-toggler-icon"></span>
-            </button>
-
-            <!-- Navbar content -->
-            <div class="collapse navbar-collapse" id="navbarNav">
-                <!-- Live Search Component -->
-                <div class="mx-auto">
+            <!-- Navbar content (sempre aberto) -->
+            <div class="navbar-content">
+                <!-- Live Search Component (Desktop - centralizado) -->
+                <div class="desktop-search-wrapper mx-auto">
                     @include('components.live-search')
                 </div>
 

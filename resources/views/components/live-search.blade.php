@@ -340,6 +340,30 @@
 
 /* Mobile */
 @media (max-width: 768px) {
+    .live-search-wrapper {
+        max-width: 100%;
+    }
+
+    .live-search-form {
+        border-radius: 12px !important;
+    }
+
+    .live-search-input {
+        padding: 10px 16px;
+        font-size: 14px;
+        border-radius: 12px 0 0 12px !important;
+    }
+
+    .live-search-submit {
+        padding: 10px 16px;
+        min-width: 50px;
+        border-radius: 0 12px 12px 0 !important;
+    }
+
+    .live-search-submit i {
+        font-size: 14px;
+    }
+    
     .live-search-item-image {
         width: 60px;
         height: 60px;

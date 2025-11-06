@@ -593,7 +593,9 @@
         });
 
         // Carregar primeira variação ao carregar a página
-        updateVariation();
+        // NOTA: Não atualizar o preço aqui, pois o preço correto é o do produto principal (B2C)
+        // calculado na página de admin, não o preço da variação
+        // updateVariation();
     }
 
     function updateVariation() {
@@ -614,11 +616,12 @@
                 if (data.success && data.variation) {
                     selectedVariationId = data.variation.id;
                     
-                    // Atualizar preço
-                    const priceDisplay = document.getElementById('product-price-display');
-                    if (priceDisplay) {
-                        priceDisplay.textContent = 'R$ ' + data.variation.price;
-                    }
+                    // NÃO atualizar o preço - o preço correto é sempre o do produto principal (B2C)
+                    // calculado na página de admin, não o preço da variação
+                    // const priceDisplay = document.getElementById('product-price-display');
+                    // if (priceDisplay) {
+                    //     priceDisplay.textContent = 'R$ ' + data.variation.price;
+                    // }
 
                     // Atualizar SKU
                     const skuDisplay = document.getElementById('variation-sku-display');
@@ -927,8 +930,9 @@
 
 
         // Carregar primeira variação ao carregar a página
-
-        updateVariation();
+        // NOTA: Não atualizar o preço aqui, pois o preço correto é o do produto principal (B2C)
+        // calculado na página de admin, não o preço da variação
+        // updateVariation();
 
     }
 
@@ -970,15 +974,12 @@
 
                     
 
-                    // Atualizar preço
-
-                    const priceDisplay = document.getElementById('product-price-display');
-
-                    if (priceDisplay) {
-
-                        priceDisplay.textContent = 'R$ ' + data.variation.price;
-
-                    }
+                    // NÃO atualizar o preço - o preço correto é sempre o do produto principal (B2C)
+                    // calculado na página de admin, não o preço da variação
+                    // const priceDisplay = document.getElementById('product-price-display');
+                    // if (priceDisplay) {
+                    //     priceDisplay.textContent = 'R$ ' + data.variation.price;
+                    // }
 
 
 
@@ -1345,8 +1346,9 @@
 
 
         // Carregar primeira variação ao carregar a página
-
-        updateVariation();
+        // NOTA: Não atualizar o preço aqui, pois o preço correto é o do produto principal (B2C)
+        // calculado na página de admin, não o preço da variação
+        // updateVariation();
 
     }
 
@@ -1388,15 +1390,12 @@
 
                     
 
-                    // Atualizar preço
-
-                    const priceDisplay = document.getElementById('product-price-display');
-
-                    if (priceDisplay) {
-
-                        priceDisplay.textContent = 'R$ ' + data.variation.price;
-
-                    }
+                    // NÃO atualizar o preço - o preço correto é sempre o do produto principal (B2C)
+                    // calculado na página de admin, não o preço da variação
+                    // const priceDisplay = document.getElementById('product-price-display');
+                    // if (priceDisplay) {
+                    //     priceDisplay.textContent = 'R$ ' + data.variation.price;
+                    // }
 
 
 
