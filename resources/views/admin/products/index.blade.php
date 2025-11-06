@@ -453,47 +453,62 @@
 
 @section('styles')
 <style>
-    /* Corrigir z-index do modal de variações para permitir interação */
-    .modal-backdrop.show {
+    /* Corrigir z-index e garantir que o modal seja clicável */
+    .modal-backdrop {
         z-index: 1040 !important;
-        opacity: 0.5;
+        opacity: 0.5 !important;
+        pointer-events: auto !important;
     }
     
+    .modal-backdrop.show {
+        z-index: 1040 !important;
+        opacity: 0.5 !important;
+    }
+    
+    /* Modal de Variações */
     #variationsModal {
         z-index: 1050 !important;
+        pointer-events: none !important;
     }
     
     #variationsModal.show {
         display: block !important;
+        pointer-events: auto !important;
     }
     
     #variationsModal .modal-dialog {
         z-index: 1051 !important;
         position: relative;
+        pointer-events: auto !important;
     }
     
     #variationsModal .modal-content {
         position: relative;
         z-index: 1052 !important;
+        pointer-events: auto !important;
     }
     
-    /* Corrigir z-index do modal de imagens também */
+    /* Modal de Imagens */
     #imagesModal {
         z-index: 1050 !important;
+        pointer-events: none !important;
     }
     
     #imagesModal.show {
         display: block !important;
+        pointer-events: auto !important;
     }
     
     #imagesModal .modal-dialog {
         z-index: 1051 !important;
         position: relative;
+        pointer-events: auto !important;
     }
     
     #imagesModal .modal-content {
         position: relative;
         z-index: 1052 !important;
+        pointer-events: auto !important;
     }
 </style>
 @endsection
@@ -503,6 +518,37 @@
 (function() {
     'use strict';
     
+    // Função para limpar backdrops duplicados e garantir ordem correta
+    function fixModalBackdrop() {
+        // Remover backdrops duplicados (manter apenas o último)
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        if (backdrops.length > 1) {
+            for (let i = 0; i < backdrops.length - 1; i++) {
+                backdrops[i].remove();
+            }
+        }
+        
+        // Garantir que o backdrop tenha z-index menor que os modais
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+            backdrop.style.zIndex = '1040';
+        }
+        
+        // Garantir que os modais abertos tenham z-index maior
+        const openModals = document.querySelectorAll('.modal.show');
+        openModals.forEach((modal, index) => {
+            modal.style.zIndex = (1050 + index).toString();
+            const dialog = modal.querySelector('.modal-dialog');
+            if (dialog) {
+                dialog.style.zIndex = (1051 + index).toString();
+            }
+            const content = modal.querySelector('.modal-content');
+            if (content) {
+                content.style.zIndex = (1052 + index).toString();
+            }
+        });
+    }
+    
     // Aguardar o DOM estar completamente carregado
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
@@ -510,7 +556,37 @@
         init();
     }
     
+    // Monitorar quando modais são abertos
+    document.addEventListener('show.bs.modal', function(e) {
+        setTimeout(fixModalBackdrop, 10);
+    });
+    
+    // Monitorar quando modais são fechados
+    document.addEventListener('hidden.bs.modal', function(e) {
+        // Remover backdrops órfãos
+        const backdrops = document.querySelectorAll('.modal-backdrop');
+        const openModals = document.querySelectorAll('.modal.show');
+        if (openModals.length === 0 && backdrops.length > 0) {
+            backdrops.forEach(backdrop => backdrop.remove());
+        }
+    });
+    
     function init() {
+        // Listener específico para modais de variações e imagens
+        const variationsModal = document.getElementById('variationsModal');
+        const imagesModal = document.getElementById('imagesModal');
+        
+        if (variationsModal) {
+            variationsModal.addEventListener('show.bs.modal', function() {
+                setTimeout(fixModalBackdrop, 50);
+            });
+        }
+        
+        if (imagesModal) {
+            imagesModal.addEventListener('show.bs.modal', function() {
+                setTimeout(fixModalBackdrop, 50);
+            });
+        }
         console.log('🚀 Inicializando seleção de produtos...');
         
         const selectAllCheckbox = document.getElementById('selectAll');
