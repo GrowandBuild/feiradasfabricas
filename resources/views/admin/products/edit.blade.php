@@ -233,8 +233,7 @@
                             <i class="bi bi-cloud-upload me-1"></i>Adicionar Novas Imagens
                         </label>
                         <input type="file" class="form-control @error('images') is-invalid @enderror" 
-                               id="images" name="images[]" multiple accept="image/*" 
-                               onchange="console.log('Arquivos selecionados:', this.files.length)">
+                               id="images" name="images[]" multiple accept="image/*">
                         <div class="form-text">
                             <i class="bi bi-info-circle me-1"></i>
                             Você pode selecionar múltiplas imagens. Formatos aceitos: JPG, PNG, GIF, WEBP (máx. 2MB cada)
@@ -575,18 +574,22 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // ========== FUNCIONALIDADE DE IMAGENS ==========
     
-    // Verificar se o campo de imagens existe
+    // Verificar se o campo de imagens e o container existem
     const imageInput = document.getElementById('images');
-    if (imageInput) {
-        console.log('Campo de imagens encontrado');
+    const container = document.getElementById('images-container');
+    
+    if (imageInput && container) {
+        console.log('Campo de imagens e container encontrados');
         
         // Adicionar preview das novas imagens selecionadas
         imageInput.addEventListener('change', function(e) {
             const files = e.target.files;
-            const container = document.getElementById('images-container');
+            
+            if (!files || files.length === 0) {
+                return;
+            }
             
             console.log('Arquivos selecionados:', files.length);
-            console.log('Arquivos:', Array.from(files).map(f => ({ name: f.name, type: f.type, size: f.size })));
             
             // Limpar previews anteriores de novas imagens
             const newImagePreviews = container.querySelectorAll('.new-image-preview');
@@ -595,8 +598,10 @@ document.addEventListener('DOMContentLoaded', function() {
             // Adicionar preview das novas imagens
             Array.from(files).forEach((file, index) => {
                 console.log(`Processando arquivo ${index + 1}:`, file.name, file.type, file.size);
+                
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
+                    
                     reader.onload = function(e) {
                         const col = document.createElement('div');
                         col.className = 'col-md-3 mb-2 new-image-preview';
@@ -604,29 +609,38 @@ document.addEventListener('DOMContentLoaded', function() {
                             <div class="position-relative">
                                 <img src="${e.target.result}" 
                                      class="img-thumbnail" 
-                                     style="width: 100%; height: 100px; object-fit: cover;">
+                                     style="width: 100%; height: 100px; object-fit: cover; cursor: pointer;"
+                                     alt="Preview ${file.name}">
                                 <span class="badge bg-success position-absolute top-0 start-0">Nova</span>
+                                <button type="button" 
+                                        class="btn btn-sm btn-danger position-absolute top-0 end-0" 
+                                        onclick="this.closest('.new-image-preview').remove();">
+                                    <i class="bi bi-x"></i>
+                                </button>
                             </div>
                         `;
                         container.appendChild(col);
                         console.log('Preview adicionado para:', file.name);
                     };
+                    
+                    reader.onerror = function() {
+                        console.error('Erro ao ler arquivo:', file.name);
+                    };
+                    
                     reader.readAsDataURL(file);
                 } else {
                     console.warn('Arquivo não é uma imagem:', file.name, file.type);
+                    alert(`O arquivo "${file.name}" não é uma imagem válida.`);
                 }
             });
         });
     } else {
-        console.error('Campo de imagens não encontrado!');
-    }
-    
-    // Verificar se o container existe
-    const container = document.getElementById('images-container');
-    if (container) {
-        console.log('Container de imagens encontrado');
-    } else {
-        console.error('Container de imagens não encontrado!');
+        if (!imageInput) {
+            console.error('Campo de imagens não encontrado!');
+        }
+        if (!container) {
+            console.error('Container de imagens não encontrado!');
+        }
     }
     
     console.log('✅ Funcionalidades de preços e imagens inicializadas!');
