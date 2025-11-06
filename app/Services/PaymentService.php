@@ -249,6 +249,208 @@ class PaymentService
     }
 
     /**
+     * Criar preferência de pagamento Mercado Pago (para PIX e Boleto)
+     */
+    public function createMercadoPagoPreference($amount, $currency, $paymentData, $metadata = [])
+    {
+        try {
+            $accessToken = setting('mercadopago_access_token');
+            $sandbox = setting('mercadopago_sandbox', true);
+            
+            if (empty($accessToken)) {
+                throw new \Exception('Access Token do Mercado Pago não configurado');
+            }
+
+            // Determinar método de pagamento
+            $paymentMethod = $paymentData['payment_method'] ?? 'pix';
+            
+            // Configurar métodos de pagamento permitidos
+            $paymentMethods = [];
+            if ($paymentMethod === 'pix') {
+                $paymentMethods = [
+                    'excluded_payment_methods' => [],
+                    'excluded_payment_types' => [
+                        ['id' => 'credit_card'],
+                        ['id' => 'debit_card'],
+                        ['id' => 'ticket']
+                    ],
+                    'installments' => 1
+                ];
+            } elseif ($paymentMethod === 'boleto') {
+                $paymentMethods = [
+                    'excluded_payment_methods' => [],
+                    'excluded_payment_types' => [
+                        ['id' => 'credit_card'],
+                        ['id' => 'debit_card'],
+                        ['id' => 'bank_transfer']
+                    ],
+                    'installments' => 1
+                ];
+            }
+
+            // Preparar itens
+            $items = [];
+            if (isset($metadata['cart_items']) && is_array($metadata['cart_items'])) {
+                foreach ($metadata['cart_items'] as $item) {
+                    $items[] = [
+                        'title' => $item['product']['name'] ?? 'Produto',
+                        'description' => $item['product']['description'] ?? '',
+                        'quantity' => $item['quantity'] ?? 1,
+                        'unit_price' => (float) ($item['price'] ?? 0),
+                        'currency_id' => $currency
+                    ];
+                }
+            } else {
+                // Fallback: item único
+                $items[] = [
+                    'title' => 'Compra na Feira das Fábricas',
+                    'description' => 'Pedido temporário',
+                    'quantity' => 1,
+                    'unit_price' => (float) $amount,
+                    'currency_id' => $currency
+                ];
+            }
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $accessToken,
+                'Content-Type' => 'application/json'
+            ])->post('https://api.mercadopago.com/checkout/preferences', [
+                'items' => $items,
+                'payer' => [
+                    'name' => ($paymentData['first_name'] ?? '') . ' ' . ($paymentData['last_name'] ?? ''),
+                    'surname' => $paymentData['last_name'] ?? '',
+                    'email' => $paymentData['email'] ?? '',
+                    'identification' => [
+                        'type' => 'CPF',
+                        'number' => $paymentData['cpf'] ?? ''
+                    ],
+                    'address' => [
+                        'street_name' => $paymentData['address']['street'] ?? '',
+                        'street_number' => '',
+                        'zip_code' => $paymentData['address']['postal_code'] ?? '',
+                        'city' => $paymentData['address']['city'] ?? '',
+                        'federal_unit' => $paymentData['address']['state'] ?? ''
+                    ]
+                ],
+                'back_urls' => [
+                    'success' => route('checkout.success', 'temp'),
+                    'failure' => route('checkout.index'),
+                    'pending' => route('checkout.payment.pix')
+                ],
+                'auto_return' => 'approved',
+                'payment_methods' => $paymentMethods,
+                'external_reference' => $metadata['temp_order'] ?? uniqid(),
+                'metadata' => $metadata,
+                'notification_url' => url('/payment/mercadopago/notification'),
+                'statement_descriptor' => 'FEIRA DAS FABRICAS'
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                
+                // Para PIX, buscar o QR code
+                $paymentUrl = null;
+                $paymentId = null;
+                
+                if ($paymentMethod === 'pix') {
+                    // Para PIX, sempre criar pagamento diretamente para obter QR code
+                    $pixPayment = $this->createMercadoPagoPixPayment($amount, $currency, $paymentData, $metadata);
+                    if ($pixPayment['success']) {
+                        $paymentUrl = $pixPayment['payment_url'] ?? $pixPayment['qr_code_base64'] ?? null;
+                        $paymentId = $pixPayment['payment_id'] ?? null;
+                    } else {
+                        // Se falhar, usar init_point como fallback
+                        $paymentUrl = $data['init_point'] ?? null;
+                    }
+                } elseif ($paymentMethod === 'boleto') {
+                    // Para boleto, usar init_point
+                    $paymentUrl = $data['init_point'] ?? null;
+                }
+                
+                return [
+                    'success' => true,
+                    'preference_id' => $data['id'],
+                    'payment_id' => $paymentId,
+                    'payment_url' => $paymentUrl ?? $data['init_point'] ?? null,
+                    'status' => 'pending',
+                    'init_point' => $data['init_point'] ?? null
+                ];
+            } else {
+                $errorData = $response->json();
+                Log::error('Erro ao criar preferência Mercado Pago: ' . json_encode($errorData));
+                return [
+                    'success' => false,
+                    'error' => $errorData['message'] ?? 'Erro ao criar preferência de pagamento'
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao criar preferência Mercado Pago: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
+     * Criar pagamento PIX diretamente no Mercado Pago
+     */
+    private function createMercadoPagoPixPayment($amount, $currency, $paymentData, $metadata = [])
+    {
+        try {
+            $accessToken = setting('mercadopago_access_token');
+            
+            if (empty($accessToken)) {
+                throw new \Exception('Access Token do Mercado Pago não configurado');
+            }
+
+            $response = Http::withHeaders([
+                'Authorization' => 'Bearer ' . $accessToken,
+                'Content-Type' => 'application/json',
+                'X-Idempotency-Key' => uniqid()
+            ])->post('https://api.mercadopago.com/v1/payments', [
+                'transaction_amount' => (float) $amount,
+                'description' => 'Compra na Feira das Fábricas',
+                'payment_method_id' => 'pix',
+                'payer' => [
+                    'email' => $paymentData['email'] ?? '',
+                    'first_name' => $paymentData['first_name'] ?? '',
+                    'last_name' => $paymentData['last_name'] ?? '',
+                    'identification' => [
+                        'type' => 'CPF',
+                        'number' => preg_replace('/[^0-9]/', '', $paymentData['cpf'] ?? '')
+                    ]
+                ],
+                'external_reference' => $metadata['temp_order'] ?? uniqid(),
+                'metadata' => $metadata
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                return [
+                    'success' => true,
+                    'payment_id' => $data['id'],
+                    'status' => $data['status'],
+                    'payment_url' => $data['point_of_interaction']['transaction_data']['qr_code'] ?? null,
+                    'qr_code_base64' => $data['point_of_interaction']['transaction_data']['qr_code_base64'] ?? null
+                ];
+            } else {
+                $errorData = $response->json();
+                return [
+                    'success' => false,
+                    'error' => $errorData['message'] ?? 'Erro ao criar pagamento PIX'
+                ];
+            }
+        } catch (\Exception $e) {
+            Log::error('Erro ao criar pagamento PIX: ' . $e->getMessage());
+            return [
+                'success' => false,
+                'error' => $e->getMessage()
+            ];
+        }
+    }
+
+    /**
      * Verificar status de pagamento
      */
     public function checkPaymentStatus($provider, $paymentId)

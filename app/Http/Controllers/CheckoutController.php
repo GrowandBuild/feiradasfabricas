@@ -87,11 +87,27 @@ class CheckoutController extends Controller
                 ]
             ];
 
+            // Preparar itens do carrinho para metadados
+            $cartItemsArray = $cartItems->map(function($item) {
+                return [
+                    'product_id' => $item->product_id,
+                    'product' => [
+                        'name' => $item->product->name ?? 'Produto',
+                        'sku' => $item->product->sku ?? '',
+                        'description' => $item->product->description ?? ''
+                    ],
+                    'quantity' => $item->quantity,
+                    'price' => $item->price,
+                    'total' => $item->total
+                ];
+            })->toArray();
+
             // Metadados temporários (sem order_id)
             $metadata = [
                 'customer_email' => $request->customer_email,
                 'temp_order' => true,
-                'payment_method' => $request->payment_method
+                'payment_method' => $request->payment_method,
+                'cart_items' => $cartItemsArray
             ];
 
             // Processar pagamento baseado no método
@@ -129,7 +145,7 @@ class CheckoutController extends Controller
                         'subtotal' => $subtotal,
                         'shipping_cost' => $shipping,
                         'total_amount' => $total,
-                        'cart_items' => $cartItems->toArray()
+                        'cart_items' => $cartItemsArray
                     ],
                     'checkout_data' => $paymentResult
                 ]);
