@@ -43,14 +43,24 @@ class Setting extends Model
         // Converter valor para string se necessário (exceto arrays que viram JSON)
         $valueToStore = is_array($value) ? json_encode($value) : (string) $value;
         
-        $setting = static::updateOrCreate(
-            ['key' => $key],
-            [
+        // Buscar o registro existente primeiro
+        $setting = static::where('key', $key)->first();
+        
+        if ($setting) {
+            // Se existe, atualizar explicitamente todos os campos
+            $setting->value = $valueToStore;
+            $setting->type = $type;
+            $setting->group = $group;
+            $setting->save();
+        } else {
+            // Se não existe, criar novo
+            $setting = static::create([
+                'key' => $key,
                 'value' => $valueToStore,
                 'type' => $type,
                 'group' => $group,
-            ]
-        );
+            ]);
+        }
 
         // Recarregar do banco para garantir que está atualizado
         $setting->refresh();

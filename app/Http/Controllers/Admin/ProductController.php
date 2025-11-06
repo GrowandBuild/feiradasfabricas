@@ -398,17 +398,21 @@ class ProductController extends Controller
             'b2c_margin' => 'required|numeric|min:0|max:100',
         ]);
 
-        // Garantir que os valores são números (float)
-        $b2bMargin = (float) $request->b2b_margin;
-        $b2cMargin = (float) $request->b2c_margin;
+        // Garantir que os valores são números (float) e arredondar para 2 casas decimais
+        $b2bMargin = round((float) $request->b2b_margin, 2);
+        $b2cMargin = round((float) $request->b2c_margin, 2);
 
         // Salvar as configurações
         $b2bSetting = Setting::set('b2b_margin_percentage', $b2bMargin, 'number', 'pricing');
         $b2cSetting = Setting::set('b2c_margin_percentage', $b2cMargin, 'number', 'pricing');
 
-        // Verificar se foram salvas corretamente
-        $savedB2B = Setting::get('b2b_margin_percentage');
-        $savedB2C = Setting::get('b2c_margin_percentage');
+        // Verificar se foram salvas corretamente - buscar diretamente do banco
+        $savedB2B = Setting::get('b2b_margin_percentage', $b2bMargin);
+        $savedB2C = Setting::get('b2c_margin_percentage', $b2cMargin);
+
+        // Garantir que os valores retornados são números
+        $savedB2B = is_numeric($savedB2B) ? (float) $savedB2B : $b2bMargin;
+        $savedB2C = is_numeric($savedB2C) ? (float) $savedB2C : $b2cMargin;
 
         return response()->json([
             'success' => true,
@@ -757,67 +761,85 @@ class ProductController extends Controller
      */
     public function updateImages(Request $request, Product $product)
     {
-        $request->validate([
-            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
-            'additional_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
-            'remove_featured_image' => 'nullable|boolean',
-            'existing_featured_image' => 'nullable|string',
-            'existing_additional_images' => 'nullable|array',
-        ]);
+        try {
+            $request->validate([
+                'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
+                'additional_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
+                'remove_featured_image' => 'nullable|boolean',
+                'existing_featured_image' => 'nullable|string',
+                'existing_additional_images' => 'nullable|array',
+            ]);
 
-        $imagePaths = [];
-        $currentImages = $product->images ?? [];
-        
-        // 1. Processar imagem de destaque
-        $removeFeatured = $request->has('remove_featured_image') && $request->remove_featured_image == '1';
-        
-        if ($request->hasFile('featured_image')) {
-            // Nova imagem de destaque foi enviada
-            $featuredImage = $request->file('featured_image');
-            if ($featuredImage->isValid()) {
-                $path = $featuredImage->store('products', 'public');
-                $imagePaths[] = $path; // Adicionar como primeira imagem
-            }
-        } elseif (!$removeFeatured && $request->has('existing_featured_image')) {
-            // Manter imagem de destaque existente
-            $existingFeatured = $this->extractImagePath($request->existing_featured_image);
-            if ($existingFeatured) {
-                $imagePaths[] = $existingFeatured;
-            }
-        }
-        
-        // 2. Processar imagens adicionais existentes (que não foram marcadas para remover)
-        if ($request->has('existing_additional_images') && is_array($request->existing_additional_images)) {
-            foreach ($request->existing_additional_images as $image) {
-                if (empty($image)) {
-                    continue;
+            $imagePaths = [];
+            $currentImages = $product->images ?? [];
+            
+            // 1. Processar imagem de destaque
+            $removeFeatured = $request->has('remove_featured_image') && $request->remove_featured_image == '1';
+            
+            if ($request->hasFile('featured_image')) {
+                // Nova imagem de destaque foi enviada
+                $featuredImage = $request->file('featured_image');
+                if ($featuredImage->isValid()) {
+                    $path = $featuredImage->store('products', 'public');
+                    $imagePaths[] = $path; // Adicionar como primeira imagem
                 }
-                
-                $extractedPath = $this->extractImagePath($image);
-                if ($extractedPath && !in_array($extractedPath, $imagePaths)) {
-                    $imagePaths[] = $extractedPath;
+            } elseif (!$removeFeatured && $request->has('existing_featured_image')) {
+                // Manter imagem de destaque existente
+                $existingFeatured = $this->extractImagePath($request->existing_featured_image);
+                if ($existingFeatured) {
+                    $imagePaths[] = $existingFeatured;
                 }
             }
-        }
-        
-        // 3. Adicionar novas imagens adicionais se houver upload
-        if ($request->hasFile('additional_images')) {
-            foreach ($request->file('additional_images') as $image) {
-                if ($image->isValid()) {
-                    $path = $image->store('products', 'public');
-                    $imagePaths[] = $path;
+            
+            // 2. Processar imagens adicionais existentes (que não foram marcadas para remover)
+            if ($request->has('existing_additional_images') && is_array($request->existing_additional_images)) {
+                foreach ($request->existing_additional_images as $image) {
+                    if (empty($image)) {
+                        continue;
+                    }
+                    
+                    $extractedPath = $this->extractImagePath($image);
+                    if ($extractedPath && !in_array($extractedPath, $imagePaths)) {
+                        $imagePaths[] = $extractedPath;
+                    }
                 }
             }
+            
+            // 3. Adicionar novas imagens adicionais se houver upload
+            if ($request->hasFile('additional_images')) {
+                foreach ($request->file('additional_images') as $image) {
+                    if ($image->isValid()) {
+                        $path = $image->store('products', 'public');
+                        $imagePaths[] = $path;
+                    }
+                }
+            }
+            
+            // 4. Atualizar produto
+            $product->update(['images' => $imagePaths]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagens atualizadas com sucesso!',
+                'images' => $product->all_images
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro de validação: ' . $e->getMessage(),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar imagens do produto: ' . $e->getMessage(), [
+                'product_id' => $product->id,
+                'exception' => $e
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar imagens: ' . $e->getMessage()
+            ], 500);
         }
-        
-        // 4. Atualizar produto
-        $product->update(['images' => $imagePaths]);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Imagens atualizadas com sucesso!',
-            'images' => $product->all_images
-        ]);
     }
     
     /**

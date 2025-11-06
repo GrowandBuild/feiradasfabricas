@@ -816,11 +816,17 @@ function saveMargins(e) {
         if (data.success) {
             // Atualizar os valores nos inputs com os valores salvos confirmados
             if (data.data) {
-                if (data.data.b2c_margin !== undefined) {
-                    document.getElementById('b2c_margin').value = data.data.b2c_margin;
+                if (data.data.b2c_margin !== undefined && data.data.b2c_margin !== null) {
+                    const b2cInput = document.getElementById('b2c_margin');
+                    if (b2cInput) {
+                        b2cInput.value = parseFloat(data.data.b2c_margin).toFixed(1);
+                    }
                 }
-                if (data.data.b2b_margin !== undefined) {
-                    document.getElementById('b2b_margin').value = data.data.b2b_margin;
+                if (data.data.b2b_margin !== undefined && data.data.b2b_margin !== null) {
+                    const b2bInput = document.getElementById('b2b_margin');
+                    if (b2bInput) {
+                        b2bInput.value = parseFloat(data.data.b2b_margin).toFixed(1);
+                    }
                 }
             }
             alert('✅ Margens salvas com sucesso!\n\nB2C: ' + (data.data?.b2c_margin || b2cValue) + '%\nB2B: ' + (data.data?.b2b_margin || b2bValue) + '%');

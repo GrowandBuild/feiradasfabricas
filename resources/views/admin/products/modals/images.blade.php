@@ -309,6 +309,29 @@ function saveImages() {
         return;
     }
     
+    // Verificar tamanho dos arquivos antes de enviar
+    const featuredInput = document.getElementById('featuredImageInput');
+    const additionalInput = document.getElementById('additionalImagesInput');
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    
+    if (featuredInput && featuredInput.files.length > 0) {
+        const file = featuredInput.files[0];
+        if (file.size > maxSize) {
+            alert('❌ A imagem de destaque é muito grande. Tamanho máximo: 10MB');
+            return;
+        }
+    }
+    
+    if (additionalInput && additionalInput.files.length > 0) {
+        for (let i = 0; i < additionalInput.files.length; i++) {
+            const file = additionalInput.files[i];
+            if (file.size > maxSize) {
+                alert(`❌ A imagem adicional "${file.name}" é muito grande. Tamanho máximo: 10MB`);
+                return;
+            }
+        }
+    }
+    
     const form = document.getElementById('imagesForm');
     const formData = new FormData(form);
     
@@ -348,28 +371,51 @@ function saveImages() {
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
     
-    // Adicionar timeout para evitar requisições muito longas
+    // Adicionar timeout para evitar requisições muito longas (30 segundos)
     const timeoutId = setTimeout(() => {
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
-        alert('⏱️ A requisição está demorando muito. Verifique sua conexão e tente novamente.');
-    }, 60000); // 60 segundos
+        alert('⏱️ A requisição está demorando muito (mais de 30 segundos). Verifique sua conexão e tente novamente.');
+    }, 30000); // 30 segundos
+    
+    // Adicionar log para debug
+    console.log('Enviando requisição para salvar imagens...', {
+        productId: productId,
+        formDataKeys: Array.from(formData.keys())
+    });
     
     fetch(`/admin/products/${productId}/update-images`, {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
         },
         body: formData
     })
     .then(response => {
         clearTimeout(timeoutId);
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
+        console.log('Resposta recebida:', response.status, response.statusText);
+        
+        // Verificar se a resposta é JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+            return response.text().then(text => {
+                console.error('Resposta não é JSON:', text);
+                throw new Error('Resposta do servidor não é JSON: ' + text.substring(0, 100));
+            });
         }
+        
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.message || `HTTP error! status: ${response.status}`);
+            });
+        }
+        
         return response.json();
     })
     .then(data => {
+        console.log('Dados recebidos:', data);
+        
         if (data.success) {
             saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Salvo!';
             saveBtn.classList.remove('btn-primary');
@@ -392,8 +438,17 @@ function saveImages() {
     })
     .catch(error => {
         clearTimeout(timeoutId);
-        console.error('Erro:', error);
-        alert('❌ Erro ao salvar imagens. Verifique sua conexão e tente novamente.');
+        console.error('Erro completo:', error);
+        console.error('Stack:', error.stack);
+        
+        let errorMessage = '❌ Erro ao salvar imagens. ';
+        if (error.message) {
+            errorMessage += error.message;
+        } else {
+            errorMessage += 'Verifique sua conexão e tente novamente.';
+        }
+        
+        alert(errorMessage);
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
     });
