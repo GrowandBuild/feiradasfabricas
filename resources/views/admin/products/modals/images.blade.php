@@ -37,7 +37,8 @@
                                        type="checkbox" 
                                        id="remove_featured_image" 
                                        name="remove_featured_image" 
-                                       value="1">
+                                       value="1"
+                                       onchange="removeFeaturedImageImmediately(this)">
                                 <label class="form-check-label text-danger" for="remove_featured_image">
                                     <i class="bi bi-trash"></i> Remover imagem de destaque
                                 </label>
@@ -272,7 +273,8 @@ function renderExistingImages(images, featuredImage) {
         additionalImages.forEach((image, index) => {
             const fileName = image.split('/').pop().split('?')[0];
             const col = document.createElement('div');
-            col.className = 'col-md-3 mb-2';
+            col.className = 'col-md-3 mb-2 image-item-container';
+            col.setAttribute('data-image-path', image);
             col.innerHTML = `
                 <div class="position-relative">
                     <img src="${image}?v=${Date.now()}" 
@@ -286,7 +288,8 @@ function renderExistingImages(images, featuredImage) {
                         <input class="form-check-input remove-additional-image" 
                                type="checkbox" 
                                data-image-path="${image}"
-                               id="remove_additional_${index}">
+                               id="remove_additional_${index}"
+                               onchange="removeImageImmediately(this, '${image}')">
                         <label class="form-check-label text-danger small" for="remove_additional_${index}">
                             <i class="bi bi-trash"></i> Remover
                         </label>
@@ -461,6 +464,222 @@ function saveImages() {
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
     });
+}
+
+function removeFeaturedImageImmediately(checkbox) {
+    const productId = document.getElementById('imagesProductId').value;
+    if (!productId) {
+        alert('❌ Erro: ID do produto não encontrado');
+        checkbox.checked = false;
+        return;
+    }
+    
+    if (!checkbox.checked) {
+        return;
+    }
+    
+    // Confirmar remoção
+    if (!confirm('Tem certeza que deseja remover a imagem de destaque?')) {
+        checkbox.checked = false;
+        return;
+    }
+    
+    // Desabilitar checkbox durante o processamento
+    checkbox.disabled = true;
+    const container = document.getElementById('currentFeaturedImageContainer');
+    const label = checkbox.nextElementSibling;
+    const originalLabelText = label.innerHTML;
+    label.innerHTML = '<i class="bi bi-hourglass-split"></i> Removendo...';
+    
+    // Verificar token CSRF
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken || !csrfToken.content) {
+        alert('❌ Erro: Token CSRF não encontrado');
+        checkbox.checked = false;
+        checkbox.disabled = false;
+        label.innerHTML = originalLabelText;
+        return;
+    }
+    
+    // Obter caminho da imagem atual
+    const currentFeatured = document.getElementById('currentFeaturedImagePreview');
+    const imagePath = currentFeatured ? currentFeatured.src : null;
+    
+    if (!imagePath) {
+        alert('❌ Erro: Imagem de destaque não encontrada');
+        checkbox.checked = false;
+        checkbox.disabled = false;
+        label.innerHTML = originalLabelText;
+        return;
+    }
+    
+    fetch(`/admin/products/${productId}/remove-image`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken.content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ image_path: imagePath })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Ocultar container da imagem de destaque
+            if (container) {
+                container.style.transition = 'opacity 0.3s';
+                container.style.opacity = '0';
+                setTimeout(() => {
+                    container.style.display = 'none';
+                    document.getElementById('noFeaturedImageAlert').style.display = 'block';
+                }, 300);
+            }
+            
+            // Desmarcar checkbox
+            checkbox.checked = false;
+            checkbox.disabled = false;
+            label.innerHTML = originalLabelText;
+            
+            // Mostrar mensagem de sucesso
+            showImageMessage('success', '✅ Imagem de destaque removida com sucesso!');
+        } else {
+            checkbox.checked = false;
+            checkbox.disabled = false;
+            label.innerHTML = originalLabelText;
+            showImageMessage('error', '❌ Erro: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        checkbox.checked = false;
+        checkbox.disabled = false;
+        label.innerHTML = originalLabelText;
+        showImageMessage('error', '❌ Erro ao remover imagem. Verifique sua conexão.');
+    });
+}
+
+function removeImageImmediately(checkbox, imagePath) {
+    const productId = document.getElementById('imagesProductId').value;
+    if (!productId) {
+        alert('❌ Erro: ID do produto não encontrado');
+        checkbox.checked = false;
+        return;
+    }
+    
+    if (!checkbox.checked) {
+        // Se desmarcou, não fazer nada (imagem já foi removida)
+        return;
+    }
+    
+    // Confirmar remoção
+    if (!confirm('Tem certeza que deseja remover esta imagem?')) {
+        checkbox.checked = false;
+        return;
+    }
+    
+    // Desabilitar checkbox durante o processamento
+    checkbox.disabled = true;
+    const container = checkbox.closest('.image-item-container');
+    
+    // Mostrar loading
+    const label = checkbox.nextElementSibling;
+    const originalLabelText = label.innerHTML;
+    label.innerHTML = '<i class="bi bi-hourglass-split"></i> Removendo...';
+    
+    // Verificar token CSRF
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken || !csrfToken.content) {
+        alert('❌ Erro: Token CSRF não encontrado');
+        checkbox.checked = false;
+        checkbox.disabled = false;
+        label.innerHTML = originalLabelText;
+        return;
+    }
+    
+    // Extrair caminho da imagem
+    const extractedPath = extractImagePath(imagePath);
+    
+    fetch(`/admin/products/${productId}/remove-image`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': csrfToken.content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ image_path: imagePath })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Remover visualmente o container da imagem
+            if (container) {
+                container.style.transition = 'opacity 0.3s';
+                container.style.opacity = '0';
+                setTimeout(() => {
+                    container.remove();
+                    
+                    // Verificar se não há mais imagens
+                    const remainingImages = document.querySelectorAll('.image-item-container');
+                    if (remainingImages.length === 0) {
+                        document.getElementById('currentAdditionalImagesContainer').style.display = 'none';
+                        document.getElementById('noAdditionalImagesAlert').style.display = 'block';
+                    }
+                }, 300);
+            }
+            
+            // Mostrar mensagem de sucesso
+            showImageMessage('success', '✅ Imagem removida com sucesso!');
+        } else {
+            checkbox.checked = false;
+            checkbox.disabled = false;
+            label.innerHTML = originalLabelText;
+            showImageMessage('error', '❌ Erro: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        checkbox.checked = false;
+        checkbox.disabled = false;
+        label.innerHTML = originalLabelText;
+        showImageMessage('error', '❌ Erro ao remover imagem. Verifique sua conexão.');
+    });
+}
+
+function showImageMessage(type, message) {
+    // Remover mensagem anterior se existir
+    const existingMessage = document.getElementById('imageMessage');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Criar nova mensagem
+    const messageDiv = document.createElement('div');
+    messageDiv.id = 'imageMessage';
+    messageDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    messageDiv.style.cssText = 'top: 20px; right: 20px; z-index: 10000; min-width: 300px;';
+    messageDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    document.body.appendChild(messageDiv);
+    
+    // Remover automaticamente após 3 segundos
+    setTimeout(() => {
+        if (messageDiv && messageDiv.parentNode) {
+            messageDiv.remove();
+        }
+    }, 3000);
 }
 
 function extractImagePath(imageUrl) {

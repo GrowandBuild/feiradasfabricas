@@ -130,8 +130,9 @@ class SearchController extends Controller
             ]);
         }
 
-        // Buscar produtos ativos e em estoque
+        // Buscar produtos ativos, disponíveis e em estoque
         $products = Product::where('is_active', true)
+            ->where('is_unavailable', false) // Apenas produtos disponíveis
             ->where('in_stock', true)
             ->where(function($q) use ($query) {
                 $q->where('name', 'like', "%{$query}%")
@@ -141,6 +142,7 @@ class SearchController extends Controller
                   ->orWhere('model', 'like', "%{$query}%")
                   ->orWhere('sku', 'like', "%{$query}%");
             })
+            ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
             ->orderByRaw("
                 CASE 
                     WHEN name LIKE ? THEN 1
@@ -293,6 +295,9 @@ class SearchController extends Controller
     private function buildSearchQuery($query, $filters, $sort)
     {
         $searchQuery = Product::query();
+        
+        // Sempre filtrar apenas produtos disponíveis
+        $searchQuery->where('is_unavailable', false);
 
         // Busca textual
         if (!empty($query)) {
@@ -361,7 +366,8 @@ class SearchController extends Controller
     private function applySorting($query, $sort)
     {
         // Sempre priorizar produtos disponíveis primeiro
-        $query->orderBy('in_stock', 'desc')
+        $query->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
+              ->orderBy('in_stock', 'desc')
               ->orderBy('is_active', 'desc');
         
         switch ($sort) {

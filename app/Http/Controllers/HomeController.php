@@ -18,7 +18,11 @@ class HomeController extends Controller
         $departments = \App\Models\Department::active()
             ->ordered()
             ->with(['products' => function($query) {
-                $query->active()->featured()->take(4);
+                $query->active()
+                    ->available() // Apenas produtos disponíveis
+                    ->featured()
+                    ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
+                    ->take(4);
             }])
             ->get();
 
@@ -30,8 +34,10 @@ class HomeController extends Controller
      */
     public function products(Request $request)
     {
-        // Produtos indisponíveis também aparecem, mas serão marcados visualmente
-        $query = Product::active()->with(['categories']);
+        // Apenas produtos disponíveis
+        $query = Product::active()
+            ->available() // Apenas produtos disponíveis
+            ->with(['categories']);
 
         // Filtro por categoria
         if ($request->filled('category')) {
@@ -55,7 +61,8 @@ class HomeController extends Controller
         }
 
         // Sempre priorizar produtos disponíveis primeiro
-        $query->orderBy('in_stock', 'desc')
+        $query->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
+              ->orderBy('in_stock', 'desc')
               ->orderBy('is_active', 'desc');
         
         // Ordenação
@@ -78,7 +85,12 @@ class HomeController extends Controller
 
         $products = $query->paginate(12);
         $categories = Category::active()->ordered()->get();
-        $brands = Product::active()->distinct()->pluck('brand')->filter()->sort();
+        $brands = Product::active()
+            ->available() // Apenas marcas de produtos disponíveis
+            ->distinct()
+            ->pluck('brand')
+            ->filter()
+            ->sort();
 
         return view('products.index', compact('products', 'categories', 'brands'));
     }
@@ -94,13 +106,15 @@ class HomeController extends Controller
             ->with(['categories', 'activeVariations'])
             ->firstOrFail();
 
-        // Produtos relacionados (mesma categoria)
+        // Produtos relacionados (mesma categoria) - apenas disponíveis
         $relatedProducts = Product::active()
+            ->available() // Apenas produtos disponíveis
             ->inStock()
             ->where('id', '!=', $product->id)
             ->whereHas('categories', function($q) use ($product) {
                 $q->whereIn('categories.id', $product->categories->pluck('id'));
             })
+            ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
             ->take(4)
             ->get();
 

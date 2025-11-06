@@ -43,6 +43,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/{product}/variations/update-stock', [ProductController::class, 'updateStock'])->name('products.variations.update-stock');
         Route::get('products/{product}/images', [ProductController::class, 'getImages'])->name('products.images');
         Route::post('products/{product}/update-images', [ProductController::class, 'updateImages'])->name('products.update-images');
+        Route::post('products/{product}/remove-image', [ProductController::class, 'removeImage'])->name('products.remove-image');
 
         // Categorias
         Route::resource('categories', CategoryController::class);
@@ -132,8 +133,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/bulk-action', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'bulkAction'])->name('products.bulk-action');
         Route::post('products/bulk-availability', [App\Http\Controllers\Admin\ProductController::class, 'bulkAction'])->name('products.bulk-availability');
         Route::post('products/{product}/update-cost-price', [App\Http\Controllers\Admin\ProductController::class, 'updateCostPrice'])->name('products.update-cost-price');
-        Route::post('products/salvar-margens', [App\Http\Controllers\Admin\ProductController::class, 'salvarMargens'])->name('products.salvar-margens');
-        Route::post('products/aplicar-margens-todos', [App\Http\Controllers\Admin\ProductController::class, 'aplicarMargensTodos'])->name('products.aplicar-margens-todos');
+        Route::post('products/{product}/update-profit-margin', [App\Http\Controllers\Admin\ProductController::class, 'updateProfitMargin'])->name('products.update-profit-margin');
+        Route::post('products/apply-global-margins', [App\Http\Controllers\Admin\ProductController::class, 'applyGlobalMargins'])->name('products.apply-global-margins');
         Route::get('products/export-search-results', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'exportResults'])->name('products.export-search-results');
         Route::get('products/search-suggestions', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'getSearchSuggestions'])->name('products.search-suggestions');
 

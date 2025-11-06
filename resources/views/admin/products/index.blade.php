@@ -27,6 +27,79 @@
     </div>
 </div>
 
+<!-- Controlador Global de Margens de Lucro -->
+<div class="card mb-4 border-warning">
+    <div class="card-header d-flex align-items-center" style="background-color: #fff3cd; border-bottom: 2px solid #ffc107;">
+        <i class="bi bi-sliders me-2" style="color: #856404; font-size: 1.2rem;"></i>
+        <h6 class="mb-0 fw-bold" style="color: #856404;">Controlador Global de Margens de Lucro</h6>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-percent me-1"></i>Margem de Lucro B2B (%)
+                </label>
+                <div class="input-group">
+                    <input type="text" 
+                           class="form-control" 
+                           id="global-profit-b2b" 
+                           value="" 
+                           placeholder="Ex: 10"
+                           style="font-size: 1rem;">
+                    <span class="input-group-text">%</span>
+                </div>
+                <small class="text-muted">Margem para clientes B2B</small>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-percent me-1"></i>Margem de Lucro B2C (%)
+                </label>
+                <div class="input-group">
+                    <input type="text" 
+                           class="form-control" 
+                           id="global-profit-b2c" 
+                           value="" 
+                           placeholder="Ex: 20"
+                           style="font-size: 1rem;">
+                    <span class="input-group-text">%</span>
+                </div>
+                <small class="text-muted">Margem para clientes B2C</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">
+                    <i class="bi bi-info-circle me-1"></i>Opções de Aplicação
+                </label>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="apply-to-all-products" checked>
+                    <label class="form-check-label" for="apply-to-all-products">
+                        Aplicar a todos os produtos
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="recalculate-prices" checked>
+                    <label class="form-check-label" for="recalculate-prices">
+                        Recalcular preços automaticamente
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="button" 
+                        class="btn btn-warning w-100 fw-bold" 
+                        id="apply-global-margins"
+                        style="height: 38px;">
+                    <i class="bi bi-arrow-repeat me-1"></i>
+                    Aplicar
+                </button>
+            </div>
+        </div>
+        <div class="alert alert-info mt-3 mb-0" style="font-size: 0.875rem;">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>Atenção:</strong> Esta ação irá atualizar as margens de lucro e recalcular os preços de todos os produtos que possuem preço de custo definido. 
+            Produtos sem custo não serão afetados.
+        </div>
+    </div>
+</div>
+
 <!-- Filtros -->
 <div class="card mb-4">
     <div class="card-header d-flex align-items-center">
@@ -135,64 +208,6 @@
     </div>
 </div>
 
-<!-- Configuração de Margens de Lucro -->
-<div class="card mb-4">
-    <div class="card-header d-flex align-items-center justify-content-between">
-        <div class="d-flex align-items-center">
-            <i class="bi bi-percent me-2" style="color: var(--accent-color);"></i>
-            <h6 class="mb-0">Configuração de Margens de Lucro</h6>
-        </div>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSalvarMargens">
-            <i class="bi bi-save me-1"></i>Salvar Margens
-        </button>
-    </div>
-    <div class="card-body">
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">
-                    <i class="bi bi-person me-1"></i>Margem B2C (%)
-                </label>
-                <div class="input-group">
-                    <input type="number" 
-                           class="form-control" 
-                           id="b2c_margin" 
-                           step="0.1" 
-                           min="0" 
-                           max="100"
-                           value="{{ setting('b2c_margin_percentage', 10) }}">
-                    <span class="input-group-text">%</span>
-                </div>
-                <small class="text-muted">Ex: 10% = R$ 1,00 → R$ 1,10</small>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">
-                    <i class="bi bi-building me-1"></i>Margem B2B (%)
-                </label>
-                <div class="input-group">
-                    <input type="number" 
-                           class="form-control" 
-                           id="b2b_margin" 
-                           step="0.1" 
-                           min="0" 
-                           max="100"
-                           value="{{ setting('b2b_margin_percentage', 20) }}">
-                    <span class="input-group-text">%</span>
-                </div>
-                <small class="text-muted">Ex: 20% = R$ 1,00 → R$ 1,20</small>
-            </div>
-            <div class="col-md-4 d-flex align-items-end">
-                <div class="w-100">
-                    <label class="form-label">Aplicar a todos os produtos</label>
-                    <button type="button" class="btn btn-warning btn-sm w-100" id="btnAplicarMargens">
-                        <i class="bi bi-arrow-repeat me-1"></i>Recalcular Todos os Preços
-                    </button>
-                    <small class="text-muted d-block mt-1">⚠️ Recalcula B2B e B2C de todos os produtos</small>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Lista de Produtos -->
 <div class="card">
     <div class="card-body">
@@ -232,10 +247,10 @@
                             <th class="text-center" style="width: 45px; padding: 8px 4px;">
                                 <i class="bi bi-image text-muted"></i>
                             </th>
-                            <th style="min-width: 180px; max-width: 250px; padding: 8px;">Produto</th>
-                            <th style="width: 90px; padding: 8px 4px;">Marca</th>
-                            <th style="width: 110px; padding: 8px 4px;">Preço</th>
-                            <th class="text-center" style="width: 80px; padding: 8px 4px;">Estoque</th>
+                            <th style="min-width: 150px; max-width: 220px; padding: 8px;">Produto</th>
+                            <th style="width: 80px; padding: 8px 4px;">Marca</th>
+                            <th style="width: 200px; padding: 8px 4px;">Preço e Margens</th>
+                            <th class="text-center" style="width: 70px; padding: 8px 4px;">Estoque</th>
                             <th class="text-center" style="width: 100px; padding: 8px 4px;">Variações</th>
                             <th class="text-center" style="width: 100px; padding: 8px 4px;">Status</th>
                             <th class="text-center" style="width: 90px; padding: 8px 4px;">Ações</th>
@@ -301,38 +316,89 @@
                                         <span class="text-muted" style="font-size: 0.75rem;">-</span>
                                     @endif
                                 </td>
-                                <td style="padding: 8px 4px;">
-                                    <div class="price-editor" data-product-id="{{ $product->id }}">
-                                        <div class="cost-price-input mb-1">
-                                            <label class="form-label mb-0" style="font-size: 0.7rem; color: #6c757d;">
-                                                Custo:
-                                            </label>
-                                            <div class="input-group input-group-sm">
-                                                <span class="input-group-text" style="font-size: 0.7rem; padding: 2px 6px;">R$</span>
-                                                <input type="text" 
-                                                       class="form-control form-control-sm cost-price-field" 
-                                                       data-product-id="{{ $product->id }}"
-                                                       value="{{ $product->cost_price ? number_format($product->cost_price, 2, ',', '.') : '0,00' }}" 
-                                                       style="font-size: 0.75rem; padding: 2px 6px;"
-                                                       placeholder="0,00"
-                                                       onblur="normalizeAndUpdatePrice({{ $product->id }}, this.value)">
-                                                <button class="btn btn-sm btn-outline-success" 
-                                                        type="button" 
-                                                        onclick="normalizeAndUpdatePrice({{ $product->id }}, document.querySelector('[data-product-id=\'{{ $product->id }}\'].cost-price-field').value)"
-                                                        style="font-size: 0.7rem; padding: 2px 6px;"
-                                                        title="Salvar">
-                                                    <i class="bi bi-check"></i>
-                                                </button>
+                                <td style="padding: 6px 4px;">
+                                    <div class="price-editor" data-product-id="{{ $product->id }}" style="min-width: 180px; max-width: 200px;">
+                                        <!-- Custo -->
+                                        <div class="mb-1">
+                                            <div class="d-flex align-items-center mb-0">
+                                                <label class="form-label mb-0 me-1" style="font-size: 0.65rem; color: #6c757d; white-space: nowrap;">Custo:</label>
+                                                <div class="input-group input-group-sm flex-grow-1" style="min-width: 0;">
+                                                    <span class="input-group-text" style="font-size: 0.65rem; padding: 1px 4px;">R$</span>
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm cost-price-field" 
+                                                           data-product-id="{{ $product->id }}"
+                                                           value="{{ $product->cost_price ? number_format($product->cost_price, 2, ',', '.') : '0,00' }}" 
+                                                           style="font-size: 0.7rem; padding: 1px 4px;"
+                                                           placeholder="0,00"
+                                                           onblur="normalizeAndUpdatePrice({{ $product->id }}, this.value)">
+                                                    <button class="btn btn-sm btn-outline-success" 
+                                                            type="button" 
+                                                            onclick="normalizeAndUpdatePrice({{ $product->id }}, document.querySelector('[data-product-id=\'{{ $product->id }}\'].cost-price-field').value)"
+                                                            style="font-size: 0.65rem; padding: 1px 4px;"
+                                                            title="Salvar">
+                                                        <i class="bi bi-check" style="font-size: 0.7rem;"></i>
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="fw-semibold text-success" style="font-size: 0.875rem; line-height: 1.2;">
-                                            R$ <span class="b2c-price-display">{{ number_format($product->price, 2, ',', '.') }}</span>
-                                    </div>
-                                    @if($product->b2b_price)
-                                            <small class="text-muted" style="font-size: 0.7rem; line-height: 1.2;">
-                                                B2B: R$ <span class="b2b-price-display">{{ number_format($product->b2b_price, 2, ',', '.') }}</span>
-                                        </small>
-                                    @endif
+                                        
+                                        <!-- Margens de Lucro - Layout Compacto -->
+                                        <div class="mb-1" style="border-top: 1px solid #e0e0e0; padding-top: 3px;">
+                                            <div class="d-flex gap-1 align-items-center mb-1">
+                                                <label class="form-label mb-0 me-1" style="font-size: 0.6rem; color: #6c757d; white-space: nowrap; min-width: 45px;">B2B:</label>
+                                                <div class="input-group input-group-sm flex-grow-1" style="min-width: 0;">
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm profit-b2b-field" 
+                                                           data-product-id="{{ $product->id }}"
+                                                           value="{{ $product->profit_margin_b2b ? ($product->profit_margin_b2b % 1 == 0 ? number_format($product->profit_margin_b2b, 0, ',', '.') : number_format($product->profit_margin_b2b, 2, ',', '.')) : '10' }}" 
+                                                           style="font-size: 0.65rem; padding: 1px 3px;"
+                                                           placeholder="10"
+                                                           onblur="updateProfitMargin({{ $product->id }}, 'b2b', this.value)">
+                                                    <span class="input-group-text" style="font-size: 0.6rem; padding: 1px 3px;">%</span>
+                                                </div>
+                                            </div>
+                                            <div class="d-flex gap-1 align-items-center">
+                                                <label class="form-label mb-0 me-1" style="font-size: 0.6rem; color: #6c757d; white-space: nowrap; min-width: 45px;">B2C:</label>
+                                                <div class="input-group input-group-sm flex-grow-1" style="min-width: 0;">
+                                                    <input type="text" 
+                                                           class="form-control form-control-sm profit-b2c-field" 
+                                                           data-product-id="{{ $product->id }}"
+                                                           value="{{ $product->profit_margin_b2c ? ($product->profit_margin_b2c % 1 == 0 ? number_format($product->profit_margin_b2c, 0, ',', '.') : number_format($product->profit_margin_b2c, 2, ',', '.')) : '20' }}" 
+                                                           style="font-size: 0.65rem; padding: 1px 3px;"
+                                                           placeholder="20"
+                                                           onblur="updateProfitMargin({{ $product->id }}, 'b2c', this.value)">
+                                                    <span class="input-group-text" style="font-size: 0.6rem; padding: 1px 3px;">%</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Preços Calculados - Layout Compacto -->
+                                        <div class="calculated-prices" style="border-top: 1px solid #e0e0e0; padding-top: 3px;">
+                                            @php
+                                                $b2bPrice = $product->b2b_price ?? $product->price;
+                                                $b2cPrice = $product->price;
+                                                $b2bMargin = $product->profit_margin_b2b ?? 10.00;
+                                                $b2cMargin = $product->profit_margin_b2c ?? 20.00;
+                                                $hasInvertedMargins = $b2bMargin > $b2cMargin;
+                                                $hasInvertedPrices = $b2bPrice > $b2cPrice;
+                                            @endphp
+                                            @if($hasInvertedMargins || $hasInvertedPrices)
+                                                <div class="alert alert-warning p-1 mb-1" style="font-size: 0.6rem; line-height: 1.1; padding: 2px 4px !important;">
+                                                    <i class="bi bi-exclamation-triangle" style="font-size: 0.65rem;"></i>
+                                                    <strong>B2B > B2C</strong>
+                                                </div>
+                                            @endif
+                                            <div class="d-flex justify-content-between align-items-center mb-0" style="font-size: 0.75rem; line-height: 1.2;">
+                                                <span class="text-success fw-semibold">B2C:</span>
+                                                <span class="text-success fw-semibold">R$ <span class="b2c-price-display">{{ number_format($b2cPrice, 2, ',', '.') }}</span></span>
+                                                <small class="text-muted" style="font-size: 0.6rem;">({{ number_format($b2cMargin, 0, ',', '.') }}%)</small>
+                                            </div>
+                                            <div class="d-flex justify-content-between align-items-center" style="font-size: 0.75rem; line-height: 1.2;">
+                                                <span class="text-primary fw-semibold">B2B:</span>
+                                                <span class="text-primary fw-semibold">R$ <span class="b2b-price-display">{{ number_format($b2bPrice, 2, ',', '.') }}</span></span>
+                                                <small class="text-muted" style="font-size: 0.6rem;">({{ number_format($b2bMargin, 0, ',', '.') }}%)</small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="text-center" style="padding: 8px 4px;">
@@ -706,10 +772,10 @@ function updateProductPrice(productId, costPrice) {
             const b2cDisplay = priceEditor.querySelector('.b2c-price-display');
             const b2bDisplay = priceEditor.querySelector('.b2b-price-display');
             
-            if (b2cDisplay) {
+            if (b2cDisplay && data.product.b2c_price) {
                 b2cDisplay.textContent = data.product.b2c_price;
             }
-            if (b2bDisplay) {
+            if (b2bDisplay && data.product.b2b_price) {
                 b2bDisplay.textContent = data.product.b2b_price;
             }
             
@@ -750,117 +816,170 @@ function updateProductPrice(productId, costPrice) {
     });
 }
 
-// ========== SISTEMA DE MARGENS DE LUCRO ==========
-document.addEventListener('DOMContentLoaded', function() {
-    const btnSalvar = document.getElementById('btnSalvarMargens');
-    const btnAplicar = document.getElementById('btnAplicarMargens');
+// Função para normalizar percentual (aceita valores como 10, 20, 10.5, 10,50, etc)
+// Valores inteiros são tratados diretamente como porcentagem
+function normalizePercent(value) {
+    if (!value || value === '') return null;
     
-    if (btnSalvar) {
-        btnSalvar.addEventListener('click', function() {
-            const inputB2C = document.getElementById('b2c_margin');
-            const inputB2B = document.getElementById('b2b_margin');
-            
-            if (!inputB2C || !inputB2B) {
-                alert('Erro: Campos não encontrados.');
-                return;
-            }
-            
-            const margemB2C = parseFloat(inputB2C.value);
-            const margemB2B = parseFloat(inputB2B.value);
-            
-            if (isNaN(margemB2C) || isNaN(margemB2B)) {
-                alert('Por favor, insira valores numéricos válidos.');
-                return;
-            }
-            
-            if (margemB2C < 0 || margemB2C > 100 || margemB2B < 0 || margemB2B > 100) {
-                alert('As margens devem estar entre 0 e 100%.');
-                return;
-            }
-            
-            btnSalvar.disabled = true;
-            btnSalvar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
-            
-            fetch('/admin/products/salvar-margens', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({
-                    margem_b2c: margemB2C,
-                    margem_b2b: margemB2B
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('HTTP ' + response.status);
-                }
-                return response.json();
-            })
-            .then(data => {
-                console.log('Resposta do servidor:', data);
-                if (data.sucesso) {
-                    // Atualizar os campos com os valores retornados
-                    inputB2C.value = parseFloat(data.margens.b2c).toFixed(1);
-                    inputB2B.value = parseFloat(data.margens.b2b).toFixed(1);
-                    alert('✅ ' + data.mensagem + '\n\nB2C: ' + data.margens.b2c + '%\nB2B: ' + data.margens.b2b + '%');
-                } else {
-                    alert('❌ ' + data.mensagem);
-                }
-            })
-            .catch(error => {
-                console.error('Erro completo:', error);
-                alert('❌ Erro ao salvar margens. Verifique o console para mais detalhes.');
-            })
-            .finally(() => {
-                btnSalvar.disabled = false;
-                btnSalvar.innerHTML = '<i class="bi bi-save me-1"></i>Salvar Margens';
-            });
-        });
+    // Remove espaços e caracteres não numéricos exceto vírgula e ponto
+    let cleanValue = value.toString().trim().replace(/[^\d,.]/g, '');
+    
+    // Se não tem vírgula nem ponto, trata como valor inteiro direto (10 = 10%, 20 = 20%)
+    if (!cleanValue.includes(',') && !cleanValue.includes('.')) {
+        return parseFloat(cleanValue);
     }
     
-    if (btnAplicar) {
-        btnAplicar.addEventListener('click', function() {
-            if (!confirm('Tem certeza que deseja recalcular os preços de TODOS os produtos? Esta ação não pode ser desfeita.')) {
-                return;
+    // Se tem vírgula, assume formato brasileiro (10,50 ou 10,5)
+    if (cleanValue.includes(',')) {
+        // Remove pontos (separadores de milhar brasileiro)
+        cleanValue = cleanValue.replace(/\./g, '');
+        // Substitui vírgula por ponto para parseFloat
+        cleanValue = cleanValue.replace(',', '.');
+        return parseFloat(cleanValue);
+    }
+    
+    // Se tem ponto mas não vírgula
+    if (cleanValue.includes('.')) {
+        const parts = cleanValue.split('.');
+        
+        // Se tem apenas um ponto
+        if (parts.length === 2) {
+            // Se a parte após o ponto tem 1 ou 2 dígitos, é decimal (10.5 ou 10.50)
+            if (parts[1].length <= 2) {
+                return parseFloat(cleanValue);
+            }
+            // Se tem mais de 2 dígitos após o ponto, é separador de milhar (1.000)
+            // Remove o ponto e trata como valor inteiro
+            return parseFloat(parts.join(''));
+        }
+        
+        // Se tem múltiplos pontos, são separadores de milhar (1.000.000)
+        // Remove todos os pontos
+        cleanValue = cleanValue.replace(/\./g, '');
+        return parseFloat(cleanValue);
+    }
+    
+    return parseFloat(cleanValue);
+}
+
+// Função para atualizar margem de lucro
+function updateProfitMargin(productId, type, inputValue) {
+    const normalizedMargin = normalizePercent(inputValue);
+    
+    if (normalizedMargin === null || normalizedMargin < 0 || isNaN(normalizedMargin)) {
+        alert('Por favor, insira uma margem de lucro válida (0% a 1000%).');
+        const input = document.querySelector(`[data-product-id='${productId}'].profit-${type}-field`);
+        // Restaurar valor original
+        const originalValue = input.getAttribute('data-original-value') || (type === 'b2b' ? '10,00' : '20,00');
+        input.value = originalValue;
+        return;
+    }
+    
+    // Validar margem máxima
+    if (normalizedMargin > 1000) {
+        alert('A margem de lucro não pode ser maior que 1000%.');
+        const input = document.querySelector(`[data-product-id='${productId}'].profit-${type}-field`);
+        const originalValue = input.getAttribute('data-original-value') || (type === 'b2b' ? '10,00' : '20,00');
+        input.value = originalValue;
+        return;
+    }
+    
+    const input = document.querySelector(`[data-product-id='${productId}'].profit-${type}-field`);
+    const row = input.closest('tr');
+    
+    // Salvar valor original para possível rollback
+    if (!input.getAttribute('data-original-value')) {
+        input.setAttribute('data-original-value', input.value);
+    }
+    
+            // Atualizar o valor exibido no campo
+            // Se for inteiro, mostra sem decimais; se tiver decimais, mostra até 2 casas
+            if (normalizedMargin % 1 === 0) {
+                // Valor inteiro - mostra sem decimais
+                input.value = normalizedMargin.toString();
+            } else {
+                // Valor decimal - mostra com até 2 casas decimais
+                input.value = normalizedMargin.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 2
+                });
+            }
+    
+    // Mostrar loading
+    const originalValue = input.getAttribute('data-original-value') || input.value;
+    input.disabled = true;
+    
+    fetch(`/admin/products/${productId}/update-profit-margin`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            type: type,
+            margin: parseFloat(normalizedMargin)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Atualizar exibição dos preços se houver custo
+            const priceEditor = row.querySelector('.price-editor');
+            const b2cDisplay = priceEditor.querySelector('.b2c-price-display');
+            const b2bDisplay = priceEditor.querySelector('.b2b-price-display');
+            
+            if (b2cDisplay && data.product.b2c_price) {
+                b2cDisplay.textContent = data.product.b2c_price;
+            }
+            if (b2bDisplay && data.product.b2b_price) {
+                b2bDisplay.textContent = data.product.b2b_price;
             }
             
-            btnAplicar.disabled = true;
-            btnAplicar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Processando...';
+            // Atualizar valor original salvo
+            input.setAttribute('data-original-value', input.value);
             
-            fetch('/admin/products/aplicar-margens-todos', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.sucesso) {
-                    alert('✅ ' + data.mensagem);
-                    setTimeout(() => window.location.reload(), 1500);
+            // Mostrar feedback visual
+            input.classList.add('border-success');
+            setTimeout(() => {
+                input.classList.remove('border-success');
+            }, 2000);
+        } else {
+            alert('Erro ao atualizar margem: ' + (data.message || 'Erro desconhecido'));
+            // Restaurar valor original formatado
+            const originalNormalized = normalizePercent(originalValue);
+            if (originalNormalized !== null) {
+                if (originalNormalized % 1 === 0) {
+                    input.value = originalNormalized.toString();
                 } else {
-                    alert('❌ ' + data.mensagem);
+                    input.value = originalNormalized.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2
+                    });
                 }
-            })
-            .catch(error => {
-                console.error('Erro:', error);
-                alert('❌ Erro ao recalcular preços.');
-            })
-            .finally(() => {
-                btnAplicar.disabled = false;
-                btnAplicar.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Recalcular Todos os Preços';
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar margem. Tente novamente.');
+        // Restaurar valor original formatado
+        const originalNormalized = normalizePercent(originalValue);
+        if (originalNormalized !== null) {
+            input.value = originalNormalized.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
             });
-        });
-    }
-});
+        }
+    })
+    .finally(() => {
+        input.disabled = false;
+    });
+}
 
 // Permitir Enter para salvar e formatação inteligente
 document.addEventListener('DOMContentLoaded', function() {
+    // Campos de preço de custo
     document.querySelectorAll('.cost-price-field').forEach(input => {
         // Salvar valor original
         input.setAttribute('data-original-value', input.value);
@@ -889,6 +1008,136 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
+    
+    // Campos de margem de lucro
+    document.querySelectorAll('.profit-b2b-field, .profit-b2c-field').forEach(input => {
+        // Salvar valor original
+        input.setAttribute('data-original-value', input.value);
+        
+        // Evento Enter
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const productId = this.getAttribute('data-product-id');
+                const type = this.classList.contains('profit-b2b-field') ? 'b2b' : 'b2c';
+                updateProfitMargin(productId, type, this.value);
+            }
+        });
+        
+        // Formatar ao perder foco (se não foi salvo)
+        input.addEventListener('blur', function(e) {
+            // Só formata se não foi clicado no botão de salvar
+            const normalized = normalizePercent(this.value);
+            if (normalized !== null && normalized >= 0 && normalized <= 1000 && !isNaN(normalized)) {
+                // Se for inteiro, mostra sem decimais; se tiver decimais, mostra até 2 casas
+                if (normalized % 1 === 0) {
+                    this.value = normalized.toString();
+                } else {
+                    this.value = normalized.toLocaleString('pt-BR', {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 2
+                    });
+                }
+            } else if (this.value && this.value !== '') {
+                // Se o valor não é válido, restaurar original
+                this.value = this.getAttribute('data-original-value') || (this.classList.contains('profit-b2b-field') ? '10' : '20');
+            }
+        });
+    });
+    
+    // Controlador Global de Margens
+    const applyGlobalMarginsBtn = document.getElementById('apply-global-margins');
+    if (applyGlobalMarginsBtn) {
+        applyGlobalMarginsBtn.addEventListener('click', function() {
+            const profitB2B = document.getElementById('global-profit-b2b').value.trim();
+            const profitB2C = document.getElementById('global-profit-b2c').value.trim();
+            const recalculatePrices = document.getElementById('recalculate-prices').checked;
+            
+            // Validar que os campos foram preenchidos
+            if (!profitB2B || !profitB2C) {
+                alert('Por favor, preencha ambas as margens de lucro (B2B e B2C) antes de aplicar.');
+                return;
+            }
+            
+            // Normalizar valores
+            const normalizedB2B = normalizePercent(profitB2B);
+            const normalizedB2C = normalizePercent(profitB2C);
+            
+            // Validar valores
+            if (normalizedB2B === null || normalizedB2B < 0 || normalizedB2B > 1000 || isNaN(normalizedB2B)) {
+                alert('Por favor, insira uma margem de lucro B2B válida (0% a 1000%).');
+                return;
+            }
+            
+            if (normalizedB2C === null || normalizedB2C < 0 || normalizedB2C > 1000 || isNaN(normalizedB2C)) {
+                alert('Por favor, insira uma margem de lucro B2C válida (0% a 1000%).');
+                return;
+            }
+            
+            // Confirmar ação
+            const formatPercent = (val) => {
+                if (val % 1 === 0) {
+                    return val.toString();
+                } else {
+                    return val.toLocaleString('pt-BR', {minimumFractionDigits: 0, maximumFractionDigits: 2});
+                }
+            };
+            
+            const confirmMessage = `Deseja aplicar as margens de lucro a todos os produtos?\n\n` +
+                                 `Margem B2B: ${formatPercent(normalizedB2B)}%\n` +
+                                 `Margem B2C: ${formatPercent(normalizedB2C)}%\n\n` +
+                                 (recalculatePrices ? 'Os preços serão recalculados automaticamente.\n\n' : '') +
+                                 `Esta ação afetará todos os produtos que possuem preço de custo definido.`;
+            
+            if (!confirm(confirmMessage)) {
+                return;
+            }
+            
+            // Desabilitar botão e mostrar loading
+            const originalText = this.innerHTML;
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Aplicando...';
+            
+            // Fazer requisição
+            fetch('/admin/products/apply-global-margins', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    profit_margin_b2b: normalizedB2B,
+                    profit_margin_b2c: normalizedB2C,
+                    recalculate_prices: recalculatePrices
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Mostrar mensagem de sucesso
+                    alert(data.message);
+                    
+                    // Recarregar a página para atualizar os valores
+                    window.location.reload();
+                } else {
+                    alert('Erro ao aplicar margens: ' + (data.message || 'Erro desconhecido'));
+                    if (data.errors && data.errors.length > 0) {
+                        console.error('Erros detalhados:', data.errors);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao aplicar margens. Tente novamente.');
+            })
+            .finally(() => {
+                // Restaurar botão
+                this.disabled = false;
+                this.innerHTML = originalText;
+            });
+        });
+    }
 });
 </script>
 @endpush

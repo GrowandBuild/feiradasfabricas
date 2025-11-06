@@ -339,163 +339,261 @@ class ProductController extends Controller
     }
 
     /**
-     * Atualizar preço de custo e recalcular B2B/B2C
+     * Atualizar preço de custo e recalcular B2B/B2C baseado nas margens de lucro
      */
     public function updateCostPrice(Request $request, Product $product)
     {
-        $request->validate([
-            'cost_price' => 'required|numeric|min:0',
-        ]);
-
-        // Obter margens configuradas
-        // B2C = 10% de margem (custo R$ 1,00 → venda R$ 1,10)
-        // B2B = 20% de margem (custo R$ 1,00 → venda R$ 1,20)
-        $b2cMargin = Setting::get('b2c_margin_percentage', 10);
-        $b2bMargin = Setting::get('b2b_margin_percentage', 20);
-
-        // Calcular novos preços baseados nas margens
-        $costPrice = (float) $request->cost_price;
-        $b2cPrice = round($costPrice * (1 + $b2cMargin / 100), 2);
-        $b2bPrice = round($costPrice * (1 + $b2bMargin / 100), 2);
-
-        // Atualizar produto
-        $product->update([
-            'cost_price' => $costPrice,
-            'b2b_price' => $b2bPrice,
-            'price' => $b2cPrice,
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Preços atualizados com sucesso!',
-            'product' => [
-                'cost_price' => number_format($costPrice, 2, ',', '.'),
-                'b2b_price' => number_format($b2bPrice, 2, ',', '.'),
-                'b2c_price' => number_format($b2cPrice, 2, ',', '.'),
-            ]
-        ]);
-    }
-
-    /**
-     * Salvar configurações de margens de lucro
-     */
-    public function salvarMargens(Request $request)
-    {
         try {
-            $validated = $request->validate([
-                'margem_b2c' => 'required|numeric|min:0|max:100',
-                'margem_b2b' => 'required|numeric|min:0|max:100',
+            $request->validate([
+                'cost_price' => 'required|numeric|min:0',
             ]);
 
-            $margemB2C = (float) $validated['margem_b2c'];
-            $margemB2B = (float) $validated['margem_b2b'];
-
-            // Buscar registro B2C existente ou criar novo
-            $settingB2C = Setting::where('key', 'b2c_margin_percentage')->first();
-            if ($settingB2C) {
-                // Se existe, FORÇAR atualização
-                $settingB2C->value = (string) $margemB2C;
-                $settingB2C->type = 'number';
-                $settingB2C->group = 'pricing';
-                $settingB2C->save();
-            } else {
-                // Se não existe, criar novo
-                Setting::create([
-                    'key' => 'b2c_margin_percentage',
-                    'value' => (string) $margemB2C,
-                    'type' => 'number',
-                    'group' => 'pricing',
-                ]);
+            $costPrice = (float) $request->cost_price;
+            
+            // Validar que o custo é válido
+            if ($costPrice < 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'O preço de custo não pode ser negativo.'
+                ], 422);
             }
 
-            // Buscar registro B2B existente ou criar novo
-            $settingB2B = Setting::where('key', 'b2b_margin_percentage')->first();
-            if ($settingB2B) {
-                // Se existe, FORÇAR atualização
-                $settingB2B->value = (string) $margemB2B;
-                $settingB2B->type = 'number';
-                $settingB2B->group = 'pricing';
-                $settingB2B->save();
-            } else {
-                // Se não existe, criar novo
-                Setting::create([
-                    'key' => 'b2b_margin_percentage',
-                    'value' => (string) $margemB2B,
-                    'type' => 'number',
-                    'group' => 'pricing',
-                ]);
+            // Obter margens de lucro (padrão: B2B 10%, B2C 20%)
+            $profitMarginB2B = $product->profit_margin_b2b ?? 10.00;
+            $profitMarginB2C = $product->profit_margin_b2c ?? 20.00;
+
+            // Validar margens
+            if ($profitMarginB2B < 0 || $profitMarginB2B > 1000) {
+                $profitMarginB2B = 10.00;
+            }
+            if ($profitMarginB2C < 0 || $profitMarginB2C > 1000) {
+                $profitMarginB2C = 20.00;
             }
 
-            // Buscar novamente para confirmar que foram salvos
-            $confirmB2C = Setting::where('key', 'b2c_margin_percentage')->first();
-            $confirmB2B = Setting::where('key', 'b2b_margin_percentage')->first();
+            // Calcular preços com margem de lucro
+            // Fórmula: Preço = Custo * (1 + Margem/100)
+            $b2bPrice = round($costPrice * (1 + $profitMarginB2B / 100), 2);
+            $b2cPrice = round($costPrice * (1 + $profitMarginB2C / 100), 2);
+
+            // Validar que os preços calculados são válidos
+            if ($b2bPrice <= 0 || $b2cPrice <= 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erro ao calcular preços. Verifique as margens de lucro.'
+                ], 422);
+            }
+
+            // Atualizar produto com custo e preços recalculados
+            $product->update([
+                'cost_price' => $costPrice,
+                'b2b_price' => $b2bPrice,
+                'price' => $b2cPrice,
+            ]);
 
             return response()->json([
-                'sucesso' => true,
-                'mensagem' => 'Margens salvas com sucesso!',
-                'margens' => [
-                    'b2c' => (float) ($confirmB2C->value ?? $margemB2C),
-                    'b2b' => (float) ($confirmB2B->value ?? $margemB2B),
+                'success' => true,
+                'message' => 'Preço de custo atualizado e preços recalculados com sucesso!',
+                'product' => [
+                    'cost_price' => number_format($costPrice, 2, ',', '.'),
+                    'b2b_price' => number_format($b2bPrice, 2, ',', '.'),
+                    'b2c_price' => number_format($b2cPrice, 2, ',', '.'),
                 ]
             ]);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao salvar margens: ' . $e->getMessage(), [
-                'exception' => $e,
-                'request' => $request->all()
-            ]);
-            
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'sucesso' => false,
-                'mensagem' => 'Erro ao salvar margens: ' . $e->getMessage()
+                'success' => false,
+                'message' => 'Erro de validação: ' . implode(', ', $e->errors()['cost_price'] ?? []),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar preço de custo: ' . $e->getMessage(), [
+                'product_id' => $product->id,
+                'exception' => $e
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar preço: ' . $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Aplicar margens configuradas a todos os produtos
+     * Atualizar margem de lucro e recalcular preços B2B/B2C
      */
-    public function aplicarMargensTodos(Request $request)
+    public function updateProfitMargin(Request $request, Product $product)
     {
         try {
-            $margemB2C = (float) Setting::get('b2c_margin_percentage', 10);
-            $margemB2B = (float) Setting::get('b2b_margin_percentage', 20);
+            $request->validate([
+                'type' => 'required|in:b2b,b2c',
+                'margin' => 'required|numeric|min:0|max:1000',
+            ]);
 
-            $produtos = Product::whereNotNull('cost_price')
-                ->where('cost_price', '>', 0)
-                ->get();
+            $type = $request->type;
+            $margin = (float) $request->margin;
 
-            $atualizados = 0;
-            foreach ($produtos as $produto) {
-                $custo = (float) $produto->cost_price;
-                
-                if ($custo <= 0) {
-                    continue;
-                }
-                
-                $precoB2C = round($custo * (1 + $margemB2C / 100), 2);
-                $precoB2B = round($custo * (1 + $margemB2B / 100), 2);
+            // Validar margem
+            if ($margin < 0 || $margin > 1000) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A margem de lucro deve estar entre 0% e 1000%.'
+                ], 422);
+            }
 
-                $produto->update([
-                    'price' => $precoB2C,
-                    'b2b_price' => $precoB2B,
+            // Atualizar margem de lucro
+            if ($type === 'b2b') {
+                $product->update(['profit_margin_b2b' => $margin]);
+            } else {
+                $product->update(['profit_margin_b2c' => $margin]);
+            }
+
+            // Recalcular preços se houver custo definido
+            if ($product->cost_price && $product->cost_price > 0) {
+                $profitMarginB2B = $product->profit_margin_b2b ?? 10.00;
+                $profitMarginB2C = $product->profit_margin_b2c ?? 20.00;
+
+                $b2bPrice = round($product->cost_price * (1 + $profitMarginB2B / 100), 2);
+                $b2cPrice = round($product->cost_price * (1 + $profitMarginB2C / 100), 2);
+
+                $product->update([
+                    'b2b_price' => $b2bPrice,
+                    'price' => $b2cPrice,
                 ]);
-
-                $atualizados++;
             }
 
             return response()->json([
-                'sucesso' => true,
-                'mensagem' => "Preços de {$atualizados} produto(s) recalculado(s) com sucesso!",
-                'atualizados' => $atualizados,
-                'total' => $produtos->count()
+                'success' => true,
+                'message' => 'Margem de lucro atualizada e preços recalculados com sucesso!',
+                'product' => [
+                    'profit_margin_b2b' => number_format($product->profit_margin_b2b ?? 10.00, 2, ',', '.'),
+                    'profit_margin_b2c' => number_format($product->profit_margin_b2c ?? 20.00, 2, ',', '.'),
+                    'b2b_price' => $product->b2b_price ? number_format($product->b2b_price, 2, ',', '.') : null,
+                    'b2c_price' => $product->price ? number_format($product->price, 2, ',', '.') : null,
+                ]
             ]);
-        } catch (\Exception $e) {
+        } catch (\Illuminate\Validation\ValidationException $e) {
             return response()->json([
-                'sucesso' => false,
-                'mensagem' => 'Erro ao recalcular preços: ' . $e->getMessage()
+                'success' => false,
+                'message' => 'Erro de validação: ' . implode(', ', array_merge(
+                    $e->errors()['type'] ?? [],
+                    $e->errors()['margin'] ?? []
+                )),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar margem de lucro: ' . $e->getMessage(), [
+                'product_id' => $product->id,
+                'exception' => $e
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar margem: ' . $e->getMessage()
             ], 500);
         }
     }
+
+    /**
+     * Aplicar margens de lucro globalmente a todos os produtos
+     */
+    public function applyGlobalMargins(Request $request)
+    {
+        try {
+            $request->validate([
+                'profit_margin_b2b' => 'required|numeric|min:0|max:1000',
+                'profit_margin_b2c' => 'required|numeric|min:0|max:1000',
+                'recalculate_prices' => 'nullable|boolean',
+            ]);
+
+            $profitMarginB2B = (float) $request->profit_margin_b2b;
+            $profitMarginB2C = (float) $request->profit_margin_b2c;
+            $recalculatePrices = $request->boolean('recalculate_prices', true);
+
+            // Validar margens
+            if ($profitMarginB2B < 0 || $profitMarginB2B > 1000) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A margem de lucro B2B deve estar entre 0% e 1000%.'
+                ], 422);
+            }
+
+            if ($profitMarginB2C < 0 || $profitMarginB2C > 1000) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'A margem de lucro B2C deve estar entre 0% e 1000%.'
+                ], 422);
+            }
+
+            // Buscar todos os produtos que têm preço de custo definido
+            $products = Product::whereNotNull('cost_price')
+                              ->where('cost_price', '>', 0)
+                              ->get();
+
+            $updated = 0;
+            $errors = [];
+
+            foreach ($products as $product) {
+                try {
+                    // Atualizar margens de lucro
+                    $product->update([
+                        'profit_margin_b2b' => $profitMarginB2B,
+                        'profit_margin_b2c' => $profitMarginB2C,
+                    ]);
+
+                    // Recalcular preços se solicitado
+                    if ($recalculatePrices && $product->cost_price > 0) {
+                        $b2bPrice = round($product->cost_price * (1 + $profitMarginB2B / 100), 2);
+                        $b2cPrice = round($product->cost_price * (1 + $profitMarginB2C / 100), 2);
+
+                        $product->update([
+                            'b2b_price' => $b2bPrice,
+                            'price' => $b2cPrice,
+                        ]);
+                    }
+
+                    $updated++;
+                } catch (\Exception $e) {
+                    $errors[] = "Produto ID {$product->id} ({$product->name}): " . $e->getMessage();
+                    \Log::error("Erro ao atualizar produto {$product->id} no controlador global", [
+                        'product_id' => $product->id,
+                        'exception' => $e
+                    ]);
+                }
+            }
+
+            $message = "Margens de lucro aplicadas com sucesso a {$updated} produto(s).";
+            if (!empty($errors)) {
+                $message .= " Erros: " . count($errors) . " produto(s) não puderam ser atualizados.";
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'updated' => $updated,
+                'total' => $products->count(),
+                'errors' => $errors
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro de validação: ' . implode(', ', array_merge(
+                    $e->errors()['profit_margin_b2b'] ?? [],
+                    $e->errors()['profit_margin_b2c'] ?? []
+                )),
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao aplicar margens globais: ' . $e->getMessage(), [
+                'exception' => $e
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao aplicar margens: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     /**
      * Retorna as variações de um produto agrupadas por tipo
@@ -871,6 +969,59 @@ class ProductController extends Controller
         }
     }
     
+    /**
+     * Remove uma imagem específica do produto
+     */
+    public function removeImage(Request $request, Product $product)
+    {
+        try {
+            $request->validate([
+                'image_path' => 'required|string'
+            ]);
+
+            $imagePath = $this->extractImagePath($request->image_path);
+            
+            if (!$imagePath) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Caminho da imagem inválido'
+                ], 400);
+            }
+
+            $currentImages = $product->images ?? [];
+            
+            // Remover a imagem do array
+            $updatedImages = array_filter($currentImages, function($img) use ($imagePath) {
+                return $img !== $imagePath;
+            });
+            
+            // Reindexar o array
+            $updatedImages = array_values($updatedImages);
+            
+            // Atualizar produto
+            $product->update(['images' => $updatedImages]);
+            
+            // Opcional: deletar o arquivo físico do storage
+            // Storage::disk('public')->delete($imagePath);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagem removida com sucesso!',
+                'images' => $product->all_images
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao remover imagem do produto: ' . $e->getMessage(), [
+                'product_id' => $product->id,
+                'exception' => $e
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao remover imagem: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     /**
      * Extrai o caminho da imagem de uma URL ou caminho
      */
