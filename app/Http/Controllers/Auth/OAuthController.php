@@ -35,8 +35,9 @@ class OAuthController extends Controller
                     'error_description' => $request->input('error_description')
                 ]);
 
-                return redirect()->route('admin.settings.index', ['tab' => 'delivery'])
-                    ->with('error', 'Erro na autorização: ' . ($request->input('error_description') ?? $error));
+                return redirect()->route('admin.settings.index')
+                    ->with('error', 'Erro na autorização: ' . ($request->input('error_description') ?? $error))
+                    ->with('active_tab', 'delivery');
             }
 
             // Se houver código, processar autorização
@@ -48,17 +49,20 @@ class OAuthController extends Controller
                 $result = $this->processAuthorization($provider, $code, $state);
 
                 if ($result['success']) {
-                    return redirect()->route('admin.settings.index', ['tab' => 'delivery'])
-                        ->with('success', $result['message'] ?? 'Autorização realizada com sucesso!');
+                    return redirect()->route('admin.settings.index')
+                        ->with('success', $result['message'] ?? 'Autorização realizada com sucesso!')
+                        ->with('active_tab', 'delivery');
                 } else {
-                    return redirect()->route('admin.settings.index', ['tab' => 'delivery'])
-                        ->with('error', $result['message'] ?? 'Erro ao processar autorização.');
+                    return redirect()->route('admin.settings.index')
+                        ->with('error', $result['message'] ?? 'Erro ao processar autorização.')
+                        ->with('active_tab', 'delivery');
                 }
             }
 
             // Se não houver código nem erro, apenas confirmar recebimento
-            return redirect()->route('admin.settings.index', ['tab' => 'delivery'])
-                ->with('info', 'Callback recebido. Verifique as configurações.');
+            return redirect()->route('admin.settings.index')
+                ->with('info', 'Callback recebido. Verifique as configurações.')
+                ->with('active_tab', 'delivery');
 
         } catch (\Exception $e) {
             Log::error('Erro ao processar callback OAuth: ' . $e->getMessage(), [
@@ -135,11 +139,21 @@ class OAuthController extends Controller
                 ? 'https://sandbox.melhorenvio.com.br'
                 : 'https://www.melhorenvio.com.br';
 
+            $clientId = setting('melhor_envio_client_id');
+            $clientSecret = setting('melhor_envio_client_secret');
+            
+            if (empty($clientId) || empty($clientSecret)) {
+                return [
+                    'success' => false,
+                    'message' => 'Client ID ou Client Secret não configurados. Configure primeiro nas configurações.'
+                ];
+            }
+
             // Trocar código por token
             $response = Http::asForm()->post($baseUrl . '/oauth/token', [
                 'grant_type' => 'authorization_code',
-                'client_id' => setting('melhor_envio_client_id'),
-                'client_secret' => setting('melhor_envio_client_secret'),
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
                 'code' => $code,
                 'redirect_uri' => route('auth.callback', ['provider' => 'melhor_envio'])
             ]);
@@ -147,28 +161,42 @@ class OAuthController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 
-                // Salvar token nas configurações
-                setting(['melhor_envio_token' => $data['access_token'] ?? null]);
-                setting(['melhor_envio_refresh_token' => $data['refresh_token'] ?? null]);
+                // Salvar token nas configurações usando o helper
+                \App\Models\Setting::set('melhor_envio_token', $data['access_token'] ?? null, 'string', 'delivery');
                 
-                Log::info('Token do Melhor Envio obtido com sucesso');
+                if (isset($data['refresh_token'])) {
+                    \App\Models\Setting::set('melhor_envio_refresh_token', $data['refresh_token'], 'string', 'delivery');
+                }
+                
+                Log::info('Token do Melhor Envio obtido com sucesso', [
+                    'has_access_token' => !empty($data['access_token']),
+                    'has_refresh_token' => !empty($data['refresh_token'])
+                ]);
 
                 return [
                     'success' => true,
-                    'message' => 'Autorização do Melhor Envio realizada com sucesso!'
+                    'message' => 'Autorização do Melhor Envio realizada com sucesso! Token salvo automaticamente.'
                 ];
             } else {
+                $errorData = $response->json();
+                $errorMessage = isset($errorData['message']) 
+                    ? $errorData['message'] 
+                    : $response->body();
+                
                 Log::error('Erro ao obter token do Melhor Envio', [
-                    'response' => $response->body()
+                    'status' => $response->status(),
+                    'response' => $errorMessage
                 ]);
 
                 return [
                     'success' => false,
-                    'message' => 'Erro ao obter token: ' . $response->body()
+                    'message' => 'Erro ao obter token: ' . $errorMessage
                 ];
             }
         } catch (\Exception $e) {
-            Log::error('Erro ao processar autorização do Melhor Envio: ' . $e->getMessage());
+            Log::error('Erro ao processar autorização do Melhor Envio: ' . $e->getMessage(), [
+                'exception' => $e->getTraceAsString()
+            ]);
             
             return [
                 'success' => false,

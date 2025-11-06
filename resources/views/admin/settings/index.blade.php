@@ -479,18 +479,18 @@
                                                    value="{{ setting('melhor_envio_client_secret', '') }}" placeholder="Client Secret do Melhor Envio">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="melhor_envio_token" class="form-label">Token (Opcional - obtido via OAuth)</label>
-                                            <input type="password" class="form-control" id="melhor_envio_token" 
-                                                   value="{{ setting('melhor_envio_token', '') }}" placeholder="Token de acesso (gerado automaticamente)">
-                                            <small class="form-text text-muted">O token será gerado automaticamente após autorização OAuth</small>
-                                        </div>
-                                        <div class="mb-3">
                                             <label for="melhor_envio_sandbox" class="form-label">Ambiente</label>
                                             <select class="form-select" id="melhor_envio_sandbox">
                                                 <option value="1" {{ setting('melhor_envio_sandbox', true) ? 'selected' : '' }}>Sandbox (Teste)</option>
                                                 <option value="0" {{ !setting('melhor_envio_sandbox', true) ? 'selected' : '' }}>Produção</option>
                                             </select>
                                         </div>
+                                        @if(setting('melhor_envio_token'))
+                                        <div class="alert alert-info mb-3">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <strong>Token configurado:</strong> O token foi obtido via OAuth e está ativo.
+                                        </div>
+                                        @endif
                                         <button class="btn btn-danger btn-sm" onclick="saveDeliveryConfig('melhor_envio')">
                                             <i class="bi bi-check-lg me-1"></i>Salvar
                                         </button>
@@ -1285,28 +1285,62 @@ function testDeliveryConnection(provider) {
 // Função para autorizar Melhor Envio via OAuth
 function authorizeMelhorEnvio() {
     const clientId = document.getElementById('melhor_envio_client_id')?.value;
+    const clientSecret = document.getElementById('melhor_envio_client_secret')?.value;
     const sandbox = document.getElementById('melhor_envio_sandbox')?.value === '1';
     
-    if (!clientId) {
-        alert('Por favor, configure o Client ID primeiro e salve as configurações.');
+    if (!clientId || !clientSecret) {
+        alert('Por favor, configure o Client ID e Client Secret primeiro e salve as configurações.');
         return;
     }
     
-    // Construir URL de autorização OAuth
-    const baseUrl = sandbox 
-        ? 'https://sandbox.melhorenvio.com.br'
-        : 'https://www.melhorenvio.com.br';
+    // Primeiro salvar as configurações para garantir que estão no banco
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('_method', 'PUT');
     
-    const redirectUri = encodeURIComponent('{{ route("auth.callback", ["provider" => "melhor_envio"]) }}');
-    const authUrl = `${baseUrl}/oauth/authorize?` + new URLSearchParams({
-        client_id: clientId,
-        redirect_uri: redirectUri,
-        response_type: 'code',
-        scope: 'read write'
+    const fields = ['melhor_envio_enabled', 'melhor_envio_client_id', 'melhor_envio_client_secret', 'melhor_envio_sandbox'];
+    fields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) {
+            formData.append(field, element.type === 'checkbox' ? (element.checked ? '1' : '0') : element.value);
+        }
     });
     
-    // Abrir em nova janela ou redirecionar
-    window.location.href = authUrl;
+    // Salvar primeiro
+    fetch('{{ route("admin.settings.update") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Construir URL de autorização OAuth
+            const baseUrl = sandbox 
+                ? 'https://sandbox.melhorenvio.com.br'
+                : 'https://www.melhorenvio.com.br';
+            
+            const redirectUri = encodeURIComponent('{{ route("auth.callback", ["provider" => "melhor_envio"]) }}');
+            const authUrl = `${baseUrl}/oauth/authorize?` + new URLSearchParams({
+                client_id: clientId,
+                redirect_uri: redirectUri,
+                response_type: 'code',
+                scope: 'read write'
+            });
+            
+            // Redirecionar para autorização
+            window.location.href = authUrl;
+        } else {
+            alert('Erro ao salvar configurações: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar configurações antes de autorizar.');
+    });
 }
 
 // Função para mostrar modal de conexão
@@ -1371,7 +1405,7 @@ function getDeliveryFields(provider) {
         'total_express': ['total_express_enabled', 'total_express_api_key', 'total_express_sandbox'],
         'jadlog': ['jadlog_enabled', 'jadlog_cnpj', 'jadlog_api_key', 'jadlog_sandbox'],
         'loggi': ['loggi_enabled', 'loggi_api_key', 'loggi_sandbox'],
-        'melhor_envio': ['melhor_envio_enabled', 'melhor_envio_client_id', 'melhor_envio_client_secret', 'melhor_envio_token', 'melhor_envio_sandbox']
+        'melhor_envio': ['melhor_envio_enabled', 'melhor_envio_client_id', 'melhor_envio_client_secret', 'melhor_envio_sandbox']
     };
     return fields[provider] || [];
 }
@@ -1643,5 +1677,19 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+// Ativar aba correta se vier do callback OAuth
+@if(session('active_tab'))
+    document.addEventListener('DOMContentLoaded', function() {
+        const activeTab = '{{ session("active_tab") }}';
+        if (activeTab) {
+            const tabButton = document.querySelector(`#${activeTab}-tab`);
+            if (tabButton) {
+                const tab = new bootstrap.Tab(tabButton);
+                tab.show();
+            }
+        }
+    });
+@endif
 </script>
 @endsection
