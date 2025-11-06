@@ -497,6 +497,9 @@
                                         <button class="btn btn-outline-secondary btn-sm ms-2" onclick="testDeliveryConnection('melhor_envio')">
                                             <i class="bi bi-wifi me-1"></i>Testar
                                         </button>
+                                        <button class="btn btn-outline-primary btn-sm ms-2" onclick="authorizeMelhorEnvio()" title="Autorizar aplicativo no Melhor Envio">
+                                            <i class="bi bi-key me-1"></i>Autorizar
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -1277,6 +1280,33 @@ function testDeliveryConnection(provider) {
             message: 'Erro ao testar conexão: ' + error.message
         });
     });
+}
+
+// Função para autorizar Melhor Envio via OAuth
+function authorizeMelhorEnvio() {
+    const clientId = document.getElementById('melhor_envio_client_id')?.value;
+    const sandbox = document.getElementById('melhor_envio_sandbox')?.value === '1';
+    
+    if (!clientId) {
+        alert('Por favor, configure o Client ID primeiro e salve as configurações.');
+        return;
+    }
+    
+    // Construir URL de autorização OAuth
+    const baseUrl = sandbox 
+        ? 'https://sandbox.melhorenvio.com.br'
+        : 'https://www.melhorenvio.com.br';
+    
+    const redirectUri = encodeURIComponent('{{ route("auth.callback", ["provider" => "melhor_envio"]) }}');
+    const authUrl = `${baseUrl}/oauth/authorize?` + new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: 'read write'
+    });
+    
+    // Abrir em nova janela ou redirecionar
+    window.location.href = authUrl;
 }
 
 // Função para mostrar modal de conexão

@@ -423,7 +423,34 @@ class SettingController extends Controller
             : 'https://www.melhorenvio.com.br/api/v2/me';
 
         try {
-            // Tentar primeiro com Basic Auth (Client ID e Secret)
+            $response = null;
+            $lastError = null;
+            
+            // Método 1: Tentar com Bearer Token (se tiver token configurado)
+            if (!empty($token)) {
+                Log::info('Testando conexão Melhor Envio com Bearer Token');
+                $response = Http::withHeaders([
+                    'Authorization' => 'Bearer ' . $token,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                    'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
+                ])->get($baseUrl);
+                
+                if ($response->successful()) {
+                    $data = $response->json();
+                    return [
+                        'success' => true,
+                        'message' => 'Conexão com Melhor Envio estabelecida com sucesso' . 
+                            (isset($data['name']) ? ' - Usuário: ' . $data['name'] : '')
+                    ];
+                }
+                
+                $lastError = $response->body();
+                Log::warning('Bearer Token falhou', ['status' => $response->status(), 'body' => $lastError]);
+            }
+            
+            // Método 2: Tentar com Basic Auth (Client ID e Secret)
+            Log::info('Testando conexão Melhor Envio com Basic Auth');
             $response = Http::withBasicAuth($clientId, $clientSecret)
                 ->withHeaders([
                     'Accept' => 'application/json',
@@ -431,66 +458,57 @@ class SettingController extends Controller
                     'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
                 ])->get($baseUrl);
             
-            // Se Basic Auth não funcionar e tiver token, tentar com Bearer token
-            if (!$response->successful() && !empty($token)) {
-                $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $token,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                    'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
-                ])->get($baseUrl);
-            }
-
-            // Se o endpoint /me não funcionar, tentar outro endpoint
-            if (!$response->successful() && $response->status() === 401) {
-                // Tentar endpoint alternativo para verificar token
-                $altUrl = $sandbox 
-                    ? 'https://sandbox.melhorenvio.com.br/api/v2/me/cart'
-                    : 'https://www.melhorenvio.com.br/api/v2/me/cart';
-                
-                $altResponse = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $token,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                    'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
-                ])->get($altUrl);
-
-                if ($altResponse->successful() || $altResponse->status() === 200) {
-                    return [
-                        'success' => true,
-                        'message' => 'Conexão com Melhor Envio estabelecida com sucesso'
-                    ];
-                }
-            }
-
             if ($response->successful()) {
                 $data = $response->json();
                 return [
                     'success' => true,
-                    'message' => 'Conexão com Melhor Envio estabelecida com sucesso' . 
+                    'message' => 'Conexão com Melhor Envio estabelecida com sucesso usando Basic Auth' . 
                         (isset($data['name']) ? ' - Usuário: ' . $data['name'] : '')
                 ];
-            } else {
-                $errorData = $response->json();
-                $errorMessage = isset($errorData['message']) 
-                    ? $errorData['message'] 
-                    : $response->body();
-                
-                // Se for erro de autenticação, dar mensagem mais clara
-                if ($response->status() === 401) {
+            }
+            
+            // Se ambos falharam, analisar o erro
+            $errorData = $response->json();
+            $errorMessage = isset($errorData['message']) 
+                ? $errorData['message'] 
+                : ($response->body() ?: 'Erro desconhecido');
+            
+            Log::error('Falha na conexão Melhor Envio', [
+                'status' => $response->status(),
+                'error' => $errorMessage,
+                'has_token' => !empty($token),
+                'has_credentials' => !empty($clientId) && !empty($clientSecret)
+            ]);
+            
+            // Mensagens específicas baseadas no erro
+            if ($response->status() === 401) {
+                if (empty($token)) {
                     return [
                         'success' => false,
-                        'message' => 'Token inválido ou expirado. Verifique se o token está correto e se não expirou. ' . 
-                            'Se necessário, gere um novo token no painel do Melhor Envio.'
+                        'message' => 'Autenticação falhou. O Melhor Envio requer autorização OAuth. ' .
+                            'Você precisa autorizar o aplicativo primeiro. ' .
+                            'Acesse o painel do Melhor Envio e autorize o aplicativo, ou configure um token de acesso válido.'
+                    ];
+                } else {
+                    return [
+                        'success' => false,
+                        'message' => 'Token inválido ou expirado. Verifique se o token está correto. ' .
+                            'Se necessário, gere um novo token através da autorização OAuth no painel do Melhor Envio.'
                     ];
                 }
-                
-                return [
-                    'success' => false,
-                    'message' => 'Falha na conexão com Melhor Envio: ' . $errorMessage
-                ];
             }
+            
+            return [
+                'success' => false,
+                'message' => 'Falha na conexão com Melhor Envio: ' . $errorMessage . 
+                    ' (Status: ' . $response->status() . ')'
+            ];
         } catch (\Exception $e) {
+            Log::error('Exceção ao testar conexão Melhor Envio', [
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            
             return [
                 'success' => false,
                 'message' => 'Erro ao conectar com Melhor Envio: ' . $e->getMessage()
