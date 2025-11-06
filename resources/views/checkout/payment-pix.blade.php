@@ -542,18 +542,24 @@
                         </div>
                     </div>
 
-                    @if(isset($checkoutData['payment_url']) && $checkoutData['payment_url'])
+                    @if(isset($checkoutData['payment_url']) && !empty($checkoutData['payment_url']))
                         <div class="qr-code-container">
                             <h5 style="margin-bottom: 2rem; color: #1e40af; font-weight: 700;">
                                 <i class="fas fa-qrcode me-2"></i>QR Code PIX
                             </h5>
                             <div class="qr-code">
-                                <img src="{{ $checkoutData['payment_url'] }}" alt="QR Code PIX" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <div class="qr-code-placeholder" style="display: none;">
-                                    <i class="fas fa-qrcode"></i>
-                                    <span>QR Code PIX</span>
-                                </div>
+                                <img src="{{ $checkoutData['payment_url'] }}" alt="QR Code PIX" style="width: 100%; height: 100%; object-fit: contain;">
                             </div>
+                            @if(isset($checkoutData['qr_code_text']) && !empty($checkoutData['qr_code_text']))
+                                <div style="margin-top: 1.5rem; padding: 1rem; background: white; border-radius: 8px; border: 1px solid #e2e8f0;">
+                                    <p style="margin: 0; font-size: 0.85rem; color: #64748b; margin-bottom: 0.5rem;">
+                                        <strong>Código PIX:</strong>
+                                    </p>
+                                    <p style="margin: 0; font-family: monospace; font-size: 0.9rem; word-break: break-all; color: #1e293b;" id="pixCode">
+                                        {{ $checkoutData['qr_code_text'] }}
+                                    </p>
+                                </div>
+                            @endif
                         </div>
                     @else
                         <div class="qr-code-container">
@@ -624,18 +630,29 @@
 let checkInterval;
 
 function copyPixCode() {
-    // Aqui você implementaria a lógica para copiar o código PIX
-    const btn = event.target.closest('button');
-    const originalText = btn.innerHTML;
-    btn.innerHTML = '<i class="fas fa-check me-2"></i>Código Copiado!';
-    btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+    const pixCodeElement = document.getElementById('pixCode');
+    if (!pixCodeElement) {
+        alert('Código PIX não encontrado.');
+        return;
+    }
     
-    setTimeout(() => {
-        btn.innerHTML = originalText;
-        btn.style.background = 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)';
-    }, 2000);
+    const pixCode = pixCodeElement.textContent.trim();
     
-    alert('Código PIX copiado para a área de transferência!');
+    // Copiar para área de transferência
+    navigator.clipboard.writeText(pixCode).then(() => {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-check me-2"></i>Código Copiado!';
+        btn.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.background = 'linear-gradient(135deg, #f59e0b 0%, #f97316 100%)';
+        }, 2000);
+    }).catch(err => {
+        console.error('Erro ao copiar:', err);
+        alert('Erro ao copiar código PIX. Tente selecionar e copiar manualmente.');
+    });
 }
 
 function checkPaymentStatus() {

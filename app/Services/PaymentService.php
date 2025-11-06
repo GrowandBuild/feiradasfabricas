@@ -356,22 +356,30 @@ class PaymentService
                     // Para PIX, sempre criar pagamento diretamente para obter QR code
                     $pixPayment = $this->createMercadoPagoPixPayment($amount, $currency, $paymentData, $metadata);
                     if ($pixPayment['success']) {
-                        $paymentUrl = $pixPayment['payment_url'] ?? $pixPayment['qr_code_base64'] ?? null;
+                        // Usar payment_url que já contém a imagem base64 formatada
+                        $paymentUrl = $pixPayment['payment_url'] ?? null;
                         $paymentId = $pixPayment['payment_id'] ?? null;
+                        $qrCodeText = $pixPayment['qr_code_text'] ?? null;
                     } else {
-                        // Se falhar, usar init_point como fallback
-                        $paymentUrl = $data['init_point'] ?? null;
+                        // Se falhar, logar erro e retornar erro
+                        Log::error('Erro ao criar pagamento PIX: ' . ($pixPayment['error'] ?? 'Erro desconhecido'));
+                        return [
+                            'success' => false,
+                            'error' => $pixPayment['error'] ?? 'Erro ao gerar QR Code PIX'
+                        ];
                     }
                 } elseif ($paymentMethod === 'boleto') {
                     // Para boleto, usar init_point
                     $paymentUrl = $data['init_point'] ?? null;
+                    $qrCodeText = null;
                 }
                 
                 return [
                     'success' => true,
                     'preference_id' => $data['id'],
-                    'payment_id' => $paymentId,
+                    'payment_id' => $paymentId ?? null,
                     'payment_url' => $paymentUrl ?? $data['init_point'] ?? null,
+                    'qr_code_text' => $qrCodeText ?? null,
                     'status' => 'pending',
                     'init_point' => $data['init_point'] ?? null
                 ];
@@ -427,18 +435,56 @@ class PaymentService
 
             if ($response->successful()) {
                 $data = $response->json();
+                
+                // Log para depuração (remover em produção)
+                Log::info('Resposta Mercado Pago PIX:', [
+                    'payment_id' => $data['id'] ?? null,
+                    'status' => $data['status'] ?? null,
+                    'has_point_of_interaction' => isset($data['point_of_interaction']),
+                    'point_of_interaction' => $data['point_of_interaction'] ?? null
+                ]);
+                
+                // Obter dados do PIX
+                $pointOfInteraction = $data['point_of_interaction'] ?? [];
+                $transactionData = $pointOfInteraction['transaction_data'] ?? [];
+                
+                // QR Code em base64 (imagem)
+                $qrCodeBase64 = $transactionData['qr_code_base64'] ?? null;
+                
+                // Código PIX em texto (para copiar)
+                $qrCodeText = $transactionData['qr_code'] ?? null;
+                
+                // Log para depuração
+                if (!$qrCodeBase64) {
+                    Log::warning('QR Code base64 não encontrado na resposta do Mercado Pago', [
+                        'transaction_data' => $transactionData
+                    ]);
+                }
+                
+                // Criar URL data URI para a imagem do QR Code
+                $paymentUrl = null;
+                if ($qrCodeBase64) {
+                    $paymentUrl = 'data:image/png;base64,' . $qrCodeBase64;
+                }
+                
                 return [
                     'success' => true,
                     'payment_id' => $data['id'],
                     'status' => $data['status'],
-                    'payment_url' => $data['point_of_interaction']['transaction_data']['qr_code'] ?? null,
-                    'qr_code_base64' => $data['point_of_interaction']['transaction_data']['qr_code_base64'] ?? null
+                    'payment_url' => $paymentUrl,
+                    'qr_code_base64' => $qrCodeBase64,
+                    'qr_code_text' => $qrCodeText
                 ];
             } else {
                 $errorData = $response->json();
+                $statusCode = $response->status();
+                Log::error('Erro ao criar pagamento PIX', [
+                    'status_code' => $statusCode,
+                    'error' => $errorData
+                ]);
                 return [
                     'success' => false,
-                    'error' => $errorData['message'] ?? 'Erro ao criar pagamento PIX'
+                    'error' => $errorData['message'] ?? 'Erro ao criar pagamento PIX (Status: ' . $statusCode . ')'
                 ];
             }
         } catch (\Exception $e) {
