@@ -142,7 +142,7 @@
             <i class="bi bi-percent me-2" style="color: var(--accent-color);"></i>
             <h6 class="mb-0">Configuração de Margens de Lucro</h6>
         </div>
-        <button type="button" class="btn btn-sm btn-outline-primary" id="saveMarginsBtn" onclick="saveMargins(event)">
+        <button type="button" class="btn btn-sm btn-outline-primary" id="btnSalvarMargens">
             <i class="bi bi-save me-1"></i>Salvar Margens
         </button>
     </div>
@@ -183,7 +183,7 @@
             <div class="col-md-4 d-flex align-items-end">
                 <div class="w-100">
                     <label class="form-label">Aplicar a todos os produtos</label>
-                    <button type="button" class="btn btn-warning btn-sm w-100" id="applyMarginsBtn" onclick="applyMarginsToAll(event)">
+                    <button type="button" class="btn btn-warning btn-sm w-100" id="btnAplicarMargens">
                         <i class="bi bi-arrow-repeat me-1"></i>Recalcular Todos os Preços
                     </button>
                     <small class="text-muted d-block mt-1">⚠️ Recalcula B2B e B2C de todos os produtos</small>
@@ -750,168 +750,107 @@ function updateProductPrice(productId, costPrice) {
     });
 }
 
-// Salvar margens de lucro
-function saveMargins(e) {
-    const b2bMarginInput = document.getElementById('b2b_margin');
-    const b2cMarginInput = document.getElementById('b2c_margin');
+// ========== SISTEMA DE MARGENS DE LUCRO ==========
+document.addEventListener('DOMContentLoaded', function() {
+    const btnSalvar = document.getElementById('btnSalvarMargens');
+    const btnAplicar = document.getElementById('btnAplicarMargens');
     
-    if (!b2bMarginInput || !b2cMarginInput) {
-        alert('Erro: Campos de margem não encontrados. Por favor, recarregue a página.');
-        console.error('Inputs não encontrados:', { b2b: b2bMarginInput, b2c: b2cMarginInput });
-        return;
-    }
-    
-    const b2bMargin = b2bMarginInput.value;
-    const b2cMargin = b2cMarginInput.value;
-    
-    if (!b2bMargin || !b2cMargin || b2bMargin === '' || b2cMargin === '') {
-        alert('Por favor, preencha ambas as margens.');
-        return;
-    }
-    
-    const b2bValue = parseFloat(b2bMargin);
-    const b2cValue = parseFloat(b2cMargin);
-    
-    if (isNaN(b2bValue) || isNaN(b2cValue)) {
-        alert('Por favor, insira valores numéricos válidos para as margens.');
-        return;
-    }
-    
-    // Mostrar loading
-    let btn = null;
-    if (e && e.target) {
-        btn = e.target.closest('button');
-    }
-    if (!btn) {
-        btn = document.getElementById('saveMarginsBtn');
-    }
-    if (!btn) {
-        btn = document.querySelector('button[onclick*="saveMargins"]');
-    }
-    const originalBtnText = btn ? btn.innerHTML : '';
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
-    }
-    
-    fetch('/admin/products/save-margins', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-            b2b_margin: b2bValue,
-            b2c_margin: b2cValue
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            // Atualizar os valores nos inputs com os valores salvos confirmados
-            if (data.data) {
-                if (data.data.b2c_margin !== undefined && data.data.b2c_margin !== null) {
-                    const b2cInput = document.getElementById('b2c_margin');
-                    if (b2cInput) {
-                        b2cInput.value = parseFloat(data.data.b2c_margin).toFixed(1);
-                    }
-                }
-                if (data.data.b2b_margin !== undefined && data.data.b2b_margin !== null) {
-                    const b2bInput = document.getElementById('b2b_margin');
-                    if (b2bInput) {
-                        b2bInput.value = parseFloat(data.data.b2b_margin).toFixed(1);
-                    }
-                }
+    if (btnSalvar) {
+        btnSalvar.addEventListener('click', function() {
+            const inputB2C = document.getElementById('b2c_margin');
+            const inputB2B = document.getElementById('b2b_margin');
+            
+            if (!inputB2C || !inputB2B) {
+                alert('Erro: Campos não encontrados.');
+                return;
             }
-            alert('✅ Margens salvas com sucesso!\n\nB2C: ' + (data.data?.b2c_margin || b2cValue) + '%\nB2B: ' + (data.data?.b2b_margin || b2bValue) + '%');
-        } else {
-            alert('❌ Erro ao salvar margens: ' + (data.message || 'Erro desconhecido'));
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert('❌ Erro ao salvar margens: ' + error.message + '\n\nVerifique o console para mais detalhes.');
-    })
-    .finally(() => {
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = originalBtnText;
-        }
-    });
-}
-
-// Aplicar margens a todos os produtos
-function applyMarginsToAll(e) {
-    if (!confirm('Tem certeza que deseja recalcular os preços B2B e B2C de TODOS os produtos baseado nas margens configuradas? Esta ação não pode ser desfeita.')) {
-        return;
-    }
-    
-    // Capturar o botão corretamente - tentar múltiplas formas
-    let btn = null;
-    if (e && e.target) {
-        btn = e.target.closest('button');
-    }
-    if (!btn) {
-        btn = document.getElementById('applyMarginsBtn');
-    }
-    if (!btn) {
-        // Última tentativa: buscar pelo texto do botão
-        const buttons = document.querySelectorAll('button');
-        for (let button of buttons) {
-            if (button.textContent.includes('Recalcular Todos os Preços')) {
-                btn = button;
-                break;
+            
+            const margemB2C = parseFloat(inputB2C.value);
+            const margemB2B = parseFloat(inputB2B.value);
+            
+            if (isNaN(margemB2C) || isNaN(margemB2B)) {
+                alert('Por favor, insira valores numéricos válidos.');
+                return;
             }
-        }
+            
+            if (margemB2C < 0 || margemB2C > 100 || margemB2B < 0 || margemB2B > 100) {
+                alert('As margens devem estar entre 0 e 100%.');
+                return;
+            }
+            
+            btnSalvar.disabled = true;
+            btnSalvar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
+            
+            fetch('/admin/products/salvar-margens', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    margem_b2c: margemB2C,
+                    margem_b2b: margemB2B
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    inputB2C.value = data.margens.b2c;
+                    inputB2B.value = data.margens.b2b;
+                    alert('✅ ' + data.mensagem);
+                } else {
+                    alert('❌ ' + data.mensagem);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('❌ Erro ao salvar margens.');
+            })
+            .finally(() => {
+                btnSalvar.disabled = false;
+                btnSalvar.innerHTML = '<i class="bi bi-save me-1"></i>Salvar Margens';
+            });
+        });
     }
     
-    if (!btn) {
-        alert('Erro: botão não encontrado. Por favor, recarregue a página.');
-        console.error('Botão não encontrado. Elementos disponíveis:', document.querySelectorAll('button'));
-        return;
+    if (btnAplicar) {
+        btnAplicar.addEventListener('click', function() {
+            if (!confirm('Tem certeza que deseja recalcular os preços de TODOS os produtos? Esta ação não pode ser desfeita.')) {
+                return;
+            }
+            
+            btnAplicar.disabled = true;
+            btnAplicar.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Processando...';
+            
+            fetch('/admin/products/aplicar-margens-todos', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.sucesso) {
+                    alert('✅ ' + data.mensagem);
+                    setTimeout(() => window.location.reload(), 1500);
+                } else {
+                    alert('❌ ' + data.mensagem);
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('❌ Erro ao recalcular preços.');
+            })
+            .finally(() => {
+                btnAplicar.disabled = false;
+                btnAplicar.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Recalcular Todos os Preços';
+            });
+        });
     }
-    
-    const originalText = btn.innerHTML;
-    btn.disabled = true;
-    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Processando...';
-    
-    fetch('/admin/products/apply-margins-to-all', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            alert(data.message + '\n\nTotal de produtos processados: ' + (data.total_products || 0) + '\nProdutos atualizados: ' + (data.updated || 0));
-            location.reload(); // Recarregar página para mostrar novos preços
-        } else {
-            alert('Erro ao recalcular preços: ' + (data.message || 'Erro desconhecido'));
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert('Erro ao recalcular preços: ' + error.message + '\n\nVerifique o console para mais detalhes.');
-        btn.disabled = false;
-        btn.innerHTML = originalText;
-    });
-}
+});
 
 // Permitir Enter para salvar e formatação inteligente
 document.addEventListener('DOMContentLoaded', function() {

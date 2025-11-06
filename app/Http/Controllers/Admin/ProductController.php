@@ -389,83 +389,93 @@ class ProductController extends Controller
     }
 
     /**
-     * Salvar configurações de margens
+     * Salvar configurações de margens de lucro
      */
-    public function saveMargins(Request $request)
+    public function salvarMargens(Request $request)
     {
-        $request->validate([
-            'b2b_margin' => 'required|numeric|min:0|max:100',
-            'b2c_margin' => 'required|numeric|min:0|max:100',
-        ]);
+        try {
+            $validated = $request->validate([
+                'margem_b2c' => 'required|numeric|min:0|max:100',
+                'margem_b2b' => 'required|numeric|min:0|max:100',
+            ]);
 
-        // Garantir que os valores são números (float) e arredondar para 2 casas decimais
-        $b2bMargin = round((float) $request->b2b_margin, 2);
-        $b2cMargin = round((float) $request->b2c_margin, 2);
+            $margemB2C = (float) $validated['margem_b2c'];
+            $margemB2B = (float) $validated['margem_b2b'];
 
-        // Salvar as configurações
-        $b2bSetting = Setting::set('b2b_margin_percentage', $b2bMargin, 'number', 'pricing');
-        $b2cSetting = Setting::set('b2c_margin_percentage', $b2cMargin, 'number', 'pricing');
+            // Buscar ou criar registro B2C
+            $settingB2C = Setting::firstOrNew(['key' => 'b2c_margin_percentage']);
+            $settingB2C->value = (string) $margemB2C;
+            $settingB2C->type = 'number';
+            $settingB2C->group = 'pricing';
+            $settingB2C->save();
 
-        // Verificar se foram salvas corretamente - buscar diretamente do banco
-        $savedB2B = Setting::get('b2b_margin_percentage', $b2bMargin);
-        $savedB2C = Setting::get('b2c_margin_percentage', $b2cMargin);
+            // Buscar ou criar registro B2B
+            $settingB2B = Setting::firstOrNew(['key' => 'b2b_margin_percentage']);
+            $settingB2B->value = (string) $margemB2B;
+            $settingB2B->type = 'number';
+            $settingB2B->group = 'pricing';
+            $settingB2B->save();
 
-        // Garantir que os valores retornados são números
-        $savedB2B = is_numeric($savedB2B) ? (float) $savedB2B : $b2bMargin;
-        $savedB2C = is_numeric($savedB2C) ? (float) $savedB2C : $b2cMargin;
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Margens salvas com sucesso!',
-            'data' => [
-                'b2b_margin' => $savedB2B,
-                'b2c_margin' => $savedB2C,
-            ]
-        ]);
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => 'Margens salvas com sucesso!',
+                'margens' => [
+                    'b2c' => $margemB2C,
+                    'b2b' => $margemB2B,
+                ]
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'sucesso' => false,
+                'mensagem' => 'Erro ao salvar margens: ' . $e->getMessage()
+            ], 500);
+        }
     }
 
     /**
-     * Aplicar margens a todos os produtos
+     * Aplicar margens configuradas a todos os produtos
      */
-    public function applyMarginsToAll(Request $request)
+    public function aplicarMargensTodos(Request $request)
     {
-        // Obter margens configuradas
-        // B2C = 10% de margem (custo R$ 1,00 → venda R$ 1,10)
-        // B2B = 20% de margem (custo R$ 1,00 → venda R$ 1,20)
-        $b2cMargin = Setting::get('b2c_margin_percentage', 10);
-        $b2bMargin = Setting::get('b2b_margin_percentage', 20);
+        try {
+            $margemB2C = (float) Setting::get('b2c_margin_percentage', 10);
+            $margemB2B = (float) Setting::get('b2b_margin_percentage', 20);
 
-        $products = Product::whereNotNull('cost_price')
-            ->where('cost_price', '>', 0)
-            ->get();
+            $produtos = Product::whereNotNull('cost_price')
+                ->where('cost_price', '>', 0)
+                ->get();
 
-        $updated = 0;
-        foreach ($products as $product) {
-            // Garantir que cost_price é um número válido
-            $costPrice = (float) $product->cost_price;
-            
-            if ($costPrice <= 0) {
-                continue; // Pular produtos sem preço de custo válido
+            $atualizados = 0;
+            foreach ($produtos as $produto) {
+                $custo = (float) $produto->cost_price;
+                
+                if ($custo <= 0) {
+                    continue;
+                }
+                
+                $precoB2C = round($custo * (1 + $margemB2C / 100), 2);
+                $precoB2B = round($custo * (1 + $margemB2B / 100), 2);
+
+                $produto->update([
+                    'price' => $precoB2C,
+                    'b2b_price' => $precoB2B,
+                ]);
+
+                $atualizados++;
             }
-            
-            // Calcular novos preços baseados nas margens
-            $b2cPrice = round($costPrice * (1 + $b2cMargin / 100), 2);
-            $b2bPrice = round($costPrice * (1 + $b2bMargin / 100), 2);
 
-            $product->update([
-                'b2b_price' => $b2bPrice,
-                'price' => $b2cPrice,
+            return response()->json([
+                'sucesso' => true,
+                'mensagem' => "Preços de {$atualizados} produto(s) recalculado(s) com sucesso!",
+                'atualizados' => $atualizados,
+                'total' => $produtos->count()
             ]);
-
-            $updated++;
+        } catch (\Exception $e) {
+            return response()->json([
+                'sucesso' => false,
+                'mensagem' => 'Erro ao recalcular preços: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            'success' => true,
-            'message' => "Preços de {$updated} produto(s) recalculado(s) com sucesso!",
-            'updated' => $updated,
-            'total_products' => $products->count()
-        ]);
     }
 
     /**

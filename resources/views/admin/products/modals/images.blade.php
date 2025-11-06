@@ -378,6 +378,15 @@ function saveImages() {
         alert('⏱️ A requisição está demorando muito (mais de 30 segundos). Verifique sua conexão e tente novamente.');
     }, 30000); // 30 segundos
     
+    // Verificar se o token CSRF existe
+    const csrfToken = document.querySelector('meta[name="csrf-token"]');
+    if (!csrfToken || !csrfToken.content) {
+        alert('❌ Erro: Token CSRF não encontrado. Recarregue a página e tente novamente.');
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+        return;
+    }
+    
     // Adicionar log para debug
     console.log('Enviando requisição para salvar imagens...', {
         productId: productId,
@@ -387,7 +396,7 @@ function saveImages() {
     fetch(`/admin/products/${productId}/update-images`, {
         method: 'POST',
         headers: {
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-CSRF-TOKEN': csrfToken.content,
             'Accept': 'application/json'
         },
         body: formData

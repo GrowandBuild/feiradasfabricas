@@ -132,8 +132,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/bulk-action', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'bulkAction'])->name('products.bulk-action');
         Route::post('products/bulk-availability', [App\Http\Controllers\Admin\ProductController::class, 'bulkAction'])->name('products.bulk-availability');
         Route::post('products/{product}/update-cost-price', [App\Http\Controllers\Admin\ProductController::class, 'updateCostPrice'])->name('products.update-cost-price');
-        Route::post('products/save-margins', [App\Http\Controllers\Admin\ProductController::class, 'saveMargins'])->name('products.save-margins');
-        Route::post('products/apply-margins-to-all', [App\Http\Controllers\Admin\ProductController::class, 'applyMarginsToAll'])->name('products.apply-margins-to-all');
+        Route::post('products/salvar-margens', [App\Http\Controllers\Admin\ProductController::class, 'salvarMargens'])->name('products.salvar-margens');
+        Route::post('products/aplicar-margens-todos', [App\Http\Controllers\Admin\ProductController::class, 'aplicarMargensTodos'])->name('products.aplicar-margens-todos');
         Route::get('products/export-search-results', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'exportResults'])->name('products.export-search-results');
         Route::get('products/search-suggestions', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'getSearchSuggestions'])->name('products.search-suggestions');
 
