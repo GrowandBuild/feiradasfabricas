@@ -121,6 +121,9 @@
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                     <i class="bi bi-x-circle me-1"></i>Cancelar
                 </button>
+                <button type="button" class="btn btn-primary" onclick="saveAndCloseModal()">
+                    <i class="bi bi-check-circle me-1"></i>Salvar e Fechar
+                </button>
             </div>
         </div>
     </div>
@@ -388,7 +391,7 @@ function addNewVariationType(productId, type) {
     });
 }
 
-function updateAllStock() {
+function updateAllStock(event) {
     const productId = document.getElementById('variationsProductId').value;
     const stockInputs = document.querySelectorAll('.stock-input[data-variation-id]');
     const updates = [];
@@ -407,17 +410,23 @@ function updateAllStock() {
     });
     
     if (updates.length === 0) {
-        alert('Nenhuma variação para atualizar');
-        return;
+        if (event && event.target) {
+            alert('Nenhuma variação para atualizar');
+        }
+        return Promise.resolve({ success: false, message: 'Nenhuma variação para atualizar' });
     }
     
-    // Mostrar loading no botão
-    const saveBtn = event.target;
-    const originalText = saveBtn.innerHTML;
-    saveBtn.disabled = true;
-    saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
+    // Mostrar loading no botão se houver evento
+    let saveBtn = null;
+    let originalText = '';
+    if (event && event.target) {
+        saveBtn = event.target;
+        originalText = saveBtn.innerHTML;
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
+    }
     
-    fetch(`/admin/products/${productId}/variations/update-stock`, {
+    return fetch(`/admin/products/${productId}/variations/update-stock`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -433,15 +442,58 @@ function updateAllStock() {
         } else {
             showVariationMessage('error', '❌ Erro: ' + (data.message || 'Erro desconhecido'));
         }
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+        return data;
     })
     .catch(error => {
         console.error('Erro:', error);
         showVariationMessage('error', '❌ Erro ao atualizar estoque');
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = originalText;
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+        return { success: false, error: error };
     });
+}
+
+// Função para salvar e fechar o modal
+function saveAndCloseModal() {
+    const productId = document.getElementById('variationsProductId').value;
+    
+    // Verificar se estamos na aba de estoque e há alterações pendentes
+    const activeTab = document.querySelector('#variationsTabs .nav-link.active');
+    if (activeTab && activeTab.getAttribute('data-bs-target') === '#stock') {
+        // Se estiver na aba de estoque, salvar todas as alterações primeiro
+        const stockInputs = document.querySelectorAll('.stock-input[data-variation-id]');
+        if (stockInputs.length > 0) {
+            // Salvar estoque e depois fechar
+            updateAllStock().then(data => {
+                // Aguardar um pouco para mostrar a mensagem e depois fechar
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('variationsModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                }, 1500);
+            });
+        } else {
+            // Não há alterações, apenas fechar
+            const modal = bootstrap.Modal.getInstance(document.getElementById('variationsModal'));
+            if (modal) {
+                modal.hide();
+            }
+        }
+    } else {
+        // Para outras abas, as alterações já foram salvas automaticamente
+        // Apenas fechar o modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('variationsModal'));
+        if (modal) {
+            modal.hide();
+        }
+    }
 }
 
 // Função para exibir mensagens de feedback
