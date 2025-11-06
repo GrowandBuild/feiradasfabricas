@@ -235,7 +235,9 @@
 </div>
 @endsection
 
+@push('modals')
 @include('admin.banners.modal-edit')
+@endpush
 
 @section('styles')
 <style>

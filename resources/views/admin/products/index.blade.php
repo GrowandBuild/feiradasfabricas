@@ -445,11 +445,13 @@
     </div>
 </div>
 
+@push('modals')
 <!-- Incluir Modal de Variações -->
 @include('admin.products.modals.variations')
 
 <!-- Incluir Modal de Imagens -->
 @include('admin.products.modals.images')
+@endpush
 
 @section('styles')
 <style>

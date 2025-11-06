@@ -532,6 +532,10 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Modais renderizados diretamente no body para ficarem acima do backdrop -->
+    @stack('modals')
+    
     @stack('scripts')
     @yield('scripts')
 </body>
