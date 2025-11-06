@@ -82,10 +82,23 @@ class CustomerController extends Controller
             'credit_limit' => 'nullable|numeric|min:0',
         ]);
 
+        $oldB2BStatus = $customer->b2b_status;
+        
         $data = $request->all();
         $data['is_active'] = $request->has('is_active');
 
         $customer->update($data);
+
+        // Enviar email de notificação para o cliente se o status B2B mudou
+        if ($customer->type === 'b2b' && isset($data['b2b_status']) && $oldB2BStatus !== $data['b2b_status']) {
+            try {
+                $emailService = app(\App\Services\EmailService::class);
+                $emailService->enviarNotificacaoStatusB2B($customer);
+            } catch (\Exception $e) {
+                \Log::error('Erro ao enviar notificação de status B2B: ' . $e->getMessage());
+                // Não interromper o fluxo se o email falhar
+            }
+        }
 
         return redirect()->route('admin.customers.index')
                         ->with('success', 'Cliente atualizado com sucesso!');
@@ -98,10 +111,23 @@ class CustomerController extends Controller
             'b2b_notes' => 'nullable|string',
         ]);
 
+        $oldStatus = $customer->b2b_status;
+        
         $customer->update([
             'b2b_status' => $request->b2b_status,
             'b2b_notes' => $request->b2b_notes,
         ]);
+
+        // Enviar email de notificação para o cliente se o status mudou
+        if ($oldStatus !== $request->b2b_status) {
+            try {
+                $emailService = app(\App\Services\EmailService::class);
+                $emailService->enviarNotificacaoStatusB2B($customer);
+            } catch (\Exception $e) {
+                \Log::error('Erro ao enviar notificação de status B2B: ' . $e->getMessage());
+                // Não interromper o fluxo se o email falhar
+            }
+        }
 
         $statusLabels = [
             'pending' => 'Pendente',
@@ -110,7 +136,7 @@ class CustomerController extends Controller
         ];
 
         return redirect()->back()
-                        ->with('success', 'Status B2B atualizado para: ' . $statusLabels[$request->b2b_status]);
+                        ->with('success', 'Status B2B atualizado para: ' . $statusLabels[$request->b2b_status] . '. O cliente receberá um email de notificação.');
     }
 
     public function resetPassword(Request $request, Customer $customer)

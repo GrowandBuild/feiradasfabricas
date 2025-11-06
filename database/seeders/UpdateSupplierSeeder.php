@@ -42,10 +42,13 @@ class UpdateSupplierSeeder extends Seeder
             'APPLE-AT-001', 'APPLE-AT-PACK4',
             // Apple Watch
             'APPLE-AW-SE2-40', 'APPLE-AW-S10-42', 'APPLE-AW-S10-46',
-            // iPads
-            'APPLE-IP10-64', 'APPLE-IP10-256', 'APPLE-IP11-128',
+            // iPads (incluindo variações de cor do iPad 11)
+            'APPLE-IP10-64', 'APPLE-IP10-256', 'APPLE-IP11-128-AZUL', 
+            'APPLE-IP11-128-ROSA', 'APPLE-IP11-128-BRANCO',
             'APPLE-IPMINI17P-128', 'APPLE-IPAM2-11-128', 'APPLE-IPAM3-11-128',
             'APPLE-IPPM4-11-256',
+            // Apple Pencil
+            'APPLE-PENCIL-PRO',
             // MacBooks
             'APPLE-MBA15-M3-8-256', 'APPLE-MBA13-M4-16-512', 'APPLE-MBA15-M4-16-256',
         ];

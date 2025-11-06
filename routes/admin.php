@@ -37,6 +37,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Produtos
         Route::resource('products', ProductController::class);
         Route::post('products/{product}/adjust-stock', [ProductController::class, 'adjustStock'])->name('products.adjust-stock');
+        Route::get('products/{product}/variations', [ProductController::class, 'getVariations'])->name('products.variations');
+        Route::post('products/{product}/variations/toggle', [ProductController::class, 'toggleVariation'])->name('products.variations.toggle');
+        Route::post('products/{product}/variations/add', [ProductController::class, 'addVariation'])->name('products.variations.add');
+        Route::post('products/{product}/variations/update-stock', [ProductController::class, 'updateStock'])->name('products.variations.update-stock');
 
         // Categorias
         Route::resource('categories', CategoryController::class);
@@ -124,6 +128,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Busca Avançada
         Route::get('products/advanced-search', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'search'])->name('products.advanced-search');
         Route::post('products/bulk-action', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'bulkAction'])->name('products.bulk-action');
+        Route::post('products/bulk-availability', [App\Http\Controllers\Admin\ProductController::class, 'bulkAction'])->name('products.bulk-availability');
+        Route::post('products/{product}/update-cost-price', [App\Http\Controllers\Admin\ProductController::class, 'updateCostPrice'])->name('products.update-cost-price');
+        Route::post('products/save-margins', [App\Http\Controllers\Admin\ProductController::class, 'saveMargins'])->name('products.save-margins');
+        Route::post('products/apply-margins-to-all', [App\Http\Controllers\Admin\ProductController::class, 'applyMarginsToAll'])->name('products.apply-margins-to-all');
         Route::get('products/export-search-results', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'exportResults'])->name('products.export-search-results');
         Route::get('products/search-suggestions', [App\Http\Controllers\Admin\AdvancedSearchController::class, 'getSearchSuggestions'])->name('products.search-suggestions');
 

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\InventoryLog;
+use App\Models\ProductVariation;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -52,8 +54,30 @@ class ProductController extends Controller
             $query->where('supplier', $request->supplier);
         }
 
+        if ($request->filled('availability')) {
+            if ($request->availability === 'unavailable') {
+                $query->where('is_unavailable', true);
+            } elseif ($request->availability === 'available') {
+                $query->where('is_unavailable', false);
+            }
+        }
+
         $products = $query->paginate(20);
         $categories = Category::all();
+        
+        // Carregar margens padrão APENAS se não existirem (não sobrescrever valores existentes)
+        // B2C = 10% de margem (custo R$ 1,00 → venda R$ 1,10)
+        // B2B = 20% de margem (custo R$ 1,00 → venda R$ 1,20)
+        // IMPORTANTE: Não sobrescrever valores já salvos pelo usuário
+        $b2cSetting = Setting::where('key', 'b2c_margin_percentage')->first();
+        if (!$b2cSetting) {
+            Setting::set('b2c_margin_percentage', 10, 'number', 'pricing');
+        }
+        
+        $b2bSetting = Setting::where('key', 'b2b_margin_percentage')->first();
+        if (!$b2bSetting) {
+            Setting::set('b2b_margin_percentage', 20, 'number', 'pricing');
+        }
 
         return view('admin.products.index', compact('products', 'categories'));
     }
@@ -284,5 +308,428 @@ class ProductController extends Controller
 
         return redirect()->back()
                         ->with('success', 'Estoque ajustado com sucesso!');
+    }
+
+    /**
+     * Ações em massa para produtos
+     */
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|in:mark_unavailable,mark_available',
+            'product_ids' => 'required|string',
+        ]);
+
+        // Parse JSON array de IDs
+        $productIdsJson = $request->product_ids;
+        $productIds = json_decode($productIdsJson, true);
+        
+        if (!is_array($productIds) || empty($productIds)) {
+            return redirect()->back()
+                        ->with('error', 'Nenhum produto selecionado.');
+        }
+
+        // Validar que todos os IDs existem
+        $existingIds = Product::whereIn('id', $productIds)->pluck('id')->toArray();
+        $invalidIds = array_diff($productIds, $existingIds);
+        
+        if (!empty($invalidIds)) {
+            return redirect()->back()
+                        ->with('error', 'Alguns produtos selecionados não existem.');
+        }
+
+        $action = $request->action;
+        $count = 0;
+
+        foreach ($existingIds as $productId) {
+            $product = Product::find($productId);
+            if ($product) {
+                if ($action === 'mark_unavailable') {
+                    $product->is_unavailable = true;
+                } elseif ($action === 'mark_available') {
+                    $product->is_unavailable = false;
+                }
+                $product->save();
+                $count++;
+            }
+        }
+
+        $message = $action === 'mark_unavailable' 
+            ? "{$count} produto(s) marcado(s) como indisponível(is)!" 
+            : "{$count} produto(s) marcado(s) como disponível(is)!";
+
+        return redirect()->back()
+                        ->with('success', $message);
+    }
+
+    /**
+     * Atualizar preço de custo e recalcular B2B/B2C
+     */
+    public function updateCostPrice(Request $request, Product $product)
+    {
+        $request->validate([
+            'cost_price' => 'required|numeric|min:0',
+        ]);
+
+        // Obter margens configuradas
+        // B2C = 10% de margem (custo R$ 1,00 → venda R$ 1,10)
+        // B2B = 20% de margem (custo R$ 1,00 → venda R$ 1,20)
+        $b2cMargin = Setting::get('b2c_margin_percentage', 10);
+        $b2bMargin = Setting::get('b2b_margin_percentage', 20);
+
+        // Calcular novos preços baseados nas margens
+        $costPrice = (float) $request->cost_price;
+        $b2cPrice = round($costPrice * (1 + $b2cMargin / 100), 2);
+        $b2bPrice = round($costPrice * (1 + $b2bMargin / 100), 2);
+
+        // Atualizar produto
+        $product->update([
+            'cost_price' => $costPrice,
+            'b2b_price' => $b2bPrice,
+            'price' => $b2cPrice,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Preços atualizados com sucesso!',
+            'product' => [
+                'cost_price' => number_format($costPrice, 2, ',', '.'),
+                'b2b_price' => number_format($b2bPrice, 2, ',', '.'),
+                'b2c_price' => number_format($b2cPrice, 2, ',', '.'),
+            ]
+        ]);
+    }
+
+    /**
+     * Salvar configurações de margens
+     */
+    public function saveMargins(Request $request)
+    {
+        $request->validate([
+            'b2b_margin' => 'required|numeric|min:0|max:100',
+            'b2c_margin' => 'required|numeric|min:0|max:100',
+        ]);
+
+        // Garantir que os valores são números (float)
+        $b2bMargin = (float) $request->b2b_margin;
+        $b2cMargin = (float) $request->b2c_margin;
+
+        // Salvar as configurações
+        $b2bSetting = Setting::set('b2b_margin_percentage', $b2bMargin, 'number', 'pricing');
+        $b2cSetting = Setting::set('b2c_margin_percentage', $b2cMargin, 'number', 'pricing');
+
+        // Verificar se foram salvas corretamente
+        $savedB2B = Setting::get('b2b_margin_percentage');
+        $savedB2C = Setting::get('b2c_margin_percentage');
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Margens salvas com sucesso!',
+            'data' => [
+                'b2b_margin' => $savedB2B,
+                'b2c_margin' => $savedB2C,
+            ]
+        ]);
+    }
+
+    /**
+     * Aplicar margens a todos os produtos
+     */
+    public function applyMarginsToAll(Request $request)
+    {
+        // Obter margens configuradas
+        // B2C = 10% de margem (custo R$ 1,00 → venda R$ 1,10)
+        // B2B = 20% de margem (custo R$ 1,00 → venda R$ 1,20)
+        $b2cMargin = Setting::get('b2c_margin_percentage', 10);
+        $b2bMargin = Setting::get('b2b_margin_percentage', 20);
+
+        $products = Product::whereNotNull('cost_price')
+            ->where('cost_price', '>', 0)
+            ->get();
+
+        $updated = 0;
+        foreach ($products as $product) {
+            // Garantir que cost_price é um número válido
+            $costPrice = (float) $product->cost_price;
+            
+            if ($costPrice <= 0) {
+                continue; // Pular produtos sem preço de custo válido
+            }
+            
+            // Calcular novos preços baseados nas margens
+            $b2cPrice = round($costPrice * (1 + $b2cMargin / 100), 2);
+            $b2bPrice = round($costPrice * (1 + $b2bMargin / 100), 2);
+
+            $product->update([
+                'b2b_price' => $b2bPrice,
+                'price' => $b2cPrice,
+            ]);
+
+            $updated++;
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "Preços de {$updated} produto(s) recalculado(s) com sucesso!",
+            'updated' => $updated,
+            'total_products' => $products->count()
+        ]);
+    }
+
+    /**
+     * Retorna as variações de um produto agrupadas por tipo
+     */
+    public function getVariations(Product $product)
+    {
+        $variations = $product->variations()->get();
+        
+        // Agrupar por cores
+        $colors = $variations->whereNotNull('color')
+            ->groupBy('color')
+            ->map(function($group, $color) {
+                $activeVariations = $group->where('is_active', true);
+                return [
+                    'name' => $color,
+                    'count' => $group->count(),
+                    'enabled' => $activeVariations->count() > 0
+                ];
+            })
+            ->values();
+        
+        // Agrupar por RAM
+        $rams = $variations->whereNotNull('ram')
+            ->groupBy('ram')
+            ->map(function($group, $ram) {
+                $activeVariations = $group->where('is_active', true);
+                return [
+                    'name' => $ram,
+                    'count' => $group->count(),
+                    'enabled' => $activeVariations->count() > 0
+                ];
+            })
+            ->values();
+        
+        // Agrupar por armazenamento
+        $storages = $variations->whereNotNull('storage')
+            ->groupBy('storage')
+            ->map(function($group, $storage) {
+                $activeVariations = $group->where('is_active', true);
+                return [
+                    'name' => $storage,
+                    'count' => $group->count(),
+                    'enabled' => $activeVariations->count() > 0
+                ];
+            })
+            ->values();
+        
+        // Retornar todas as variações individuais para o estoque
+        $variationsList = $variations->map(function($variation) {
+            $parts = [];
+            if ($variation->ram) $parts[] = $variation->ram;
+            if ($variation->storage) $parts[] = $variation->storage;
+            if ($variation->color) $parts[] = $variation->color;
+            
+            return [
+                'id' => $variation->id,
+                'sku' => $variation->sku,
+                'name' => implode(' / ', $parts) ?: $variation->sku,
+                'ram' => $variation->ram,
+                'storage' => $variation->storage,
+                'color' => $variation->color,
+                'stock_quantity' => $variation->stock_quantity,
+                'in_stock' => $variation->in_stock,
+                'is_active' => $variation->is_active
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'productId' => $product->id,
+            'colors' => $colors,
+            'rams' => $rams,
+            'storages' => $storages,
+            'variations' => $variationsList
+        ]);
+    }
+
+    /**
+     * Habilita/desabilita variações por tipo e valor
+     */
+    public function toggleVariation(Request $request, Product $product)
+    {
+        $request->validate([
+            'type' => 'required|in:color,ram,storage',
+            'value' => 'required|string',
+            'enabled' => 'required|boolean'
+        ]);
+        
+        $type = $request->type;
+        $value = $request->value;
+        $enabled = $request->enabled;
+        
+        // Atualizar todas as variações com esse tipo e valor
+        $updated = $product->variations()
+            ->where($type, $value)
+            ->update(['is_active' => $enabled]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => $updated . ' variação(ões) atualizada(s)',
+            'updated' => $updated
+        ]);
+    }
+
+    /**
+     * Adiciona uma nova variação ou habilita variações existentes
+     */
+    public function addVariation(Request $request, Product $product)
+    {
+        $request->validate([
+            'type' => 'required|in:color,ram,storage',
+            'value' => 'required|string|max:255'
+        ]);
+        
+        $type = $request->type;
+        $value = trim($request->value);
+        
+        if (empty($value)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'O valor não pode estar vazio'
+            ], 400);
+        }
+        
+        // Verificar se já existe variação com esse valor
+        $existingVariations = $product->variations()->where($type, $value)->get();
+        
+        if ($existingVariations->count() > 0) {
+            // Se já existe, apenas habilita todas
+            $existingVariations->each(function($variation) {
+                $variation->update(['is_active' => true]);
+            });
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Variações existentes foram habilitadas',
+                'action' => 'enabled_existing'
+            ]);
+        }
+        
+        // Se não existe, criar novas variações combinando com as existentes
+        $existingVariations = $product->variations()->get();
+        
+        $rams = $existingVariations->whereNotNull('ram')->pluck('ram')->unique()->values();
+        $storages = $existingVariations->whereNotNull('storage')->pluck('storage')->unique()->values();
+        $colors = $existingVariations->whereNotNull('color')->pluck('color')->unique()->values();
+        
+        // Adicionar o novo valor ao tipo correspondente
+        if ($type === 'color') {
+            $colors = $colors->push($value)->unique()->values();
+        } elseif ($type === 'ram') {
+            $rams = $rams->push($value)->unique()->values();
+        } elseif ($type === 'storage') {
+            $storages = $storages->push($value)->unique()->values();
+        }
+        
+        // Se não há outras variações, criar uma variação básica
+        if ($rams->isEmpty() && $storages->isEmpty() && $colors->isEmpty()) {
+            $rams = collect(['']);
+            $storages = collect(['']);
+            $colors = collect(['']);
+        }
+        
+        // Garantir que pelo menos um de cada tipo existe (ou vazio)
+        if ($rams->isEmpty()) $rams = collect(['']);
+        if ($storages->isEmpty()) $storages = collect(['']);
+        if ($colors->isEmpty()) $colors = collect(['']);
+        
+        // Criar combinações
+        $created = 0;
+        foreach ($rams as $ram) {
+            foreach ($storages as $storage) {
+                foreach ($colors as $color) {
+                    // Verificar se já existe essa combinação
+                    $query = $product->variations();
+                    if ($ram) $query->where('ram', $ram);
+                    else $query->whereNull('ram');
+                    if ($storage) $query->where('storage', $storage);
+                    else $query->whereNull('storage');
+                    if ($color) $query->where('color', $color);
+                    else $query->whereNull('color');
+                    
+                    $existing = $query->first();
+                    
+                    if (!$existing) {
+                        // Criar SKU
+                        $skuParts = [$product->sku];
+                        if ($ram) $skuParts[] = str_replace('GB', '', $ram);
+                        if ($storage) $skuParts[] = str_replace('GB', '', $storage);
+                        if ($color) $skuParts[] = strtoupper(substr($color, 0, 3));
+                        $sku = implode('-', $skuParts);
+                        
+                        // Verificar se SKU já existe
+                        while (ProductVariation::where('sku', $sku)->exists()) {
+                            $sku .= '-' . rand(100, 999);
+                        }
+                        
+                        ProductVariation::create([
+                            'product_id' => $product->id,
+                            'ram' => $ram ?: null,
+                            'storage' => $storage ?: null,
+                            'color' => $color ?: null,
+                            'sku' => $sku,
+                            'price' => $product->price,
+                            'b2b_price' => $product->b2b_price,
+                            'cost_price' => $product->cost_price,
+                            'stock_quantity' => 0,
+                            'in_stock' => false,
+                            'is_active' => true,
+                            'sort_order' => 0
+                        ]);
+                        $created++;
+                    }
+                }
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => $created . ' nova(s) variação(ões) criada(s)',
+            'created' => $created
+        ]);
+    }
+
+    /**
+     * Atualiza o estoque de múltiplas variações
+     */
+    public function updateStock(Request $request, Product $product)
+    {
+        $request->validate([
+            'updates' => 'required|array',
+            'updates.*.variation_id' => 'required|exists:product_variations,id',
+            'updates.*.stock_quantity' => 'required|integer|min:0',
+            'updates.*.in_stock' => 'required|boolean'
+        ]);
+        
+        $updated = 0;
+        
+        foreach ($request->updates as $update) {
+            $variation = ProductVariation::find($update['variation_id']);
+            
+            // Verificar se a variação pertence ao produto
+            if ($variation && $variation->product_id === $product->id) {
+                $variation->update([
+                    'stock_quantity' => $update['stock_quantity'],
+                    'in_stock' => $update['in_stock']
+                ]);
+                $updated++;
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'message' => "Estoque de {$updated} variação(ões) atualizado(s)",
+            'updated' => $updated
+        ]);
     }
 }

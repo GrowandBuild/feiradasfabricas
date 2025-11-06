@@ -200,7 +200,14 @@ class CustomerAuthController extends Controller
             'is_active' => true,
         ]);
 
-        // TODO: Enviar email de notificação para admin sobre novo cadastro B2B
+        // Enviar email de notificação para admin sobre novo cadastro B2B
+        try {
+            $emailService = app(\App\Services\EmailService::class);
+            $emailService->enviarNotificacaoCadastroB2B($customer);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao enviar notificação de cadastro B2B: ' . $e->getMessage());
+            // Não interromper o fluxo se o email falhar
+        }
         
         return redirect()->route('home')->with('success', 'Sua solicitação de conta B2B foi enviada com sucesso! Nossa equipe analisará seu cadastro e você receberá um e-mail de confirmação em até 24 horas.');
     }

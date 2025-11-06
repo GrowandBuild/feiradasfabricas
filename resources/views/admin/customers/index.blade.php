@@ -32,7 +32,7 @@
                 <div class="d-flex justify-content-between align-items-center">
                     <div>
                         <h6 class="mb-1">B2B</h6>
-                        <div class="stats-number">{{ \App\Models\Customer::where('type', 'B2B')->count() }}</div>
+                        <div class="stats-number">{{ \App\Models\Customer::where('type', 'b2b')->count() }}</div>
                     </div>
                     <i class="bi bi-building" style="font-size: 2.5rem; opacity: 0.3;"></i>
                 </div>
@@ -53,17 +53,19 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card stats-card bg-warning">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <h6 class="mb-1">B2B Pendentes</h6>
-                        <div class="stats-number">{{ \App\Models\Customer::where('type', 'B2B')->where('b2b_status', 'pending')->count() }}</div>
+        <a href="{{ route('admin.customers.index', ['b2b_status' => 'pending']) }}" class="text-decoration-none">
+            <div class="card stats-card bg-warning pulse-card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">B2B Pendentes</h6>
+                            <div class="stats-number">{{ \App\Models\Customer::where('type', 'b2b')->where('b2b_status', 'pending')->count() }}</div>
+                        </div>
+                        <i class="bi bi-clock-history" style="font-size: 2.5rem; opacity: 0.3;"></i>
                     </div>
-                    <i class="bi bi-clock-history" style="font-size: 2.5rem; opacity: 0.3;"></i>
                 </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -79,8 +81,8 @@
                 <label class="form-label">Tipo</label>
                 <select name="type" class="form-select">
                     <option value="">Todos</option>
-                    <option value="B2C" {{ request('type') === 'B2C' ? 'selected' : '' }}>B2C</option>
-                    <option value="B2B" {{ request('type') === 'B2B' ? 'selected' : '' }}>B2B</option>
+                    <option value="b2c" {{ request('type') === 'b2c' ? 'selected' : '' }}>B2C</option>
+                    <option value="b2b" {{ request('type') === 'b2b' ? 'selected' : '' }}>B2B</option>
                 </select>
             </div>
             <div class="col-md-2">
@@ -131,10 +133,13 @@
                     </thead>
                     <tbody>
                         @foreach($customers as $customer)
-                            <tr>
+                            <tr class="{{ $customer->type === 'b2b' && $customer->b2b_status === 'pending' ? 'table-warning' : '' }}">
                                 <td>
                                     <div>
                                         <strong>{{ $customer->first_name }} {{ $customer->last_name }}</strong>
+                                        @if($customer->type === 'b2b' && $customer->b2b_status === 'pending')
+                                            <span class="badge bg-warning ms-2">NOVO</span>
+                                        @endif
                                     </div>
                                     <small class="text-muted">{{ $customer->email }}</small>
                                     @if($customer->phone)
@@ -142,8 +147,8 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <span class="badge bg-{{ $customer->type === 'B2B' ? 'info' : 'secondary' }}">
-                                        {{ $customer->type }}
+                                    <span class="badge bg-{{ $customer->type === 'b2b' ? 'info' : 'secondary' }}">
+                                        {{ strtoupper($customer->type) }}
                                     </span>
                                 </td>
                                 <td>
@@ -160,7 +165,7 @@
                                     <span class="badge bg-primary">{{ $customer->orders_count }} pedidos</span>
                                 </td>
                                 <td>
-                                    @if($customer->type === 'B2B')
+                                    @if($customer->type === 'b2b')
                                         @php
                                             $b2bColors = [
                                                 'pending' => 'warning',
@@ -173,9 +178,12 @@
                                                 'rejected' => 'Rejeitado'
                                             ];
                                         @endphp
-                                        <span class="badge bg-{{ $b2bColors[$customer->b2b_status] ?? 'secondary' }}">
+                                        <span class="badge bg-{{ $b2bColors[$customer->b2b_status] ?? 'secondary' }} {{ $customer->b2b_status === 'pending' ? 'pulse-badge' : '' }}">
                                             {{ $b2bLabels[$customer->b2b_status] ?? $customer->b2b_status }}
                                         </span>
+                                        @if($customer->b2b_status === 'pending')
+                                            <br><small class="text-warning"><i class="bi bi-exclamation-triangle"></i> Aguardando aprovação</small>
+                                        @endif
                                     @else
                                         <span class="text-muted">-</span>
                                     @endif
@@ -195,8 +203,8 @@
                                            class="btn btn-outline-primary btn-sm" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
-                                        @if($customer->type === 'B2B')
-                                        <button type="button" class="btn btn-outline-warning btn-sm" 
+                                        @if($customer->type === 'b2b')
+                                        <button type="button" class="btn btn-{{ $customer->b2b_status === 'pending' ? 'warning' : 'outline-warning' }} btn-sm" 
                                                 title="Status B2B" data-bs-toggle="modal" 
                                                 data-bs-target="#b2bModal{{ $customer->id }}">
                                             <i class="bi bi-building-gear"></i>
@@ -217,7 +225,7 @@
                             </tr>
 
                             <!-- Modal B2B Status -->
-                            @if($customer->type === 'B2B')
+                            @if($customer->type === 'b2b')
                             <div class="modal fade" id="b2bModal{{ $customer->id }}" tabindex="-1">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
@@ -256,6 +264,45 @@
                     </tbody>
                 </table>
             </div>
+            
+            <style>
+                .pulse-badge {
+                    animation: pulse 2s infinite;
+                }
+                
+                @keyframes pulse {
+                    0%, 100% {
+                        opacity: 1;
+                    }
+                    50% {
+                        opacity: 0.7;
+                    }
+                }
+                
+                .table-warning {
+                    background-color: rgba(255, 193, 7, 0.1) !important;
+                }
+                
+                .pulse-card {
+                    animation: pulseCard 2s infinite;
+                    cursor: pointer;
+                    transition: transform 0.2s;
+                }
+                
+                .pulse-card:hover {
+                    transform: translateY(-2px);
+                    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+                }
+                
+                @keyframes pulseCard {
+                    0%, 100% {
+                        box-shadow: 0 2px 4px rgba(255, 193, 7, 0.3);
+                    }
+                    50% {
+                        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.6);
+                    }
+                }
+            </style>
 
             <!-- Paginação -->
             <div class="d-flex justify-content-center mt-4">

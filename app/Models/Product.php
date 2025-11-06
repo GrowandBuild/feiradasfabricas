@@ -24,6 +24,7 @@ class Product extends Model
         'manage_stock',
         'in_stock',
         'is_active',
+        'is_unavailable',
         'is_featured',
         'brand',
         'model',
@@ -42,6 +43,7 @@ class Product extends Model
         'manage_stock' => 'boolean',
         'in_stock' => 'boolean',
         'is_active' => 'boolean',
+        'is_unavailable' => 'boolean',
         'is_featured' => 'boolean',
         'price' => 'decimal:2',
         'b2b_price' => 'decimal:2',
@@ -256,6 +258,30 @@ class Product extends Model
     public function isLowStock($threshold = 10)
     {
         return $this->current_stock <= $threshold;
+    }
+
+    /**
+     * Verifica se o produto está indisponível
+     */
+    public function isUnavailable()
+    {
+        return $this->is_unavailable === true;
+    }
+
+    /**
+     * Scope para produtos disponíveis
+     */
+    public function scopeAvailable($query)
+    {
+        return $query->where('is_unavailable', false);
+    }
+
+    /**
+     * Scope para produtos indisponíveis
+     */
+    public function scopeUnavailable($query)
+    {
+        return $query->where('is_unavailable', true);
     }
 
     /**

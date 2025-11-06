@@ -124,7 +124,8 @@
                 <div class="row">
                     @foreach($products as $product)
                         <div class="col-lg-4 col-md-6 mb-4">
-                            <div class="card h-100 product-card">
+                            <div class="card h-100 product-card {{ $product->is_unavailable ? 'product-unavailable' : '' }}" 
+                                 style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
                                 <div class="card-img-top-container position-relative" style="height: 250px; overflow: hidden;">
                                     @if($product->first_image)
                                         <img src="{{ $product->first_image }}" 
@@ -139,18 +140,20 @@
                                              style="height: 100%; object-fit: cover;">
                                     @endif
                                     
-                                    @if($product->sale_price && $product->sale_price < $product->price)
-                                        <div class="position-absolute top-0 end-0 m-2">
-                                            <span class="badge bg-danger">
-                                                {{ round((($product->price - $product->sale_price) / $product->price) * 100) }}% OFF
+                                    @if($product->is_unavailable)
+                                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                                             style="background: rgba(0,0,0,0.5); z-index: 2;">
+                                            <span class="badge bg-warning text-dark fs-6 px-3 py-2">
+                                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                                Indisponível no momento
                                             </span>
                                         </div>
                                     @endif
                                     
-                                    @if($product->hasListBadge())
-                                        <div class="position-absolute top-0 start-0 m-2">
-                                            <span class="badge bg-info" style="font-size: 0.75rem;">
-                                                📋 Lista
+                                    @if($product->sale_price && $product->sale_price < $product->price)
+                                        <div class="position-absolute top-0 end-0 m-2" style="z-index: {{ $product->is_unavailable ? '1' : '3' }};">
+                                            <span class="badge bg-danger">
+                                                {{ round((($product->price - $product->sale_price) / $product->price) * 100) }}% OFF
                                             </span>
                                         </div>
                                     @endif
@@ -200,11 +203,17 @@
                                             Ver Detalhes
                                         </a>
                                         
-                                        <x-add-to-cart 
-                                            :product="$product" 
-                                            :showQuantity="false"
-                                            buttonText="Adicionar ao Carrinho"
-                                            buttonClass="btn btn-primary btn-sm" />
+                                        @if(!$product->is_unavailable)
+                                            <x-add-to-cart 
+                                                :product="$product" 
+                                                :showQuantity="false"
+                                                buttonText="Adicionar ao Carrinho"
+                                                buttonClass="btn btn-primary btn-sm" />
+                                        @else
+                                            <button class="btn btn-secondary btn-sm" disabled>
+                                                <i class="bi bi-x-circle me-1"></i>Indisponível
+                                            </button>
+                                        @endif
                                     </div>
                                 </div>
                             </div>

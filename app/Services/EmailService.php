@@ -348,6 +348,133 @@ class EmailService
     }
 
     /**
+     * Enviar notificação de novo cadastro B2B para admin
+     */
+    public function enviarNotificacaoCadastroB2B(Customer $customer)
+    {
+        if (!setting('email_enabled', false)) {
+            return false;
+        }
+
+        // Verificar se notificações B2B estão habilitadas
+        if (!setting('email_notifications_b2b', true)) {
+            return false;
+        }
+
+        try {
+            // Obter email do admin para notificação
+            $adminEmail = setting('notification_email', setting('contact_email', 'admin@feiradasfabricas.com'));
+            
+            if (!$adminEmail) {
+                Log::warning('Email de notificação não configurado para novo cadastro B2B');
+                return false;
+            }
+
+            $data = [
+                'customer' => $customer,
+                'company_name' => setting('site_name', 'Feira das Fábricas'),
+                'company_email' => setting('contact_email', 'contato@feiradasfabricas.com'),
+                'company_phone' => setting('contact_phone', ''),
+            ];
+
+            Mail::send('emails.b2b-registration-notification', $data, function ($message) use ($adminEmail, $customer) {
+                $message->to($adminEmail)
+                        ->subject('🚨 Novo Cadastro B2B Aguardando Aprovação - ' . $customer->company_name . ' - ' . setting('site_name', 'Feira das Fábricas'))
+                        ->from($this->fromAddress, $this->fromName)
+                        ->replyTo($this->replyTo);
+            });
+
+            Log::info('Email de notificação de cadastro B2B enviado', [
+                'customer_id' => $customer->id,
+                'company_name' => $customer->company_name,
+                'admin_email' => $adminEmail
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Erro ao enviar notificação de cadastro B2B: ' . $e->getMessage(), [
+                'customer_id' => $customer->id
+            ]);
+            
+            return false;
+        }
+    }
+
+    /**
+     * Enviar notificação de aprovação/rejeição B2B para cliente
+     */
+    public function enviarNotificacaoStatusB2B(Customer $customer)
+    {
+        if (!setting('email_enabled', false)) {
+            return false;
+        }
+
+        // Verificar se notificações B2B estão habilitadas
+        if (!setting('email_notifications_b2b', true)) {
+            return false;
+        }
+
+        try {
+            if (!$customer->email) {
+                throw new \Exception('Cliente não possui email cadastrado');
+            }
+
+            $statusLabels = [
+                'pending' => 'Pendente',
+                'approved' => 'Aprovado',
+                'rejected' => 'Rejeitado'
+            ];
+
+            $statusColors = [
+                'pending' => '#856404',
+                'approved' => '#155724',
+                'rejected' => '#721c24'
+            ];
+
+            $statusBgColors = [
+                'pending' => '#fff3cd',
+                'approved' => '#d4edda',
+                'rejected' => '#f8d7da'
+            ];
+
+            $data = [
+                'customer' => $customer,
+                'status_label' => $statusLabels[$customer->b2b_status] ?? 'Desconhecido',
+                'status_color' => $statusColors[$customer->b2b_status] ?? '#333',
+                'status_bg_color' => $statusBgColors[$customer->b2b_status] ?? '#f8f9fa',
+                'company_name' => setting('site_name', 'Feira das Fábricas'),
+                'company_email' => setting('contact_email', 'contato@feiradasfabricas.com'),
+                'company_phone' => setting('contact_phone', ''),
+            ];
+
+            $subject = 'Status do seu Cadastro B2B - ' . $statusLabels[$customer->b2b_status] . ' - ' . setting('site_name', 'Feira das Fábricas');
+
+            Mail::send('emails.b2b-status-notification', $data, function ($message) use ($customer, $subject) {
+                $message->to($customer->email, $customer->first_name . ' ' . $customer->last_name)
+                        ->subject($subject)
+                        ->from($this->fromAddress, $this->fromName)
+                        ->replyTo($this->replyTo);
+            });
+
+            Log::info('Email de status B2B enviado', [
+                'customer_id' => $customer->id,
+                'status' => $customer->b2b_status,
+                'customer_email' => $customer->email
+            ]);
+
+            return true;
+
+        } catch (\Exception $e) {
+            Log::error('Erro ao enviar notificação de status B2B: ' . $e->getMessage(), [
+                'customer_id' => $customer->id
+            ]);
+            
+            return false;
+        }
+    }
+
+    /**
      * Processar fila de emails automáticos
      */
     public function processarFilaEmails()

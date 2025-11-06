@@ -83,6 +83,16 @@
             </div>
             <div class="col-md-2">
                 <label class="form-label">
+                    <i class="bi bi-x-circle me-1"></i>Disponibilidade
+                </label>
+                <select name="availability" class="form-select">
+                    <option value="">Todas</option>
+                    <option value="available" {{ request('availability') === 'available' ? 'selected' : '' }}>Disponível</option>
+                    <option value="unavailable" {{ request('availability') === 'unavailable' ? 'selected' : '' }}>Indisponível</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">
                     <i class="bi bi-boxes me-1"></i>Estoque
                 </label>
                 <select name="stock_status" class="form-select">
@@ -91,7 +101,7 @@
                     <option value="out" {{ request('stock_status') === 'out' ? 'selected' : '' }}>Sem Estoque</option>
                 </select>
             </div>
-            <div class="col-md-2">
+            <div class="col-md-1">
                 <label class="form-label">
                     <i class="bi bi-truck me-1"></i>Fornecedor
                 </label>
@@ -125,126 +135,241 @@
     </div>
 </div>
 
+<!-- Configuração de Margens de Lucro -->
+<div class="card mb-4">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <div class="d-flex align-items-center">
+            <i class="bi bi-percent me-2" style="color: var(--accent-color);"></i>
+            <h6 class="mb-0">Configuração de Margens de Lucro</h6>
+        </div>
+        <button type="button" class="btn btn-sm btn-outline-primary" id="saveMarginsBtn" onclick="saveMargins(event)">
+            <i class="bi bi-save me-1"></i>Salvar Margens
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">
+                    <i class="bi bi-person me-1"></i>Margem B2C (%)
+                </label>
+                <div class="input-group">
+                    <input type="number" 
+                           class="form-control" 
+                           id="b2c_margin" 
+                           step="0.1" 
+                           min="0" 
+                           max="100"
+                           value="{{ setting('b2c_margin_percentage', 10) }}">
+                    <span class="input-group-text">%</span>
+                </div>
+                <small class="text-muted">Ex: 10% = R$ 1,00 → R$ 1,10</small>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">
+                    <i class="bi bi-building me-1"></i>Margem B2B (%)
+                </label>
+                <div class="input-group">
+                    <input type="number" 
+                           class="form-control" 
+                           id="b2b_margin" 
+                           step="0.1" 
+                           min="0" 
+                           max="100"
+                           value="{{ setting('b2b_margin_percentage', 20) }}">
+                    <span class="input-group-text">%</span>
+                </div>
+                <small class="text-muted">Ex: 20% = R$ 1,00 → R$ 1,20</small>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="w-100">
+                    <label class="form-label">Aplicar a todos os produtos</label>
+                    <button type="button" class="btn btn-warning btn-sm w-100" id="applyMarginsBtn" onclick="applyMarginsToAll(event)">
+                        <i class="bi bi-arrow-repeat me-1"></i>Recalcular Todos os Preços
+                    </button>
+                    <small class="text-muted d-block mt-1">⚠️ Recalcula B2B e B2C de todos os produtos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Lista de Produtos -->
 <div class="card">
     <div class="card-body">
         @if($products->count() > 0)
+            <!-- Barra de Ações em Massa -->
+            <div id="bulkActionsBar" class="mb-3 p-3 bg-light rounded d-none">
+                <form id="bulkActionForm" action="{{ route('admin.products.bulk-availability') }}" method="POST">
+                    @csrf
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div>
+                            <span id="selectedCount" class="fw-semibold">0</span> produto(s) selecionado(s)
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button" onclick="submitBulkAction('mark_unavailable')" class="btn btn-warning btn-sm">
+                                <i class="bi bi-x-circle me-1"></i>Marcar como Indisponível
+                            </button>
+                            <button type="button" onclick="submitBulkAction('mark_available')" class="btn btn-success btn-sm">
+                                <i class="bi bi-check-circle me-1"></i>Marcar como Disponível
+                            </button>
+                            <button type="button" id="clearSelection" class="btn btn-outline-secondary btn-sm">
+                                <i class="bi bi-x me-1"></i>Limpar
+                            </button>
+                        </div>
+                        <input type="hidden" name="action" id="bulkAction" value="">
+                    </div>
+                    <input type="hidden" name="product_ids" id="selectedProductIds" value="">
+                </form>
+            </div>
+
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-hover align-middle table-sm" style="font-size: 0.875rem;">
                     <thead class="table-light">
                         <tr>
-                            <th class="text-center" style="width: 80px;">
+                            <th class="text-center" style="width: 30px; padding: 8px 4px;">
+                                <input type="checkbox" id="selectAll" class="form-check-input" title="Selecionar todos">
+                            </th>
+                            <th class="text-center" style="width: 45px; padding: 8px 4px;">
                                 <i class="bi bi-image text-muted"></i>
                             </th>
-                            <th>Produto</th>
-                            <th>Marca</th>
-                            <th>SKU</th>
-                            <th>Preço</th>
-                            <th class="text-center">Estoque</th>
-                            <th>Categorias</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center" style="width: 120px;">Ações</th>
+                            <th style="min-width: 180px; max-width: 250px; padding: 8px;">Produto</th>
+                            <th style="width: 90px; padding: 8px 4px;">Marca</th>
+                            <th style="width: 110px; padding: 8px 4px;">Preço</th>
+                            <th class="text-center" style="width: 80px; padding: 8px 4px;">Estoque</th>
+                            <th class="text-center" style="width: 100px; padding: 8px 4px;">Variações</th>
+                            <th class="text-center" style="width: 100px; padding: 8px 4px;">Status</th>
+                            <th class="text-center" style="width: 90px; padding: 8px 4px;">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($products as $product)
-                            <tr>
-                                <td class="text-center">
+                            <tr class="{{ $product->is_unavailable ? 'table-secondary opacity-75' : '' }}">
+                                <td class="text-center" style="padding: 8px 4px;">
+                                    <input type="checkbox" 
+                                           class="form-check-input product-checkbox" 
+                                           value="{{ $product->id }}"
+                                           data-product-id="{{ $product->id }}">
+                                </td>
+                                <td class="text-center" style="padding: 8px 4px;">
                                     @if($product->first_image)
                                         <img src="{{ $product->first_image }}" 
                                              alt="{{ $product->name }}" 
-                                             class="rounded shadow-sm" 
-                                             style="width: 60px; height: 60px; object-fit: cover;"
+                                             class="rounded" 
+                                             style="width: 40px; height: 40px; object-fit: cover;"
                                              onerror="this.onerror=null; this.src='{{ asset('images/no-image.svg') }}';">
                                     @else
                                         <div class="d-flex align-items-center justify-content-center" 
-                                             style="width: 60px; height: 60px;">
-                                            <i class="bi bi-image" style="font-size: 1.5rem; color: #fd7e14;"></i>
+                                             style="width: 40px; height: 40px;">
+                                            <i class="bi bi-image" style="font-size: 1rem; color: #fd7e14;"></i>
                                         </div>
                                     @endif
                                 </td>
-                                <td>
-                                    <div class="d-flex align-items-start">
-                                        <div>
-                                            <h6 class="mb-1 fw-semibold">{{ $product->name }}</h6>
-                                            <div class="mt-1 d-flex flex-wrap gap-1">
+                                <td style="padding: 8px;">
+                                    <div style="line-height: 1.3;">
+                                        <div class="fw-semibold" style="font-size: 0.875rem; margin-bottom: 2px;">{{ Str::limit($product->name, 35) }}</div>
+                                        <div class="d-flex flex-wrap gap-1" style="margin-top: 2px;">
                                                 @if($product->is_featured)
-                                                    <span class="badge bg-warning">
-                                                        <i class="bi bi-star-fill me-1"></i>Destaque
+                                                <span class="badge bg-warning" style="font-size: 0.7rem; padding: 2px 6px;">
+                                                    <i class="bi bi-star-fill" style="font-size: 0.7rem;"></i>
                                                     </span>
                                                 @endif
-                                                @if($product->hasListBadge())
-                                                    <span class="badge bg-info" title="Produto de lista - Fornecedor: {{ $product->supplier }}">
-                                                        📋 Lista
-                                                    </span>
-                                                @endif
-                                            </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td>
+                                <td style="padding: 8px 4px;">
                                     @if($product->brand)
-                                        <span class="badge bg-primary">
-                                            <i class="bi bi-award me-1"></i>{{ $product->brand }}
+                                        <span class="badge bg-primary" style="font-size: 0.75rem; padding: 3px 6px;">
+                                            {{ Str::limit($product->brand, 12) }}
                                         </span>
                                     @else
-                                        <span class="text-muted">N/A</span>
+                                        <span class="text-muted" style="font-size: 0.75rem;">-</span>
                                     @endif
                                 </td>
-                                <td>
-                                    <code class="bg-light px-2 py-1 rounded">{{ $product->sku }}</code>
-                                </td>
-                                <td>
-                                    <div class="fw-semibold text-success">
-                                        R$ {{ number_format($product->price, 2, ',', '.') }}
+                                <td style="padding: 8px 4px;">
+                                    <div class="price-editor" data-product-id="{{ $product->id }}">
+                                        <div class="cost-price-input mb-1">
+                                            <label class="form-label mb-0" style="font-size: 0.7rem; color: #6c757d;">
+                                                Custo:
+                                            </label>
+                                            <div class="input-group input-group-sm">
+                                                <span class="input-group-text" style="font-size: 0.7rem; padding: 2px 6px;">R$</span>
+                                                <input type="text" 
+                                                       class="form-control form-control-sm cost-price-field" 
+                                                       data-product-id="{{ $product->id }}"
+                                                       value="{{ $product->cost_price ? number_format($product->cost_price, 2, ',', '.') : '0,00' }}" 
+                                                       style="font-size: 0.75rem; padding: 2px 6px;"
+                                                       placeholder="0,00"
+                                                       onblur="normalizeAndUpdatePrice({{ $product->id }}, this.value)">
+                                                <button class="btn btn-sm btn-outline-success" 
+                                                        type="button" 
+                                                        onclick="normalizeAndUpdatePrice({{ $product->id }}, document.querySelector('[data-product-id=\'{{ $product->id }}\'].cost-price-field').value)"
+                                                        style="font-size: 0.7rem; padding: 2px 6px;"
+                                                        title="Salvar">
+                                                    <i class="bi bi-check"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div class="fw-semibold text-success" style="font-size: 0.875rem; line-height: 1.2;">
+                                            R$ <span class="b2c-price-display">{{ number_format($product->price, 2, ',', '.') }}</span>
                                     </div>
                                     @if($product->b2b_price)
-                                        <small class="text-muted">
-                                            B2B: R$ {{ number_format($product->b2b_price, 2, ',', '.') }}
+                                            <small class="text-muted" style="font-size: 0.7rem; line-height: 1.2;">
+                                                B2B: R$ <span class="b2b-price-display">{{ number_format($product->b2b_price, 2, ',', '.') }}</span>
                                         </small>
                                     @endif
+                                    </div>
                                 </td>
-                                <td class="text-center">
-                                    <div class="d-flex flex-column align-items-center">
-                                        <span class="fw-semibold">{{ $product->current_stock }}</span>
+                                <td class="text-center" style="padding: 8px 4px;">
+                                    <div style="line-height: 1.2;">
+                                        <span class="fw-semibold" style="font-size: 0.875rem;">{{ $product->current_stock }}</span>
                                         @if($product->isLowStock())
-                                            <span class="badge bg-danger mt-1">
-                                                <i class="bi bi-exclamation-triangle me-1"></i>Baixo
+                                            <span class="badge bg-danger d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
+                                                <i class="bi bi-exclamation-triangle" style="font-size: 0.7rem;"></i>
                                             </span>
                                         @elseif($product->current_stock == 0)
-                                            <span class="badge bg-secondary mt-1">
-                                                <i class="bi bi-x-circle me-1"></i>Sem Estoque
+                                            <span class="badge bg-secondary d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
+                                                <i class="bi bi-x-circle" style="font-size: 0.7rem;"></i>
                                             </span>
                                         @else
-                                            <span class="badge bg-success mt-1">
-                                                <i class="bi bi-check-circle me-1"></i>OK
+                                            <span class="badge bg-success d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
+                                                <i class="bi bi-check-circle" style="font-size: 0.7rem;"></i>
                                             </span>
                                         @endif
                                     </div>
                                 </td>
-                                <td>
-                                    @forelse($product->categories as $category)
-                                        <span class="badge bg-light text-dark me-1 mb-1">
-                                            <i class="bi bi-tag me-1"></i>{{ $category->name }}
+                                <td class="text-center" style="padding: 8px 4px;">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-primary variations-btn" 
+                                            data-product-id="{{ $product->id }}"
+                                            data-product-name="{{ $product->name }}"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#variationsModal"
+                                            style="font-size: 0.7rem; padding: 2px 8px;"
+                                            title="Gerenciar Variações">
+                                        <i class="bi bi-list-ul me-1"></i>
+                                        <span>{{ $product->variations()->count() }}</span>
+                                    </button>
+                                </td>
+                                <td class="text-center" style="padding: 8px 4px;">
+                                    <div style="line-height: 1.2;">
+                                        <span class="badge bg-{{ $product->is_active ? 'success' : 'danger' }} d-block" style="font-size: 0.7rem; padding: 2px 4px; margin-bottom: 2px;">
+                                            <i class="bi bi-{{ $product->is_active ? 'check-circle' : 'x-circle' }}" style="font-size: 0.7rem;"></i>
                                         </span>
-                                    @empty
-                                        <span class="text-muted">Sem categoria</span>
-                                    @endforelse
+                                        @if($product->is_unavailable)
+                                            <span class="badge bg-warning d-block" style="font-size: 0.7rem; padding: 2px 4px;">
+                                                <i class="bi bi-exclamation-triangle" style="font-size: 0.7rem;"></i>
+                                            </span>
+                                        @endif
+                                    </div>
                                 </td>
-                                <td class="text-center">
-                                    <span class="badge bg-{{ $product->is_active ? 'success' : 'danger' }}">
-                                        <i class="bi bi-{{ $product->is_active ? 'check-circle' : 'x-circle' }} me-1"></i>
-                                        {{ $product->is_active ? 'Ativo' : 'Inativo' }}
-                                    </span>
-                                </td>
-                                <td class="text-center">
+                                <td class="text-center" style="padding: 8px 4px;">
                                     <div class="btn-group btn-group-sm" role="group">
                                         <a href="{{ route('admin.products.show', $product) }}" 
-                                           class="btn btn-outline-info" title="Visualizar">
+                                           class="btn btn-outline-info" title="Visualizar" style="padding: 2px 6px; font-size: 0.75rem;">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a href="{{ route('admin.products.edit', $product) }}" 
-                                           class="btn btn-outline-primary" title="Editar">
+                                           class="btn btn-outline-primary" title="Editar" style="padding: 2px 6px; font-size: 0.75rem;">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <form action="{{ route('admin.products.destroy', $product) }}" 
@@ -252,7 +377,7 @@
                                               onsubmit="return confirm('Tem certeza que deseja excluir este produto?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger" title="Excluir">
+                                            <button type="submit" class="btn btn-outline-danger" title="Excluir" style="padding: 2px 6px; font-size: 0.75rem;">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -303,4 +428,752 @@
         @endif
     </div>
 </div>
+
+<!-- Incluir Modal de Variações -->
+@include('admin.products.modals.variations')
+
+@push('scripts')
+<script>
+(function() {
+    'use strict';
+    
+    // Aguardar o DOM estar completamente carregado
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+    
+    function init() {
+        console.log('🚀 Inicializando seleção de produtos...');
+        
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const bulkActionsBar = document.getElementById('bulkActionsBar');
+        const selectedCount = document.getElementById('selectedCount');
+        const selectedProductIds = document.getElementById('selectedProductIds');
+        const clearSelectionBtn = document.getElementById('clearSelection');
+
+        if (!selectAllCheckbox) {
+            console.error('❌ Checkbox "Selecionar todos" não encontrado!');
+            return;
+        }
+
+        // Função para obter todos os checkboxes visíveis na página atual
+        function getVisibleCheckboxes() {
+            const checkboxes = document.querySelectorAll('.product-checkbox');
+            console.log('📋 Checkboxes encontrados:', checkboxes.length);
+            return checkboxes;
+        }
+
+        // Função para atualizar a barra de ações
+        function updateBulkActionsBar() {
+            const productCheckboxes = getVisibleCheckboxes();
+            const checkedBoxes = Array.from(productCheckboxes).filter(cb => cb.checked);
+            const count = checkedBoxes.length;
+            const ids = checkedBoxes.map(cb => cb.value);
+
+            if (selectedCount) selectedCount.textContent = count;
+            if (selectedProductIds) selectedProductIds.value = JSON.stringify(ids);
+
+            if (bulkActionsBar) {
+                if (count > 0) {
+                    bulkActionsBar.classList.remove('d-none');
+                } else {
+                    bulkActionsBar.classList.add('d-none');
+                }
+            }
+
+            // Atualizar estado do checkbox "Selecionar todos"
+            if (selectAllCheckbox) {
+                if (count === 0) {
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllCheckbox.checked = false;
+                } else if (count === productCheckboxes.length && productCheckboxes.length > 0) {
+                    selectAllCheckbox.indeterminate = false;
+                    selectAllCheckbox.checked = true;
+                } else {
+                    selectAllCheckbox.indeterminate = true;
+                }
+            }
+        }
+
+        // Selecionar todos (apenas os produtos visíveis na página atual)
+        selectAllCheckbox.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const productCheckboxes = getVisibleCheckboxes();
+            const isChecked = this.checked;
+            
+            console.log('✅ Selecionar todos clicado. Marcando', productCheckboxes.length, 'produtos como:', isChecked);
+            
+            // Marcar/desmarcar todos os checkboxes visíveis
+            productCheckboxes.forEach((cb, index) => {
+                cb.checked = isChecked;
+                console.log(`  - Produto ${index + 1} (ID: ${cb.value}): ${isChecked ? 'marcado' : 'desmarcado'}`);
+            });
+            
+            updateBulkActionsBar();
+        });
+
+        // Atualizar quando checkbox individual é clicado
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.classList.contains('product-checkbox')) {
+                console.log('📦 Checkbox individual alterado:', e.target.value, e.target.checked);
+                updateBulkActionsBar();
+            }
+        });
+
+        // Limpar seleção
+        if (clearSelectionBtn) {
+            clearSelectionBtn.addEventListener('click', function() {
+                const productCheckboxes = getVisibleCheckboxes();
+                productCheckboxes.forEach(cb => {
+                    cb.checked = false;
+                });
+                if (selectAllCheckbox) {
+                    selectAllCheckbox.checked = false;
+                    selectAllCheckbox.indeterminate = false;
+                }
+                updateBulkActionsBar();
+            });
+        }
+
+        // Função para submeter ação em massa
+        window.submitBulkAction = function(action) {
+            const productCheckboxes = getVisibleCheckboxes();
+            const checkedBoxes = Array.from(productCheckboxes).filter(cb => cb.checked);
+            
+            if (checkedBoxes.length === 0) {
+                alert('Por favor, selecione pelo menos um produto.');
+                return false;
+            }
+
+            const actionText = action === 'mark_unavailable' ? 'marcar como indisponível' : 'marcar como disponível';
+            if (confirm(`Tem certeza que deseja ${actionText} ${checkedBoxes.length} produto(s)?`)) {
+                document.getElementById('bulkAction').value = action;
+                document.getElementById('bulkActionForm').submit();
+            }
+        };
+
+        // Inicializar
+        updateBulkActionsBar();
+        console.log('✅ Sistema de seleção inicializado com sucesso!');
+    }
+})();
+
+// Função para normalizar valor digitado de forma inteligente
+// Aceita: 2580, 2580.00, 2.580,00, 2580,50, etc
+function normalizePrice(value) {
+    if (!value || value === '') return null;
+    
+    // Remove espaços e caracteres não numéricos exceto vírgula e ponto
+    let cleanValue = value.toString().trim().replace(/[^\d,.]/g, '');
+    
+    // Se não tem vírgula nem ponto, trata como valor direto (2580 = 2580.00)
+    if (!cleanValue.includes(',') && !cleanValue.includes('.')) {
+        return parseFloat(cleanValue);
+    }
+    
+    // Se tem vírgula, assume formato brasileiro (2.580,00 ou 2580,50)
+    if (cleanValue.includes(',')) {
+        // Remove pontos (separadores de milhar brasileiro)
+        cleanValue = cleanValue.replace(/\./g, '');
+        // Substitui vírgula por ponto para parseFloat
+        cleanValue = cleanValue.replace(',', '.');
+        return parseFloat(cleanValue);
+    }
+    
+    // Se tem ponto mas não vírgula
+    if (cleanValue.includes('.')) {
+        const parts = cleanValue.split('.');
+        
+        // Se tem apenas um ponto
+        if (parts.length === 2) {
+            // Se a parte após o ponto tem 1 ou 2 dígitos, é decimal (2580.50 ou 2580.5)
+            if (parts[1].length <= 2) {
+                return parseFloat(cleanValue);
+            }
+            // Se tem mais de 2 dígitos após o ponto, é separador de milhar (2.580)
+            // Remove o ponto e trata como valor inteiro
+            return parseFloat(parts.join(''));
+        }
+        
+        // Se tem múltiplos pontos, são separadores de milhar (2.580.000)
+        // Remove todos os pontos
+        cleanValue = cleanValue.replace(/\./g, '');
+        return parseFloat(cleanValue);
+    }
+    
+    return parseFloat(cleanValue);
+}
+
+// Função para normalizar e atualizar preço
+function normalizeAndUpdatePrice(productId, inputValue) {
+    const normalizedPrice = normalizePrice(inputValue);
+    
+    if (normalizedPrice === null || normalizedPrice < 0 || isNaN(normalizedPrice)) {
+        alert('Por favor, insira um preço de custo válido.');
+        const input = document.querySelector(`[data-product-id='${productId}'].cost-price-field`);
+        // Restaurar valor original
+        const originalValue = input.getAttribute('data-original-value') || '0,00';
+        input.value = originalValue;
+        return;
+    }
+    
+    const input = document.querySelector(`[data-product-id='${productId}'].cost-price-field`);
+    const row = input.closest('tr');
+    
+    // Salvar valor original para possível rollback
+    if (!input.getAttribute('data-original-value')) {
+        input.setAttribute('data-original-value', input.value);
+    }
+    
+    // Atualizar o valor exibido no campo com formato brasileiro
+    input.value = normalizedPrice.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+    
+    // Chamar função de atualização com o valor normalizado
+    updateProductPrice(productId, normalizedPrice);
+}
+
+// Função para atualizar preço de custo e recalcular B2B/B2C
+function updateProductPrice(productId, costPrice) {
+    if (!costPrice || costPrice <= 0 || isNaN(costPrice)) {
+        alert('Por favor, insira um preço de custo válido.');
+        return;
+    }
+
+    const input = document.querySelector(`[data-product-id='${productId}'].cost-price-field`);
+    const row = input.closest('tr');
+    
+    // Mostrar loading
+    const originalValue = input.getAttribute('data-original-value') || input.value;
+    input.disabled = true;
+    
+    fetch(`/admin/products/${productId}/update-cost-price`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            cost_price: parseFloat(costPrice)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Atualizar exibição dos preços
+            const priceEditor = row.querySelector('.price-editor');
+            const b2cDisplay = priceEditor.querySelector('.b2c-price-display');
+            const b2bDisplay = priceEditor.querySelector('.b2b-price-display');
+            
+            if (b2cDisplay) {
+                b2cDisplay.textContent = data.product.b2c_price;
+            }
+            if (b2bDisplay) {
+                b2bDisplay.textContent = data.product.b2b_price;
+            }
+            
+            // Atualizar valor original salvo
+            input.setAttribute('data-original-value', input.value);
+            
+            // Mostrar feedback visual
+            input.classList.add('border-success');
+            setTimeout(() => {
+                input.classList.remove('border-success');
+            }, 2000);
+        } else {
+            alert('Erro ao atualizar preço: ' + (data.message || 'Erro desconhecido'));
+            // Restaurar valor original formatado
+            const originalNormalized = normalizePrice(originalValue);
+            if (originalNormalized !== null) {
+                input.value = originalNormalized.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar preço. Tente novamente.');
+        // Restaurar valor original formatado
+        const originalNormalized = normalizePrice(originalValue);
+        if (originalNormalized !== null) {
+            input.value = originalNormalized.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+    })
+    .finally(() => {
+        input.disabled = false;
+    });
+}
+
+// Salvar margens de lucro
+function saveMargins(e) {
+    const b2bMarginInput = document.getElementById('b2b_margin');
+    const b2cMarginInput = document.getElementById('b2c_margin');
+    
+    if (!b2bMarginInput || !b2cMarginInput) {
+        alert('Erro: Campos de margem não encontrados. Por favor, recarregue a página.');
+        console.error('Inputs não encontrados:', { b2b: b2bMarginInput, b2c: b2cMarginInput });
+        return;
+    }
+    
+    const b2bMargin = b2bMarginInput.value;
+    const b2cMargin = b2cMarginInput.value;
+    
+    if (!b2bMargin || !b2cMargin || b2bMargin === '' || b2cMargin === '') {
+        alert('Por favor, preencha ambas as margens.');
+        return;
+    }
+    
+    const b2bValue = parseFloat(b2bMargin);
+    const b2cValue = parseFloat(b2cMargin);
+    
+    if (isNaN(b2bValue) || isNaN(b2cValue)) {
+        alert('Por favor, insira valores numéricos válidos para as margens.');
+        return;
+    }
+    
+    // Mostrar loading
+    let btn = null;
+    if (e && e.target) {
+        btn = e.target.closest('button');
+    }
+    if (!btn) {
+        btn = document.getElementById('saveMarginsBtn');
+    }
+    if (!btn) {
+        btn = document.querySelector('button[onclick*="saveMargins"]');
+    }
+    const originalBtnText = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
+    }
+    
+    fetch('/admin/products/save-margins', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            b2b_margin: b2bValue,
+            b2c_margin: b2cValue
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            // Atualizar os valores nos inputs com os valores salvos confirmados
+            if (data.data) {
+                if (data.data.b2c_margin !== undefined) {
+                    document.getElementById('b2c_margin').value = data.data.b2c_margin;
+                }
+                if (data.data.b2b_margin !== undefined) {
+                    document.getElementById('b2b_margin').value = data.data.b2b_margin;
+                }
+            }
+            alert('✅ Margens salvas com sucesso!\n\nB2C: ' + (data.data?.b2c_margin || b2cValue) + '%\nB2B: ' + (data.data?.b2b_margin || b2bValue) + '%');
+        } else {
+            alert('❌ Erro ao salvar margens: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('❌ Erro ao salvar margens: ' + error.message + '\n\nVerifique o console para mais detalhes.');
+    })
+    .finally(() => {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalBtnText;
+        }
+    });
+}
+
+// Aplicar margens a todos os produtos
+function applyMarginsToAll(e) {
+    if (!confirm('Tem certeza que deseja recalcular os preços B2B e B2C de TODOS os produtos baseado nas margens configuradas? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+    
+    // Capturar o botão corretamente - tentar múltiplas formas
+    let btn = null;
+    if (e && e.target) {
+        btn = e.target.closest('button');
+    }
+    if (!btn) {
+        btn = document.getElementById('applyMarginsBtn');
+    }
+    if (!btn) {
+        // Última tentativa: buscar pelo texto do botão
+        const buttons = document.querySelectorAll('button');
+        for (let button of buttons) {
+            if (button.textContent.includes('Recalcular Todos os Preços')) {
+                btn = button;
+                break;
+            }
+        }
+    }
+    
+    if (!btn) {
+        alert('Erro: botão não encontrado. Por favor, recarregue a página.');
+        console.error('Botão não encontrado. Elementos disponíveis:', document.querySelectorAll('button'));
+        return;
+    }
+    
+    const originalText = btn.innerHTML;
+    btn.disabled = true;
+    btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Processando...';
+    
+    fetch('/admin/products/apply-margins-to-all', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert(data.message + '\n\nTotal de produtos processados: ' + (data.total_products || 0) + '\nProdutos atualizados: ' + (data.updated || 0));
+            location.reload(); // Recarregar página para mostrar novos preços
+        } else {
+            alert('Erro ao recalcular preços: ' + (data.message || 'Erro desconhecido'));
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao recalcular preços: ' + error.message + '\n\nVerifique o console para mais detalhes.');
+        btn.disabled = false;
+        btn.innerHTML = originalText;
+    });
+}
+
+// Permitir Enter para salvar e formatação inteligente
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.cost-price-field').forEach(input => {
+        // Salvar valor original
+        input.setAttribute('data-original-value', input.value);
+        
+        // Evento Enter
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const productId = this.getAttribute('data-product-id');
+                normalizeAndUpdatePrice(productId, this.value);
+            }
+        });
+        
+        // Formatar ao perder foco (se não foi salvo)
+        input.addEventListener('blur', function(e) {
+            // Só formata se não foi clicado no botão de salvar
+            const normalized = normalizePrice(this.value);
+            if (normalized !== null && normalized >= 0 && !isNaN(normalized)) {
+                this.value = normalized.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            } else if (this.value && this.value !== '') {
+                // Se o valor não é válido, restaurar original
+                this.value = this.getAttribute('data-original-value') || '0,00';
+            }
+        });
+    });
+});
+
+// Sistema de Gerenciamento de Variações
+document.addEventListener('DOMContentLoaded', function() {
+    const variationsModal = document.getElementById('variationsModal');
+    if (variationsModal) {
+        variationsModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const productId = button.getAttribute('data-product-id');
+            const productName = button.getAttribute('data-product-name');
+            
+            document.getElementById('variationsModalLabel').textContent = `Variações - ${productName}`;
+            document.getElementById('variationsProductId').value = productId;
+            
+            loadVariations(productId);
+        });
+    }
+});
+
+function loadVariations(productId) {
+    fetch(`/admin/products/${productId}/variations`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderVariations(data);
+                renderStock(data);
+            } else {
+                alert('Erro ao carregar variações: ' + (data.message || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao carregar variações');
+        });
+}
+
+function renderVariations(data) {
+    // Renderizar cores
+    const colorsContainer = document.getElementById('colorsList');
+    colorsContainer.innerHTML = '';
+    if (data.colors && data.colors.length > 0) {
+        data.colors.forEach(color => {
+            const colorItem = createColorItem(color, data.productId);
+            colorsContainer.appendChild(colorItem);
+        });
+    } else {
+        colorsContainer.innerHTML = '<p class="text-muted text-center">Nenhuma cor encontrada</p>';
+    }
+    
+    // Renderizar RAMs
+    const ramsContainer = document.getElementById('ramsList');
+    ramsContainer.innerHTML = '';
+    if (data.rams && data.rams.length > 0) {
+        data.rams.forEach(ram => {
+            const ramItem = createRamItem(ram, data.productId);
+            ramsContainer.appendChild(ramItem);
+        });
+    } else {
+        ramsContainer.innerHTML = '<p class="text-muted text-center">Nenhuma RAM encontrada</p>';
+    }
+    
+    // Renderizar Armazenamentos
+    const storagesContainer = document.getElementById('storagesList');
+    storagesContainer.innerHTML = '';
+    if (data.storages && data.storages.length > 0) {
+        data.storages.forEach(storage => {
+            const storageItem = createStorageItem(storage, data.productId);
+            storagesContainer.appendChild(storageItem);
+        });
+    } else {
+        storagesContainer.innerHTML = '<p class="text-muted text-center">Nenhum armazenamento encontrado</p>';
+    }
+}
+
+function renderStock(data) {
+    const stockContainer = document.getElementById('stockList');
+    stockContainer.innerHTML = '';
+    
+    if (data.variations && data.variations.length > 0) {
+        data.variations.forEach(variation => {
+            const stockItem = createStockItem(variation, data.productId);
+            stockContainer.appendChild(stockItem);
+        });
+    } else {
+        stockContainer.innerHTML = '<p class="text-muted text-center">Nenhuma variação encontrada</p>';
+    }
+}
+
+function createColorItem(color, productId) {
+    const div = document.createElement('div');
+    div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    div.innerHTML = `
+        <span class="flex-grow-1">${color.name}</span>
+        <span class="badge bg-${color.enabled ? 'success' : 'secondary'} me-2">${color.count} variações</span>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" 
+                   ${color.enabled ? 'checked' : ''} 
+                   onchange="toggleVariationType(${productId}, 'color', '${color.name.replace(/'/g, "\\'")}', this.checked)">
+        </div>
+    `;
+    return div;
+}
+
+function createRamItem(ram, productId) {
+    const div = document.createElement('div');
+    div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    div.innerHTML = `
+        <span class="flex-grow-1">${ram.name}</span>
+        <span class="badge bg-${ram.enabled ? 'success' : 'secondary'} me-2">${ram.count} variações</span>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" 
+                   ${ram.enabled ? 'checked' : ''} 
+                   onchange="toggleVariationType(${productId}, 'ram', '${ram.name.replace(/'/g, "\\'")}', this.checked)">
+        </div>
+    `;
+    return div;
+}
+
+function createStorageItem(storage, productId) {
+    const div = document.createElement('div');
+    div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    div.innerHTML = `
+        <span class="flex-grow-1">${storage.name}</span>
+        <span class="badge bg-${storage.enabled ? 'success' : 'secondary'} me-2">${storage.count} variações</span>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" 
+                   ${storage.enabled ? 'checked' : ''} 
+                   onchange="toggleVariationType(${productId}, 'storage', '${storage.name.replace(/'/g, "\\'")}', this.checked)">
+        </div>
+    `;
+    return div;
+}
+
+function createStockItem(variation, productId) {
+    const div = document.createElement('div');
+    div.className = 'mb-3 p-3 border rounded';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="flex-grow-1">
+                <strong>${variation.name || variation.sku}</strong>
+                <div class="small text-muted">SKU: ${variation.sku}</div>
+                ${variation.ram ? `<span class="badge bg-info me-1">${variation.ram}</span>` : ''}
+                ${variation.storage ? `<span class="badge bg-primary me-1">${variation.storage}</span>` : ''}
+                ${variation.color ? `<span class="badge bg-secondary me-1">${variation.color}</span>` : ''}
+            </div>
+            <span class="badge bg-${variation.is_active ? 'success' : 'secondary'}">
+                ${variation.is_active ? 'Ativo' : 'Inativo'}
+            </span>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label small">Estoque Atual</label>
+                <input type="number" 
+                       class="form-control form-control-sm stock-input" 
+                       data-variation-id="${variation.id}"
+                       value="${variation.stock_quantity || 0}"
+                       min="0"
+                       step="1">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small">Status</label>
+                <select class="form-select form-select-sm stock-status" 
+                        data-variation-id="${variation.id}">
+                    <option value="1" ${variation.in_stock ? 'selected' : ''}>Em Estoque</option>
+                    <option value="0" ${!variation.in_stock ? 'selected' : ''}>Fora de Estoque</option>
+                </select>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+function toggleVariationType(productId, type, value, enabled) {
+    fetch(`/admin/products/${productId}/variations/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ type, value, enabled })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadVariations(productId);
+        } else {
+            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar variação');
+    });
+}
+
+function addNewVariationType(productId, type) {
+    const inputId = `new${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    const input = document.getElementById(inputId);
+    const value = input.value.trim();
+    
+    if (!value) {
+        alert('Por favor, insira um valor');
+        return;
+    }
+    
+    fetch(`/admin/products/${productId}/variations/add`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ type, value })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            loadVariations(productId);
+        } else {
+            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao adicionar variação');
+    });
+}
+
+function updateAllStock() {
+    const productId = document.getElementById('variationsProductId').value;
+    const stockInputs = document.querySelectorAll('.stock-input[data-variation-id]');
+    const updates = [];
+    
+    stockInputs.forEach(input => {
+        const variationId = input.getAttribute('data-variation-id');
+        const stockQuantity = parseInt(input.value) || 0;
+        const statusSelect = document.querySelector(`.stock-status[data-variation-id="${variationId}"]`);
+        const inStock = statusSelect ? statusSelect.value === '1' : true;
+        
+        updates.push({
+            variation_id: variationId,
+            stock_quantity: stockQuantity,
+            in_stock: inStock
+        });
+    });
+    
+    if (updates.length === 0) {
+        alert('Nenhuma variação para atualizar');
+        return;
+    }
+    
+    fetch(`/admin/products/${productId}/variations/update-stock`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ updates })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Estoque de ${data.updated} variação(ões) atualizado(s) com sucesso!`);
+            loadVariations(productId);
+        } else {
+            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar estoque');
+    });
+}
+</script>
+@endpush
 @endsection

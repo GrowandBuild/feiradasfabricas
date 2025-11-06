@@ -749,6 +749,7 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'Database\\Seeders\\SettingSeeder' => __DIR__ . '/../..' . '/database/seeders/SettingSeeder.php',
         'Database\\Seeders\\SettingsSeeder' => __DIR__ . '/../..' . '/database/seeders/SettingsSeeder.php',
         'Database\\Seeders\\UpdateClothingProductsSeeder' => __DIR__ . '/../..' . '/database/seeders/UpdateClothingProductsSeeder.php',
+        'Database\\Seeders\\UpdateSupplierSeeder' => __DIR__ . '/../..' . '/database/seeders/UpdateSupplierSeeder.php',
         'DeepCopy\\DeepCopy' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/DeepCopy.php',
         'DeepCopy\\Exception\\CloneException' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/Exception/CloneException.php',
         'DeepCopy\\Exception\\PropertyException' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/Exception/PropertyException.php',

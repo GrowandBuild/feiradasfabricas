@@ -77,7 +77,7 @@
                     </div>
 
                     <!-- Informações B2B -->
-                    @if($customer->type === 'B2B')
+                    @if($customer->type === 'b2b')
                     <div class="row mb-4">
                         <div class="col-12">
                             <h6 class="border-bottom pb-2 mb-3">
@@ -287,7 +287,35 @@
                             </div>
                             <small class="text-muted">Clientes inativos não podem fazer pedidos</small>
                         </div>
+                        @if($customer->type === 'b2b')
+                        <div class="col-md-6">
+                            <label for="b2b_status" class="form-label">Status B2B *</label>
+                            <select name="b2b_status" id="b2b_status" class="form-select @error('b2b_status') is-invalid @enderror" required>
+                                <option value="pending" {{ old('b2b_status', $customer->b2b_status) === 'pending' ? 'selected' : '' }}>Pendente</option>
+                                <option value="approved" {{ old('b2b_status', $customer->b2b_status) === 'approved' ? 'selected' : '' }}>Aprovado</option>
+                                <option value="rejected" {{ old('b2b_status', $customer->b2b_status) === 'rejected' ? 'selected' : '' }}>Rejeitado</option>
+                            </select>
+                            @error('b2b_status')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Aprovar ou rejeitar o cadastro B2B</small>
+                        </div>
+                        @endif
                     </div>
+                    
+                    @if($customer->type === 'b2b')
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <label for="b2b_notes" class="form-label">Observações B2B</label>
+                            <textarea name="b2b_notes" id="b2b_notes" class="form-control @error('b2b_notes') is-invalid @enderror" rows="3" 
+                                      placeholder="Adicione observações sobre o status B2B...">{{ old('b2b_notes', $customer->b2b_notes) }}</textarea>
+                            @error('b2b_notes')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Observações internas sobre o cadastro B2B</small>
+                        </div>
+                    </div>
+                    @endif
 
                     <!-- Botões -->
                     <div class="d-flex justify-content-between">

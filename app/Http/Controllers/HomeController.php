@@ -30,7 +30,8 @@ class HomeController extends Controller
      */
     public function products(Request $request)
     {
-        $query = Product::active()->inStock()->with(['categories']);
+        // Produtos indisponíveis também aparecem, mas serão marcados visualmente
+        $query = Product::active()->with(['categories']);
 
         // Filtro por categoria
         if ($request->filled('category')) {
@@ -83,6 +84,7 @@ class HomeController extends Controller
      */
     public function product($slug)
     {
+        // Produtos indisponíveis também podem ser visualizados
         $product = Product::active()
             ->where('slug', $slug)
             ->with(['categories', 'activeVariations'])

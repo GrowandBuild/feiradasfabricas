@@ -26,7 +26,16 @@
             <div class="product-gallery">
                 <!-- Imagem Principal -->
                 <div class="main-image-container mb-3">
-                    <div class="main-image-wrapper position-relative">
+                    <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
+                        @if($product->is_unavailable)
+                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                                 style="background: rgba(0,0,0,0.3); z-index: 10; border-radius: 8px;">
+                                <span class="badge bg-warning text-dark fs-5 px-4 py-3">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    Indisponível no momento
+                                </span>
+                            </div>
+                        @endif
                         <img id="main-product-image" 
                              src="{{ $product->first_image }}" 
                              alt="{{ $product->name }}" 
@@ -91,9 +100,10 @@
             <div class="product-details">
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <h1 class="h2 mb-0">{{ $product->name }}</h1>
-                    @if($product->hasListBadge())
-                        <span class="badge bg-info" style="font-size: 0.875rem;">
-                            📋 Lista
+                    @if($product->is_unavailable)
+                        <span class="badge bg-warning text-dark" style="font-size: 0.875rem;">
+                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                            Indisponível no momento
                         </span>
                     @endif
                 </div>
@@ -220,11 +230,18 @@
                 @endif
 
                 <div class="action-buttons">
-                    <x-add-to-cart 
-                        :product="$product" 
-                        :showQuantity="true"
-                        buttonText="Adicionar ao Carrinho"
-                        buttonClass="btn btn-primary btn-lg me-2" />
+                    @if(!$product->is_unavailable)
+                        <x-add-to-cart 
+                            :product="$product" 
+                            :showQuantity="true"
+                            buttonText="Adicionar ao Carrinho"
+                            buttonClass="btn btn-primary btn-lg me-2" />
+                    @else
+                        <button class="btn btn-secondary btn-lg me-2" disabled>
+                            <i class="bi bi-x-circle me-2"></i>
+                            Indisponível no momento
+                        </button>
+                    @endif
                     
                     <button class="btn btn-outline-secondary btn-lg">
                         <i class="far fa-heart me-2"></i>
@@ -662,3 +679,1329 @@
     @endif
 </script>
 @endsection
+
+
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+    }
+
+    
+
+    .main-image-container:hover .gallery-nav {
+
+        opacity: 1;
+
+    }
+
+    
+
+    .gallery-nav:hover {
+
+        background: rgba(255, 255, 255, 1);
+
+        transform: scale(1.1);
+
+    }
+
+    
+
+    .thumbnails-container {
+
+        margin-top: 15px;
+
+    }
+
+    
+
+    .thumbnails-wrapper {
+
+        gap: 8px;
+
+        padding: 5px 0;
+
+    }
+
+    
+
+    .thumbnail-item {
+
+        position: relative;
+
+    }
+
+    
+
+    .thumbnail-img {
+
+        transition: all 0.3s ease;
+
+        border: 2px solid transparent;
+
+        border-radius: 8px;
+
+        background-color: #f8f9fa;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+    }
+
+    
+
+    .thumbnail-img:hover {
+
+        border-color: #007bff;
+
+        transform: scale(1.05);
+
+    }
+
+    
+
+    .thumbnail-img.active {
+
+        border-color: #007bff;
+
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+
+    }
+
+    
+
+    .thumbnail-item {
+
+        background-color: #f8f9fa;
+
+        border-radius: 8px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        min-height: 80px;
+
+    }
+
+    
+
+    .image-counter {
+
+        z-index: 10;
+
+    }
+
+    
+
+    /* Estilos dos cards de produtos */
+
+    .product-card {
+
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    }
+
+    
+
+    .product-card:hover {
+
+        transform: translateY(-5px);
+
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+
+    }
+
+    
+
+    .breadcrumb {
+
+        background: none;
+
+        padding: 0;
+
+    }
+
+    
+
+    .breadcrumb-item a {
+
+        color: #007bff;
+
+        text-decoration: none;
+
+    }
+
+    
+
+    .breadcrumb-item a:hover {
+
+        text-decoration: underline;
+
+    }
+
+    
+
+    /* Responsividade */
+
+    @media (max-width: 768px) {
+
+        .gallery-nav {
+
+            opacity: 1;
+
+            width: 35px;
+
+            height: 35px;
+
+        }
+
+        
+
+        .thumbnail-img {
+
+            width: 60px !important;
+
+            height: 60px !important;
+
+        }
+
+        
+
+        .main-image {
+
+            max-height: 400px !important;
+
+        }
+
+    }
+
+    
+
+    /* Scrollbar customizada para miniaturas */
+
+    .thumbnails-wrapper::-webkit-scrollbar {
+
+        height: 4px;
+
+    }
+
+    
+
+    .thumbnails-wrapper::-webkit-scrollbar-track {
+
+        background: #f1f1f1;
+
+        border-radius: 2px;
+
+    }
+
+    
+
+    .thumbnails-wrapper::-webkit-scrollbar-thumb {
+
+        background: #c1c1c1;
+
+        border-radius: 2px;
+
+    }
+
+    
+
+    .thumbnails-wrapper::-webkit-scrollbar-thumb:hover {
+
+        background: #a8a8a8;
+
+    }
+
+</style>
+
+@endsection
+
+
+
+@section('scripts')
+
+@stack('scripts')
+
+<script>
+
+    // Variáveis globais para a galeria
+
+    let currentImageIndex = 0;
+
+    const productImages = @json($product->all_images);
+
+    const totalImages = productImages.length;
+
+
+
+    // Função para definir a imagem principal
+
+    function setMainImage(imageSrc, imageNumber) {
+
+        const mainImage = document.getElementById('main-product-image');
+
+        const currentImageSpan = document.getElementById('current-image');
+
+        const thumbnails = document.querySelectorAll('.thumbnail-img');
+
+        
+
+        // Atualizar imagem principal
+
+        mainImage.src = imageSrc;
+
+        
+
+        // Atualizar contador
+
+        if (currentImageSpan) {
+
+            currentImageSpan.textContent = imageNumber;
+
+        }
+
+        
+
+        // Atualizar índice atual
+
+        currentImageIndex = imageNumber - 1;
+
+        
+
+        // Atualizar thumbnails ativas
+
+        thumbnails.forEach((thumb, index) => {
+
+            thumb.classList.remove('active');
+
+            if (index === currentImageIndex) {
+
+                thumb.classList.add('active');
+
+            }
+
+        });
+
+        
+
+        // Efeito de fade na troca de imagem
+
+        mainImage.style.opacity = '0.7';
+
+        setTimeout(() => {
+
+            mainImage.style.opacity = '1';
+
+        }, 150);
+
+    }
+
+
+
+    // Função para navegar entre imagens
+
+    function changeImage(direction) {
+
+        if (totalImages <= 1) return;
+
+        
+
+        currentImageIndex += direction;
+
+        
+
+        // Loop circular
+
+        if (currentImageIndex >= totalImages) {
+
+            currentImageIndex = 0;
+
+        } else if (currentImageIndex < 0) {
+
+            currentImageIndex = totalImages - 1;
+
+        }
+
+        
+
+        // Definir nova imagem
+
+        setMainImage(productImages[currentImageIndex], currentImageIndex + 1);
+
+        
+
+        // Scroll automático para a thumbnail ativa
+
+        scrollToActiveThumbnail();
+
+    }
+
+
+
+    // Função para fazer scroll automático para a thumbnail ativa
+
+    function scrollToActiveThumbnail() {
+
+        const activeThumbnail = document.querySelector('.thumbnail-img.active');
+
+        if (activeThumbnail) {
+
+            activeThumbnail.scrollIntoView({
+
+                behavior: 'smooth',
+
+                block: 'nearest',
+
+                inline: 'center'
+
+            });
+
+        }
+
+    }
+
+
+
+    // Navegação por teclado
+
+    document.addEventListener('keydown', function(e) {
+
+        if (e.key === 'ArrowLeft') {
+
+            changeImage(-1);
+
+        } else if (e.key === 'ArrowRight') {
+
+            changeImage(1);
+
+        }
+
+    });
+
+
+
+    // Zoom na imagem principal (clique duplo)
+
+    document.getElementById('main-product-image').addEventListener('dblclick', function() {
+
+        if (this.style.transform === 'scale(2)') {
+
+            this.style.transform = 'scale(1)';
+
+            this.style.cursor = 'pointer';
+
+        } else {
+
+            this.style.transform = 'scale(2)';
+
+            this.style.cursor = 'zoom-out';
+
+        }
+
+    });
+
+
+
+    // Inicialização
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // Verificar se há múltiplas imagens
+
+        if (totalImages <= 1) {
+
+            // Ocultar elementos de navegação se não há múltiplas imagens
+
+            const navButtons = document.querySelectorAll('.gallery-nav');
+
+            const imageCounter = document.querySelector('.image-counter');
+
+            
+
+            navButtons.forEach(btn => btn.style.display = 'none');
+
+            if (imageCounter) imageCounter.style.display = 'none';
+
+        }
+
+
+
+        // Inicializar seletores de variações
+
+        initVariationSelectors();
+
+    });
+
+
+
+    // Sistema de variações de produtos
+
+    @if($product->hasVariations())
+
+    const productSlug = '{{ $product->slug }}';
+
+    let selectedVariationId = null;
+
+
+
+    function initVariationSelectors() {
+
+        const variationSelects = document.querySelectorAll('.variation-select');
+
+        
+
+        variationSelects.forEach(select => {
+
+            select.addEventListener('change', function() {
+
+                updateVariation();
+
+            });
+
+        });
+
+
+
+        // Carregar primeira variação ao carregar a página
+
+        updateVariation();
+
+    }
+
+
+
+    function updateVariation() {
+
+        const ram = document.getElementById('variation-ram')?.value || '';
+
+        const storage = document.getElementById('variation-storage')?.value || '';
+
+        const color = document.getElementById('variation-color')?.value || '';
+
+
+
+        // Construir URL da API
+
+        const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
+
+        if (ram) url.searchParams.append('ram', ram);
+
+        if (storage) url.searchParams.append('storage', storage);
+
+        if (color) url.searchParams.append('color', color);
+
+
+
+        // Buscar variação
+
+        fetch(url)
+
+            .then(response => response.json())
+
+            .then(data => {
+
+                if (data.success && data.variation) {
+
+                    selectedVariationId = data.variation.id;
+
+                    
+
+                    // Atualizar preço
+
+                    const priceDisplay = document.getElementById('product-price-display');
+
+                    if (priceDisplay) {
+
+                        priceDisplay.textContent = 'R$ ' + data.variation.price;
+
+                    }
+
+
+
+                    // Atualizar SKU
+
+                    const skuDisplay = document.getElementById('variation-sku-display');
+
+                    const skuSpan = document.getElementById('selected-variation-sku');
+
+                    if (skuDisplay && skuSpan) {
+
+                        skuSpan.textContent = data.variation.sku;
+
+                        skuDisplay.style.display = 'block';
+
+                    }
+
+
+
+                    // Atualizar estoque
+
+                    const stockDisplay = document.getElementById('variation-stock-display');
+
+                    const stockBadge = document.getElementById('variation-stock-badge');
+
+                    if (stockDisplay && stockBadge) {
+
+                        if (data.variation.in_stock && data.variation.stock_quantity > 0) {
+
+                            stockBadge.className = 'badge bg-success fs-6';
+
+                            stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
+
+                        } else {
+
+                            stockBadge.className = 'badge bg-danger fs-6';
+
+                            stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
+
+                        }
+
+                        stockDisplay.style.display = 'block';
+
+                    }
+
+
+
+                    // Atualizar atributo data-variation-id no botão de adicionar ao carrinho
+
+                    const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
+
+                    if (addToCartBtn) {
+
+                        addToCartBtn.setAttribute('data-variation-id', data.variation.id);
+
+                        // Também atualizar no componente add-to-cart
+
+                        const addToCartComponent = document.querySelector('.add-to-cart-component');
+
+                        if (addToCartComponent) {
+
+                            addToCartComponent.setAttribute('data-variation-id', data.variation.id);
+
+                        }
+
+                    }
+
+                } else {
+
+                    // Variação não encontrada
+
+                    const priceDisplay = document.getElementById('product-price-display');
+
+                    if (priceDisplay) {
+
+                        priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ",", ".") }}';
+
+                    }
+
+                    
+
+                    const skuDisplay = document.getElementById('variation-sku-display');
+
+                    if (skuDisplay) {
+
+                        skuDisplay.style.display = 'none';
+
+                    }
+
+
+
+                    const stockDisplay = document.getElementById('variation-stock-display');
+
+                    if (stockDisplay) {
+
+                        stockDisplay.style.display = 'none';
+
+                    }
+
+
+
+                    selectedVariationId = null;
+
+                }
+
+            })
+
+            .catch(error => {
+
+                console.error('Erro ao buscar variação:', error);
+
+            });
+
+    }
+
+    @endif
+
+</script>
+
+@endsection
+
+
+
+
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+
+    }
+
+    
+
+    .main-image-container:hover .gallery-nav {
+
+        opacity: 1;
+
+    }
+
+    
+
+    .gallery-nav:hover {
+
+        background: rgba(255, 255, 255, 1);
+
+        transform: scale(1.1);
+
+    }
+
+    
+
+    .thumbnails-container {
+
+        margin-top: 15px;
+
+    }
+
+    
+
+    .thumbnails-wrapper {
+
+        gap: 8px;
+
+        padding: 5px 0;
+
+    }
+
+    
+
+    .thumbnail-item {
+
+        position: relative;
+
+    }
+
+    
+
+    .thumbnail-img {
+
+        transition: all 0.3s ease;
+
+        border: 2px solid transparent;
+
+        border-radius: 8px;
+
+        background-color: #f8f9fa;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+    }
+
+    
+
+    .thumbnail-img:hover {
+
+        border-color: #007bff;
+
+        transform: scale(1.05);
+
+    }
+
+    
+
+    .thumbnail-img.active {
+
+        border-color: #007bff;
+
+        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+
+    }
+
+    
+
+    .thumbnail-item {
+
+        background-color: #f8f9fa;
+
+        border-radius: 8px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        min-height: 80px;
+
+    }
+
+    
+
+    .image-counter {
+
+        z-index: 10;
+
+    }
+
+    
+
+    /* Estilos dos cards de produtos */
+
+    .product-card {
+
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+    }
+
+    
+
+    .product-card:hover {
+
+        transform: translateY(-5px);
+
+        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+
+    }
+
+    
+
+    .breadcrumb {
+
+        background: none;
+
+        padding: 0;
+
+    }
+
+    
+
+    .breadcrumb-item a {
+
+        color: #007bff;
+
+        text-decoration: none;
+
+    }
+
+    
+
+    .breadcrumb-item a:hover {
+
+        text-decoration: underline;
+
+    }
+
+    
+
+    /* Responsividade */
+
+    @media (max-width: 768px) {
+
+        .gallery-nav {
+
+            opacity: 1;
+
+            width: 35px;
+
+            height: 35px;
+
+        }
+
+        
+
+        .thumbnail-img {
+
+            width: 60px !important;
+
+            height: 60px !important;
+
+        }
+
+        
+
+        .main-image {
+
+            max-height: 400px !important;
+
+        }
+
+    }
+
+    
+
+    /* Scrollbar customizada para miniaturas */
+
+    .thumbnails-wrapper::-webkit-scrollbar {
+
+        height: 4px;
+
+    }
+
+    
+
+    .thumbnails-wrapper::-webkit-scrollbar-track {
+
+        background: #f1f1f1;
+
+        border-radius: 2px;
+
+    }
+
+    
+
+    .thumbnails-wrapper::-webkit-scrollbar-thumb {
+
+        background: #c1c1c1;
+
+        border-radius: 2px;
+
+    }
+
+    
+
+    .thumbnails-wrapper::-webkit-scrollbar-thumb:hover {
+
+        background: #a8a8a8;
+
+    }
+
+</style>
+
+@endsection
+
+
+
+@section('scripts')
+
+@stack('scripts')
+
+<script>
+
+    // Variáveis globais para a galeria
+
+    let currentImageIndex = 0;
+
+    const productImages = @json($product->all_images);
+
+    const totalImages = productImages.length;
+
+
+
+    // Função para definir a imagem principal
+
+    function setMainImage(imageSrc, imageNumber) {
+
+        const mainImage = document.getElementById('main-product-image');
+
+        const currentImageSpan = document.getElementById('current-image');
+
+        const thumbnails = document.querySelectorAll('.thumbnail-img');
+
+        
+
+        // Atualizar imagem principal
+
+        mainImage.src = imageSrc;
+
+        
+
+        // Atualizar contador
+
+        if (currentImageSpan) {
+
+            currentImageSpan.textContent = imageNumber;
+
+        }
+
+        
+
+        // Atualizar índice atual
+
+        currentImageIndex = imageNumber - 1;
+
+        
+
+        // Atualizar thumbnails ativas
+
+        thumbnails.forEach((thumb, index) => {
+
+            thumb.classList.remove('active');
+
+            if (index === currentImageIndex) {
+
+                thumb.classList.add('active');
+
+            }
+
+        });
+
+        
+
+        // Efeito de fade na troca de imagem
+
+        mainImage.style.opacity = '0.7';
+
+        setTimeout(() => {
+
+            mainImage.style.opacity = '1';
+
+        }, 150);
+
+    }
+
+
+
+    // Função para navegar entre imagens
+
+    function changeImage(direction) {
+
+        if (totalImages <= 1) return;
+
+        
+
+        currentImageIndex += direction;
+
+        
+
+        // Loop circular
+
+        if (currentImageIndex >= totalImages) {
+
+            currentImageIndex = 0;
+
+        } else if (currentImageIndex < 0) {
+
+            currentImageIndex = totalImages - 1;
+
+        }
+
+        
+
+        // Definir nova imagem
+
+        setMainImage(productImages[currentImageIndex], currentImageIndex + 1);
+
+        
+
+        // Scroll automático para a thumbnail ativa
+
+        scrollToActiveThumbnail();
+
+    }
+
+
+
+    // Função para fazer scroll automático para a thumbnail ativa
+
+    function scrollToActiveThumbnail() {
+
+        const activeThumbnail = document.querySelector('.thumbnail-img.active');
+
+        if (activeThumbnail) {
+
+            activeThumbnail.scrollIntoView({
+
+                behavior: 'smooth',
+
+                block: 'nearest',
+
+                inline: 'center'
+
+            });
+
+        }
+
+    }
+
+
+
+    // Navegação por teclado
+
+    document.addEventListener('keydown', function(e) {
+
+        if (e.key === 'ArrowLeft') {
+
+            changeImage(-1);
+
+        } else if (e.key === 'ArrowRight') {
+
+            changeImage(1);
+
+        }
+
+    });
+
+
+
+    // Zoom na imagem principal (clique duplo)
+
+    document.getElementById('main-product-image').addEventListener('dblclick', function() {
+
+        if (this.style.transform === 'scale(2)') {
+
+            this.style.transform = 'scale(1)';
+
+            this.style.cursor = 'pointer';
+
+        } else {
+
+            this.style.transform = 'scale(2)';
+
+            this.style.cursor = 'zoom-out';
+
+        }
+
+    });
+
+
+
+    // Inicialização
+
+    document.addEventListener('DOMContentLoaded', function() {
+
+        // Verificar se há múltiplas imagens
+
+        if (totalImages <= 1) {
+
+            // Ocultar elementos de navegação se não há múltiplas imagens
+
+            const navButtons = document.querySelectorAll('.gallery-nav');
+
+            const imageCounter = document.querySelector('.image-counter');
+
+            
+
+            navButtons.forEach(btn => btn.style.display = 'none');
+
+            if (imageCounter) imageCounter.style.display = 'none';
+
+        }
+
+
+
+        // Inicializar seletores de variações
+
+        initVariationSelectors();
+
+    });
+
+
+
+    // Sistema de variações de produtos
+
+    @if($product->hasVariations())
+
+    const productSlug = '{{ $product->slug }}';
+
+    let selectedVariationId = null;
+
+
+
+    function initVariationSelectors() {
+
+        const variationSelects = document.querySelectorAll('.variation-select');
+
+        
+
+        variationSelects.forEach(select => {
+
+            select.addEventListener('change', function() {
+
+                updateVariation();
+
+            });
+
+        });
+
+
+
+        // Carregar primeira variação ao carregar a página
+
+        updateVariation();
+
+    }
+
+
+
+    function updateVariation() {
+
+        const ram = document.getElementById('variation-ram')?.value || '';
+
+        const storage = document.getElementById('variation-storage')?.value || '';
+
+        const color = document.getElementById('variation-color')?.value || '';
+
+
+
+        // Construir URL da API
+
+        const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
+
+        if (ram) url.searchParams.append('ram', ram);
+
+        if (storage) url.searchParams.append('storage', storage);
+
+        if (color) url.searchParams.append('color', color);
+
+
+
+        // Buscar variação
+
+        fetch(url)
+
+            .then(response => response.json())
+
+            .then(data => {
+
+                if (data.success && data.variation) {
+
+                    selectedVariationId = data.variation.id;
+
+                    
+
+                    // Atualizar preço
+
+                    const priceDisplay = document.getElementById('product-price-display');
+
+                    if (priceDisplay) {
+
+                        priceDisplay.textContent = 'R$ ' + data.variation.price;
+
+                    }
+
+
+
+                    // Atualizar SKU
+
+                    const skuDisplay = document.getElementById('variation-sku-display');
+
+                    const skuSpan = document.getElementById('selected-variation-sku');
+
+                    if (skuDisplay && skuSpan) {
+
+                        skuSpan.textContent = data.variation.sku;
+
+                        skuDisplay.style.display = 'block';
+
+                    }
+
+
+
+                    // Atualizar estoque
+
+                    const stockDisplay = document.getElementById('variation-stock-display');
+
+                    const stockBadge = document.getElementById('variation-stock-badge');
+
+                    if (stockDisplay && stockBadge) {
+
+                        if (data.variation.in_stock && data.variation.stock_quantity > 0) {
+
+                            stockBadge.className = 'badge bg-success fs-6';
+
+                            stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
+
+                        } else {
+
+                            stockBadge.className = 'badge bg-danger fs-6';
+
+                            stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
+
+                        }
+
+                        stockDisplay.style.display = 'block';
+
+                    }
+
+
+
+                    // Atualizar atributo data-variation-id no botão de adicionar ao carrinho
+
+                    const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
+
+                    if (addToCartBtn) {
+
+                        addToCartBtn.setAttribute('data-variation-id', data.variation.id);
+
+                        // Também atualizar no componente add-to-cart
+
+                        const addToCartComponent = document.querySelector('.add-to-cart-component');
+
+                        if (addToCartComponent) {
+
+                            addToCartComponent.setAttribute('data-variation-id', data.variation.id);
+
+                        }
+
+                    }
+
+                } else {
+
+                    // Variação não encontrada
+
+                    const priceDisplay = document.getElementById('product-price-display');
+
+                    if (priceDisplay) {
+
+                        priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ",", ".") }}';
+
+                    }
+
+                    
+
+                    const skuDisplay = document.getElementById('variation-sku-display');
+
+                    if (skuDisplay) {
+
+                        skuDisplay.style.display = 'none';
+
+                    }
+
+
+
+                    const stockDisplay = document.getElementById('variation-stock-display');
+
+                    if (stockDisplay) {
+
+                        stockDisplay.style.display = 'none';
+
+                    }
+
+
+
+                    selectedVariationId = null;
+
+                }
+
+            })
+
+            .catch(error => {
+
+                console.error('Erro ao buscar variação:', error);
+
+            });
+
+    }
+
+    @endif
+
+</script>
+
+@endsection
+
+

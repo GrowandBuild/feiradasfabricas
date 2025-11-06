@@ -410,10 +410,13 @@ class ProductionProductsSeeder extends Seeder
             'APPLE-AT-001', 'APPLE-AT-PACK4',
             // Apple Watch
             'APPLE-AW-SE2-40', 'APPLE-AW-S10-42', 'APPLE-AW-S10-46',
-            // iPads
-            'APPLE-IP10-64', 'APPLE-IP10-256', 'APPLE-IP11-128',
+            // iPads (incluindo variações de cor do iPad 11)
+            'APPLE-IP10-64', 'APPLE-IP10-256', 'APPLE-IP11-128-AZUL', 
+            'APPLE-IP11-128-ROSA', 'APPLE-IP11-128-BRANCO',
             'APPLE-IPMINI17P-128', 'APPLE-IPAM2-11-128', 'APPLE-IPAM3-11-128',
             'APPLE-IPPM4-11-256',
+            // Apple Pencil
+            'APPLE-PENCIL-PRO',
             // MacBooks
             'APPLE-MBA15-M3-8-256', 'APPLE-MBA13-M4-16-512', 'APPLE-MBA15-M4-16-256',
         ];
@@ -1520,11 +1523,11 @@ class ProductionProductsSeeder extends Seeder
                 'category' => 'tablets'
             ],
             [
-                'name' => 'iPad 11 128GB',
-                'slug' => 'ipad-11-128gb',
-                'description' => 'iPad 11 com 128GB de armazenamento. Tela Liquid Retina de 10.9".',
-                'short_description' => 'iPad 11 128GB.',
-                'sku' => 'APPLE-IP11-128',
+                'name' => 'iPad 11 128GB Azul',
+                'slug' => 'ipad-11-128gb-azul',
+                'description' => 'iPad 11 com 128GB de armazenamento. Tela Liquid Retina de 10.9". Cor Azul.',
+                'short_description' => 'iPad 11 128GB Azul.',
+                'sku' => 'APPLE-IP11-128-AZUL',
                 'cost_price' => 2300.00,
                 'stock_quantity' => 15,
                 'min_stock' => 5,
@@ -1539,9 +1542,62 @@ class ProductionProductsSeeder extends Seeder
                 'specifications' => [
                     'Tela' => '10.9" Liquid Retina',
                     'Armazenamento' => '128GB',
+                    'Cor' => 'Azul',
                 ],
                 'weight' => 0.477,
                 'sort_order' => 22,
+                'category' => 'tablets'
+            ],
+            [
+                'name' => 'iPad 11 128GB Rosa',
+                'slug' => 'ipad-11-128gb-rosa',
+                'description' => 'iPad 11 com 128GB de armazenamento. Tela Liquid Retina de 10.9". Cor Rosa.',
+                'short_description' => 'iPad 11 128GB Rosa.',
+                'sku' => 'APPLE-IP11-128-ROSA',
+                'cost_price' => 2300.00,
+                'stock_quantity' => 15,
+                'min_stock' => 5,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'iPad 11',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('iPad Air 5'),
+                'specifications' => [
+                    'Tela' => '10.9" Liquid Retina',
+                    'Armazenamento' => '128GB',
+                    'Cor' => 'Rosa',
+                ],
+                'weight' => 0.477,
+                'sort_order' => 23,
+                'category' => 'tablets'
+            ],
+            [
+                'name' => 'iPad 11 128GB Branco',
+                'slug' => 'ipad-11-128gb-branco',
+                'description' => 'iPad 11 com 128GB de armazenamento. Tela Liquid Retina de 10.9". Cor Branco.',
+                'short_description' => 'iPad 11 128GB Branco.',
+                'sku' => 'APPLE-IP11-128-BRANCO',
+                'cost_price' => 2350.00,
+                'stock_quantity' => 15,
+                'min_stock' => 5,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => true,
+                'brand' => 'Apple',
+                'model' => 'iPad 11',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('iPad Air 5'),
+                'specifications' => [
+                    'Tela' => '10.9" Liquid Retina',
+                    'Armazenamento' => '128GB',
+                    'Cor' => 'Branco',
+                ],
+                'weight' => 0.477,
+                'sort_order' => 24,
                 'category' => 'tablets'
             ],
             [
@@ -1566,7 +1622,7 @@ class ProductionProductsSeeder extends Seeder
                     'Armazenamento' => '128GB',
                 ],
                 'weight' => 0.293,
-                'sort_order' => 23,
+                'sort_order' => 25,
                 'category' => 'tablets'
             ],
             [
@@ -1592,7 +1648,7 @@ class ProductionProductsSeeder extends Seeder
                     'Armazenamento' => '128GB',
                 ],
                 'weight' => 0.462,
-                'sort_order' => 24,
+                'sort_order' => 26,
                 'category' => 'tablets'
             ],
             [
@@ -1618,7 +1674,7 @@ class ProductionProductsSeeder extends Seeder
                     'Armazenamento' => '128GB',
                 ],
                 'weight' => 0.462,
-                'sort_order' => 25,
+                'sort_order' => 27,
                 'category' => 'tablets'
             ],
             [
@@ -1644,8 +1700,35 @@ class ProductionProductsSeeder extends Seeder
                     'Armazenamento' => '256GB',
                 ],
                 'weight' => 0.444,
-                'sort_order' => 26,
+                'sort_order' => 28,
                 'category' => 'tablets'
+            ],
+            // Apple Pencil
+            [
+                'name' => 'Apple Pencil Pro',
+                'slug' => 'apple-pencil-pro',
+                'description' => 'Apple Pencil Pro com sensibilidade à pressão e inclinação. Compatível com iPad Pro e iPad Air.',
+                'short_description' => 'Apple Pencil Pro para iPad.',
+                'sku' => 'APPLE-PENCIL-PRO',
+                'cost_price' => 1000.00,
+                'stock_quantity' => 20,
+                'min_stock' => 10,
+                'manage_stock' => true,
+                'in_stock' => true,
+                'is_active' => true,
+                'is_featured' => false,
+                'brand' => 'Apple',
+                'model' => 'Pencil Pro',
+                'department_id' => $department->id,
+                'images' => $this->getImagesForProduct('iPad Air 5'),
+                'specifications' => [
+                    'Compatibilidade' => 'iPad Pro e iPad Air',
+                    'Pressão' => 'Sensível à pressão',
+                    'Inclinação' => 'Sensível à inclinação',
+                ],
+                'weight' => 0.020,
+                'sort_order' => 29,
+                'category' => 'acessorios'
             ],
             // MacBooks
             [

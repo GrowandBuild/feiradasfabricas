@@ -40,14 +40,20 @@ class Setting extends Model
 
     public static function set($key, $value, $type = 'string', $group = 'general')
     {
+        // Converter valor para string se necessário (exceto arrays que viram JSON)
+        $valueToStore = is_array($value) ? json_encode($value) : (string) $value;
+        
         $setting = static::updateOrCreate(
             ['key' => $key],
             [
-                'value' => is_array($value) ? json_encode($value) : $value,
+                'value' => $valueToStore,
                 'type' => $type,
                 'group' => $group,
             ]
         );
+
+        // Recarregar do banco para garantir que está atualizado
+        $setting->refresh();
 
         return $setting;
     }
