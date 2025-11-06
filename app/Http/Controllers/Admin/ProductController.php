@@ -753,58 +753,50 @@ class ProductController extends Controller
     }
 
     /**
-     * Atualiza as imagens do produto
+     * Atualiza as imagens do produto - seguindo padrão do banner
      */
     public function updateImages(Request $request, Product $product)
     {
         $request->validate([
             'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
             'additional_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
-            'existing_images' => 'nullable|array',
+            'remove_featured_image' => 'nullable|boolean',
+            'existing_featured_image' => 'nullable|string',
+            'existing_additional_images' => 'nullable|array',
         ]);
 
         $imagePaths = [];
+        $currentImages = $product->images ?? [];
         
-        // 1. Manter imagens existentes que não foram removidas
-        if ($request->has('existing_images') && is_array($request->existing_images)) {
-            $existingImages = $request->existing_images;
-            
-            // Converter URLs absolutas de volta para caminhos relativos se necessário
-            foreach ($existingImages as $image) {
+        // 1. Processar imagem de destaque
+        $removeFeatured = $request->has('remove_featured_image') && $request->remove_featured_image == '1';
+        
+        if ($request->hasFile('featured_image')) {
+            // Nova imagem de destaque foi enviada
+            $featuredImage = $request->file('featured_image');
+            if ($featuredImage->isValid()) {
+                $path = $featuredImage->store('products', 'public');
+                $imagePaths[] = $path; // Adicionar como primeira imagem
+            }
+        } elseif (!$removeFeatured && $request->has('existing_featured_image')) {
+            // Manter imagem de destaque existente
+            $existingFeatured = $this->extractImagePath($request->existing_featured_image);
+            if ($existingFeatured) {
+                $imagePaths[] = $existingFeatured;
+            }
+        }
+        
+        // 2. Processar imagens adicionais existentes (que não foram marcadas para remover)
+        if ($request->has('existing_additional_images') && is_array($request->existing_additional_images)) {
+            foreach ($request->existing_additional_images as $image) {
                 if (empty($image)) {
                     continue;
                 }
                 
-                // Se é URL absoluta, extrair o caminho
-                if (strpos($image, 'http') === 0) {
-                    // Remover o domínio e extrair o caminho
-                    $parsed = parse_url($image);
-                    $path = $parsed['path'] ?? '';
-                    
-                    // Remover /storage/ se presente
-                    if (strpos($path, '/storage/') === 0) {
-                        $path = substr($path, 9); // Remove '/storage/'
-                    } elseif (strpos($path, 'storage/') === 0) {
-                        $path = substr($path, 8); // Remove 'storage/'
-                    }
-                    
-                    if (!empty($path)) {
-                        $imagePaths[] = $path;
-                    }
-                } else {
-                    // Já é um caminho relativo
-                    $imagePaths[] = $image;
+                $extractedPath = $this->extractImagePath($image);
+                if ($extractedPath && !in_array($extractedPath, $imagePaths)) {
+                    $imagePaths[] = $extractedPath;
                 }
-            }
-        }
-        
-        // 2. Adicionar nova imagem de destaque se fornecida
-        if ($request->hasFile('featured_image')) {
-            $featuredImage = $request->file('featured_image');
-            if ($featuredImage->isValid()) {
-                $path = $featuredImage->store('products', 'public');
-                // Adicionar como primeira imagem (imagem de destaque)
-                array_unshift($imagePaths, $path);
             }
         }
         
@@ -826,5 +818,33 @@ class ProductController extends Controller
             'message' => 'Imagens atualizadas com sucesso!',
             'images' => $product->all_images
         ]);
+    }
+    
+    /**
+     * Extrai o caminho da imagem de uma URL ou caminho
+     */
+    private function extractImagePath($image)
+    {
+        if (empty($image)) {
+            return null;
+        }
+        
+        // Se é URL absoluta, extrair o caminho
+        if (strpos($image, 'http') === 0) {
+            $parsed = parse_url($image);
+            $path = $parsed['path'] ?? '';
+            
+            // Remover /storage/ se presente
+            if (strpos($path, '/storage/') === 0) {
+                $path = substr($path, 9); // Remove '/storage/'
+            } elseif (strpos($path, 'storage/') === 0) {
+                $path = substr($path, 8); // Remove 'storage/'
+            }
+            
+            return !empty($path) ? $path : null;
+        }
+        
+        // Já é um caminho relativo
+        return $image;
     }
 }

@@ -3,7 +3,9 @@
     <div class="modal-dialog modal-lg modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="variationsModalLabel">Gerenciar Variações</h5>
+                <h5 class="modal-title" id="variationsModalLabel">
+                    <i class="bi bi-list-ul me-2"></i>Gerenciar Variações
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
@@ -116,7 +118,9 @@
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Cancelar
+                </button>
             </div>
         </div>
     </div>
@@ -133,10 +137,40 @@ document.addEventListener('DOMContentLoaded', function() {
             const productId = button.getAttribute('data-product-id');
             const productName = button.getAttribute('data-product-name');
             
-            document.getElementById('variationsModalLabel').textContent = `Variações - ${productName}`;
+            document.getElementById('variationsModalLabel').innerHTML = 
+                '<i class="bi bi-list-ul me-2"></i>Variações - ' + productName;
             document.getElementById('variationsProductId').value = productId;
             
             loadVariations(productId);
+        });
+        
+        // Limpar conteúdo ao fechar o modal
+        variationsModal.addEventListener('hidden.bs.modal', function() {
+            // Limpar listas
+            const colorsList = document.getElementById('colorsList');
+            const ramsList = document.getElementById('ramsList');
+            const storagesList = document.getElementById('storagesList');
+            const stockList = document.getElementById('stockList');
+            
+            if (colorsList) colorsList.innerHTML = '<p class="text-muted text-center">Carregando...</p>';
+            if (ramsList) ramsList.innerHTML = '<p class="text-muted text-center">Carregando...</p>';
+            if (storagesList) storagesList.innerHTML = '<p class="text-muted text-center">Carregando...</p>';
+            if (stockList) stockList.innerHTML = '<p class="text-muted text-center">Carregando...</p>';
+            
+            // Limpar inputs
+            const newColor = document.getElementById('newColor');
+            const newRam = document.getElementById('newRam');
+            const newStorage = document.getElementById('newStorage');
+            
+            if (newColor) newColor.value = '';
+            if (newRam) newRam.value = '';
+            if (newStorage) newStorage.value = '';
+            
+            // Resetar para primeira aba
+            const firstTab = document.querySelector('#variationsTabs .nav-link');
+            if (firstTab) {
+                firstTab.click();
+            }
         });
     }
 });
@@ -306,14 +340,17 @@ function toggleVariationType(productId, type, value, enabled) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            // Feedback visual
+            const message = data.message || 'Variação atualizada com sucesso!';
+            showVariationMessage('success', message);
             loadVariations(productId);
         } else {
-            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+            showVariationMessage('error', 'Erro: ' + (data.message || 'Erro desconhecido'));
         }
     })
     .catch(error => {
         console.error('Erro:', error);
-        alert('Erro ao atualizar variação');
+        showVariationMessage('error', 'Erro ao atualizar variação');
     });
 }
 
@@ -339,14 +376,15 @@ function addNewVariationType(productId, type) {
     .then(data => {
         if (data.success) {
             input.value = '';
+            showVariationMessage('success', data.message || 'Variação adicionada com sucesso!');
             loadVariations(productId);
         } else {
-            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+            showVariationMessage('error', 'Erro: ' + (data.message || 'Erro desconhecido'));
         }
     })
     .catch(error => {
         console.error('Erro:', error);
-        alert('Erro ao adicionar variação');
+        showVariationMessage('error', 'Erro ao adicionar variação');
     });
 }
 
@@ -373,6 +411,12 @@ function updateAllStock() {
         return;
     }
     
+    // Mostrar loading no botão
+    const saveBtn = event.target;
+    const originalText = saveBtn.innerHTML;
+    saveBtn.disabled = true;
+    saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
+    
     fetch(`/admin/products/${productId}/variations/update-stock`, {
         method: 'POST',
         headers: {
@@ -384,16 +428,48 @@ function updateAllStock() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(`Estoque de ${data.updated} variação(ões) atualizado(s) com sucesso!`);
+            showVariationMessage('success', `✅ Estoque de ${data.updated} variação(ões) atualizado(s) com sucesso!`);
             loadVariations(productId);
         } else {
-            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+            showVariationMessage('error', '❌ Erro: ' + (data.message || 'Erro desconhecido'));
         }
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
     })
     .catch(error => {
         console.error('Erro:', error);
-        alert('Erro ao atualizar estoque');
+        showVariationMessage('error', '❌ Erro ao atualizar estoque');
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
     });
+}
+
+// Função para exibir mensagens de feedback
+function showVariationMessage(type, message) {
+    // Remover mensagem anterior se existir
+    const existingMessage = document.getElementById('variationMessage');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Criar nova mensagem
+    const messageDiv = document.createElement('div');
+    messageDiv.id = 'variationMessage';
+    messageDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    messageDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    messageDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    document.body.appendChild(messageDiv);
+    
+    // Remover automaticamente após 5 segundos
+    setTimeout(() => {
+        if (messageDiv && messageDiv.parentNode) {
+            messageDiv.remove();
+        }
+    }, 5000);
 }
 </script>
 @endpush
