@@ -24,18 +24,22 @@ class Setting extends Model
 
     public static function get($key, $default = null)
     {
+        // Buscar diretamente do banco sem cache
         $setting = static::where('key', $key)->first();
         
         if (!$setting) {
             return $default;
         }
 
-        return match ($setting->type) {
+        // Converter baseado no tipo
+        $value = match ($setting->type) {
             'boolean' => (bool) $setting->value,
             'number' => (float) $setting->value,
             'json' => json_decode($setting->value, true),
             default => $setting->value,
         };
+        
+        return $value;
     }
 
     public static function set($key, $value, $type = 'string', $group = 'general')

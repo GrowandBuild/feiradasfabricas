@@ -793,19 +793,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     margem_b2b: margemB2B
                 })
             })
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('HTTP ' + response.status);
+                }
+                return response.json();
+            })
             .then(data => {
+                console.log('Resposta do servidor:', data);
                 if (data.sucesso) {
-                    inputB2C.value = data.margens.b2c;
-                    inputB2B.value = data.margens.b2b;
-                    alert('✅ ' + data.mensagem);
+                    // Atualizar os campos com os valores retornados
+                    inputB2C.value = parseFloat(data.margens.b2c).toFixed(1);
+                    inputB2B.value = parseFloat(data.margens.b2b).toFixed(1);
+                    alert('✅ ' + data.mensagem + '\n\nB2C: ' + data.margens.b2c + '%\nB2B: ' + data.margens.b2b + '%');
                 } else {
                     alert('❌ ' + data.mensagem);
                 }
             })
             .catch(error => {
-                console.error('Erro:', error);
-                alert('❌ Erro ao salvar margens.');
+                console.error('Erro completo:', error);
+                alert('❌ Erro ao salvar margens. Verifique o console para mais detalhes.');
             })
             .finally(() => {
                 btnSalvar.disabled = false;

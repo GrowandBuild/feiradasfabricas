@@ -65,19 +65,7 @@ class ProductController extends Controller
         $products = $query->paginate(20);
         $categories = Category::all();
         
-        // Carregar margens padrão APENAS se não existirem (não sobrescrever valores existentes)
-        // B2C = 10% de margem (custo R$ 1,00 → venda R$ 1,10)
-        // B2B = 20% de margem (custo R$ 1,00 → venda R$ 1,20)
-        // IMPORTANTE: Não sobrescrever valores já salvos pelo usuário
-        $b2cSetting = Setting::where('key', 'b2c_margin_percentage')->first();
-        if (!$b2cSetting) {
-            Setting::set('b2c_margin_percentage', 10, 'number', 'pricing');
-        }
-        
-        $b2bSetting = Setting::where('key', 'b2b_margin_percentage')->first();
-        if (!$b2bSetting) {
-            Setting::set('b2b_margin_percentage', 20, 'number', 'pricing');
-        }
+        // Não criar valores padrão aqui - deixar a view usar os defaults apenas para exibição
 
         return view('admin.products.index', compact('products', 'categories'));
     }
@@ -402,29 +390,60 @@ class ProductController extends Controller
             $margemB2C = (float) $validated['margem_b2c'];
             $margemB2B = (float) $validated['margem_b2b'];
 
-            // Buscar ou criar registro B2C
-            $settingB2C = Setting::firstOrNew(['key' => 'b2c_margin_percentage']);
-            $settingB2C->value = (string) $margemB2C;
-            $settingB2C->type = 'number';
-            $settingB2C->group = 'pricing';
-            $settingB2C->save();
+            // Buscar registro B2C existente ou criar novo
+            $settingB2C = Setting::where('key', 'b2c_margin_percentage')->first();
+            if ($settingB2C) {
+                // Se existe, FORÇAR atualização
+                $settingB2C->value = (string) $margemB2C;
+                $settingB2C->type = 'number';
+                $settingB2C->group = 'pricing';
+                $settingB2C->save();
+            } else {
+                // Se não existe, criar novo
+                Setting::create([
+                    'key' => 'b2c_margin_percentage',
+                    'value' => (string) $margemB2C,
+                    'type' => 'number',
+                    'group' => 'pricing',
+                ]);
+            }
 
-            // Buscar ou criar registro B2B
-            $settingB2B = Setting::firstOrNew(['key' => 'b2b_margin_percentage']);
-            $settingB2B->value = (string) $margemB2B;
-            $settingB2B->type = 'number';
-            $settingB2B->group = 'pricing';
-            $settingB2B->save();
+            // Buscar registro B2B existente ou criar novo
+            $settingB2B = Setting::where('key', 'b2b_margin_percentage')->first();
+            if ($settingB2B) {
+                // Se existe, FORÇAR atualização
+                $settingB2B->value = (string) $margemB2B;
+                $settingB2B->type = 'number';
+                $settingB2B->group = 'pricing';
+                $settingB2B->save();
+            } else {
+                // Se não existe, criar novo
+                Setting::create([
+                    'key' => 'b2b_margin_percentage',
+                    'value' => (string) $margemB2B,
+                    'type' => 'number',
+                    'group' => 'pricing',
+                ]);
+            }
+
+            // Buscar novamente para confirmar que foram salvos
+            $confirmB2C = Setting::where('key', 'b2c_margin_percentage')->first();
+            $confirmB2B = Setting::where('key', 'b2b_margin_percentage')->first();
 
             return response()->json([
                 'sucesso' => true,
                 'mensagem' => 'Margens salvas com sucesso!',
                 'margens' => [
-                    'b2c' => $margemB2C,
-                    'b2b' => $margemB2B,
+                    'b2c' => (float) ($confirmB2C->value ?? $margemB2C),
+                    'b2b' => (float) ($confirmB2B->value ?? $margemB2B),
                 ]
             ]);
         } catch (\Exception $e) {
+            \Log::error('Erro ao salvar margens: ' . $e->getMessage(), [
+                'exception' => $e,
+                'request' => $request->all()
+            ]);
+            
             return response()->json([
                 'sucesso' => false,
                 'mensagem' => 'Erro ao salvar margens: ' . $e->getMessage()
