@@ -573,13 +573,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ========== FUNCIONALIDADE DE IMAGENS ==========
+    // Seguindo a mesma lógica simples dos selos de categorias
     
-    // Verificar se o campo de imagens e o container existem
     const imageInput = document.getElementById('images');
     const container = document.getElementById('images-container');
     
     if (imageInput && container) {
-        console.log('Campo de imagens e container encontrados');
+        console.log('✅ Campo de imagens e container encontrados');
+        
+        // Armazenar referência aos arquivos selecionados
+        let selectedFiles = [];
         
         // Adicionar preview das novas imagens selecionadas
         imageInput.addEventListener('change', function(e) {
@@ -589,15 +592,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            console.log('Arquivos selecionados:', files.length);
+            console.log('📸 Arquivos selecionados:', files.length);
             
             // Limpar previews anteriores de novas imagens
             const newImagePreviews = container.querySelectorAll('.new-image-preview');
             newImagePreviews.forEach(preview => preview.remove());
             
+            // Adicionar novos arquivos à lista
+            selectedFiles = Array.from(files);
+            
             // Adicionar preview das novas imagens
-            Array.from(files).forEach((file, index) => {
-                console.log(`Processando arquivo ${index + 1}:`, file.name, file.type, file.size);
+            selectedFiles.forEach((file, index) => {
+                console.log(`📷 Processando arquivo ${index + 1}:`, file.name);
                 
                 if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
@@ -605,6 +611,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     reader.onload = function(e) {
                         const col = document.createElement('div');
                         col.className = 'col-md-3 mb-2 new-image-preview';
+                        col.setAttribute('data-file-name', file.name);
                         col.innerHTML = `
                             <div class="position-relative">
                                 <img src="${e.target.result}" 
@@ -614,34 +621,62 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <span class="badge bg-success position-absolute top-0 start-0">Nova</span>
                                 <button type="button" 
                                         class="btn btn-sm btn-danger position-absolute top-0 end-0" 
-                                        onclick="this.closest('.new-image-preview').remove();">
+                                        onclick="removeNewImagePreview(this, '${file.name}')">
                                     <i class="bi bi-x"></i>
                                 </button>
                             </div>
                         `;
                         container.appendChild(col);
-                        console.log('Preview adicionado para:', file.name);
+                        console.log('✅ Preview adicionado para:', file.name);
                     };
                     
                     reader.onerror = function() {
-                        console.error('Erro ao ler arquivo:', file.name);
+                        console.error('❌ Erro ao ler arquivo:', file.name);
                     };
                     
                     reader.readAsDataURL(file);
                 } else {
-                    console.warn('Arquivo não é uma imagem:', file.name, file.type);
+                    console.warn('⚠️ Arquivo não é uma imagem:', file.name);
                     alert(`O arquivo "${file.name}" não é uma imagem válida.`);
                 }
             });
         });
     } else {
         if (!imageInput) {
-            console.error('Campo de imagens não encontrado!');
+            console.error('❌ Campo de imagens não encontrado!');
         }
         if (!container) {
-            console.error('Container de imagens não encontrado!');
+            console.error('❌ Container de imagens não encontrado!');
         }
     }
+    
+    // Função para remover preview de nova imagem
+    window.removeNewImagePreview = function(button, fileName) {
+        if (confirm('Tem certeza que deseja remover esta imagem do upload?')) {
+            const preview = button.closest('.new-image-preview');
+            if (preview) {
+                preview.remove();
+                
+                // Remover o arquivo do input usando DataTransfer
+                const imageInput = document.getElementById('images');
+                if (imageInput && imageInput.files) {
+                    const dt = new DataTransfer();
+                    const files = Array.from(imageInput.files);
+                    
+                    // Remover o arquivo pelo nome
+                    const filteredFiles = files.filter(file => file.name !== fileName);
+                    
+                    // Adicionar os arquivos restantes ao DataTransfer
+                    filteredFiles.forEach(file => dt.items.add(file));
+                    
+                    // Atualizar o input
+                    imageInput.files = dt.files;
+                    
+                    console.log('🗑️ Imagem removida do upload. Arquivos restantes:', dt.files.length);
+                }
+            }
+        }
+    };
     
     console.log('✅ Funcionalidades de preços e imagens inicializadas!');
 });

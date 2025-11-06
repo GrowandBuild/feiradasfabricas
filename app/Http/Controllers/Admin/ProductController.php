@@ -187,42 +187,30 @@ class ProductController extends Controller
         $data['slug'] = Str::slug($request->name);
         $data['in_stock'] = $request->stock_quantity > 0;
 
-        // Gerenciar imagens
+        // Gerenciar imagens - seguindo a mesma lógica simples dos selos de categorias
         $imagePaths = [];
         
-        // Debug: verificar dados recebidos
-        \Log::info('Dados de imagens recebidos:', [
-            'has_images' => $request->hasFile('images'),
-            'images_count' => $request->hasFile('images') ? count($request->file('images')) : 0,
-            'has_existing_images' => $request->has('existing_images'),
-            'existing_images' => $request->existing_images ?? [],
-            'all_images_removed' => $request->all_images_removed ?? '0'
-        ]);
+        // 1. Primeiro, manter as imagens existentes que não foram removidas
+        if ($request->has('existing_images') && is_array($request->existing_images)) {
+            $imagePaths = array_filter($request->existing_images);
+        }
         
-        // Verificar se todas as imagens foram removidas
-        if ($request->has('all_images_removed') && $request->all_images_removed == '1') {
-            $imagePaths = [];
-            \Log::info('Todas as imagens foram removidas');
-        } else {
-            // Adicionar imagens existentes que não foram removidas
-            if ($request->has('existing_images')) {
-                $imagePaths = $request->existing_images;
-                \Log::info('Imagens existentes mantidas:', ['images' => $imagePaths]);
+        // 2. Adicionar novas imagens se houver upload
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                if ($image->isValid()) {
+                    $path = $image->store('products', 'public');
+                    $imagePaths[] = $path;
+                }
             }
         }
         
-        // Adicionar novas imagens se houver
-        if ($request->hasFile('images')) {
-            \Log::info('Processando novas imagens...');
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('products', 'public');
-                $imagePaths[] = $path;
-                \Log::info('Nova imagem salva:', ['path' => $path]);
-            }
+        // 3. Se todas as imagens foram removidas explicitamente
+        if ($request->has('all_images_removed') && $request->all_images_removed == '1') {
+            $imagePaths = [];
         }
         
         $data['images'] = $imagePaths;
-        \Log::info('Array final de imagens:', ['images' => $imagePaths]);
 
         // Log de alteração de estoque se necessário
         $oldStock = $product->stock_quantity;
