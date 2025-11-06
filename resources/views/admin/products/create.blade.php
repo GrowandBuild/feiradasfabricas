@@ -141,7 +141,7 @@
                         <label for="images" class="form-label">Imagens do Produto</label>
                         <input type="file" class="form-control @error('images') is-invalid @enderror" 
                                id="images" name="images[]" multiple accept="image/*">
-                        <div class="form-text">Você pode selecionar múltiplas imagens. Formatos aceitos: JPG, PNG, GIF (máx. 2MB cada)</div>
+                        <div class="form-text">Você pode selecionar múltiplas imagens. Formatos aceitos: JPG, PNG, GIF, WEBP, AVIF (máx. 10MB cada)</div>
                         @error('images')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror

@@ -41,6 +41,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/{product}/variations/toggle', [ProductController::class, 'toggleVariation'])->name('products.variations.toggle');
         Route::post('products/{product}/variations/add', [ProductController::class, 'addVariation'])->name('products.variations.add');
         Route::post('products/{product}/variations/update-stock', [ProductController::class, 'updateStock'])->name('products.variations.update-stock');
+        Route::get('products/{product}/images', [ProductController::class, 'getImages'])->name('products.images');
+        Route::post('products/{product}/update-images', [ProductController::class, 'updateImages'])->name('products.update-images');
 
         // Categorias
         Route::resource('categories', CategoryController::class);

@@ -199,7 +199,16 @@
     flex-shrink: 0;
     background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
     border: 1px solid rgba(0, 0, 0, 0.05);
-    transition: all 0.25s ease;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, opacity 0.2s ease-in-out;
+    display: block;
+    /* Prevenir flicker - otimizações de renderização */
+    image-rendering: -webkit-optimize-contrast;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transform: translateZ(0);
+    will-change: transform, opacity;
+    /* Prevenir recarregamento */
+    content-visibility: auto;
 }
 
 .live-search-item:hover .live-search-item-image {
@@ -460,7 +469,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return `
                 <a href="${productUrl}" class="live-search-item">
                     <img src="${image}" alt="${escapeHtml(product.name)}" class="live-search-item-image" 
-                         onerror="this.src='{{ asset('images/no-image.png') }}'">
+                         data-fallback="{{ asset('images/no-image.png') }}">
                     <div class="live-search-item-content">
                         <div class="live-search-item-name">${escapeHtml(product.name)}</div>
                         ${shortDescription ? `<div class="live-search-item-description">${escapeHtml(shortDescription)}</div>` : ''}
@@ -474,6 +483,42 @@ document.addEventListener('DOMContentLoaded', function() {
         }).join('');
         
         searchContent.innerHTML = html;
+        
+        // Prevenir flicker: adicionar event listeners após inserir HTML
+        const images = searchContent.querySelectorAll('.live-search-item-image');
+        images.forEach(img => {
+            const fallbackSrc = img.getAttribute('data-fallback') || '{{ asset('images/no-image.png') }}';
+            let errorHandled = false;
+            let imageLoaded = false;
+            
+            // Adicionar listener de erro uma única vez
+            img.addEventListener('error', function() {
+                if (!errorHandled && this.src !== fallbackSrc) {
+                    errorHandled = true;
+                    this.onerror = null; // Prevenir loop infinito
+                    this.src = fallbackSrc;
+                }
+            }, { once: true });
+            
+            // Adicionar listener de load para estabilizar
+            img.addEventListener('load', function() {
+                if (!imageLoaded) {
+                    imageLoaded = true;
+                    // Forçar repaint para estabilizar
+                    this.style.opacity = '1';
+                }
+            }, { once: true });
+            
+            // Definir opacity inicial para prevenir flicker
+            img.style.opacity = '0';
+            img.style.transition = 'opacity 0.2s ease-in-out';
+            
+            // Se a imagem já está carregada (cache), mostrar imediatamente
+            if (img.complete && img.naturalHeight !== 0) {
+                img.style.opacity = '1';
+                imageLoaded = true;
+            }
+        });
     }
     
     // Exibir mensagem de nenhum resultado

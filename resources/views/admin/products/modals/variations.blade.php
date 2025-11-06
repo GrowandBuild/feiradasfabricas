@@ -122,4 +122,279 @@
     </div>
 </div>
 
+@push('scripts')
+<script>
+// Sistema de Gerenciamento de Variações
+document.addEventListener('DOMContentLoaded', function() {
+    const variationsModal = document.getElementById('variationsModal');
+    if (variationsModal) {
+        variationsModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const productId = button.getAttribute('data-product-id');
+            const productName = button.getAttribute('data-product-name');
+            
+            document.getElementById('variationsModalLabel').textContent = `Variações - ${productName}`;
+            document.getElementById('variationsProductId').value = productId;
+            
+            loadVariations(productId);
+        });
+    }
+});
+
+function loadVariations(productId) {
+    fetch(`/admin/products/${productId}/variations`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                renderVariations(data);
+                renderStock(data);
+            } else {
+                alert('Erro ao carregar variações: ' + (data.message || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao carregar variações');
+        });
+}
+
+function renderVariations(data) {
+    // Renderizar cores
+    const colorsContainer = document.getElementById('colorsList');
+    colorsContainer.innerHTML = '';
+    if (data.colors && data.colors.length > 0) {
+        data.colors.forEach(color => {
+            const colorItem = createColorItem(color, data.productId);
+            colorsContainer.appendChild(colorItem);
+        });
+    } else {
+        colorsContainer.innerHTML = '<p class="text-muted text-center">Nenhuma cor encontrada</p>';
+    }
+    
+    // Renderizar RAMs
+    const ramsContainer = document.getElementById('ramsList');
+    ramsContainer.innerHTML = '';
+    if (data.rams && data.rams.length > 0) {
+        data.rams.forEach(ram => {
+            const ramItem = createRamItem(ram, data.productId);
+            ramsContainer.appendChild(ramItem);
+        });
+    } else {
+        ramsContainer.innerHTML = '<p class="text-muted text-center">Nenhuma RAM encontrada</p>';
+    }
+    
+    // Renderizar Armazenamentos
+    const storagesContainer = document.getElementById('storagesList');
+    storagesContainer.innerHTML = '';
+    if (data.storages && data.storages.length > 0) {
+        data.storages.forEach(storage => {
+            const storageItem = createStorageItem(storage, data.productId);
+            storagesContainer.appendChild(storageItem);
+        });
+    } else {
+        storagesContainer.innerHTML = '<p class="text-muted text-center">Nenhum armazenamento encontrado</p>';
+    }
+}
+
+function renderStock(data) {
+    const stockContainer = document.getElementById('stockList');
+    stockContainer.innerHTML = '';
+    
+    if (data.variations && data.variations.length > 0) {
+        data.variations.forEach(variation => {
+            const stockItem = createStockItem(variation, data.productId);
+            stockContainer.appendChild(stockItem);
+        });
+    } else {
+        stockContainer.innerHTML = '<p class="text-muted text-center">Nenhuma variação encontrada</p>';
+    }
+}
+
+function createColorItem(color, productId) {
+    const div = document.createElement('div');
+    div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    div.innerHTML = `
+        <span class="flex-grow-1">${color.name}</span>
+        <span class="badge bg-${color.enabled ? 'success' : 'secondary'} me-2">${color.count} variações</span>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" 
+                   ${color.enabled ? 'checked' : ''} 
+                   onchange="toggleVariationType(${productId}, 'color', '${color.name.replace(/'/g, "\\'")}', this.checked)">
+        </div>
+    `;
+    return div;
+}
+
+function createRamItem(ram, productId) {
+    const div = document.createElement('div');
+    div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    div.innerHTML = `
+        <span class="flex-grow-1">${ram.name}</span>
+        <span class="badge bg-${ram.enabled ? 'success' : 'secondary'} me-2">${ram.count} variações</span>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" 
+                   ${ram.enabled ? 'checked' : ''} 
+                   onchange="toggleVariationType(${productId}, 'ram', '${ram.name.replace(/'/g, "\\'")}', this.checked)">
+        </div>
+    `;
+    return div;
+}
+
+function createStorageItem(storage, productId) {
+    const div = document.createElement('div');
+    div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    div.innerHTML = `
+        <span class="flex-grow-1">${storage.name}</span>
+        <span class="badge bg-${storage.enabled ? 'success' : 'secondary'} me-2">${storage.count} variações</span>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" 
+                   ${storage.enabled ? 'checked' : ''} 
+                   onchange="toggleVariationType(${productId}, 'storage', '${storage.name.replace(/'/g, "\\'")}', this.checked)">
+        </div>
+    `;
+    return div;
+}
+
+function createStockItem(variation, productId) {
+    const div = document.createElement('div');
+    div.className = 'mb-3 p-3 border rounded';
+    div.innerHTML = `
+        <div class="d-flex justify-content-between align-items-start mb-2">
+            <div class="flex-grow-1">
+                <strong>${variation.name || variation.sku}</strong>
+                <div class="small text-muted">SKU: ${variation.sku}</div>
+                ${variation.ram ? `<span class="badge bg-info me-1">${variation.ram}</span>` : ''}
+                ${variation.storage ? `<span class="badge bg-primary me-1">${variation.storage}</span>` : ''}
+                ${variation.color ? `<span class="badge bg-secondary me-1">${variation.color}</span>` : ''}
+            </div>
+            <span class="badge bg-${variation.is_active ? 'success' : 'secondary'}">
+                ${variation.is_active ? 'Ativo' : 'Inativo'}
+            </span>
+        </div>
+        <div class="row g-2">
+            <div class="col-md-6">
+                <label class="form-label small">Estoque Atual</label>
+                <input type="number" 
+                       class="form-control form-control-sm stock-input" 
+                       data-variation-id="${variation.id}"
+                       value="${variation.stock_quantity || 0}"
+                       min="0"
+                       step="1">
+            </div>
+            <div class="col-md-6">
+                <label class="form-label small">Status</label>
+                <select class="form-select form-select-sm stock-status" 
+                        data-variation-id="${variation.id}">
+                    <option value="1" ${variation.in_stock ? 'selected' : ''}>Em Estoque</option>
+                    <option value="0" ${!variation.in_stock ? 'selected' : ''}>Fora de Estoque</option>
+                </select>
+            </div>
+        </div>
+    `;
+    return div;
+}
+
+function toggleVariationType(productId, type, value, enabled) {
+    fetch(`/admin/products/${productId}/variations/toggle`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ type, value, enabled })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            loadVariations(productId);
+        } else {
+            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar variação');
+    });
+}
+
+function addNewVariationType(productId, type) {
+    const inputId = `new${type.charAt(0).toUpperCase() + type.slice(1)}`;
+    const input = document.getElementById(inputId);
+    const value = input.value.trim();
+    
+    if (!value) {
+        alert('Por favor, insira um valor');
+        return;
+    }
+    
+    fetch(`/admin/products/${productId}/variations/add`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ type, value })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            loadVariations(productId);
+        } else {
+            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao adicionar variação');
+    });
+}
+
+function updateAllStock() {
+    const productId = document.getElementById('variationsProductId').value;
+    const stockInputs = document.querySelectorAll('.stock-input[data-variation-id]');
+    const updates = [];
+    
+    stockInputs.forEach(input => {
+        const variationId = input.getAttribute('data-variation-id');
+        const stockQuantity = parseInt(input.value) || 0;
+        const statusSelect = document.querySelector(`.stock-status[data-variation-id="${variationId}"]`);
+        const inStock = statusSelect ? statusSelect.value === '1' : true;
+        
+        updates.push({
+            variation_id: variationId,
+            stock_quantity: stockQuantity,
+            in_stock: inStock
+        });
+    });
+    
+    if (updates.length === 0) {
+        alert('Nenhuma variação para atualizar');
+        return;
+    }
+    
+    fetch(`/admin/products/${productId}/variations/update-stock`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({ updates })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Estoque de ${data.updated} variação(ões) atualizado(s) com sucesso!`);
+            loadVariations(productId);
+        } else {
+            alert('Erro: ' + (data.message || 'Erro desconhecido'));
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar estoque');
+    });
+}
+</script>
+@endpush
 

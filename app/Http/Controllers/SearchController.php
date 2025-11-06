@@ -360,6 +360,10 @@ class SearchController extends Controller
 
     private function applySorting($query, $sort)
     {
+        // Sempre priorizar produtos disponíveis primeiro
+        $query->orderBy('in_stock', 'desc')
+              ->orderBy('is_active', 'desc');
+        
         switch ($sort) {
             case 'price_asc':
                 $query->orderBy('price', 'asc');
@@ -465,8 +469,13 @@ class SearchController extends Controller
 
     private function getProductSuggestions($query)
     {
-        return Product::where('name', 'like', "%{$query}%")
-                     ->orWhere('brand', 'like', "%{$query}%")
+        return Product::where(function($q) use ($query) {
+                         $q->where('name', 'like', "%{$query}%")
+                           ->orWhere('brand', 'like', "%{$query}%");
+                     })
+                     ->orderBy('in_stock', 'desc')
+                     ->orderBy('is_active', 'desc')
+                     ->orderBy('name', 'asc')
                      ->limit(5)
                      ->get(['id', 'name', 'brand', 'price', 'images'])
                      ->map(function($product) {

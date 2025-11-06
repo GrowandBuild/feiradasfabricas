@@ -54,6 +54,10 @@ class HomeController extends Controller
             });
         }
 
+        // Sempre priorizar produtos disponíveis primeiro
+        $query->orderBy('in_stock', 'desc')
+              ->orderBy('is_active', 'desc');
+        
         // Ordenação
         $sortBy = $request->get('sort', 'name');
         $sortDirection = $request->get('direction', 'asc');

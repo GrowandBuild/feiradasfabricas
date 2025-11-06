@@ -236,7 +236,7 @@
                                id="images" name="images[]" multiple accept="image/*">
                         <div class="form-text">
                             <i class="bi bi-info-circle me-1"></i>
-                            Você pode selecionar múltiplas imagens. Formatos aceitos: JPG, PNG, GIF, WEBP (máx. 2MB cada)
+                            Você pode selecionar múltiplas imagens. Formatos aceitos: JPG, PNG, GIF, WEBP, AVIF (máx. 10MB cada)
                         </div>
                         @error('images')
                             <div class="invalid-feedback">

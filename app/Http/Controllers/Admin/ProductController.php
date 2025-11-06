@@ -102,7 +102,7 @@ class ProductController extends Controller
             'categories' => 'required|array|min:1',
             'categories.*' => 'exists:categories,id',
             'images' => 'nullable',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
             'specifications' => 'nullable|array',
             'brand' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
@@ -173,7 +173,7 @@ class ProductController extends Controller
             'categories' => 'required|array|min:1',
             'categories.*' => 'exists:categories,id',
             'images' => 'nullable',
-            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:2048',
+            'images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
             'specifications' => 'nullable|array',
             'brand' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
@@ -718,6 +718,113 @@ class ProductController extends Controller
             'success' => true,
             'message' => "Estoque de {$updated} variação(ões) atualizado(s)",
             'updated' => $updated
+        ]);
+    }
+
+    /**
+     * Retorna as imagens do produto para o modal
+     */
+    public function getImages(Product $product)
+    {
+        $images = $product->all_images ?? [];
+        $featuredImage = $product->first_image ?? null;
+        
+        // Converter URLs relativas para absolutas se necessário
+        $formattedImages = [];
+        foreach ($images as $image) {
+            if (empty($image)) {
+                continue;
+            }
+            
+            if (strpos($image, 'http') === 0 || strpos($image, 'https') === 0) {
+                $formattedImages[] = $image;
+            } elseif (strpos($image, '/') === 0) {
+                $formattedImages[] = url(ltrim($image, '/'));
+            } else {
+                $formattedImages[] = asset('storage/' . $image);
+            }
+        }
+        
+        return response()->json([
+            'success' => true,
+            'images' => $formattedImages,
+            'featured_image' => $featuredImage ? (strpos($featuredImage, 'http') === 0 ? $featuredImage : asset('storage/' . $featuredImage)) : null
+        ]);
+    }
+
+    /**
+     * Atualiza as imagens do produto
+     */
+    public function updateImages(Request $request, Product $product)
+    {
+        $request->validate([
+            'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
+            'additional_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
+            'existing_images' => 'nullable|array',
+        ]);
+
+        $imagePaths = [];
+        
+        // 1. Manter imagens existentes que não foram removidas
+        if ($request->has('existing_images') && is_array($request->existing_images)) {
+            $existingImages = $request->existing_images;
+            
+            // Converter URLs absolutas de volta para caminhos relativos se necessário
+            foreach ($existingImages as $image) {
+                if (empty($image)) {
+                    continue;
+                }
+                
+                // Se é URL absoluta, extrair o caminho
+                if (strpos($image, 'http') === 0) {
+                    // Remover o domínio e extrair o caminho
+                    $parsed = parse_url($image);
+                    $path = $parsed['path'] ?? '';
+                    
+                    // Remover /storage/ se presente
+                    if (strpos($path, '/storage/') === 0) {
+                        $path = substr($path, 9); // Remove '/storage/'
+                    } elseif (strpos($path, 'storage/') === 0) {
+                        $path = substr($path, 8); // Remove 'storage/'
+                    }
+                    
+                    if (!empty($path)) {
+                        $imagePaths[] = $path;
+                    }
+                } else {
+                    // Já é um caminho relativo
+                    $imagePaths[] = $image;
+                }
+            }
+        }
+        
+        // 2. Adicionar nova imagem de destaque se fornecida
+        if ($request->hasFile('featured_image')) {
+            $featuredImage = $request->file('featured_image');
+            if ($featuredImage->isValid()) {
+                $path = $featuredImage->store('products', 'public');
+                // Adicionar como primeira imagem (imagem de destaque)
+                array_unshift($imagePaths, $path);
+            }
+        }
+        
+        // 3. Adicionar novas imagens adicionais se houver upload
+        if ($request->hasFile('additional_images')) {
+            foreach ($request->file('additional_images') as $image) {
+                if ($image->isValid()) {
+                    $path = $image->store('products', 'public');
+                    $imagePaths[] = $path;
+                }
+            }
+        }
+        
+        // 4. Atualizar produto
+        $product->update(['images' => $imagePaths]);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Imagens atualizadas com sucesso!',
+            'images' => $product->all_images
         ]);
     }
 }
