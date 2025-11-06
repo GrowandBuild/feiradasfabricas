@@ -332,6 +332,16 @@ function createStockItem(variation, productId) {
 }
 
 function toggleVariationType(productId, type, value, enabled) {
+    if (!productId || !type || !value) {
+        showVariationMessage('error', 'Erro: Dados inválidos');
+        return;
+    }
+    
+    // Desabilitar o toggle enquanto processa
+    const toggle = event.target;
+    const originalState = toggle.checked;
+    toggle.disabled = true;
+    
     fetch(`/admin/products/${productId}/variations/toggle`, {
         method: 'POST',
         headers: {
@@ -340,32 +350,63 @@ function toggleVariationType(productId, type, value, enabled) {
         },
         body: JSON.stringify({ type, value, enabled })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        toggle.disabled = false;
         if (data.success) {
             // Feedback visual
             const message = data.message || 'Variação atualizada com sucesso!';
             showVariationMessage('success', message);
+            // Recarregar variações para atualizar o estado
             loadVariations(productId);
         } else {
+            // Reverter o toggle se falhou
+            toggle.checked = !enabled;
             showVariationMessage('error', 'Erro: ' + (data.message || 'Erro desconhecido'));
         }
     })
     .catch(error => {
         console.error('Erro:', error);
-        showVariationMessage('error', 'Erro ao atualizar variação');
+        toggle.disabled = false;
+        // Reverter o toggle se falhou
+        toggle.checked = !enabled;
+        showVariationMessage('error', 'Erro ao atualizar variação. Verifique sua conexão.');
     });
 }
 
 function addNewVariationType(productId, type) {
+    if (!productId || !type) {
+        showVariationMessage('error', 'Erro: Dados inválidos');
+        return;
+    }
+    
     const inputId = `new${type.charAt(0).toUpperCase() + type.slice(1)}`;
     const input = document.getElementById(inputId);
+    if (!input) {
+        showVariationMessage('error', 'Erro: Campo de entrada não encontrado');
+        return;
+    }
+    
     const value = input.value.trim();
     
     if (!value) {
-        alert('Por favor, insira um valor');
+        showVariationMessage('error', 'Por favor, insira um valor');
         return;
     }
+    
+    // Desabilitar input e botão enquanto processa
+    const addBtn = input.nextElementSibling;
+    const originalBtnText = addBtn ? addBtn.innerHTML : '';
+    if (addBtn) {
+        addBtn.disabled = true;
+        addBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Adicionando...';
+    }
+    input.disabled = true;
     
     fetch(`/admin/products/${productId}/variations/add`, {
         method: 'POST',
@@ -375,11 +416,23 @@ function addNewVariationType(productId, type) {
         },
         body: JSON.stringify({ type, value })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
+        input.disabled = false;
+        if (addBtn) {
+            addBtn.disabled = false;
+            addBtn.innerHTML = originalBtnText;
+        }
+        
         if (data.success) {
             input.value = '';
             showVariationMessage('success', data.message || 'Variação adicionada com sucesso!');
+            // Recarregar variações para mostrar o novo item
             loadVariations(productId);
         } else {
             showVariationMessage('error', 'Erro: ' + (data.message || 'Erro desconhecido'));
@@ -387,12 +440,22 @@ function addNewVariationType(productId, type) {
     })
     .catch(error => {
         console.error('Erro:', error);
-        showVariationMessage('error', 'Erro ao adicionar variação');
+        input.disabled = false;
+        if (addBtn) {
+            addBtn.disabled = false;
+            addBtn.innerHTML = originalBtnText;
+        }
+        showVariationMessage('error', 'Erro ao adicionar variação. Verifique sua conexão.');
     });
 }
 
 function updateAllStock(event) {
     const productId = document.getElementById('variationsProductId').value;
+    if (!productId) {
+        showVariationMessage('error', 'Erro: ID do produto não encontrado');
+        return Promise.resolve({ success: false });
+    }
+    
     const stockInputs = document.querySelectorAll('.stock-input[data-variation-id]');
     const updates = [];
     
@@ -411,7 +474,7 @@ function updateAllStock(event) {
     
     if (updates.length === 0) {
         if (event && event.target) {
-            alert('Nenhuma variação para atualizar');
+            showVariationMessage('error', 'Nenhuma variação para atualizar');
         }
         return Promise.resolve({ success: false, message: 'Nenhuma variação para atualizar' });
     }
@@ -426,6 +489,15 @@ function updateAllStock(event) {
         saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
     }
     
+    // Timeout para evitar requisições muito longas
+    const timeoutId = setTimeout(() => {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = originalText;
+        }
+        showVariationMessage('error', '⏱️ A requisição está demorando muito. Verifique sua conexão.');
+    }, 60000); // 60 segundos
+    
     return fetch(`/admin/products/${productId}/variations/update-stock`, {
         method: 'POST',
         headers: {
@@ -434,10 +506,17 @@ function updateAllStock(event) {
         },
         body: JSON.stringify({ updates })
     })
-    .then(response => response.json())
+    .then(response => {
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             showVariationMessage('success', `✅ Estoque de ${data.updated} variação(ões) atualizado(s) com sucesso!`);
+            // Recarregar variações para atualizar o estado
             loadVariations(productId);
         } else {
             showVariationMessage('error', '❌ Erro: ' + (data.message || 'Erro desconhecido'));
@@ -449,8 +528,9 @@ function updateAllStock(event) {
         return data;
     })
     .catch(error => {
+        clearTimeout(timeoutId);
         console.error('Erro:', error);
-        showVariationMessage('error', '❌ Erro ao atualizar estoque');
+        showVariationMessage('error', '❌ Erro ao atualizar estoque. Verifique sua conexão.');
         if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.innerHTML = originalText;

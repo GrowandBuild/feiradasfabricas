@@ -304,6 +304,11 @@ function renderExistingImages(images, featuredImage) {
 
 function saveImages() {
     const productId = document.getElementById('imagesProductId').value;
+    if (!productId) {
+        alert('❌ Erro: ID do produto não encontrado');
+        return;
+    }
+    
     const form = document.getElementById('imagesForm');
     const formData = new FormData(form);
     
@@ -332,11 +337,23 @@ function saveImages() {
         }
     });
     
-    // Mostrar loading
-    const saveBtn = event.target;
+    // Mostrar loading - encontrar o botão corretamente
+    const saveBtn = document.querySelector('#imagesModal .btn-primary');
+    if (!saveBtn) {
+        alert('❌ Erro: Botão de salvar não encontrado');
+        return;
+    }
+    
     const originalText = saveBtn.innerHTML;
     saveBtn.disabled = true;
     saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
+    
+    // Adicionar timeout para evitar requisições muito longas
+    const timeoutId = setTimeout(() => {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = originalText;
+        alert('⏱️ A requisição está demorando muito. Verifique sua conexão e tente novamente.');
+    }, 60000); // 60 segundos
     
     fetch(`/admin/products/${productId}/update-images`, {
         method: 'POST',
@@ -345,17 +362,28 @@ function saveImages() {
         },
         body: formData
     })
-    .then(response => response.json())
+    .then(response => {
+        clearTimeout(timeoutId);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            alert('✅ Imagens atualizadas com sucesso!');
-            // Fechar modal
-            const modal = bootstrap.Modal.getInstance(document.getElementById('imagesModal'));
-            if (modal) {
-                modal.hide();
-            }
-            // Recarregar página para atualizar miniaturas
-            location.reload();
+            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Salvo!';
+            saveBtn.classList.remove('btn-primary');
+            saveBtn.classList.add('btn-success');
+            
+            // Fechar modal após 1 segundo
+            setTimeout(() => {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('imagesModal'));
+                if (modal) {
+                    modal.hide();
+                }
+                // Recarregar página para atualizar miniaturas
+                location.reload();
+            }, 1000);
         } else {
             alert('❌ Erro ao salvar imagens: ' + (data.message || 'Erro desconhecido'));
             saveBtn.disabled = false;
@@ -363,8 +391,9 @@ function saveImages() {
         }
     })
     .catch(error => {
+        clearTimeout(timeoutId);
         console.error('Erro:', error);
-        alert('❌ Erro ao salvar imagens. Tente novamente.');
+        alert('❌ Erro ao salvar imagens. Verifique sua conexão e tente novamente.');
         saveBtn.disabled = false;
         saveBtn.innerHTML = originalText;
     });
