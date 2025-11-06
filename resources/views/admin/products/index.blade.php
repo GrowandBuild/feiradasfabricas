@@ -451,6 +451,53 @@
 <!-- Incluir Modal de Imagens -->
 @include('admin.products.modals.images')
 
+@section('styles')
+<style>
+    /* Corrigir z-index do modal de variações para permitir interação */
+    .modal-backdrop.show {
+        z-index: 1040 !important;
+        opacity: 0.5;
+    }
+    
+    #variationsModal {
+        z-index: 1050 !important;
+    }
+    
+    #variationsModal.show {
+        display: block !important;
+    }
+    
+    #variationsModal .modal-dialog {
+        z-index: 1051 !important;
+        position: relative;
+    }
+    
+    #variationsModal .modal-content {
+        position: relative;
+        z-index: 1052 !important;
+    }
+    
+    /* Corrigir z-index do modal de imagens também */
+    #imagesModal {
+        z-index: 1050 !important;
+    }
+    
+    #imagesModal.show {
+        display: block !important;
+    }
+    
+    #imagesModal .modal-dialog {
+        z-index: 1051 !important;
+        position: relative;
+    }
+    
+    #imagesModal .modal-content {
+        position: relative;
+        z-index: 1052 !important;
+    }
+</style>
+@endsection
+
 @push('scripts')
 <script>
 (function() {

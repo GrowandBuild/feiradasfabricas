@@ -78,6 +78,7 @@
     </div>
 </div>
 
+@push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const imagesModal = document.getElementById('imagesModal');
@@ -271,4 +272,5 @@ function saveImages() {
     });
 }
 </script>
+@endpush
 
