@@ -21,7 +21,6 @@ class DepartmentController extends Controller
         // Produtos em destaque do departamento - priorizar disponíveis
         $featuredProducts = $department->products()
             ->active()
-            ->available()
             ->featured()
             ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
             ->orderBy('is_featured', 'desc')
@@ -65,7 +64,6 @@ class DepartmentController extends Controller
             // Buscar produtos por marca para eletrônicos
             $appleProducts = $department->products()
                 ->active()
-                ->available()
                 ->where('brand', 'Apple')
                 ->inStock()
                 ->with(['categories'])
@@ -78,7 +76,6 @@ class DepartmentController extends Controller
 
             $samsungProducts = $department->products()
                 ->active()
-                ->available()
                 ->where('brand', 'Samsung')
                 ->inStock()
                 ->with(['categories'])
@@ -91,7 +88,6 @@ class DepartmentController extends Controller
 
             $xiaomiProducts = $department->products()
                 ->active()
-                ->available()
                 ->where('brand', 'Xiaomi')
                 ->inStock()
                 ->with(['categories'])
@@ -104,7 +100,6 @@ class DepartmentController extends Controller
 
             $motorolaProducts = $department->products()
                 ->active()
-                ->available()
                 ->where('brand', 'Motorola')
                 ->inStock()
                 ->with(['categories'])
@@ -117,7 +112,6 @@ class DepartmentController extends Controller
 
             $infinixProducts = $department->products()
                 ->active()
-                ->available()
                 ->where('brand', 'Infinix')
                 ->inStock()
                 ->with(['categories'])
@@ -130,7 +124,6 @@ class DepartmentController extends Controller
 
             $jblProducts = $department->products()
                 ->active()
-                ->available()
                 ->where('brand', 'JBL')
                 ->inStock()
                 ->with(['categories'])
@@ -143,7 +136,6 @@ class DepartmentController extends Controller
 
             $oppoProducts = $department->products()
                 ->active()
-                ->available()
                 ->where('brand', 'Oppo')
                 ->inStock()
                 ->with(['categories'])
@@ -156,7 +148,6 @@ class DepartmentController extends Controller
 
             $realmeProducts = $department->products()
                 ->active()
-                ->available()
                 ->where('brand', 'Realme')
                 ->inStock()
                 ->with(['categories'])
@@ -169,7 +160,6 @@ class DepartmentController extends Controller
 
             $tecnoProducts = $department->products()
                 ->active()
-                ->available()
                 ->where('brand', 'Tecno')
                 ->inStock()
                 ->with(['categories'])
@@ -180,10 +170,9 @@ class DepartmentController extends Controller
                 ->orderBy('name')
                 ->get();
 
-            // Produtos mais recentes - apenas disponíveis
+            // Produtos mais recentes - priorizar disponíveis
             $latestProducts = $department->products()
                 ->active()
-                ->available()
                 ->inStock()
                 ->with(['categories'])
                 ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro

@@ -152,6 +152,9 @@ class SearchController extends Controller
                 END
             ", ["{$query}%", "%{$query}%", "%{$query}%"])
             ->limit($limit)
+            ->with(['activeVariations' => function($query) {
+                $query->orderBy('price', 'asc')->limit(1); // Primeira variação mais barata
+            }])
             ->get(['id', 'name', 'slug', 'short_description', 'description', 'price', 'brand', 'images']);
 
         // Formatar produtos para resposta
@@ -181,13 +184,24 @@ class SearchController extends Controller
                 }
             }
 
+            // Determinar preço correto: se tiver variações, usar o preço da primeira variação ativa
+            // Caso contrário, usar o preço do produto principal
+            $displayPrice = $product->price;
+            if ($product->activeVariations && $product->activeVariations->count() > 0) {
+                // Se tem variações, usar o preço da primeira variação (mais barata)
+                $firstVariation = $product->activeVariations->first();
+                if ($firstVariation && $firstVariation->price) {
+                    $displayPrice = $firstVariation->price;
+                }
+            }
+
             return [
                 'id' => $product->id,
                 'name' => $product->name,
                 'slug' => $product->slug,
                 'short_description' => $product->short_description,
                 'description' => $product->description,
-                'price' => (float) $product->price,
+                'price' => (float) $displayPrice, // Preço correto (produto ou primeira variação)
                 'brand' => $product->brand,
                 'images' => $formattedImages,
             ];

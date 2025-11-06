@@ -19,7 +19,6 @@ class HomeController extends Controller
             ->ordered()
             ->with(['products' => function($query) {
                 $query->active()
-                    ->available() // Apenas produtos disponíveis
                     ->featured()
                     ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
                     ->take(4);
