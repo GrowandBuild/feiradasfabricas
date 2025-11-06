@@ -347,11 +347,16 @@ function saveImages() {
     const form = document.getElementById('imagesForm');
     const formData = new FormData(form);
     
-    // Adicionar imagem de destaque existente se não foi marcada para remover
+    // SEMPRE adicionar imagem de destaque existente se não foi marcada para remover
+    // Isso garante que a imagem de destaque seja mantida mesmo quando apenas imagens adicionais são adicionadas
     const removeFeatured = document.getElementById('remove_featured_image');
-    if (!removeFeatured || !removeFeatured.checked) {
-        const currentFeatured = document.getElementById('currentFeaturedImagePreview');
-        if (currentFeatured && currentFeatured.src && currentFeatured.style.display !== 'none') {
+    const currentFeatured = document.getElementById('currentFeaturedImagePreview');
+    const featuredContainer = document.getElementById('currentFeaturedImageContainer');
+    
+    // Se o container está visível e não foi marcado para remover, manter a imagem
+    if (featuredContainer && featuredContainer.style.display !== 'none' && 
+        (!removeFeatured || !removeFeatured.checked)) {
+        if (currentFeatured && currentFeatured.src) {
             // Usar o atributo data-image-path se disponível, senão extrair do src
             let featuredPath = currentFeatured.getAttribute('data-image-path');
             if (!featuredPath) {
@@ -359,14 +364,21 @@ function saveImages() {
             }
             if (featuredPath) {
                 formData.append('existing_featured_image', featuredPath);
-                console.log('Imagem de destaque mantida:', featuredPath);
+                console.log('✅ Imagem de destaque mantida:', featuredPath);
+            } else {
+                console.warn('⚠️ Não foi possível extrair caminho da imagem de destaque');
             }
+        } else {
+            console.warn('⚠️ Imagem de destaque não encontrada no DOM');
         }
+    } else if (removeFeatured && removeFeatured.checked) {
+        console.log('ℹ️ Imagem de destaque será removida');
     }
     
     // Adicionar TODAS as imagens adicionais existentes que não foram marcadas para remover
     // Usar os inputs hidden que foram criados ao renderizar as imagens
     const existingAdditionalInputs = document.querySelectorAll('.existing-additional-image-input');
+    let additionalCount = 0;
     existingAdditionalInputs.forEach(input => {
         const imagePath = input.value;
         if (imagePath) {
@@ -378,12 +390,16 @@ function saveImages() {
                     const extractedPath = extractImagePath(imagePath);
                     if (extractedPath) {
                         formData.append('existing_additional_images[]', extractedPath);
-                        console.log('Imagem adicional mantida:', extractedPath);
+                        additionalCount++;
+                        console.log('✅ Imagem adicional mantida:', extractedPath);
                     }
+                } else {
+                    console.log('ℹ️ Imagem adicional será removida:', imagePath);
                 }
             }
         }
     });
+    console.log(`📊 Total de imagens adicionais mantidas: ${additionalCount}`);
     
     // Mostrar loading - encontrar o botão corretamente
     const saveBtn = document.querySelector('#imagesModal .btn-primary');
@@ -412,10 +428,13 @@ function saveImages() {
         return;
     }
     
-    // Adicionar log para debug
-    console.log('Enviando requisição para salvar imagens...', {
+    // Adicionar log detalhado para debug
+    console.log('📤 Enviando requisição para salvar imagens...', {
         productId: productId,
-        formDataKeys: Array.from(formData.keys())
+        formDataKeys: Array.from(formData.keys()),
+        hasFeaturedImage: formData.has('existing_featured_image'),
+        featuredImageValue: formData.get('existing_featured_image'),
+        additionalImagesCount: formData.getAll('existing_additional_images[]').length
     });
     
     fetch(`/admin/products/${productId}/update-images`, {

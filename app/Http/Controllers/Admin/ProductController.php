@@ -911,12 +911,22 @@ class ProductController extends Controller
                     $imagePaths[] = $path; // Adicionar como primeira imagem
                     \Log::info('Nova imagem de destaque adicionada', ['path' => $path]);
                 }
-            } elseif (!$removeFeatured && $request->has('existing_featured_image')) {
-                // Manter imagem de destaque existente
-                $existingFeatured = $this->extractImagePath($request->existing_featured_image);
-                if ($existingFeatured) {
-                    $imagePaths[] = $existingFeatured;
-                    \Log::info('Imagem de destaque mantida', ['path' => $existingFeatured]);
+            } elseif (!$removeFeatured) {
+                // Se não foi enviada nova imagem e não foi marcada para remover, manter a existente
+                if ($request->has('existing_featured_image') && !empty($request->existing_featured_image)) {
+                    // Manter imagem de destaque existente do request
+                    $existingFeatured = $this->extractImagePath($request->existing_featured_image);
+                    if ($existingFeatured) {
+                        $imagePaths[] = $existingFeatured;
+                        \Log::info('Imagem de destaque mantida (do request)', ['path' => $existingFeatured]);
+                    }
+                } elseif (!empty($currentImages)) {
+                    // Se não veio no request mas existe no produto, manter a primeira imagem (destaque)
+                    $firstImage = is_array($currentImages) ? $currentImages[0] : $currentImages;
+                    if ($firstImage) {
+                        $imagePaths[] = $firstImage;
+                        \Log::info('Imagem de destaque mantida (primeira do produto)', ['path' => $firstImage]);
+                    }
                 }
             }
             
