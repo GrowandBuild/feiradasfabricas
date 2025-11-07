@@ -208,6 +208,78 @@ let variationProductImagesUrls = [];
 let variationColorImagesMap = {};
 let variationColorImagesUrlsMap = {};
 let currentColorBeingEdited = null;
+let productMarginB2C = 20;
+let productMarginB2B = 10;
+
+function formatCurrencyValue(value) {
+    if (value === null || value === undefined || value === '') {
+        return '';
+    }
+    const numberValue = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(numberValue)) {
+        return '';
+    }
+    return numberValue.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function parseCurrencyValue(value) {
+    if (!value && value !== 0) {
+        return null;
+    }
+
+    let cleanValue = value.toString().trim();
+    cleanValue = cleanValue.replace(/[^0-9,.-]/g, '');
+
+    if (cleanValue === '' || cleanValue === ',' || cleanValue === '.') {
+        return null;
+    }
+
+    const commaCount = (cleanValue.match(/,/g) || []).length;
+    const dotCount = (cleanValue.match(/\./g) || []).length;
+
+    if (commaCount > 1 || dotCount > 1) {
+        cleanValue = cleanValue.replace(/\./g, '');
+        cleanValue = cleanValue.replace(/,/g, '.');
+    } else if (commaCount === 1 && dotCount === 0) {
+        cleanValue = cleanValue.replace(/,/g, '.');
+    } else if (dotCount === 1 && commaCount === 0) {
+        cleanValue = cleanValue.replace(/\./g, '.');
+    } else if (commaCount === 1 && dotCount === 1) {
+        const commaIndex = cleanValue.indexOf(',');
+        const dotIndex = cleanValue.indexOf('.');
+        if (commaIndex > dotIndex) {
+            cleanValue = cleanValue.replace(/\./g, '');
+            cleanValue = cleanValue.replace(/,/g, '.');
+        } else {
+            cleanValue = cleanValue.replace(/,/g, '');
+        }
+    } else {
+        cleanValue = cleanValue.replace(/\./g, '');
+    }
+
+    const parsed = parseFloat(cleanValue);
+    return isNaN(parsed) ? null : parsed;
+}
+
+function calculatePriceFromCost(cost) {
+    if (cost === null || cost === undefined) {
+        return {
+            price: null,
+            b2b: null
+        };
+    }
+
+    const price = cost * (1 + (productMarginB2C / 100));
+    const b2bPrice = cost * (1 + (productMarginB2B / 100));
+
+    return {
+        price: parseFloat(price.toFixed(2)),
+        b2b: parseFloat(b2bPrice.toFixed(2))
+    };
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     const variationsModal = document.getElementById('variationsModal');
@@ -264,6 +336,8 @@ function loadVariations(productId) {
                 variationProductImagesUrls = data.product_images_urls || [];
                 variationColorImagesMap = data.color_images || {};
                 variationColorImagesUrlsMap = data.color_images_urls || {};
+                productMarginB2C = data.margins?.b2c ?? 20;
+                productMarginB2B = data.margins?.b2b ?? 10;
                 renderVariations(data);
                 renderStock(data);
             } else {
@@ -322,6 +396,7 @@ function renderStock(data) {
         data.variations.forEach(variation => {
             const stockItem = createStockItem(variation, data.productId);
             stockContainer.appendChild(stockItem);
+            initializeVariationPriceFields(stockItem);
         });
     } else {
         stockContainer.innerHTML = '<p class="text-muted text-center">Nenhuma variação encontrada</p>';
@@ -398,7 +473,7 @@ function createStockItem(variation, productId) {
             </span>
         </div>
         <div class="row g-2">
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label small">Estoque Atual</label>
                 <input type="number" 
                        class="form-control form-control-sm stock-input" 
@@ -407,13 +482,48 @@ function createStockItem(variation, productId) {
                        min="0"
                        step="1">
             </div>
-            <div class="col-md-6">
+            <div class="col-md-4">
                 <label class="form-label small">Status</label>
                 <select class="form-select form-select-sm stock-status" 
                         data-variation-id="${variation.id}">
                     <option value="1" ${variation.in_stock ? 'selected' : ''}>Em Estoque</option>
                     <option value="0" ${!variation.in_stock ? 'selected' : ''}>Fora de Estoque</option>
                 </select>
+            </div>
+        </div>
+        <div class="row g-2 mt-2">
+            <div class="col-md-4">
+                <label class="form-label small">Preço de Custo</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-currency-dollar"></i></span>
+                    <input type="text"
+                           class="form-control form-control-sm variation-cost"
+                           data-variation-id="${variation.id}"
+                           data-original-value="${variation.cost_price ?? ''}"
+                           value="${variation.cost_price ?? ''}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Preço B2C</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-cart"></i></span>
+                    <input type="text"
+                           class="form-control form-control-sm variation-price"
+                           data-variation-id="${variation.id}"
+                           data-original-value="${variation.price ?? ''}"
+                           value="${variation.price ?? ''}">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label small">Preço B2B</label>
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text"><i class="bi bi-building"></i></span>
+                    <input type="text"
+                           class="form-control form-control-sm variation-b2b"
+                           data-variation-id="${variation.id}"
+                           data-original-value="${variation.b2b_price ?? ''}"
+                           value="${variation.b2b_price ?? ''}">
+                </div>
             </div>
         </div>
     `;
@@ -691,12 +801,18 @@ function updateAllStock(event) {
         const variationId = input.getAttribute('data-variation-id');
         const stockQuantity = parseInt(input.value) || 0;
         const statusSelect = document.querySelector(`.stock-status[data-variation-id="${variationId}"]`);
+        const costInput = document.querySelector(`.variation-cost[data-variation-id="${variationId}"]`);
+        const priceInput = document.querySelector(`.variation-price[data-variation-id="${variationId}"]`);
+        const b2bInput = document.querySelector(`.variation-b2b[data-variation-id="${variationId}"]`);
         const inStock = statusSelect ? statusSelect.value === '1' : true;
-        
+
         updates.push({
             variation_id: variationId,
             stock_quantity: stockQuantity,
-            in_stock: inStock
+            in_stock: inStock,
+            cost_price: costInput ? parseCurrencyValue(costInput.value) : null,
+            price: priceInput ? parseCurrencyValue(priceInput.value) : null,
+            b2b_price: b2bInput ? parseCurrencyValue(b2bInput.value) : null
         });
     });
     
@@ -730,7 +846,8 @@ function updateAllStock(event) {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
         },
         body: JSON.stringify({ updates })
     })
@@ -830,6 +947,54 @@ function showVariationMessage(type, message) {
             messageDiv.remove();
         }
     }, 5000);
+}
+
+function initializeVariationPriceFields(stockItem) {
+    if (!stockItem) {
+        return;
+    }
+
+    const costInput = stockItem.querySelector('.variation-cost');
+    const priceInput = stockItem.querySelector('.variation-price');
+    const b2bInput = stockItem.querySelector('.variation-b2b');
+
+    const inputs = [costInput, priceInput, b2bInput];
+
+    inputs.forEach(input => {
+        if (!input) {
+            return;
+        }
+        const parsed = parseCurrencyValue(input.value);
+        input.value = parsed !== null ? formatCurrencyValue(parsed) : '';
+    });
+
+    if (costInput) {
+        costInput.addEventListener('blur', function() {
+            const parsedCost = parseCurrencyValue(this.value);
+            if (parsedCost !== null) {
+                this.value = formatCurrencyValue(parsedCost);
+                const calculated = calculatePriceFromCost(parsedCost);
+                if (priceInput) {
+                    priceInput.value = formatCurrencyValue(calculated.price);
+                }
+                if (b2bInput) {
+                    b2bInput.value = formatCurrencyValue(calculated.b2b);
+                }
+            } else {
+                this.value = '';
+            }
+        });
+    }
+
+    [priceInput, b2bInput].forEach(input => {
+        if (!input) {
+            return;
+        }
+        input.addEventListener('blur', function() {
+            const parsed = parseCurrencyValue(this.value);
+            this.value = parsed !== null ? formatCurrencyValue(parsed) : '';
+        });
+    });
 }
 </script>
 @endpush

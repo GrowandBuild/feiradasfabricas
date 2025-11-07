@@ -679,7 +679,10 @@ class ProductController extends Controller
                 'color' => $variation->color,
                 'stock_quantity' => $variation->stock_quantity,
                 'in_stock' => $variation->in_stock,
-                'is_active' => $variation->is_active
+                'is_active' => $variation->is_active,
+                'price' => $variation->price,
+                'b2b_price' => $variation->b2b_price,
+                'cost_price' => $variation->cost_price,
             ];
         });
         
@@ -694,6 +697,15 @@ class ProductController extends Controller
             'product_images_urls' => $product->all_images,
             'color_images' => $product->variation_images ?? [],
             'color_images_urls' => $product->variation_images_urls,
+            'margins' => [
+                'b2c' => $product->profit_margin_b2c ?? 20.0,
+                'b2b' => $product->profit_margin_b2b ?? 10.0,
+            ],
+            'defaults' => [
+                'price' => $product->price,
+                'b2b_price' => $product->b2b_price,
+                'cost_price' => $product->cost_price,
+            ]
         ]);
     }
 
@@ -908,7 +920,10 @@ class ProductController extends Controller
             'updates' => 'required|array',
             'updates.*.variation_id' => 'required|exists:product_variations,id',
             'updates.*.stock_quantity' => 'required|integer|min:0',
-            'updates.*.in_stock' => 'required|boolean'
+            'updates.*.in_stock' => 'required|boolean',
+            'updates.*.cost_price' => 'nullable|numeric|min:0',
+            'updates.*.price' => 'nullable|numeric|min:0',
+            'updates.*.b2b_price' => 'nullable|numeric|min:0',
         ]);
         
         $updated = 0;
@@ -918,10 +933,40 @@ class ProductController extends Controller
             
             // Verificar se a variação pertence ao produto
             if ($variation && $variation->product_id === $product->id) {
-                $variation->update([
+                $dataToUpdate = [
                     'stock_quantity' => $update['stock_quantity'],
                     'in_stock' => $update['in_stock']
-                ]);
+                ];
+
+                $costPrice = array_key_exists('cost_price', $update) ? $update['cost_price'] : null;
+                $price = array_key_exists('price', $update) ? $update['price'] : null;
+                $b2bPrice = array_key_exists('b2b_price', $update) ? $update['b2b_price'] : null;
+
+                $profitMarginB2C = $product->profit_margin_b2c ?? 20.0;
+                $profitMarginB2B = $product->profit_margin_b2b ?? 10.0;
+
+                if (!is_null($costPrice)) {
+                    $costPrice = round($costPrice, 2);
+                    $dataToUpdate['cost_price'] = $costPrice;
+
+                    if (is_null($price)) {
+                        $price = round($costPrice * (1 + ($profitMarginB2C / 100)), 2);
+                    }
+
+                    if (is_null($b2bPrice)) {
+                        $b2bPrice = round($costPrice * (1 + ($profitMarginB2B / 100)), 2);
+                    }
+                }
+
+                if (!is_null($price)) {
+                    $dataToUpdate['price'] = round($price, 2);
+                }
+
+                if (!is_null($b2bPrice)) {
+                    $dataToUpdate['b2b_price'] = round($b2bPrice, 2);
+                }
+
+                $variation->update($dataToUpdate);
                 $updated++;
             }
         }
