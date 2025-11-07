@@ -58,44 +58,44 @@
 
         <div class="product-column image-area">
             <div class="main-image-container">
-                <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
-                    @if($product->is_unavailable)
-                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                    <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
+                        @if($product->is_unavailable)
+                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
                              style="background: rgba(0,0,0,0.3); z-index: 10; border-radius: 12px;">
-                            <span class="badge bg-warning text-dark fs-5 px-4 py-3">
-                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                Indisponível no momento
-                            </span>
-                        </div>
-                    @endif
+                                <span class="badge bg-warning text-dark fs-5 px-4 py-3">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    Indisponível no momento
+                                </span>
+                            </div>
+                        @endif
 
-                    <img id="main-product-image" 
-                         src="{{ $product->first_image }}" 
-                         alt="{{ $product->name }}" 
-                         class="img-fluid rounded shadow-sm main-image"
+                        <img id="main-product-image" 
+                             src="{{ $product->first_image }}" 
+                             alt="{{ $product->name }}" 
+                             class="img-fluid rounded shadow-sm main-image"
                          style="max-height: 520px; object-fit: contain; width: 100%; cursor: pointer; background-color: #f8f9fa;"
-                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
-
+                             onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                        
                     <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
-                        <span class="badge bg-dark bg-opacity-75">
-                            <i class="fas fa-images me-1"></i>
+                                <span class="badge bg-dark bg-opacity-75">
+                                    <i class="fas fa-images me-1"></i>
                             <span id="current-image">1</span>/<span id="total-images">{{ max($product->getImageCount(), 1) }}</span>
-                        </span>
-                    </div>
+                                </span>
+                            </div>
 
                     <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
-                            id="prev-image" onclick="changeImage(-1)">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
+                                    id="prev-image" onclick="changeImage(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
                     <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y me-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
-                            id="next-image" onclick="changeImage(1)">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
+                                    id="next-image" onclick="changeImage(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                    </div>
             </div>
         </div>
- 
-        <div class="product-column details-area">
+
+        <div class="product-column summary-area">
             <div class="product-details">
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <h1 class="h2 mb-0">{{ $product->name }}</h1>
@@ -140,7 +140,7 @@
                                         <i class="fas fa-times-circle me-1"></i>
                                         Fora de estoque
                                     </span>
-                                @endif
+                @endif
                             </div>
                         @endunless
                         <div id="variation-sku-display" class="sku-line" style="display: none;">
@@ -258,17 +258,46 @@
                             :showQuantity="true"
                             buttonText="Adicionar ao Carrinho"
                             buttonClass="btn btn-primary btn-lg w-100" />
-                    @else
+                        @else
                         <button class="btn btn-secondary btn-lg w-100" disabled>
                             <i class="bi bi-x-circle me-2"></i>
                             Indisponível no momento
                         </button>
-                    @endif
+                        @endif
+                    </div>
+
+                <div class="favorites-action">
+                    <button class="btn btn-outline-secondary w-100">
+                        <i class="far fa-heart me-2"></i>
+                        Favoritar produto
+                    </button>
                 </div>
+            </div>
+        </div>
+
+        <div class="product-column info-area">
+            <div class="summary-grid">
+                <div class="summary-card">
+                    <span class="title"><i class="bi bi-tag"></i> SKU</span>
+                    <span class="subtitle">{{ $product->sku ?? 'Indisponível' }}</span>
+                </div>
+                <div class="summary-card">
+                    <span class="title"><i class="bi bi-truck"></i> Frete rápido</span>
+                    <span class="subtitle">Envio rastreado para todo Brasil</span>
+                </div>
+                <div class="summary-card">
+                    <span class="title"><i class="bi bi-shield-check"></i> Proteção extra</span>
+                    <span class="subtitle">Garantia e suporte em 90 dias</span>
+                </div>
+                <div class="summary-card">
+                    <span class="title"><i class="bi bi-arrow-repeat"></i> Política de troca</span>
+                    <span class="subtitle">Devolução facilitada em até 7 dias</span>
+                </div>
+            </div>
 
                 @if($product->categories->count() > 0)
-                    <div class="product-meta-list mb-4">
-                        <strong class="d-block mb-2">Categorias:</strong>
+                <div class="product-meta-list mb-3">
+                    <strong class="d-block mb-2">Categorias</strong>
                         @foreach($product->categories as $category)
                             <span class="badge bg-secondary me-1">{{ $category->name }}</span>
                         @endforeach
@@ -276,28 +305,28 @@
                 @endif
 
                 @if($product->description)
-                    <div class="product-meta-list mb-4">
-                        <h5 class="mb-2">Descrição</h5>
-                        <p class="text-muted mb-0">{{ $product->description }}</p>
+                <div class="product-meta-list mb-3">
+                    <h5 class="mb-2">Descrição</h5>
+                    <p class="text-muted mb-0">{{ $product->description }}</p>
                     </div>
                 @endif
 
-                <div class="secondary-info mb-4">
-                    <div class="info-section">
-                        <h6><i class="bi bi-box-seam"></i> O que vem na caixa</h6>
-                        <p class="text-muted mb-0">Produto, cabo USB, documentação essencial.</p>
-                    </div>
-                    <div class="info-section">
-                        <h6><i class="bi bi-credit-card"></i> Pagamento e envio</h6>
-                        <p class="text-muted mb-0">Parcele em até 12x sem juros. Envio imediato após confirmação.</p>
-                    </div>
+            <div class="info-grid">
+                <div class="info-card">
+                    <span class="title"><i class="bi bi-box-seam"></i> O que vem na caixa</span>
+                    <span class="subtitle">Produto lacrado + cabo USB + guia rápido.</span>
                 </div>
-
-                <div class="favorites-action">
-                    <button class="btn btn-outline-secondary w-100">
-                        <i class="far fa-heart me-2"></i>
-                        Favoritar produto
-                    </button>
+                <div class="info-card">
+                    <span class="title"><i class="bi bi-credit-card"></i> Pagamento</span>
+                    <span class="subtitle">Parcele em até 12x sem juros. Desconto à vista no Pix.</span>
+            </div>
+                <div class="info-card">
+                    <span class="title"><i class="bi bi-shield-lock"></i> Segurança</span>
+                    <span class="subtitle">Checkout protegido e criptografado.</span>
+                </div>
+                <div class="info-card">
+                    <span class="title"><i class="bi bi-chat-dots"></i> Suporte</span>
+                    <span class="subtitle">Atendimento humano via WhatsApp e e-mail.</span>
                 </div>
             </div>
         </div>
