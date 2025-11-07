@@ -167,6 +167,11 @@
                             </div>
                         @endif
 
+                        <div id="variation-unavailable-message" class="alert alert-warning py-2 px-3 d-flex align-items-center gap-2" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Combinação indisponível. Escolha outra opção.</span>
+                        </div>
+
                         <!-- SKU da Variação Selecionada -->
                         <div id="variation-sku-display" class="mb-2" style="display: none;">
                             <p class="text-muted mb-0">
@@ -808,6 +813,25 @@
     const productSlug = '{{ $product->slug }}';
     let selectedVariationId = null;
 
+    function setAddToCartDisabled(disabled) {
+        const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
+        const addToCartComponent = document.querySelector('.add-to-cart-component');
+
+        if (addToCartBtn) {
+            if (typeof addToCartBtn.disabled !== 'undefined') {
+                addToCartBtn.disabled = disabled;
+            }
+            addToCartBtn.classList.toggle('disabled', disabled);
+            addToCartBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+        }
+
+        if (addToCartComponent) {
+            if (disabled) {
+                addToCartComponent.setAttribute('data-variation-id', '');
+            }
+        }
+    }
+
     function initVariationSelectors() {
         const variationSelects = document.querySelectorAll('.variation-select');
         
@@ -843,15 +867,14 @@
         fetch(url)
             .then(response => response.json())
             .then(data => {
+                const unavailableMessage = document.getElementById('variation-unavailable-message');
+
                 if (data.success && data.variation) {
                     selectedVariationId = data.variation.id;
-                    
-                    // NÃO atualizar o preço - o preço correto é sempre o do produto principal (B2C)
-                    // calculado na página de admin, não o preço da variação
-                    // const priceDisplay = document.getElementById('product-price-display');
-                    // if (priceDisplay) {
-                    //     priceDisplay.textContent = 'R$ ' + data.variation.price;
-                    // }
+
+                    if (unavailableMessage) {
+                        unavailableMessage.style.display = 'none';
+                    }
 
                     // Atualizar SKU
                     const skuDisplay = document.getElementById('variation-sku-display');
@@ -868,11 +891,14 @@
                         if (data.variation.in_stock && data.variation.stock_quantity > 0) {
                             stockBadge.className = 'badge bg-success fs-6';
                             stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
+                            stockDisplay.style.display = 'block';
+                            setAddToCartDisabled(false);
                         } else {
                             stockBadge.className = 'badge bg-danger fs-6';
                             stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
+                            stockDisplay.style.display = 'block';
+                            setAddToCartDisabled(true);
                         }
-                        stockDisplay.style.display = 'block';
                     }
 
                     // Atualizar atributo data-variation-id no botão de adicionar ao carrinho
@@ -887,11 +913,13 @@
                     }
                 } else {
                     // Variação não encontrada
+                    selectedVariationId = null;
+
                     const priceDisplay = document.getElementById('product-price-display');
                     if (priceDisplay) {
                         priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ",", ".") }}';
                     }
-                    
+
                     const skuDisplay = document.getElementById('variation-sku-display');
                     if (skuDisplay) {
                         skuDisplay.style.display = 'none';
@@ -902,7 +930,11 @@
                         stockDisplay.style.display = 'none';
                     }
 
-                    selectedVariationId = null;
+                    if (unavailableMessage) {
+                        unavailableMessage.style.display = 'flex';
+                    }
+
+                    setAddToCartDisabled(true);
                 }
             })
             .catch(error => {
