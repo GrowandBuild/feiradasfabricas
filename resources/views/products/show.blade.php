@@ -977,6 +977,11 @@
                         unavailableMessage.style.display = 'none';
                     }
 
+                    const priceDisplay = document.getElementById('product-price-display');
+                    if (priceDisplay && data.variation.price) {
+                        priceDisplay.textContent = 'R$ ' + data.variation.price;
+                    }
+
                     // Atualizar SKU
                     const skuDisplay = document.getElementById('variation-sku-display');
                     const skuSpan = document.getElementById('selected-variation-sku');
@@ -999,6 +1004,9 @@
                             stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
                             stockDisplay.style.display = 'block';
                             setAddToCartDisabled(true);
+                            if (unavailableMessage) {
+                                unavailableMessage.style.display = 'flex';
+                            }
                         }
                     }
 
