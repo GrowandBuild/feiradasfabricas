@@ -97,28 +97,6 @@
 
         <div class="product-column summary-area">
             <div class="product-details">
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <h1 class="h2 mb-0">{{ $product->name }}</h1>
-                    @if($product->is_unavailable)
-                        <span class="badge bg-warning text-dark" style="font-size: 0.875rem;">
-                            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                            Indisponível no momento
-                        </span>
-                    @endif
-                </div>
-                
-                @if($product->brand)
-                    <p class="text-muted mb-2">
-                        <strong>Marca:</strong> {{ $product->brand }}
-                    </p>
-                @endif
-                
-                @if($product->supplier)
-                    <p class="text-muted mb-2">
-                        <strong>Fornecedor:</strong> {{ $product->supplier }}
-                    </p>
-                @endif
-
                 <div class="purchase-summary mb-4">
                     <div class="price-card mb-3">
                         <div class="price-section">
@@ -266,12 +244,10 @@
                         @endif
                     </div>
 
-                <div class="favorites-action">
-                    <button class="btn btn-outline-secondary w-100">
-                        <i class="far fa-heart me-2"></i>
-                        Favoritar produto
-                    </button>
-                </div>
+                <button class="btn btn-outline-secondary w-100" style="border-color:#ff9900; color:#ff9900;">
+                    <i class="far fa-heart me-2"></i>
+                    Favoritar produto
+                </button>
             </div>
         </div>
 
@@ -441,9 +417,9 @@
     
     .main-image-container {
         border-radius: 12px;
-        background: linear-gradient(135deg, #f8fafc, #eef2ff);
+        background: linear-gradient(135deg, rgba(255, 153, 0, 0.08), rgba(255, 153, 0, 0.12));
         padding: 1.5rem;
-        box-shadow: 0 20px 45px rgba(148, 163, 184, 0.25);
+        box-shadow: 0 24px 48px rgba(255, 153, 0, 0.18);
         flex: 1;
     }
     
@@ -879,17 +855,18 @@
     }
 
     .summary-card, .info-card {
-        background: #f8fafc;
+        background: #fff8ed;
         border-radius: 14px;
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        border: 1px solid rgba(255, 153, 0, 0.3);
         padding: 1.1rem 1.25rem;
         display: flex;
         flex-direction: column;
         gap: 0.35rem;
+        box-shadow: 0 12px 30px rgba(255, 153, 0, 0.15);
     }
 
     .summary-card i, .info-card i {
-        color: #2563eb;
+        color: #ff9900;
     }
 
     .summary-card span.title, .info-card span.title {
@@ -898,7 +875,7 @@
     }
 
     .summary-card span.subtitle, .info-card span.subtitle {
-        color: #64748b;
+        color: #b45309;
         font-size: 0.88rem;
     }
 
@@ -912,19 +889,19 @@
     .price-section .h3 {
         font-size: 2.4rem;
         font-weight: 700;
-        color: #2563eb;
+        color: #ea580c;
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
 
     .price-card {
-        background: linear-gradient(145deg, rgba(37, 99, 235, 0.05), rgba(96, 165, 250, 0.08));
+        background: linear-gradient(145deg, rgba(255, 153, 0, 0.09), rgba(255, 138, 0, 0.13));
         border-radius: 16px;
         padding: 1.5rem;
-        border: 1px solid rgba(37, 99, 235, 0.15);
+        border: 1px solid rgba(255, 153, 0, 0.28);
         margin-bottom: 1.5rem;
-        box-shadow: 0 18px 45px rgba(37, 99, 235, 0.12);
+        box-shadow: 0 22px 55px rgba(255, 153, 0, 0.18);
     }
 
     .stock-line {
@@ -940,6 +917,8 @@
         font-size: 0.85rem;
         padding: 0.5rem 0.75rem;
         border-radius: 999px;
+        background-color: rgba(255, 153, 0, 0.1);
+        color: #c2410c;
     }
 </style>
 @endsection
