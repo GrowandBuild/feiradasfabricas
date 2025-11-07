@@ -125,14 +125,43 @@
                     </p>
                 @endif
 
-                <div class="summary-badges">
-                    <div class="badge-tile"><i class="bi bi-tag"></i> SKU: {{ $product->sku ?? 'Indisponível' }}</div>
-                    <div class="badge-tile"><i class="bi bi-truck"></i> Entrega rápida para todo Brasil</div>
-                    <div class="badge-tile"><i class="bi bi-shield-check"></i> Garantia de 90 dias</div>
+                <div class="purchase-summary mb-4">
+                    <div class="price-card mb-3">
+                        <div class="price-section">
+                            <span class="h3 text-primary" id="product-price-display">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
+                            <span class="sub-price">Preço à vista</span>
+                        </div>
+                        <div class="stock-line" id="variation-stock-display" style="display: none;">
+                            <span class="badge bg-success" id="variation-stock-badge"></span>
+                        </div>
+                        @unless($product->hasVariations())
+                            <div class="stock-line">
+                                @if($product->stock_quantity > 0)
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check-circle me-1"></i>
+                                        Em estoque ({{ $product->stock_quantity }} unidades)
+                                    </span>
+                                @else
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times-circle me-1"></i>
+                                        Fora de estoque
+                                    </span>
+                                @endif
+                            </div>
+                        @endunless
+                        <div id="variation-sku-display" class="sku-line" style="display: none;">
+                            <i class="bi bi-upc-scan"></i> <span id="selected-variation-sku"></span>
+                        </div>
+                    </div>
+
+                    <div class="info-highlights mb-4">
+                        <div class="highlight-item"><i class="bi bi-truck"></i> Entrega rápida e rastreada</div>
+                        <div class="highlight-item"><i class="bi bi-shield-check"></i> Garantia de 90 dias</div>
+                        <div class="highlight-item"><i class="bi bi-arrow-repeat"></i> Troca fácil em até 7 dias</div>
+                    </div>
                 </div>
 
                 @if($product->hasVariations())
-                    <!-- Seletores de Variações -->
                     <div class="product-variations mb-4">
                         <div class="variation-selector-group">
                             @if($storageOptions->count() > 0)
@@ -228,40 +257,19 @@
                     </div>
                 @endif
 
-                <div class="price-card mb-4">
-                    <div class="price-section mb-3">
-                        <span id="product-price-display" class="h3 text-primary">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
-                    </div>
-
-                        <!-- SKU da Variação Selecionada -->
-                        <div id="variation-sku-display" class="mb-2" style="display: none;">
-                            <p class="text-muted mb-0">
-                                <strong>SKU:</strong> <span id="selected-variation-sku"></span>
-                            </p>
-                        </div>
-
-                        <!-- Status de Estoque da Variação -->
-                    <div id="variation-stock-display" class="mb-2" style="display: none;">
-                        <div class="stock-line">
-                            <span class="badge bg-success" id="variation-stock-badge"></span>
-                        </div>
-                    </div>
-
-                    @unless($product->hasVariations())
-                        <div class="stock-line">
-                        @if($product->stock_quantity > 0)
-                                <span class="badge bg-success">
-                                <i class="fas fa-check-circle me-1"></i>
-                                Em estoque ({{ $product->stock_quantity }} unidades)
-                            </span>
-                        @else
-                                <span class="badge bg-danger">
-                                <i class="fas fa-times-circle me-1"></i>
-                                Fora de estoque
-                            </span>
-                        @endif
-                    </div>
-                    @endunless
+                <div class="buy-actions mb-4">
+                    @if(!$product->is_unavailable)
+                        <x-add-to-cart 
+                            :product="$product" 
+                            :showQuantity="true"
+                            buttonText="Adicionar ao Carrinho"
+                            buttonClass="btn btn-primary btn-lg w-100" />
+                    @else
+                        <button class="btn btn-secondary btn-lg w-100" disabled>
+                            <i class="bi bi-x-circle me-2"></i>
+                            Indisponível no momento
+                        </button>
+                    @endif
                 </div>
 
                 @if($product->categories->count() > 0)
@@ -280,23 +288,21 @@
                     </div>
                 @endif
 
-                <div class="action-buttons">
-                    @if(!$product->is_unavailable)
-                        <x-add-to-cart 
-                            :product="$product" 
-                            :showQuantity="true"
-                            buttonText="Adicionar ao Carrinho"
-                            buttonClass="btn btn-primary btn-lg me-2" />
-                    @else
-                        <button class="btn btn-secondary btn-lg me-2" disabled>
-                            <i class="bi bi-x-circle me-2"></i>
-                            Indisponível no momento
-                        </button>
-                    @endif
-                    
-                    <button class="btn btn-outline-secondary btn-lg">
+                <div class="secondary-info mb-4">
+                    <div class="info-section">
+                        <h6><i class="bi bi-box-seam"></i> O que vem na caixa</h6>
+                        <p class="text-muted mb-0">Produto, cabo USB, documentação essencial.</p>
+                    </div>
+                    <div class="info-section">
+                        <h6><i class="bi bi-credit-card"></i> Pagamento e envio</h6>
+                        <p class="text-muted mb-0">Parcele em até 12x sem juros. Envio imediato após confirmação.</p>
+                    </div>
+                </div>
+
+                <div class="favorites-action">
+                    <button class="btn btn-outline-secondary w-100">
                         <i class="far fa-heart me-2"></i>
-                        Favoritar
+                        Favoritar produto
                     </button>
                 </div>
             </div>
@@ -340,9 +346,7 @@
                                 </div>
                                 <div class="card-footer bg-transparent">
                                     <a href="{{ route('product', $relatedProduct->slug) }}" 
-                                       class="btn btn-outline-primary btn-sm w-100">
-                                        Ver Detalhes
-                                    </a>
+                                       class="btn btn-outline-primary w-100 btn-sm">Ver detalhes</a>
                                 </div>
                             </div>
                         </div>
