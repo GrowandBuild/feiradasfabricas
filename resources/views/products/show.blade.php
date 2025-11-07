@@ -1183,7 +1183,7 @@
     function refreshActiveVariationOptions() {
         document.querySelectorAll('.variation-option').forEach(option => {
             const input = option.querySelector('input');
-            option.classList.toggle('active', input && input.checked && !input.disabled);
+            option.classList.toggle('active', !!(input && input.checked && !input.disabled));
         });
     }
 
@@ -1191,8 +1191,7 @@
         if (!value) {
             return;
         }
-        const inputs = document.querySelectorAll(`input[name="${type}"]`);
-        inputs.forEach(input => {
+        document.querySelectorAll(`input[name="${type}"]`).forEach(input => {
             if (input.value === value && !input.disabled) {
                 input.checked = true;
             }
@@ -1201,7 +1200,7 @@
 
     function isCombinationAvailable(ram, storage, color) {
         return activeVariationsData.some(variation => {
-            if (variation.in_stock !== true || variation.stock_quantity <= 0) {
+            if (!variation.in_stock || variation.stock_quantity <= 0) {
                 return false;
             }
 
@@ -1213,6 +1212,19 @@
         });
     }
 
+    function applyColorSwatches() {
+        document.querySelectorAll('.variation-option[data-variation-type="color"]').forEach(option => {
+            const value = option.getAttribute('data-value');
+            const key = value ? value.replace(/[^a-zA-Z0-9]/g, '_') : '';
+            const swatch = option.querySelector('.swatch');
+            if (!swatch) {
+                return;
+            }
+            const hex = colorHexMap[value] || colorHexMap[key] || '#f1f5f9';
+            swatch.style.background = hex;
+        });
+    }
+
     function syncVariationOptionAvailability() {
         const selected = {
             ram: getSelectedValue('ram') || null,
@@ -1220,7 +1232,164 @@
             color: getSelectedValue('color') || null,
         };
 
-        const types = ['storage', 'color', 'ram'];
+        ['storage', 'color', 'ram'].forEach(type => {
+            const options = Array.from(document.querySelectorAll(`label[data-variation-type="${type}"]`));
+            if (!options.length) {
+                return;
+            }
 
-        types.forEach(type => {
-            const options = Array.from(document.querySelectorAll(`label[data-variation-type="${type}"]`
+            let firstAvailable = null;
+
+            options.forEach(option => {
+                const input = option.querySelector('input');
+                const value = input.value;
+                const available = isCombinationAvailable(
+                    type === 'ram' ? value : selected.ram,
+                    type === 'storage' ? value : selected.storage,
+                    type === 'color' ? value : selected.color
+                );
+
+                input.disabled = !available;
+                option.classList.toggle('disabled', !available);
+
+                if (available && !firstAvailable) {
+                    firstAvailable = input;
+                }
+
+                if (!available && input.checked) {
+                    input.checked = false;
+                }
+            });
+
+            const hasChecked = options.some(option => {
+                const input = option.querySelector('input');
+                return input.checked && !input.disabled;
+            });
+
+            if (!hasChecked && firstAvailable) {
+                firstAvailable.checked = true;
+                selected[type] = firstAvailable.value;
+            }
+        });
+
+        refreshActiveVariationOptions();
+        applyColorSwatches();
+    }
+
+    function initVariationSelectors() {
+        document.querySelectorAll('.variation-option input').forEach(input => {
+            input.addEventListener('change', () => {
+                syncVariationOptionAvailability();
+                applyColorImages(getSelectedValue('color'));
+                updateVariation();
+            });
+        });
+
+        syncVariationOptionAvailability();
+        applyColorImages(getSelectedValue('color'));
+        updateVariation();
+    }
+
+    function updateVariation() {
+        const ram = getSelectedValue('ram');
+        const storage = getSelectedValue('storage');
+        const color = getSelectedValue('color');
+        const unavailableMessage = document.getElementById('variation-unavailable-message');
+
+        const combinationExists = isCombinationAvailable(ram, storage, color);
+
+        applyColorImages(color);
+
+        if (!combinationExists) {
+            if (unavailableMessage) {
+                unavailableMessage.style.display = 'flex';
+            }
+            setAddToCartDisabled(true);
+            selectedVariationId = null;
+
+            const priceDisplay = document.getElementById('product-price-display');
+            if (priceDisplay) {
+                priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ',', '.') }}';
+            }
+
+            const skuDisplay = document.getElementById('variation-sku-display');
+            if (skuDisplay) {
+                skuDisplay.style.display = 'none';
+            }
+
+            const stockDisplay = document.getElementById('variation-stock-display');
+            if (stockDisplay) {
+                stockDisplay.style.display = 'none';
+            }
+
+            return;
+        }
+
+        if (unavailableMessage) {
+            unavailableMessage.style.display = 'none';
+        }
+
+        const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
+        if (ram) url.searchParams.append('ram', ram);
+        if (storage) url.searchParams.append('storage', storage);
+        if (color) url.searchParams.append('color', color);
+
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success && data.variation) {
+                    selectedVariationId = data.variation.id;
+
+                    const priceDisplay = document.getElementById('product-price-display');
+                    if (priceDisplay && data.variation.price) {
+                        priceDisplay.textContent = 'R$ ' + data.variation.price;
+                    }
+
+                    const skuDisplay = document.getElementById('variation-sku-display');
+                    const skuSpan = document.getElementById('selected-variation-sku');
+                    if (skuDisplay && skuSpan) {
+                        skuSpan.textContent = data.variation.sku;
+                        skuDisplay.style.display = 'block';
+                    }
+
+                    const stockDisplay = document.getElementById('variation-stock-display');
+                    const stockBadge = document.getElementById('variation-stock-badge');
+                    if (stockDisplay && stockBadge) {
+                        if (data.variation.in_stock && data.variation.stock_quantity > 0) {
+                            stockBadge.className = 'badge bg-success';
+                            stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
+                            stockDisplay.style.display = 'block';
+                            setAddToCartDisabled(false);
+                        } else {
+                            stockBadge.className = 'badge bg-danger';
+                            stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
+                            stockDisplay.style.display = 'block';
+                            setAddToCartDisabled(true);
+                            if (unavailableMessage) {
+                                unavailableMessage.style.display = 'flex';
+                            }
+                        }
+                    }
+
+                    const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
+                    if (addToCartBtn) {
+                        addToCartBtn.setAttribute('data-variation-id', data.variation.id);
+                        const addToCartComponent = document.querySelector('.add-to-cart-component');
+                        if (addToCartComponent) {
+                            addToCartComponent.setAttribute('data-variation-id', data.variation.id);
+                        }
+                    }
+                } else {
+                    selectedVariationId = null;
+                    setAddToCartDisabled(true);
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao buscar variação:', error);
+            });
+    }
+
+    initVariationSelectors();
+    @endif
+</script>
+@endsection
