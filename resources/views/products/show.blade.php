@@ -357,15 +357,15 @@
     /* Estilos da Galeria */
     .product-layout {
         display: grid;
-        grid-template-columns: 90px minmax(0, 1.1fr) minmax(0, 0.9fr);
-        gap: 1.75rem;
+        grid-template-columns: 90px minmax(0, 1.05fr) minmax(0, 0.85fr) minmax(0, 0.75fr);
+        gap: 1.5rem;
         align-items: start;
     }
 
     .product-column {
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 1.25rem;
     }
 
     .thumbnails-area {
@@ -377,6 +377,18 @@
         display: flex;
         flex-direction: column;
         gap: 0.65rem;
+    }
+
+    .summary-area {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
+    }
+
+    .info-area {
+        display: flex;
+        flex-direction: column;
+        gap: 1.25rem;
     }
 
     .image-area {
@@ -811,10 +823,11 @@
     }
 
     .product-meta-list {
-        background: #f8fafc;
+        background: #ffffff;
         border-radius: 14px;
         padding: 1.25rem;
-        border: 1px solid rgba(148, 163, 184, 0.2);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
     }
 
     .action-buttons .btn {
@@ -823,23 +836,41 @@
         border-radius: 12px;
     }
 
-    .summary-badges {
-        display: flex;
-        gap: 0.75rem;
-        margin-bottom: 1.5rem;
-        flex-wrap: wrap;
+    .summary-grid, .info-grid {
+        display: grid;
+        gap: 0.85rem;
     }
 
-    .summary-badges .badge-tile {
+    .summary-grid {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    }
+
+    .info-grid {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    }
+
+    .summary-card, .info-card {
         background: #f8fafc;
-        border-radius: 12px;
-        padding: 0.75rem 1rem;
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        font-size: 0.95rem;
-        color: #1e293b;
+        border-radius: 14px;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+        padding: 1.1rem 1.25rem;
         display: flex;
-        align-items: center;
-        gap: 0.5rem;
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .summary-card i, .info-card i {
+        color: #2563eb;
+    }
+
+    .summary-card span.title, .info-card span.title {
+        font-weight: 600;
+        color: #1f2937;
+    }
+
+    .summary-card span.subtitle, .info-card span.subtitle {
+        color: #64748b;
+        font-size: 0.88rem;
     }
 
     .product-variations {
