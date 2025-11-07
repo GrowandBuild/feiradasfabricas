@@ -362,9 +362,35 @@
     /* Estilos da Galeria */
     .product-layout {
         display: grid;
-        grid-template-columns: 90px minmax(0, 1.05fr) minmax(0, 0.85fr) minmax(0, 0.75fr);
+        grid-template-columns: 90px minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 0.8fr);
         gap: 1.5rem;
         align-items: start;
+    }
+
+    @media (max-width: 1400px) {
+        .product-layout {
+            grid-template-columns: 80px minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.8fr);
+            gap: 1.25rem;
+        }
+    }
+
+    @media (max-width: 1200px) {
+        .product-layout {
+            grid-template-columns: 70px minmax(0, 1.05fr) minmax(0, 0.95fr);
+            grid-template-rows: auto;
+        }
+        .product-column.info-area {
+            grid-column: 1 / span 3;
+        }
+        .product-column.summary-area {
+            grid-column: 2;
+        }
+        .product-column.image-area {
+            grid-column: 1;
+        }
+        .product-column.thumbnails-area {
+            grid-row: 2;
+        }
     }
 
     .product-column {
@@ -724,12 +750,16 @@
         }
 
         .price-section .h3 {
-            font-size: 1.5rem;
+            font-size: 1.75rem;
         }
 
         .action-buttons .btn {
             padding: 0.7rem 0.9rem;
             font-size: 0.9rem;
+        }
+
+        .variation-option {
+            min-width: calc(50% - 0.5rem);
         }
 
         .product-card .card-img-top-container {
@@ -913,12 +943,12 @@
     }
 
     .price-card {
-        background: linear-gradient(145deg, rgba(255, 153, 0, 0.05), rgba(255, 153, 0, 0.08));
+        background: #ffffff;
         border-radius: 16px;
         padding: 1.5rem;
-        border: 1px solid rgba(255, 153, 0, 0.15);
+        border: 1px solid rgba(148, 163, 184, 0.18);
         margin-bottom: 1.5rem;
-        box-shadow: 0 18px 45px rgba(255, 153, 0, 0.12);
+        box-shadow: 0 18px 45px rgba(148, 163, 184, 0.16);
     }
 
     .stock-line {
