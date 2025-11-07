@@ -1,6 +1,6 @@
 <!-- Modal de Gerenciamento de Variações -->
 <div class="modal fade" id="variationsModal" tabindex="-1" aria-labelledby="variationsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="variationsModalLabel">
@@ -388,21 +388,6 @@ function renderVariations(data) {
     }
 }
 
-function renderStock(data) {
-    const stockContainer = document.getElementById('stockList');
-    stockContainer.innerHTML = '';
-    
-    if (data.variations && data.variations.length > 0) {
-        data.variations.forEach(variation => {
-            const stockItem = createStockItem(variation, data.productId);
-            stockContainer.appendChild(stockItem);
-            initializeVariationPriceFields(stockItem);
-        });
-    } else {
-        stockContainer.innerHTML = '<p class="text-muted text-center">Nenhuma variação encontrada</p>';
-    }
-}
-
 function createColorItem(color, productId) {
     const div = document.createElement('div');
     div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
@@ -458,71 +443,54 @@ function createStorageItem(storage, productId) {
 
 function createStockItem(variation, productId) {
     const div = document.createElement('div');
-    div.className = 'mb-3 p-3 border rounded';
+    div.className = 'variation-stock-card border rounded-3 mb-2';
     div.innerHTML = `
-        <div class="d-flex justify-content-between align-items-start mb-2">
-            <div class="flex-grow-1">
-                <strong>${variation.name || variation.sku}</strong>
-                <div class="small text-muted">SKU: ${variation.sku}</div>
-                ${variation.ram ? `<span class="badge bg-info me-1">${variation.ram}</span>` : ''}
-                ${variation.storage ? `<span class="badge bg-primary me-1">${variation.storage}</span>` : ''}
-                ${variation.color ? `<span class="badge bg-secondary me-1">${variation.color}</span>` : ''}
+        <div class="variation-stock-header d-flex flex-wrap justify-content-between align-items-center">
+            <div class="d-flex flex-column">
+                <span class="fw-semibold">${variation.name || variation.sku}</span>
+                <small class="text-muted">SKU: ${variation.sku}</small>
+                <div class="d-flex flex-wrap gap-1 mt-1">
+                    ${variation.color ? `<span class="badge rounded-pill bg-secondary-subtle text-secondary">${variation.color}</span>` : ''}
+                    ${variation.ram ? `<span class="badge rounded-pill bg-info-subtle text-info">${variation.ram}</span>` : ''}
+                    ${variation.storage ? `<span class="badge rounded-pill bg-primary-subtle text-primary">${variation.storage}</span>` : ''}
+                </div>
             </div>
-            <span class="badge bg-${variation.is_active ? 'success' : 'secondary'}">
-                ${variation.is_active ? 'Ativo' : 'Inativo'}
-            </span>
-        </div>
-        <div class="row g-2">
-            <div class="col-md-4">
-                <label class="form-label small">Estoque Atual</label>
-                <input type="number" 
-                       class="form-control form-control-sm stock-input" 
-                       data-variation-id="${variation.id}"
-                       value="${variation.stock_quantity || 0}"
-                       min="0"
-                       step="1">
-            </div>
-            <div class="col-md-4">
-                <label class="form-label small">Status</label>
-                <select class="form-select form-select-sm stock-status" 
-                        data-variation-id="${variation.id}">
-                    <option value="1" ${variation.in_stock ? 'selected' : ''}>Em Estoque</option>
-                    <option value="0" ${!variation.in_stock ? 'selected' : ''}>Fora de Estoque</option>
-                </select>
+            <div class="d-flex align-items-center gap-2">
+                <div class="text-center">
+                    <small class="text-muted">Estoque</small>
+                    <input type="number" class="form-control form-control-sm text-center stock-input" data-variation-id="${variation.id}" value="${variation.stock_quantity || 0}" min="0" step="1" style="width: 90px;">
+                </div>
+                <div>
+                    <small class="text-muted">Status</small>
+                    <div>
+                        <select class="form-select form-select-sm stock-status" data-variation-id="${variation.id}" style="width: 140px;">
+                            <option value="1" ${variation.in_stock ? 'selected' : ''}>Em estoque</option>
+                            <option value="0" ${!variation.in_stock ? 'selected' : ''}>Sem estoque</option>
+                        </select>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="row g-2 mt-2">
-            <div class="col-md-4">
-                <label class="form-label small">Preço de Custo</label>
+        <div class="variation-stock-prices row gx-2 mt-3">
+            <div class="col-12 col-md-4">
+                <label class="form-label small text-muted mb-1">Custo</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="bi bi-currency-dollar"></i></span>
-                    <input type="text"
-                           class="form-control form-control-sm variation-cost"
-                           data-variation-id="${variation.id}"
-                           data-original-value="${variation.cost_price ?? ''}"
-                           value="${variation.cost_price ?? ''}">
+                    <input type="text" class="form-control variation-cost" data-variation-id="${variation.id}" value="${variation.cost_price ?? ''}">
                 </div>
             </div>
-            <div class="col-md-4">
-                <label class="form-label small">Preço B2C</label>
+            <div class="col-12 col-md-4">
+                <label class="form-label small text-muted mb-1">Preço B2C</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="bi bi-cart"></i></span>
-                    <input type="text"
-                           class="form-control form-control-sm variation-price"
-                           data-variation-id="${variation.id}"
-                           data-original-value="${variation.price ?? ''}"
-                           value="${variation.price ?? ''}">
+                    <input type="text" class="form-control variation-price" data-variation-id="${variation.id}" value="${variation.price ?? ''}">
                 </div>
             </div>
-            <div class="col-md-4">
-                <label class="form-label small">Preço B2B</label>
+            <div class="col-12 col-md-4">
+                <label class="form-label small text-muted mb-1">Preço B2B</label>
                 <div class="input-group input-group-sm">
                     <span class="input-group-text"><i class="bi bi-building"></i></span>
-                    <input type="text"
-                           class="form-control form-control-sm variation-b2b"
-                           data-variation-id="${variation.id}"
-                           data-original-value="${variation.b2b_price ?? ''}"
-                           value="${variation.b2b_price ?? ''}">
+                    <input type="text" class="form-control variation-b2b" data-variation-id="${variation.id}" value="${variation.b2b_price ?? ''}">
                 </div>
             </div>
         </div>
@@ -966,6 +934,7 @@ function initializeVariationPriceFields(stockItem) {
         }
         const parsed = parseCurrencyValue(input.value);
         input.value = parsed !== null ? formatCurrencyValue(parsed) : '';
+        input.addEventListener('focus', () => input.select());
     });
 
     if (costInput) {
@@ -982,6 +951,8 @@ function initializeVariationPriceFields(stockItem) {
                 }
             } else {
                 this.value = '';
+                if (priceInput) priceInput.value = '';
+                if (b2bInput) b2bInput.value = '';
             }
         });
     }
@@ -997,5 +968,25 @@ function initializeVariationPriceFields(stockItem) {
     });
 }
 </script>
+
+<style>
+    .variation-stock-card {
+        padding: 1rem;
+        background: #fff;
+        transition: box-shadow 0.15s ease;
+    }
+
+    .variation-stock-card:hover {
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+    }
+
+    .variation-stock-header small {
+        font-size: 0.75rem;
+    }
+
+    .variation-stock-prices .form-control {
+        font-weight: 500;
+    }
+</style>
 @endpush
 

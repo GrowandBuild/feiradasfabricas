@@ -664,7 +664,7 @@ class ProductController extends Controller
             ->values();
         
         // Retornar todas as variações individuais para o estoque
-        $variationsList = $variations->map(function($variation) {
+        $variationsList = $variations->where('is_active', true)->map(function($variation) {
             $parts = [];
             if ($variation->ram) $parts[] = $variation->ram;
             if ($variation->storage) $parts[] = $variation->storage;
