@@ -41,7 +41,7 @@
     </nav>
 
     <div class="product-layout">
-        <div class="product-column thumbnails-area d-none d-lg-flex" id="thumbnailsWrapper">
+        <div class="product-column thumbnails-area" id="thumbnailsWrapper">
             @foreach($product->all_images as $index => $image)
                 <div class="thumbnail-item">
                     <img src="{{ $image }}" 
@@ -100,7 +100,7 @@
                 <div class="purchase-summary mb-4">
                     <div class="price-card mb-3">
                         <div class="price-section">
-                            <span class="h3 text-primary" id="product-price-display">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
+                            <span class="h3 price-value" id="product-price-display">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
                             <span class="sub-price">Preço à vista</span>
                         </div>
                         <div class="stock-line" id="variation-stock-display" style="display: none;">
@@ -362,14 +362,20 @@
     /* Estilos da Galeria */
     .product-layout {
         display: grid;
+        grid-template-areas: "thumbs image summary info";
         grid-template-columns: 90px minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 0.8fr);
         gap: 1.5rem;
         align-items: start;
     }
 
+    .thumbnails-area { grid-area: thumbs; }
+    .image-area { grid-area: image; }
+    .summary-area { grid-area: summary; }
+    .info-area { grid-area: info; }
+
     @media (max-width: 1400px) {
         .product-layout {
-            grid-template-columns: 80px minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.8fr);
+            grid-template-columns: 80px minmax(0, 1fr) minmax(0, 0.9fr) minmax(0, 0.75fr);
             gap: 1.25rem;
         }
     }
@@ -377,19 +383,9 @@
     @media (max-width: 1200px) {
         .product-layout {
             grid-template-columns: 70px minmax(0, 1.05fr) minmax(0, 0.95fr);
-            grid-template-rows: auto;
-        }
-        .product-column.info-area {
-            grid-column: 1 / span 3;
-        }
-        .product-column.summary-area {
-            grid-column: 2;
-        }
-        .product-column.image-area {
-            grid-column: 1;
-        }
-        .product-column.thumbnails-area {
-            grid-row: 2;
+            grid-template-areas:
+                "thumbs image summary"
+                "thumbs info info";
         }
     }
 
@@ -533,6 +529,10 @@
         box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
     }
 
+    .price-value {
+        color: #ff9900;
+    }
+    
     .variation-select option.variation-option-disabled {
         color: #9ca3af;
     }
@@ -1223,232 +1223,4 @@
         const types = ['storage', 'color', 'ram'];
 
         types.forEach(type => {
-            const options = Array.from(document.querySelectorAll(`label[data-variation-type="${type}"]`));
-            if (!options.length) {
-                return;
-            }
-
-            let firstAvailableInput = null;
-
-            options.forEach(option => {
-                const input = option.querySelector('input');
-                const value = input.value;
-
-                const variationsForValue = activeVariationsData.filter(variation => {
-                    if (variation.in_stock !== true || variation.stock_quantity <= 0) {
-                        return false;
-                    }
-                    return variation[type] === value;
-                });
-
-                const hasVariations = variationsForValue.length > 0;
-
-                if (hasVariations && !firstAvailableInput) {
-                    firstAvailableInput = input;
-                }
-
-                input.disabled = !hasVariations;
-                option.classList.toggle('disabled', !hasVariations);
-
-                if (!hasVariations && input.checked) {
-                    input.checked = false;
-                    selected[type] = null;
-                }
-            });
-
-            if (!selected[type] && firstAvailableInput) {
-                firstAvailableInput.checked = true;
-                selected[type] = firstAvailableInput.value;
-            }
-        });
-
-        refreshActiveVariationOptions();
-    }
-
-    function initVariationSelectors() {
-        const optionInputs = document.querySelectorAll('.variation-option input');
-        optionInputs.forEach(input => {
-            input.addEventListener('change', () => {
-                syncVariationOptionAvailability();
-                applyColorImages(getSelectedValue('color'));
-                updateVariation();
-            });
-        });
-
-        syncVariationOptionAvailability();
-        applyColorImages(getSelectedValue('color'));
-        applyColorSwatches();
-        updateVariation();
-    }
-
-    function applyColorSwatches() {
-        document.querySelectorAll('.variation-option[data-variation-type="color"]').forEach(option => {
-            const value = option.getAttribute('data-value');
-            const swatch = option.querySelector('.swatch');
-            if (!swatch) {
-                return;
-            }
-            const key = value ? value.replace(/[^a-zA-Z0-9]/g, '_') : '';
-            const hex = colorHexMap[value] || colorHexMap[key] || '#f1f5f9';
-            swatch.style.background = hex;
-        });
-    }
-
-    function updateVariation() {
-        const ram = getSelectedValue('ram');
-        const storage = getSelectedValue('storage');
-        const color = getSelectedValue('color');
-        const unavailableMessage = document.getElementById('variation-unavailable-message');
-
-        const combinationAvailable = isCombinationAvailable(ram, storage, color);
-
-        applyColorImages(color);
-
-        if (!combinationAvailable) {
-            const fallback = (function() {
-                const prioritized = [
-                    variation => (!storage || variation.storage === storage) && (!ram || variation.ram === ram) && (!color || variation.color === color),
-                    variation => (!color || variation.color === color),
-                    variation => (!storage || variation.storage === storage) && (!ram || variation.ram === ram),
-                    variation => (!storage || variation.storage === storage),
-                    variation => (!ram || variation.ram === ram),
-                    () => true,
-                ];
-
-                for (const predicate of prioritized) {
-                    const match = activeVariationsData.find(variation => {
-                        if (variation.in_stock !== true || variation.stock_quantity <= 0) {
-                            return false;
-                        }
-                        return predicate(variation);
-                    });
-
-                    if (match) {
-                        return match;
-                    }
-                }
-                return null;
-            })();
-
-            if (fallback) {
-                if (fallback.storage) setOptionSelected('storage', fallback.storage);
-                if (fallback.color) setOptionSelected('color', fallback.color);
-                if (fallback.ram) setOptionSelected('ram', fallback.ram);
-
-                syncVariationOptionAvailability();
-                updateVariation();
-                return;
-            }
-
-            if (unavailableMessage) {
-                unavailableMessage.style.display = 'flex';
-            }
-            setAddToCartDisabled(true);
-            selectedVariationId = null;
-
-            const priceDisplay = document.getElementById('product-price-display');
-            if (priceDisplay) {
-                priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ",", ".") }}';
-            }
-
-            const skuDisplay = document.getElementById('variation-sku-display');
-            if (skuDisplay) {
-                skuDisplay.style.display = 'none';
-            }
-
-            const stockDisplay = document.getElementById('variation-stock-display');
-            if (stockDisplay) {
-                stockDisplay.style.display = 'none';
-            }
-
-            return;
-        }
-
-        if (unavailableMessage) {
-            unavailableMessage.style.display = 'none';
-        }
-
-        const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
-        if (ram) url.searchParams.append('ram', ram);
-        if (storage) url.searchParams.append('storage', storage);
-        if (color) url.searchParams.append('color', color);
-
-        fetch(url)
-            .then(response => response.json())
-            .then(data => {
-                if (data.success && data.variation) {
-                    selectedVariationId = data.variation.id;
-
-                    const priceDisplay = document.getElementById('product-price-display');
-                    if (priceDisplay && data.variation.price) {
-                        priceDisplay.textContent = 'R$ ' + data.variation.price;
-                    }
-
-                    const skuDisplay = document.getElementById('variation-sku-display');
-                    const skuSpan = document.getElementById('selected-variation-sku');
-                    if (skuDisplay && skuSpan) {
-                        skuSpan.textContent = data.variation.sku;
-                        skuDisplay.style.display = 'block';
-                    }
-
-                    const stockDisplay = document.getElementById('variation-stock-display');
-                    const stockBadge = document.getElementById('variation-stock-badge');
-                    if (stockDisplay && stockBadge) {
-                        if (data.variation.in_stock && data.variation.stock_quantity > 0) {
-                            stockBadge.className = 'badge bg-success';
-                            stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
-                            stockDisplay.style.display = 'block';
-                            setAddToCartDisabled(false);
-                        } else {
-                            stockBadge.className = 'badge bg-danger';
-                            stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-                        stockDisplay.style.display = 'block';
-                            setAddToCartDisabled(true);
-                            if (unavailableMessage) {
-                                unavailableMessage.style.display = 'flex';
-                            }
-                        }
-                    }
-
-                    const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
-                    if (addToCartBtn) {
-                        addToCartBtn.setAttribute('data-variation-id', data.variation.id);
-                        const addToCartComponent = document.querySelector('.add-to-cart-component');
-                        if (addToCartComponent) {
-                            addToCartComponent.setAttribute('data-variation-id', data.variation.id);
-                        }
-                    }
-                } else {
-                    selectedVariationId = null;
-
-                    const priceDisplay = document.getElementById('product-price-display');
-                    if (priceDisplay) {
-                        priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ",", ".") }}';
-                    }
-
-                    const skuDisplay = document.getElementById('variation-sku-display');
-                    if (skuDisplay) {
-                        skuDisplay.style.display = 'none';
-                    }
-
-                    const stockDisplay = document.getElementById('variation-stock-display');
-                    if (stockDisplay) {
-                        stockDisplay.style.display = 'none';
-                    }
-
-                    if (unavailableMessage) {
-                        unavailableMessage.style.display = 'flex';
-                    }
-
-                    setAddToCartDisabled(true);
-                }
-            })
-            .catch(error => {
-                console.error('Erro ao buscar variação:', error);
-            });
-    }
-    @endif
-</script>
-@endsection
-
-
+            const options = Array.from(document.querySelectorAll(`label[data-variation-type="${type}"]`
