@@ -198,6 +198,15 @@
         opacity: 1;
         transform: scale(1);
     }
+
+    .color-dot {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        background: #f1f5f9;
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
 </style>
 
 @push('scripts')
@@ -207,6 +216,7 @@ let variationProductImages = [];
 let variationProductImagesUrls = [];
 let variationColorImagesMap = {};
 let variationColorImagesUrlsMap = {};
+let variationColorHexMap = {};
 let currentColorBeingEdited = null;
 let productMarginB2C = 20;
 let productMarginB2B = 10;
@@ -336,6 +346,14 @@ function loadVariations(productId) {
                 variationProductImagesUrls = data.product_images_urls || [];
                 variationColorImagesMap = data.color_images || {};
                 variationColorImagesUrlsMap = data.color_images_urls || {};
+                variationColorHexMap = data.color_hex_map || {};
+                variationColorHexMap = Object.keys(variationColorHexMap).reduce((acc, key) => {
+                    const value = variationColorHexMap[key];
+                    acc[key] = value;
+                    const sanitized = key.replace(/[^a-zA-Z0-9]/g, '_');
+                    acc[sanitized] = value;
+                    return acc;
+                }, {});
                 productMarginB2C = data.margins?.b2c ?? 20;
                 productMarginB2B = data.margins?.b2b ?? 10;
                 renderVariations(data);
@@ -358,6 +376,7 @@ function renderVariations(data) {
         data.colors.forEach(color => {
             const colorItem = createColorItem(color, data.productId);
             colorsContainer.appendChild(colorItem);
+            applyExistingColorHex(color.name, colorItem);
         });
     } else {
         colorsContainer.innerHTML = '<p class="text-muted text-center">Nenhuma cor encontrada</p>';
@@ -392,26 +411,141 @@ function createColorItem(color, productId) {
     const div = document.createElement('div');
     div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
     const safeColorName = color.name.replace(/'/g, "\\'");
+    const colorKey = color.name.replace(/[^a-zA-Z0-9]/g, '_');
     const hasImages = Array.isArray(variationColorImagesMap[color.name]) && variationColorImagesMap[color.name].length > 0;
     div.innerHTML = `
-        <span class="flex-grow-1">${color.name}</span>
+        <div class="d-flex align-items-center gap-2 flex-grow-1">
+            <span class="color-dot" data-color-key="${colorKey}"></span>
+            <div class="flex-grow-1">
+                <span class="d-block fw-semibold">${color.name}</span>
+                <div class="d-flex gap-2 mt-1">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openColorImagesModal('${safeColorName}')" title="Gerenciar imagens">
+                        <i class="bi bi-image"></i>
+                    </button>
+                    <div class="input-group input-group-sm" style="width: 140px;">
+                        <span class="input-group-text"><i class="bi bi-palette"></i></span>
+                        <input type="color" class="form-control form-control-color color-picker" value="#ffffff" title="Selecionar cor" data-color-name="${safeColorName}" data-color-key="${colorKey}" onchange="handleColorPickerChange('${safeColorName}', '${colorKey}', this.value)">
+                        <button class="btn btn-outline-secondary" type="button" onclick="clearColorHex('${safeColorName}', '${colorKey}')" title="Limpar cor">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="d-flex align-items-center gap-2">
-            ${hasImages ? '<span class="badge bg-info"><i class="bi bi-images"></i></span>' : ''}
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openColorImagesModal('${safeColorName}')">
-                <i class="bi bi-image"></i>
-            </button>
             <span class="badge bg-${color.enabled ? 'success' : 'secondary'}">${color.count} variações</span>
             <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteVariationValue('color', '${safeColorName}', ${color.count})" title="Excluir cor e suas variações">
                 <i class="bi bi-trash"></i>
             </button>
-        </div>
-        <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" 
-                   ${color.enabled ? 'checked' : ''} 
-                   onchange="toggleVariationType(${productId}, 'color', '${color.name.replace(/'/g, "\\'")}', this.checked)">
+            <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" 
+                       ${color.enabled ? 'checked' : ''} 
+                       onchange="toggleVariationType(${productId}, 'color', '${color.name.replace(/'/g, "\\'")}', this.checked)">
+            </div>
         </div>
     `;
     return div;
+}
+
+function handleColorPickerChange(colorName, colorKey, hexValue) {
+    const productId = document.getElementById('variationsProductId').value;
+    if (!productId || !colorName) {
+        return;
+    }
+
+    const normalizedHex = hexValue && hexValue.startsWith('#') ? hexValue : `#${hexValue}`;
+
+    fetch(`/admin/products/${productId}/variations/color-hex`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            color: colorName,
+            hex: normalizedHex
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            variationColorHexMap[colorName] = data.hex;
+            variationColorHexMap[colorKey] = data.hex;
+            updateColorDot(colorKey, data.hex);
+        } else {
+            showVariationMessage('error', data.message || 'Não foi possível atualizar a cor.');
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao atualizar cor:', error);
+        showVariationMessage('error', 'Erro ao atualizar cor.');
+    });
+}
+
+function clearColorHex(colorName, colorKey) {
+    const productId = document.getElementById('variationsProductId').value;
+    if (!productId || !colorName) {
+        return;
+    }
+
+    fetch(`/admin/products/${productId}/variations/color-hex`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            color: colorName,
+            hex: null
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            delete variationColorHexMap[colorName];
+            delete variationColorHexMap[colorKey];
+            updateColorDot(colorKey, null);
+        } else {
+            showVariationMessage('error', data.message || 'Não foi possível limpar a cor.');
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao limpar cor:', error);
+        showVariationMessage('error', 'Erro ao limpar cor.');
+    });
+}
+
+function updateColorDot(colorKey, hex) {
+    const colorDot = document.querySelector(`.color-dot[data-color-key="${colorKey}"]`);
+    const colorPicker = document.querySelector(`.color-picker[data-color-key="${colorKey}"]`);
+
+    const finalHex = hex || '#f1f5f9';
+
+    if (colorDot) {
+        colorDot.style.background = finalHex;
+    }
+    if (colorPicker) {
+        colorPicker.value = hex || '#ffffff';
+    }
+}
+
+function applyExistingColorHex(colorName, container) {
+    const colorKey = colorName.replace(/[^a-zA-Z0-9]/g, '_');
+    const storedHex = variationColorHexMap[colorName] || variationColorHexMap[colorName.trim()] || variationColorHexMap[colorName.toLowerCase()];
+    const colorDot = container.querySelector(`.color-dot[data-color-key="${colorKey}"]`);
+    const colorPicker = container.querySelector(`.color-picker[data-color-key="${colorKey}"]`);
+
+    if (colorDot) {
+        colorDot.style.background = storedHex || '#f1f5f9';
+    }
+    if (colorPicker) {
+        colorPicker.value = storedHex || '#ffffff';
+    }
+
+    if (storedHex) {
+        variationColorHexMap[colorName] = storedHex;
+        variationColorHexMap[colorKey] = storedHex;
+    }
 }
 
 function createRamItem(ram, productId) {

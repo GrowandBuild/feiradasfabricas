@@ -15,6 +15,7 @@
             'stock_quantity' => (int) $variation->stock_quantity,
             'price' => number_format($variation->price, 2, ',', '.'),
             'b2b_price' => $variation->b2b_price ? number_format($variation->b2b_price, 2, ',', '.') : null,
+            'color_hex' => $variation->color_hex,
         ];
     })->values();
 
@@ -149,7 +150,7 @@
                                                         return (float) str_replace(['.', ','], ['', '.'], $price);
                                                     })
                                                     ->min();
-                                            @endphp
+                        @endphp
                                             <label class="variation-option" data-variation-type="storage" data-value="{{ $storage }}">
                                                 <input type="radio" name="storage" value="{{ $storage }}" {{ $loop->first ? 'checked' : '' }}>
                                                 <span class="variation-option-content">
@@ -159,10 +160,10 @@
                                                     @endif
                                                 </span>
                                             </label>
-                                        @endforeach
+                                    @endforeach
                                     </div>
-                                </div>
-                            @endif
+                            </div>
+                        @endif
 
                             @if($colorOptions->count() > 0)
                                 <div class="variation-selector mb-3">
@@ -176,20 +177,24 @@
                                                         return (float) str_replace(['.', ','], ['', '.'], $price);
                                                     })
                                                     ->min();
+                                                $colorHex = optional($variationData->firstWhere('color', $color))['color_hex'];
                                             @endphp
                                             <label class="variation-option" data-variation-type="color" data-value="{{ $color }}">
                                                 <input type="radio" name="color" value="{{ $color }}" {{ $loop->first ? 'checked' : '' }}>
                                                 <span class="variation-option-content">
-                                                    <span class="variation-option-title">{{ $color }}</span>
+                                                    <span class="variation-option-title d-flex align-items-center gap-2">
+                                                        <span class="swatch" style="background: {{ $colorHex ?? '#f1f5f9' }};"></span>
+                                                        <span>{{ $color }}</span>
+                                                    </span>
                                                     @if(!is_null($lowestPrice))
                                                         <span class="variation-option-price">R$ {{ number_format($lowestPrice, 2, ',', '.') }}</span>
                                                     @endif
                                                 </span>
                                             </label>
-                                        @endforeach
+                                    @endforeach
                                     </div>
-                                </div>
-                            @endif
+                            </div>
+                        @endif
 
                             @if($ramOptions->count() > 0)
                                 <div class="variation-selector mb-3">
@@ -213,10 +218,10 @@
                                                     @endif
                                                 </span>
                                             </label>
-                                        @endforeach
+                                    @endforeach
                                     </div>
-                                </div>
-                            @endif
+                            </div>
+                        @endif
                         </div>
 
                         <div id="variation-unavailable-message" class="alert alert-warning py-2 px-3 d-flex align-items-center gap-2" style="display: none;">
@@ -734,6 +739,14 @@
         align-items: flex-start;
     }
 
+    .variation-option-content .swatch {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
+    }
+
     .variation-option-title {
         font-weight: 600;
         font-size: 0.9rem;
@@ -780,6 +793,14 @@
     const variationColorImages = @json($product->variation_images_urls ?? []);
     const fallbackImage = "{{ asset('images/no-image.svg') }}";
     const activeVariationsData = @json($variationData);
+    const colorHexMap = activeVariationsData.reduce((acc, variation) => {
+        if (variation.color && variation.color_hex) {
+            acc[variation.color] = variation.color_hex;
+            const key = variation.color.replace(/[^a-zA-Z0-9]/g, '_');
+            acc[key] = variation.color_hex;
+        }
+        return acc;
+    }, {});
     let productImages = Array.isArray(baseProductImages) && baseProductImages.length ? [...baseProductImages] : [fallbackImage];
     let totalImages = productImages.length;
 
@@ -787,7 +808,7 @@
         const mainImage = document.getElementById('main-product-image');
         const currentImageSpan = document.getElementById('current-image');
         const thumbnails = document.querySelectorAll('.thumbnail-img');
-        
+
         if (mainImage) {
         mainImage.src = imageSrc;
             mainImage.style.opacity = '0.7';
@@ -795,13 +816,13 @@
                 mainImage.style.opacity = '1';
             }, 150);
         }
-        
+
         currentImageIndex = Math.max(0, Math.min(productImages.length - 1, imageNumber - 1));
 
         if (currentImageSpan) {
             currentImageSpan.textContent = imageNumber;
         }
-        
+
         thumbnails.forEach((thumb, index) => {
             thumb.classList.toggle('active', index === currentImageIndex);
         });
@@ -813,15 +834,15 @@
         if (totalImages <= 1) {
             return;
         }
-        
+
         currentImageIndex += direction;
-        
+
         if (currentImageIndex >= totalImages) {
             currentImageIndex = 0;
         } else if (currentImageIndex < 0) {
             currentImageIndex = totalImages - 1;
         }
-        
+
         setMainImage(productImages[currentImageIndex], currentImageIndex + 1);
         scrollToActiveThumbnail();
     }
@@ -1072,7 +1093,21 @@
 
         syncVariationOptionAvailability();
         applyColorImages(getSelectedValue('color'));
+        applyColorSwatches();
         updateVariation();
+    }
+
+    function applyColorSwatches() {
+        document.querySelectorAll('.variation-option[data-variation-type="color"]').forEach(option => {
+            const value = option.getAttribute('data-value');
+            const swatch = option.querySelector('.swatch');
+            if (!swatch) {
+                return;
+            }
+            const key = value ? value.replace(/[^a-zA-Z0-9]/g, '_') : '';
+            const hex = colorHexMap[value] || colorHexMap[key] || '#f1f5f9';
+            swatch.style.background = hex;
+        });
     }
 
     function updateVariation() {
@@ -1089,9 +1124,9 @@
             const fallback = (function() {
                 const prioritized = [
                     variation => (!storage || variation.storage === storage) && (!ram || variation.ram === ram) && (!color || variation.color === color),
+                    variation => (!color || variation.color === color),
                     variation => (!storage || variation.storage === storage) && (!ram || variation.ram === ram),
                     variation => (!storage || variation.storage === storage),
-                    variation => (!color || variation.color === color),
                     variation => (!ram || variation.ram === ram),
                     () => true,
                 ];
@@ -1183,7 +1218,7 @@
                         } else {
                             stockBadge.className = 'badge bg-danger fs-6';
                             stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-                            stockDisplay.style.display = 'block';
+                        stockDisplay.style.display = 'block';
                             setAddToCartDisabled(true);
                             if (unavailableMessage) {
                                 unavailableMessage.style.display = 'flex';

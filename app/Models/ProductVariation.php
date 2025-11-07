@@ -14,6 +14,7 @@ class ProductVariation extends Model
         'ram',
         'storage',
         'color',
+        'color_hex',
         'sku',
         'price',
         'b2b_price',

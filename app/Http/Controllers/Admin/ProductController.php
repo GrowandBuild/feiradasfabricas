@@ -697,6 +697,15 @@ class ProductController extends Controller
             'product_images_urls' => $product->all_images,
             'color_images' => $product->variation_images ?? [],
             'color_images_urls' => $product->variation_images_urls,
+            'color_hex_map' => $product->variations()
+                ->whereNotNull('color')
+                ->select('color', 'color_hex')
+                ->get()
+                ->groupBy('color')
+                ->map(function ($group) {
+                    return optional($group->first())->color_hex;
+                })
+                ->toArray(),
             'margins' => [
                 'b2c' => $product->profit_margin_b2c ?? 20.0,
                 'b2b' => $product->profit_margin_b2b ?? 10.0,
@@ -975,6 +984,37 @@ class ProductController extends Controller
             'success' => true,
             'message' => "Estoque de {$updated} variação(ões) atualizado(s)",
             'updated' => $updated
+        ]);
+    }
+
+    public function updateColorHex(Request $request, Product $product)
+    {
+        $request->validate([
+            'color' => 'required|string',
+            'hex' => 'nullable|string|regex:/^#?[0-9a-fA-F]{3,8}$/'
+        ]);
+
+        $color = trim($request->color);
+        $hex = $request->hex ? '#' . ltrim($request->hex, '#') : null;
+
+        $variations = $product->variations()->where('color', $color)->get();
+
+        if ($variations->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nenhuma variação encontrada para essa cor.'
+            ], 404);
+        }
+
+        foreach ($variations as $variation) {
+            $variation->color_hex = $hex;
+            $variation->save();
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cor atualizada com sucesso.',
+            'hex' => $hex
         ]);
     }
 

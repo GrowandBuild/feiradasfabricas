@@ -107,7 +107,9 @@ class Product extends Model
      */
     public function activeVariations()
     {
-        return $this->hasMany(ProductVariation::class)->where('is_active', true)->orderBy('sort_order');
+        return $this->hasMany(ProductVariation::class)
+            ->where('is_active', true)
+            ->orderBy('sort_order');
     }
 
     /**

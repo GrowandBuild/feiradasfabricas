@@ -170,6 +170,7 @@ class HomeController extends Controller
                 'ram' => $variation->ram,
                 'storage' => $variation->storage,
                 'color' => $variation->color,
+                'color_hex' => $variation->color_hex,
             ],
         ]);
     }

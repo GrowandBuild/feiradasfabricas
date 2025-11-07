@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('ram')->nullable(); // Ex: "8GB", "12GB"
             $table->string('storage')->nullable(); // Ex: "128GB", "256GB"
             $table->string('color')->nullable(); // Ex: "Preto", "Branco"
+            $table->string('color_hex', 9)->nullable(); // Ex: #FFFFFF ou rgba
             $table->string('sku')->unique(); // SKU único para esta variação
             $table->decimal('price', 10, 2);
             $table->decimal('b2b_price', 10, 2)->nullable();
