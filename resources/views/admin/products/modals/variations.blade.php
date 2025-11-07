@@ -158,6 +158,48 @@
     </div>
 </div>
 
+<style>
+    .variation-image-card {
+        position: relative;
+        border: 2px solid transparent;
+        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+        cursor: pointer;
+    }
+
+    .variation-image-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .variation-image-card.selected {
+        border-color: #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    }
+
+    .variation-image-card .selection-overlay {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: rgba(13, 110, 253, 0.9);
+        color: #fff;
+        border-radius: 999px;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        opacity: 0;
+        transform: scale(0.6);
+        transition: opacity 0.15s ease, transform 0.15s ease;
+        pointer-events: none;
+    }
+
+    .variation-image-card.selected .selection-overlay {
+        opacity: 1;
+        transform: scale(1);
+    }
+</style>
+
 @push('scripts')
 <script>
 // Sistema de Gerenciamento de Variações
@@ -463,9 +505,10 @@ function openColorImagesModal(colorName) {
                 const isChecked = !!selectedLookup[imagePath];
                 return `
                     <div class="col-6 col-md-4 col-lg-3 mb-3">
-                        <div class="card h-100 ${isChecked ? 'border-primary shadow-sm' : ''}" data-image-card>
+                        <div class="card variation-image-card h-100 ${isChecked ? 'selected' : ''}" data-image-card>
                             <div class="position-relative">
                                 <img src="${imageUrl}" class="card-img-top" alt="Imagem da variação" style="height: 120px; object-fit: cover;">
+                                <div class="selection-overlay"><i class="bi bi-check-lg"></i></div>
                                 <div class="form-check position-absolute top-0 end-0 m-2 bg-white rounded-pill px-2">
                                     <input class="form-check-input color-image-checkbox" type="checkbox" value="${imagePath}" ${isChecked ? 'checked' : ''}>
                                 </div>
@@ -482,11 +525,7 @@ function openColorImagesModal(colorName) {
                 }
 
                 checkbox.addEventListener('change', function() {
-                    if (this.checked) {
-                        card.classList.add('border-primary', 'shadow-sm');
-                    } else {
-                        card.classList.remove('border-primary', 'shadow-sm');
-                    }
+                    card.classList.toggle('selected', this.checked);
                 });
             });
         }
