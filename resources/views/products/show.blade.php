@@ -982,6 +982,18 @@
         });
     }
 
+    function setOptionSelected(type, value) {
+        if (!value) {
+            return;
+        }
+        const inputs = document.querySelectorAll(`input[name="${type}"]`);
+        inputs.forEach(input => {
+            if (input.value === value && !input.disabled) {
+                input.checked = true;
+            }
+        });
+    }
+
     function isCombinationAvailable(ram, storage, color) {
         return activeVariationsData.some(variation => {
             if (variation.in_stock !== true || variation.stock_quantity <= 0) {
@@ -1017,20 +1029,23 @@
                 const input = option.querySelector('input');
                 const value = input.value;
 
-                const isAvailable = isCombinationAvailable(
-                    type === 'ram' ? value : selected.ram,
-                    type === 'storage' ? value : selected.storage,
-                    type === 'color' ? value : selected.color
-                );
+                const variationsForValue = activeVariationsData.filter(variation => {
+                    if (variation.in_stock !== true || variation.stock_quantity <= 0) {
+                        return false;
+                    }
+                    return variation[type] === value;
+                });
 
-                if (isAvailable && !firstAvailableInput) {
+                const hasVariations = variationsForValue.length > 0;
+
+                if (hasVariations && !firstAvailableInput) {
                     firstAvailableInput = input;
                 }
 
-                input.disabled = !isAvailable;
-                option.classList.toggle('disabled', !isAvailable);
+                input.disabled = !hasVariations;
+                option.classList.toggle('disabled', !hasVariations);
 
-                if (!isAvailable && input.checked) {
+                if (!hasVariations && input.checked) {
                     input.checked = false;
                     selected[type] = null;
                 }
@@ -1071,6 +1086,41 @@
         applyColorImages(color);
 
         if (!combinationAvailable) {
+            const fallback = (function() {
+                const prioritized = [
+                    variation => (!storage || variation.storage === storage) && (!ram || variation.ram === ram) && (!color || variation.color === color),
+                    variation => (!storage || variation.storage === storage) && (!ram || variation.ram === ram),
+                    variation => (!storage || variation.storage === storage),
+                    variation => (!color || variation.color === color),
+                    variation => (!ram || variation.ram === ram),
+                    () => true,
+                ];
+
+                for (const predicate of prioritized) {
+                    const match = activeVariationsData.find(variation => {
+                        if (variation.in_stock !== true || variation.stock_quantity <= 0) {
+                            return false;
+                        }
+                        return predicate(variation);
+                    });
+
+                    if (match) {
+                        return match;
+                    }
+                }
+                return null;
+            })();
+
+            if (fallback) {
+                if (fallback.storage) setOptionSelected('storage', fallback.storage);
+                if (fallback.color) setOptionSelected('color', fallback.color);
+                if (fallback.ram) setOptionSelected('ram', fallback.ram);
+
+                syncVariationOptionAvailability();
+                updateVariation();
+                return;
+            }
+
             if (unavailableMessage) {
                 unavailableMessage.style.display = 'flex';
             }
