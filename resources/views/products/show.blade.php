@@ -868,6 +868,7 @@
         }
 
         syncVariationOptionAvailability();
+        updateVariation();
     }
 
     function isCombinationAvailable(ram, storage, color) {
