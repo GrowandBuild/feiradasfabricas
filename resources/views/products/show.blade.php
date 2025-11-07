@@ -40,68 +40,62 @@
         </ol>
     </nav>
 
-    <div class="row">
-        <!-- Galeria de Imagens do Produto -->
-        <div class="col-lg-6 mb-4">
-            <div class="product-gallery">
-                <div class="gallery-wrapper">
-                    <div class="thumbnails-column" id="thumbnailsWrapper">
-                        @foreach($product->all_images as $index => $image)
-                            <div class="thumbnail-item">
-                                <img src="{{ $image }}" 
-                                     alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
-                                     class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
-                                     onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
-                                     onmouseenter="setMainImage('{{ $image }}', {{ $index + 1 }})"
-                                     onmouseover="this.style.transform='scale(1.05)'"
-                                     onmouseout="this.style.transform='scale(1)'"
-                                     onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                            </div>
-                        @endforeach
-                    </div>
-
-                    <div class="main-image-container">
-                    <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
-                        @if($product->is_unavailable)
-                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-                                     style="background: rgba(0,0,0,0.3); z-index: 10; border-radius: 12px;">
-                                <span class="badge bg-warning text-dark fs-5 px-4 py-3">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    Indisponível no momento
-                                </span>
-                            </div>
-                        @endif
-
-                        <img id="main-product-image" 
-                             src="{{ $product->first_image }}" 
-                             alt="{{ $product->name }}" 
-                             class="img-fluid rounded shadow-sm main-image"
-                                 style="max-height: 520px; object-fit: contain; width: 100%; cursor: pointer; background-color: #f8f9fa;"
-                             onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                        
-                            <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
-                                <span class="badge bg-dark bg-opacity-75">
-                                    <i class="fas fa-images me-1"></i>
-                                    <span id="current-image">1</span>/<span id="total-images">{{ max($product->getImageCount(), 1) }}</span>
-                                </span>
-                            </div>
-
-                            <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
-                                    id="prev-image" onclick="changeImage(-1)">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y me-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
-                                    id="next-image" onclick="changeImage(1)">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                    </div>
+    <div class="product-layout">
+        <div class="product-column thumbnails-area d-none d-lg-flex" id="thumbnailsWrapper">
+            @foreach($product->all_images as $index => $image)
+                <div class="thumbnail-item">
+                    <img src="{{ $image }}" 
+                         alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
+                         class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
+                         onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
+                         onmouseenter="setMainImage('{{ $image }}', {{ $index + 1 }})"
+                         onmouseover="this.style.transform='scale(1.05)'"
+                         onmouseout="this.style.transform='scale(1)'"
+                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
                 </div>
-                                </div>
-            </div>
+            @endforeach
         </div>
 
-        <!-- Informações do Produto -->
-        <div class="col-md-6">
+        <div class="product-column image-area">
+            <div class="main-image-container">
+                <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
+                    @if($product->is_unavailable)
+                        <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                             style="background: rgba(0,0,0,0.3); z-index: 10; border-radius: 12px;">
+                            <span class="badge bg-warning text-dark fs-5 px-4 py-3">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                Indisponível no momento
+                            </span>
+                        </div>
+                    @endif
+
+                    <img id="main-product-image" 
+                         src="{{ $product->first_image }}" 
+                         alt="{{ $product->name }}" 
+                         class="img-fluid rounded shadow-sm main-image"
+                         style="max-height: 520px; object-fit: contain; width: 100%; cursor: pointer; background-color: #f8f9fa;"
+                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
+
+                    <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
+                        <span class="badge bg-dark bg-opacity-75">
+                            <i class="fas fa-images me-1"></i>
+                            <span id="current-image">1</span>/<span id="total-images">{{ max($product->getImageCount(), 1) }}</span>
+                        </span>
+                    </div>
+
+                    <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
+                            id="prev-image" onclick="changeImage(-1)">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y me-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
+                            id="next-image" onclick="changeImage(1)">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+ 
+        <div class="product-column details-area">
             <div class="product-details">
                 <div class="d-flex align-items-center gap-2 mb-3">
                     <h1 class="h2 mb-0">{{ $product->name }}</h1>
@@ -361,36 +355,45 @@
 @section('styles')
 <style>
     /* Estilos da Galeria */
-    .product-gallery {
-        position: relative;
+    .product-layout {
+        display: grid;
+        grid-template-columns: 90px minmax(0, 1.1fr) minmax(0, 0.9fr);
+        gap: 1.75rem;
+        align-items: start;
     }
 
-    .product-gallery .gallery-wrapper {
+    .product-column {
         display: flex;
-        gap: 1.25rem;
-        align-items: flex-start;
+        flex-direction: column;
+        gap: 1rem;
     }
 
-    .thumbnails-column {
-        width: 90px;
+    .thumbnails-area {
+        position: sticky;
+        top: 110px;
+        height: 520px;
+        overflow-y: auto;
+        padding-right: 4px;
         display: flex;
         flex-direction: column;
         gap: 0.65rem;
-        max-height: 520px;
-        overflow-y: auto;
-        padding-right: 4px;
     }
 
-    .thumbnails-column::-webkit-scrollbar {
+    .image-area {
+        position: sticky;
+        top: 100px;
+    }
+
+    .thumbnails-area::-webkit-scrollbar {
         width: 6px;
     }
 
-    .thumbnails-column::-webkit-scrollbar-track {
+    .thumbnails-area::-webkit-scrollbar-track {
         background: #f1f5f9;
         border-radius: 999px;
     }
 
-    .thumbnails-column::-webkit-scrollbar-thumb {
+    .thumbnails-area::-webkit-scrollbar-thumb {
         background: #cbd5f5;
         border-radius: 999px;
     }
