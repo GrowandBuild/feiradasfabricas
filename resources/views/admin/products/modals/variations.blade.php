@@ -401,6 +401,9 @@ function createColorItem(color, productId) {
                 <i class="bi bi-image"></i>
             </button>
             <span class="badge bg-${color.enabled ? 'success' : 'secondary'}">${color.count} variações</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteVariationValue('color', '${safeColorName}', ${color.count})" title="Excluir cor e suas variações">
+                <i class="bi bi-trash"></i>
+            </button>
         </div>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" 
@@ -414,9 +417,15 @@ function createColorItem(color, productId) {
 function createRamItem(ram, productId) {
     const div = document.createElement('div');
     div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    const safeRamName = ram.name.replace(/'/g, "\\'");
     div.innerHTML = `
         <span class="flex-grow-1">${ram.name}</span>
-        <span class="badge bg-${ram.enabled ? 'success' : 'secondary'} me-2">${ram.count} variações</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-${ram.enabled ? 'success' : 'secondary'}">${ram.count} variações</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteVariationValue('ram', '${safeRamName}', ${ram.count})" title="Excluir RAM e suas variações">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" 
                    ${ram.enabled ? 'checked' : ''} 
@@ -429,9 +438,15 @@ function createRamItem(ram, productId) {
 function createStorageItem(storage, productId) {
     const div = document.createElement('div');
     div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    const safeStorageName = storage.name.replace(/'/g, "\\'");
     div.innerHTML = `
         <span class="flex-grow-1">${storage.name}</span>
-        <span class="badge bg-${storage.enabled ? 'success' : 'secondary'} me-2">${storage.count} variações</span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-${storage.enabled ? 'success' : 'secondary'}">${storage.count} variações</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteVariationValue('storage', '${safeStorageName}', ${storage.count})" title="Excluir armazenamento e suas variações">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" 
                    ${storage.enabled ? 'checked' : ''} 
@@ -439,6 +454,50 @@ function createStorageItem(storage, productId) {
         </div>
     `;
     return div;
+}
+
+function confirmDeleteVariationValue(type, value, count) {
+    if (!type || !value) {
+        return;
+    }
+
+    const productId = document.getElementById('variationsProductId').value;
+    if (!productId) {
+        showVariationMessage('error', 'Erro: produto não identificado.');
+        return;
+    }
+
+    const decodedValue = value.replace(/\\'/g, "'");
+    const message = count > 0
+        ? `Isso removerá ${count} variação(ões) associada(s) a "${decodedValue}". Continuar?`
+        : `Remover "${decodedValue}"?`;
+
+    if (!confirm(message)) {
+        return;
+    }
+
+    fetch(`/admin/products/${productId}/variations/value`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ type, value: decodedValue })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showVariationMessage('success', data.message || 'Variações removidas com sucesso.');
+            loadVariations(productId);
+        } else {
+            showVariationMessage('error', data.message || 'Não foi possível remover as variações.');
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao remover variações:', error);
+        showVariationMessage('error', 'Erro ao remover variações.');
+    });
 }
 
 function renderStock(data) {
@@ -449,15 +508,16 @@ function renderStock(data) {
 
     stockContainer.innerHTML = '';
     const variationsArray = Array.isArray(data.variations) ? data.variations : Object.values(data.variations || {});
+    const activeVariations = variationsArray.filter(variation => variation.is_active);
 
-    if (variationsArray.length > 0) {
-        variationsArray.forEach(variation => {
+    if (activeVariations.length > 0) {
+        activeVariations.forEach(variation => {
             const stockItem = createStockItem(variation, data.productId);
             stockContainer.appendChild(stockItem);
             initializeVariationPriceFields(stockItem);
         });
     } else {
-        stockContainer.innerHTML = '<p class="text-muted text-center">Nenhuma variação encontrada</p>';
+        stockContainer.innerHTML = '<p class="text-muted text-center">Nenhuma variação ativa encontrada</p>';
     }
 }
 

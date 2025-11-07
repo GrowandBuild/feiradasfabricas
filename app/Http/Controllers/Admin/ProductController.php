@@ -1012,6 +1012,61 @@ class ProductController extends Controller
     }
 
     /**
+     * Remove todas as variações que correspondem a um determinado valor de cor/RAM/armazenamento
+     */
+    public function deleteVariationValue(Request $request, Product $product)
+    {
+        $request->validate([
+            'type' => 'required|in:color,ram,storage',
+            'value' => 'required|string'
+        ]);
+
+        $type = $request->type;
+        $value = trim($request->value);
+
+        if ($value === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Valor inválido.'
+            ], 422);
+        }
+
+        $variations = $product->variations()->where($type, $value)->get();
+
+        if ($variations->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Nenhuma variação encontrada com esse valor.'
+            ], 404);
+        }
+
+        try {
+            $deleted = 0;
+            foreach ($variations as $variation) {
+                $variation->delete();
+                $deleted++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => $deleted . ' variação(ões) removida(s) com sucesso.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao remover variações por valor', [
+                'product_id' => $product->id,
+                'type' => $type,
+                'value' => $value,
+                'exception' => $e
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Não foi possível remover as variações. Tente novamente.'
+            ], 500);
+        }
+    }
+
+    /**
      * Retorna as imagens do produto para o modal
      */
     public function getImages(Product $product)
