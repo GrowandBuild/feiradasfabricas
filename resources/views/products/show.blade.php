@@ -417,9 +417,9 @@
     
     .main-image-container {
         border-radius: 12px;
-        background: linear-gradient(135deg, rgba(255, 153, 0, 0.08), rgba(255, 153, 0, 0.12));
+        background: linear-gradient(135deg, #f8fafc, #eef2ff);
         padding: 1.5rem;
-        box-shadow: 0 24px 48px rgba(255, 153, 0, 0.18);
+        box-shadow: 0 20px 45px rgba(148, 163, 184, 0.25);
         flex: 1;
     }
     
@@ -828,11 +828,29 @@
     }
 
     .product-meta-list {
-        background: #ffffff;
+        background: #f8fafc;
         border-radius: 14px;
         padding: 1.25rem;
         border: 1px solid rgba(148, 163, 184, 0.18);
-        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+    }
+
+    .secondary-info .info-section {
+        background: #f9fafb;
+        border-radius: 12px;
+        padding: 1rem 1.25rem;
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        margin-bottom: 0.75rem;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.05);
+    }
+
+    .secondary-info .info-section h6 {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #1f2937;
     }
 
     .action-buttons .btn {
@@ -855,14 +873,13 @@
     }
 
     .summary-card, .info-card {
-        background: #fff8ed;
+        background: #f8fafc;
         border-radius: 14px;
-        border: 1px solid rgba(255, 153, 0, 0.3);
+        border: 1px solid rgba(148, 163, 184, 0.2);
         padding: 1.1rem 1.25rem;
         display: flex;
         flex-direction: column;
         gap: 0.35rem;
-        box-shadow: 0 12px 30px rgba(255, 153, 0, 0.15);
     }
 
     .summary-card i, .info-card i {
@@ -875,7 +892,7 @@
     }
 
     .summary-card span.subtitle, .info-card span.subtitle {
-        color: #b45309;
+        color: #64748b;
         font-size: 0.88rem;
     }
 
@@ -889,19 +906,19 @@
     .price-section .h3 {
         font-size: 2.4rem;
         font-weight: 700;
-        color: #ea580c;
+        color: #ff9900;
         display: flex;
         align-items: center;
         gap: 0.75rem;
     }
 
     .price-card {
-        background: linear-gradient(145deg, rgba(255, 153, 0, 0.09), rgba(255, 138, 0, 0.13));
+        background: linear-gradient(145deg, rgba(255, 153, 0, 0.05), rgba(255, 153, 0, 0.08));
         border-radius: 16px;
         padding: 1.5rem;
-        border: 1px solid rgba(255, 153, 0, 0.28);
+        border: 1px solid rgba(255, 153, 0, 0.15);
         margin-bottom: 1.5rem;
-        box-shadow: 0 22px 55px rgba(255, 153, 0, 0.18);
+        box-shadow: 0 18px 45px rgba(255, 153, 0, 0.12);
     }
 
     .stock-line {
@@ -917,8 +934,6 @@
         font-size: 0.85rem;
         padding: 0.5rem 0.75rem;
         border-radius: 999px;
-        background-color: rgba(255, 153, 0, 0.1);
-        color: #c2410c;
     }
 </style>
 @endsection
