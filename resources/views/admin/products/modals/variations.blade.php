@@ -441,6 +441,26 @@ function createStorageItem(storage, productId) {
     return div;
 }
 
+function renderStock(data) {
+    const stockContainer = document.getElementById('stockList');
+    if (!stockContainer) {
+        return;
+    }
+
+    stockContainer.innerHTML = '';
+    const variationsArray = Array.isArray(data.variations) ? data.variations : Object.values(data.variations || {});
+
+    if (variationsArray.length > 0) {
+        variationsArray.forEach(variation => {
+            const stockItem = createStockItem(variation, data.productId);
+            stockContainer.appendChild(stockItem);
+            initializeVariationPriceFields(stockItem);
+        });
+    } else {
+        stockContainer.innerHTML = '<p class="text-muted text-center">Nenhuma variação encontrada</p>';
+    }
+}
+
 function createStockItem(variation, productId) {
     const div = document.createElement('div');
     div.className = 'variation-stock-card border rounded-3 mb-2';
