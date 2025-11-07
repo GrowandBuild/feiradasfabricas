@@ -437,10 +437,10 @@ function createColorItem(color, productId) {
             <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteVariationValue('color', '${safeColorName}', ${color.count})" title="Excluir cor e suas variações">
                 <i class="bi bi-trash"></i>
             </button>
-            <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" 
-                       ${color.enabled ? 'checked' : ''} 
-                       onchange="toggleVariationType(${productId}, 'color', '${color.name.replace(/'/g, "\\'")}', this.checked)">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" 
+                   ${color.enabled ? 'checked' : ''} 
+                   onchange="toggleVariationType(${productId}, 'color', '${color.name.replace(/'/g, "\\'")}', this.checked)">
             </div>
         </div>
     `;
@@ -669,20 +669,20 @@ function createStockItem(variation, productId) {
                     ${variation.ram ? `<span class="badge rounded-pill bg-info-subtle text-info">${variation.ram}</span>` : ''}
                     ${variation.storage ? `<span class="badge rounded-pill bg-primary-subtle text-primary">${variation.storage}</span>` : ''}
                     ${!variation.is_active ? '<span class="badge rounded-pill bg-dark-subtle text-dark">Inativa</span>' : ''}
-                </div>
             </div>
+        </div>
             <div class="d-flex align-items-center gap-2">
                 <div class="text-center">
                     <small class="text-muted">Estoque</small>
                     <input type="number" class="form-control form-control-sm text-center stock-input" data-variation-id="${variation.id}" value="${variation.stock_quantity || 0}" min="0" step="1" style="width: 90px;">
-                </div>
+            </div>
                 <div>
                     <small class="text-muted">Status</small>
                     <div>
                         <select class="form-select form-select-sm stock-status" data-variation-id="${variation.id}" style="width: 140px;">
                             <option value="1" ${variation.in_stock ? 'selected' : ''}>Em estoque</option>
                             <option value="0" ${!variation.in_stock ? 'selected' : ''}>Sem estoque</option>
-                        </select>
+                </select>
                     </div>
                 </div>
                 <button type="button"
@@ -995,7 +995,7 @@ function updateAllStock(event) {
         const priceInput = document.querySelector(`.variation-price[data-variation-id="${variationId}"]`);
         const b2bInput = document.querySelector(`.variation-b2b[data-variation-id="${variationId}"]`);
         const inStock = statusSelect ? statusSelect.value === '1' : true;
-
+        
         updates.push({
             variation_id: variationId,
             stock_quantity: stockQuantity,

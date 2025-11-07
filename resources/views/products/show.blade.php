@@ -42,64 +42,60 @@
 
     <div class="row">
         <!-- Galeria de Imagens do Produto -->
-        <div class="col-md-6 mb-4">
+        <div class="col-lg-6 mb-4">
             <div class="product-gallery">
-                <!-- Imagem Principal -->
-                <div class="main-image-container mb-3">
-                    <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
-                        @if($product->is_unavailable)
-                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-                                 style="background: rgba(0,0,0,0.3); z-index: 10; border-radius: 8px;">
-                                <span class="badge bg-warning text-dark fs-5 px-4 py-3">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    Indisponível no momento
-                                </span>
+                <div class="gallery-wrapper">
+                    <div class="thumbnails-column" id="thumbnailsWrapper">
+                        @foreach($product->all_images as $index => $image)
+                            <div class="thumbnail-item">
+                                <img src="{{ $image }}" 
+                                     alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
+                                     class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
+                                     onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
+                                     onmouseover="this.style.transform='scale(1.05)'"
+                                     onmouseout="this.style.transform='scale(1)'"
+                                     onerror="this.src='{{ asset('images/no-image.svg') }}'">
                             </div>
-                        @endif
-                        <img id="main-product-image" 
-                             src="{{ $product->first_image }}" 
-                             alt="{{ $product->name }}" 
-                             class="img-fluid rounded shadow-sm main-image"
-                             style="max-height: 500px; object-fit: contain; width: 100%; cursor: pointer; background-color: #f8f9fa;"
-                             onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                        
-                        <!-- Contador de imagens -->
-                        <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
+                        @endforeach
+                    </div>
+
+                    <div class="main-image-container">
+                        <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
+                            @if($product->is_unavailable)
+                                <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                                     style="background: rgba(0,0,0,0.3); z-index: 10; border-radius: 12px;">
+                                    <span class="badge bg-warning text-dark fs-5 px-4 py-3">
+                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                        Indisponível no momento
+                                    </span>
+                                </div>
+                            @endif
+
+                            <img id="main-product-image" 
+                                 src="{{ $product->first_image }}" 
+                                 alt="{{ $product->name }}" 
+                                 class="img-fluid rounded shadow-sm main-image"
+                                 style="max-height: 520px; object-fit: contain; width: 100%; cursor: pointer; background-color: #f8f9fa;"
+                                 onerror="this.src='{{ asset('images/no-image.svg') }}'">
+
+                            <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
                                 <span class="badge bg-dark bg-opacity-75">
                                     <i class="fas fa-images me-1"></i>
-                                <span id="current-image">1</span>/<span id="total-images">{{ max($product->getImageCount(), 1) }}</span>
+                                    <span id="current-image">1</span>/<span id="total-images">{{ max($product->getImageCount(), 1) }}</span>
                                 </span>
                             </div>
 
-                        <!-- Setas de navegação (se houver múltiplas imagens) -->
-                        <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
+                            <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
                                     id="prev-image" onclick="changeImage(-1)">
                                 <i class="fas fa-chevron-left"></i>
                             </button>
-                        <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y me-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
+                            <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y me-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
                                     id="next-image" onclick="changeImage(1)">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
-                    </div>
-                </div>
-
-                <!-- Miniaturas -->
-                    <div class="thumbnails-container">
-                    <div class="thumbnails-wrapper d-flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: thin;" id="thumbnailsWrapper">
-                            @foreach($product->all_images as $index => $image)
-                                <div class="thumbnail-item flex-shrink-0">
-                                    <img src="{{ $image }}" 
-                                         alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
-                                         class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
-                                         style="width: 80px; height: 80px; object-fit: contain; cursor: pointer; background-color: #f8f9fa;"
-                                         onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
-                                         onmouseover="this.style.transform='scale(1.1)'"
-                                         onmouseout="this.style.transform='scale(1)'"
-                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                                </div>
-                            @endforeach
                         </div>
                     </div>
+                </div>
             </div>
         </div>
 
@@ -128,11 +124,11 @@
                     </p>
                 @endif
 
-                @if($product->sku && !$product->hasVariations())
-                    <p class="text-muted mb-2">
-                        <strong>SKU:</strong> {{ $product->sku }}
-                    </p>
-                @endif
+                <div class="summary-badges">
+                    <div class="badge-tile"><i class="bi bi-tag"></i> SKU: {{ $product->sku ?? 'Indisponível' }}</div>
+                    <div class="badge-tile"><i class="bi bi-truck"></i> Entrega rápida para todo Brasil</div>
+                    <div class="badge-tile"><i class="bi bi-shield-check"></i> Garantia de 90 dias</div>
+                </div>
 
                 @if($product->hasVariations())
                     <!-- Seletores de Variações -->
@@ -228,44 +224,48 @@
                             <i class="fas fa-exclamation-triangle"></i>
                             <span>Combinação indisponível. Escolha outra opção.</span>
                         </div>
-
-                        <!-- SKU da Variação Selecionada -->
-                        <div id="variation-sku-display" class="mb-2" style="display: none;">
-                            <p class="text-muted mb-0">
-                                <strong>SKU:</strong> <span id="selected-variation-sku"></span>
-                            </p>
-                        </div>
-
-                        <!-- Status de Estoque da Variação -->
-                        <div id="variation-stock-display" class="mb-3" style="display: none;">
-                            <span id="variation-stock-badge" class="badge fs-6"></span>
-                        </div>
                     </div>
                 @endif
 
-                <div class="price-section mb-4">
-                    <span id="product-price-display" class="h3 text-primary">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
+                <div class="price-card mb-4">
+                    <div class="price-section mb-3">
+                        <span id="product-price-display" class="h3 text-primary">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
+                    </div>
+
+                    <!-- SKU da Variação Selecionada -->
+                    <div id="variation-sku-display" class="mb-2" style="display: none;">
+                        <p class="text-muted mb-0">
+                            <strong>SKU:</strong> <span id="selected-variation-sku"></span>
+                        </p>
+                    </div>
+
+                    <!-- Status de Estoque da Variação -->
+                    <div id="variation-stock-display" class="mb-2" style="display: none;">
+                        <div class="stock-line">
+                            <span class="badge bg-success" id="variation-stock-badge"></span>
+                        </div>
+                    </div>
+
+                    @unless($product->hasVariations())
+                        <div class="stock-line">
+                            @if($product->stock_quantity > 0)
+                                <span class="badge bg-success">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Em estoque ({{ $product->stock_quantity }} unidades)
+                                </span>
+                            @else
+                                <span class="badge bg-danger">
+                                    <i class="fas fa-times-circle me-1"></i>
+                                    Fora de estoque
+                                </span>
+                            @endif
+                        </div>
+                    @endunless
                 </div>
 
-                @if(!$product->hasVariations())
-                    <div class="stock-status mb-4">
-                        @if($product->stock_quantity > 0)
-                            <span class="badge bg-success fs-6">
-                                <i class="fas fa-check-circle me-1"></i>
-                                Em estoque ({{ $product->stock_quantity }} unidades)
-                            </span>
-                        @else
-                            <span class="badge bg-danger fs-6">
-                                <i class="fas fa-times-circle me-1"></i>
-                                Fora de estoque
-                            </span>
-                        @endif
-                    </div>
-                @endif
-
                 @if($product->categories->count() > 0)
-                    <div class="categories mb-4">
-                        <strong>Categorias:</strong>
+                    <div class="product-meta-list mb-4">
+                        <strong class="d-block mb-2">Categorias:</strong>
                         @foreach($product->categories as $category)
                             <span class="badge bg-secondary me-1">{{ $category->name }}</span>
                         @endforeach
@@ -273,9 +273,9 @@
                 @endif
 
                 @if($product->description)
-                    <div class="description mb-4">
-                        <h5>Descrição</h5>
-                        <p class="text-muted">{{ $product->description }}</p>
+                    <div class="product-meta-list mb-4">
+                        <h5 class="mb-2">Descrição</h5>
+                        <p class="text-muted mb-0">{{ $product->description }}</p>
                     </div>
                 @endif
 
@@ -359,11 +359,53 @@
     .product-gallery {
         position: relative;
     }
-    
+
+    .product-gallery .gallery-wrapper {
+        display: flex;
+        gap: 1.25rem;
+        align-items: flex-start;
+    }
+
+    .thumbnails-column {
+        width: 90px;
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+        max-height: 520px;
+        overflow-y: auto;
+        padding-right: 4px;
+    }
+
+    .thumbnails-column::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .thumbnails-column::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 999px;
+    }
+
+    .thumbnails-column::-webkit-scrollbar-thumb {
+        background: #cbd5f5;
+        border-radius: 999px;
+    }
+
     .main-image-container {
-        position: relative;
-        overflow: hidden;
-        border-radius: 10px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, #f8fafc, #eef2ff);
+        padding: 1.5rem;
+        box-shadow: 0 20px 45px rgba(148, 163, 184, 0.25);
+        flex: 1;
+    }
+    
+    .main-image-wrapper {
+        border-radius: 12px;
+        background: #fff;
+        min-height: 300px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 12px 30px rgba(15, 23, 42, 0.18);
     }
     
     .main-image {
@@ -377,15 +419,6 @@
     
     .main-image:hover {
         transform: scale(1.02);
-    }
-    
-    .main-image-wrapper {
-        min-height: 300px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #f8f9fa;
-        border-radius: 8px;
     }
     
     .gallery-nav {
@@ -421,27 +454,32 @@
     }
     
     .thumbnail-item {
-        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.1);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        width: 78px;
     }
-    
+
+    .thumbnail-item:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.15);
+    }
+
     .thumbnail-img {
-        transition: all 0.3s ease;
-        border: 2px solid transparent;
-        border-radius: 8px;
-        background-color: #f8f9fa;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 100%;
+        height: 70px;
+        object-fit: contain;
+        padding: 0.4rem;
+        background: #f8fafc;
+        border-radius: 12px;
+        transition: transform 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
     }
-    
-    .thumbnail-img:hover {
-        border-color: #007bff;
-        transform: scale(1.05);
-    }
-    
+
     .thumbnail-img.active {
-        border-color: #007bff;
-        box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+        border: 2px solid #0d6efd;
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
     }
 
     .variation-select option.variation-option-disabled {
@@ -674,25 +712,6 @@
         }
     }
     
-    /* Scrollbar customizada para miniaturas */
-    .thumbnails-wrapper::-webkit-scrollbar {
-        height: 4px;
-    }
-    
-    .thumbnails-wrapper::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 2px;
-    }
-    
-    .thumbnails-wrapper::-webkit-scrollbar-thumb {
-        background: #c1c1c1;
-        border-radius: 2px;
-    }
-    
-    .thumbnails-wrapper::-webkit-scrollbar-thumb:hover {
-        background: #a8a8a8;
-    }
-
     .variation-selector-group {
         display: flex;
         flex-direction: column;
@@ -720,12 +739,13 @@
     .variation-option {
         border: 1px solid #d1d5db;
         border-radius: 0.75rem;
-        padding: 0.5rem 0.85rem;
-        min-width: 110px;
+        padding: 0.55rem 0.95rem;
+        min-width: 120px;
         cursor: pointer;
         transition: all 0.15s ease;
         background: #fff;
         position: relative;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
     }
 
     .variation-option input {
@@ -765,8 +785,8 @@
 
     .variation-option.active {
         border-color: #0d6efd;
-        background: rgba(13, 110, 253, 0.08);
-        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+        background: rgba(37, 99, 235, 0.08);
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.16);
     }
 
     .variation-option.disabled {
@@ -780,6 +800,78 @@
         .variation-option {
             min-width: calc(50% - 0.75rem);
         }
+    }
+
+    .product-meta-list {
+        background: #f8fafc;
+        border-radius: 14px;
+        padding: 1.25rem;
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .action-buttons .btn {
+        padding: 0.9rem 1.2rem;
+        font-weight: 600;
+        border-radius: 12px;
+    }
+
+    .summary-badges {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+    }
+
+    .summary-badges .badge-tile {
+        background: #f8fafc;
+        border-radius: 12px;
+        padding: 0.75rem 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        font-size: 0.95rem;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .product-variations {
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 16px;
+        padding: 1.5rem;
+        background: rgba(248, 250, 252, 0.9);
+    }
+
+    .price-section .h3 {
+        font-size: 2.4rem;
+        font-weight: 700;
+        color: #2563eb;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .price-card {
+        background: linear-gradient(145deg, rgba(37, 99, 235, 0.05), rgba(96, 165, 250, 0.08));
+        border-radius: 16px;
+        padding: 1.5rem;
+        border: 1px solid rgba(37, 99, 235, 0.15);
+        margin-bottom: 1.5rem;
+        box-shadow: 0 18px 45px rgba(37, 99, 235, 0.12);
+    }
+
+    .stock-line {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-weight: 600;
+        color: #0f766e;
+        font-size: 0.95rem;
+    }
+
+    .stock-line span.badge {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.75rem;
+        border-radius: 999px;
     }
 </style>
 @endsection
@@ -907,13 +999,12 @@
         wrapper.innerHTML = productImages.map((image, index) => {
             const safeImage = image.replace(/'/g, "\\'");
             return `
-                <div class="thumbnail-item flex-shrink-0">
+                <div class="thumbnail-item">
                     <img src="${image}" 
                          alt="{{ $product->name }} - Imagem ${index + 1 }}"
                          class="thumbnail-img rounded border ${index === 0 ? 'active' : ''}"
-                         style="width: 80px; height: 80px; object-fit: contain; cursor: pointer; background-color: #f8f9fa;"
                          onclick="setMainImage('${safeImage}', ${index + 1})"
-                         onmouseover="this.style.transform='scale(1.1)'"
+                         onmouseover="this.style.transform='scale(1.05)'"
                          onmouseout="this.style.transform='scale(1)'"
                          onerror="this.src='${fallbackImage}'">
                 </div>
@@ -1211,14 +1302,14 @@
                     const stockBadge = document.getElementById('variation-stock-badge');
                     if (stockDisplay && stockBadge) {
                         if (data.variation.in_stock && data.variation.stock_quantity > 0) {
-                            stockBadge.className = 'badge bg-success fs-6';
+                            stockBadge.className = 'badge bg-success';
                             stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
                             stockDisplay.style.display = 'block';
                             setAddToCartDisabled(false);
                         } else {
-                            stockBadge.className = 'badge bg-danger fs-6';
+                            stockBadge.className = 'badge bg-danger';
                             stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-                        stockDisplay.style.display = 'block';
+                            stockDisplay.style.display = 'block';
                             setAddToCartDisabled(true);
                             if (unavailableMessage) {
                                 unavailableMessage.style.display = 'flex';
