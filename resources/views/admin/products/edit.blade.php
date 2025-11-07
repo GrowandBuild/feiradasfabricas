@@ -498,6 +498,8 @@
 document.addEventListener('DOMContentLoaded', function() {
     console.log('Script de imagens e preços carregado');
     
+    const productId = {{ $product->id }};
+    
     // ========== FUNCIONALIDADE DE CÁLCULO DE PREÇOS EM TEMPO REAL ==========
     
     // Elementos dos campos de preço
@@ -505,72 +507,152 @@ document.addEventListener('DOMContentLoaded', function() {
     const b2bPriceInput = document.getElementById('b2b_price');
     const costPriceInput = document.getElementById('cost_price');
     
-    // Função para calcular preço baseado em markup
-    function calculatePriceFromMarkup(costPrice, markupPercent) {
-        return costPrice * (1 + markupPercent / 100);
-    }
-    
-    // Função para calcular preço B2B (10% desconto padrão)
-    function calculateB2BPrice(price) {
-        return price * 0.9;
-    }
-    
-    // Função para calcular markup baseado no preço de custo e venda
-    function calculateMarkup(costPrice, salePrice) {
-        if (costPrice > 0) {
-            return ((salePrice - costPrice) / costPrice) * 100;
+    function normalizePrice(value) {
+        if (!value && value !== 0) {
+            return null;
         }
-        return 0;
+
+        let cleanValue = value.toString().trim();
+        cleanValue = cleanValue.replace(/[^0-9,.-]/g, '');
+        cleanValue = cleanValue.replace('\u00a0', '').replace('\u00a0', '');
+
+        if (cleanValue === '' || cleanValue === ',') {
+            return null;
+        }
+
+        const commaCount = (cleanValue.match(/,/g) || []).length;
+        const dotCount = (cleanValue.match(/\./g) || []).length;
+
+        if (commaCount > 1 || dotCount > 1) {
+            cleanValue = cleanValue.replace(/\./g, '');
+            cleanValue = cleanValue.replace(/,/g, '.');
+        } else if (commaCount === 1 && dotCount === 0) {
+            cleanValue = cleanValue.replace(/,/g, '.');
+        } else if (dotCount === 1 && commaCount === 0) {
+            cleanValue = cleanValue.replace(/\./g, '.');
+        } else if (commaCount === 1 && dotCount === 1) {
+            const commaIndex = cleanValue.indexOf(',');
+            const dotIndex = cleanValue.indexOf('.');
+            if (commaIndex > dotIndex) {
+                cleanValue = cleanValue.replace(/\./g, '');
+                cleanValue = cleanValue.replace(/,/g, '.');
+            } else {
+                cleanValue = cleanValue.replace(/,/g, '');
+            }
+        } else {
+            cleanValue = cleanValue.replace(/\./g, '');
+        }
+
+        const parsed = parseFloat(cleanValue);
+        return isNaN(parsed) ? null : parsed;
     }
     
     // Função para formatar valores monetários
     function formatCurrency(value) {
-        return parseFloat(value).toFixed(2);
+        if (value === null || value === undefined || value === '') {
+            return '';
+        }
+        const numberValue = typeof value === 'number' ? value : parseFloat(value);
+        if (isNaN(numberValue)) {
+            return '';
+        }
+        return numberValue.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
     
-    // Função para atualizar preço B2B automaticamente
+    // Função para atualizar preço baseado no custo
+    function updateCostPriceFromServer(costPrice) {
+        if (!productId || !costPrice || costPrice <= 0) {
+            return;
+        }
+
+        const loaderClass = 'is-loading';
+        costPriceInput.classList.add(loaderClass);
+        costPriceInput.disabled = true;
+
+        fetch(`/admin/products/${productId}/update-cost-price`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                cost_price: costPrice
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.product) {
+                const { cost_price, b2c_price, b2b_price } = data.product;
+                if (costPriceInput) {
+                    costPriceInput.value = cost_price ?? formatCurrency(costPrice);
+                }
+                if (priceInput && b2c_price) {
+                    priceInput.value = b2c_price;
+                }
+                if (b2bPriceInput && b2b_price) {
+                    b2bPriceInput.value = b2b_price;
+                }
+                costPriceInput.classList.add('border-success');
+                setTimeout(() => costPriceInput.classList.remove('border-success'), 2000);
+            } else {
+                throw new Error(data.message || 'Erro ao atualizar preços');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao atualizar custo:', error);
+            alert('Erro ao atualizar preços com base no custo. Tente novamente.');
+        })
+        .finally(() => {
+            costPriceInput.disabled = false;
+            costPriceInput.classList.remove(loaderClass);
+        });
+    }
+    
+    // Função para atualizar preço B2B automaticamente local
     function updateB2BPrice() {
         if (priceInput && b2bPriceInput && priceInput.value) {
-            const newB2BPrice = calculateB2BPrice(parseFloat(priceInput.value));
-            b2bPriceInput.value = formatCurrency(newB2BPrice);
+            const normalized = normalizePrice(priceInput.value);
+            if (normalized !== null) {
+                const newB2BPrice = normalized * 0.9;
+                b2bPriceInput.value = formatCurrency(newB2BPrice);
+            }
         }
     }
     
-    // Função para calcular preço baseado no custo e markup
+    // Função para calcular preço baseado no custo e markup padrão
     function calculatePriceFromCost() {
-        if (costPriceInput && priceInput && costPriceInput.value) {
-            const costPrice = parseFloat(costPriceInput.value);
-            const markupPercent = 30; // Markup padrão de 30%
-            const newPrice = calculatePriceFromMarkup(costPrice, markupPercent);
-            priceInput.value = formatCurrency(newPrice);
-            updateB2BPrice();
+        const normalizedCost = normalizePrice(costPriceInput.value);
+        if (normalizedCost !== null) {
+            updateCostPriceFromServer(normalizedCost);
         }
     }
     
-    // Event listeners para cálculos automáticos
     if (priceInput) {
-        priceInput.addEventListener('input', updateB2BPrice);
         priceInput.addEventListener('blur', function() {
-            this.value = formatCurrency(this.value);
+            this.value = formatCurrency(normalizePrice(this.value));
             updateB2BPrice();
         });
     }
     
     if (costPriceInput) {
-        costPriceInput.addEventListener('input', function() {
-            // Só calcula automaticamente se o campo de preço estiver vazio
-            if (!priceInput.value || priceInput.value == 0) {
-                calculatePriceFromCost();
-            }
-        });
         costPriceInput.addEventListener('blur', function() {
-            this.value = formatCurrency(this.value);
+            const normalizedCost = normalizePrice(this.value);
+            if (normalizedCost !== null && normalizedCost > 0) {
+                this.value = formatCurrency(normalizedCost);
+                updateCostPriceFromServer(normalizedCost);
+            } else {
+                this.value = '';
+            }
         });
     }
     
     if (b2bPriceInput) {
         b2bPriceInput.addEventListener('blur', function() {
-            this.value = formatCurrency(this.value);
+            this.value = formatCurrency(normalizePrice(this.value));
         });
     }
     
@@ -619,7 +701,7 @@ document.addEventListener('DOMContentLoaded', function() {
             selectedFiles.forEach((file, index) => {
                 console.log(`📷 Processando arquivo ${index + 1}:`, file.name);
                 
-                if (file.type.startsWith('image/')) {
+                if (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.avif')) {
                     const reader = new FileReader();
                     
                     reader.onload = function(e) {
