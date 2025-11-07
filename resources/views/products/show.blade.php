@@ -52,6 +52,7 @@
                                      alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
                                      class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
                                      onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
+                                     onmouseenter="setMainImage('{{ $image }}', {{ $index + 1 }})"
                                      onmouseover="this.style.transform='scale(1.05)'"
                                      onmouseout="this.style.transform='scale(1)'"
                                      onerror="this.src='{{ asset('images/no-image.svg') }}'">
@@ -60,24 +61,24 @@
                     </div>
 
                     <div class="main-image-container">
-                        <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
-                            @if($product->is_unavailable)
-                                <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                    <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
+                        @if($product->is_unavailable)
+                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
                                      style="background: rgba(0,0,0,0.3); z-index: 10; border-radius: 12px;">
-                                    <span class="badge bg-warning text-dark fs-5 px-4 py-3">
-                                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                        Indisponível no momento
-                                    </span>
-                                </div>
-                            @endif
+                                <span class="badge bg-warning text-dark fs-5 px-4 py-3">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    Indisponível no momento
+                                </span>
+                            </div>
+                        @endif
 
-                            <img id="main-product-image" 
-                                 src="{{ $product->first_image }}" 
-                                 alt="{{ $product->name }}" 
-                                 class="img-fluid rounded shadow-sm main-image"
+                        <img id="main-product-image" 
+                             src="{{ $product->first_image }}" 
+                             alt="{{ $product->name }}" 
+                             class="img-fluid rounded shadow-sm main-image"
                                  style="max-height: 520px; object-fit: contain; width: 100%; cursor: pointer; background-color: #f8f9fa;"
-                                 onerror="this.src='{{ asset('images/no-image.svg') }}'">
-
+                             onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                        
                             <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
                                 <span class="badge bg-dark bg-opacity-75">
                                     <i class="fas fa-images me-1"></i>
@@ -93,9 +94,9 @@
                                     id="next-image" onclick="changeImage(1)">
                                 <i class="fas fa-chevron-right"></i>
                             </button>
-                        </div>
                     </div>
                 </div>
+                                </div>
             </div>
         </div>
 
@@ -232,14 +233,14 @@
                         <span id="product-price-display" class="h3 text-primary">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
                     </div>
 
-                    <!-- SKU da Variação Selecionada -->
-                    <div id="variation-sku-display" class="mb-2" style="display: none;">
-                        <p class="text-muted mb-0">
-                            <strong>SKU:</strong> <span id="selected-variation-sku"></span>
-                        </p>
-                    </div>
+                        <!-- SKU da Variação Selecionada -->
+                        <div id="variation-sku-display" class="mb-2" style="display: none;">
+                            <p class="text-muted mb-0">
+                                <strong>SKU:</strong> <span id="selected-variation-sku"></span>
+                            </p>
+                        </div>
 
-                    <!-- Status de Estoque da Variação -->
+                        <!-- Status de Estoque da Variação -->
                     <div id="variation-stock-display" class="mb-2" style="display: none;">
                         <div class="stock-line">
                             <span class="badge bg-success" id="variation-stock-badge"></span>
@@ -248,18 +249,18 @@
 
                     @unless($product->hasVariations())
                         <div class="stock-line">
-                            @if($product->stock_quantity > 0)
+                        @if($product->stock_quantity > 0)
                                 <span class="badge bg-success">
-                                    <i class="fas fa-check-circle me-1"></i>
-                                    Em estoque ({{ $product->stock_quantity }} unidades)
-                                </span>
-                            @else
+                                <i class="fas fa-check-circle me-1"></i>
+                                Em estoque ({{ $product->stock_quantity }} unidades)
+                            </span>
+                        @else
                                 <span class="badge bg-danger">
-                                    <i class="fas fa-times-circle me-1"></i>
-                                    Fora de estoque
-                                </span>
-                            @endif
-                        </div>
+                                <i class="fas fa-times-circle me-1"></i>
+                                Fora de estoque
+                            </span>
+                        @endif
+                    </div>
                     @endunless
                 </div>
 
@@ -389,7 +390,7 @@
         background: #cbd5f5;
         border-radius: 999px;
     }
-
+    
     .main-image-container {
         border-radius: 12px;
         background: linear-gradient(135deg, #f8fafc, #eef2ff);
@@ -476,7 +477,7 @@
         border-radius: 12px;
         transition: transform 0.2s ease, border 0.2s ease, box-shadow 0.2s ease;
     }
-
+    
     .thumbnail-img.active {
         border: 2px solid #0d6efd;
         box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
@@ -1004,6 +1005,7 @@
                          alt="{{ $product->name }} - Imagem ${index + 1 }}"
                          class="thumbnail-img rounded border ${index === 0 ? 'active' : ''}"
                          onclick="setMainImage('${safeImage}', ${index + 1})"
+                         onmouseenter="setMainImage('${safeImage}', ${index + 1})"
                          onmouseover="this.style.transform='scale(1.05)'"
                          onmouseout="this.style.transform='scale(1)'"
                          onerror="this.src='${fallbackImage}'">
@@ -1309,7 +1311,7 @@
                         } else {
                             stockBadge.className = 'badge bg-danger';
                             stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-                            stockDisplay.style.display = 'block';
+                        stockDisplay.style.display = 'block';
                             setAddToCartDisabled(true);
                             if (unavailableMessage) {
                                 unavailableMessage.style.display = 'flex';
