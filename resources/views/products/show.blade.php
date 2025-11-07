@@ -470,6 +470,26 @@
         gap: 0.65rem;
     }
 
+    @media (max-width: 992px) {
+        .thumbnails-area {
+            flex-direction: row;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.5rem 0;
+            padding-right: 0;
+            max-height: none;
+            height: auto;
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .thumbnail-item {
+            flex: 0 0 auto;
+            width: 68px;
+            min-height: auto;
+        }
+    }
+
     .summary-area {
         display: flex;
         flex-direction: column;
