@@ -32,6 +32,7 @@ class Product extends Model
         'model',
         'supplier',
         'images',
+        'variation_images',
         'specifications',
         'weight',
         'length',
@@ -57,6 +58,7 @@ class Product extends Model
         'width' => 'decimal:2',
         'height' => 'decimal:2',
         'images' => 'array',
+        'variation_images' => 'array',
         'specifications' => 'array',
     ];
 
@@ -213,6 +215,38 @@ class Product extends Model
             }, $images);
         }
         return [];
+    }
+
+    /**
+     * Obtém o mapa de imagens por cor (URLs completas)
+     */
+    public function getVariationImagesUrlsAttribute(): array
+    {
+        if (!is_array($this->variation_images) || empty($this->variation_images)) {
+            return [];
+        }
+
+        $map = [];
+
+        foreach ($this->variation_images as $color => $images) {
+            if (!is_array($images)) {
+                continue;
+            }
+
+            $map[$color] = array_values(array_map(function ($image) {
+                if (strpos($image, 'http') === 0 || strpos($image, 'https') === 0) {
+                    return $image;
+                }
+
+                try {
+                    return Storage::disk('public')->url($image);
+                } catch (\Exception $e) {
+                    return asset('storage/' . $image);
+                }
+            }, array_filter($images))); // remove valores vazios
+        }
+
+        return $map;
     }
 
     /**

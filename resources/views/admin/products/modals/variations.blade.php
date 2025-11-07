@@ -129,9 +129,44 @@
     </div>
 </div>
 
+<!-- Modal Gerenciamento de Imagens por Cor -->
+<div class="modal fade" id="colorImagesModal" tabindex="-1" aria-labelledby="colorImagesModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="colorImagesModalLabel">
+                    <i class="bi bi-image me-2"></i>Imagens por Cor
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small mb-3">
+                    Selecione quais imagens do produto devem aparecer quando esta cor for escolhida na loja.
+                </p>
+                <div id="colorImagesEmptyState" class="d-none"></div>
+                <div id="colorImagesGrid" class="row"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle me-1"></i>Fechar
+                </button>
+                <button type="button" class="btn btn-primary" id="saveColorImagesBtn" onclick="saveColorImages()">
+                    <i class="bi bi-check-circle me-1"></i>Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 // Sistema de Gerenciamento de Variações
+let variationProductImages = [];
+let variationProductImagesUrls = [];
+let variationColorImagesMap = {};
+let variationColorImagesUrlsMap = {};
+let currentColorBeingEdited = null;
+
 document.addEventListener('DOMContentLoaded', function() {
     const variationsModal = document.getElementById('variationsModal');
     if (variationsModal) {
@@ -183,6 +218,10 @@ function loadVariations(productId) {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
+                variationProductImages = data.product_images || [];
+                variationProductImagesUrls = data.product_images_urls || [];
+                variationColorImagesMap = data.color_images || {};
+                variationColorImagesUrlsMap = data.color_images_urls || {};
                 renderVariations(data);
                 renderStock(data);
             } else {
@@ -250,9 +289,17 @@ function renderStock(data) {
 function createColorItem(color, productId) {
     const div = document.createElement('div');
     div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    const safeColorName = color.name.replace(/'/g, "\\'");
+    const hasImages = Array.isArray(variationColorImagesMap[color.name]) && variationColorImagesMap[color.name].length > 0;
     div.innerHTML = `
         <span class="flex-grow-1">${color.name}</span>
-        <span class="badge bg-${color.enabled ? 'success' : 'secondary'} me-2">${color.count} variações</span>
+        <div class="d-flex align-items-center gap-2">
+            ${hasImages ? '<span class="badge bg-info"><i class="bi bi-images"></i></span>' : ''}
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="openColorImagesModal('${safeColorName}')">
+                <i class="bi bi-image"></i>
+            </button>
+            <span class="badge bg-${color.enabled ? 'success' : 'secondary'}">${color.count} variações</span>
+        </div>
         <div class="form-check form-switch">
             <input class="form-check-input" type="checkbox" 
                    ${color.enabled ? 'checked' : ''} 
@@ -376,6 +423,148 @@ function toggleVariationType(productId, type, value, enabled) {
         // Reverter o toggle se falhou
         toggle.checked = !enabled;
         showVariationMessage('error', 'Erro ao atualizar variação. Verifique sua conexão.');
+    });
+}
+
+function openColorImagesModal(colorName) {
+    const productId = document.getElementById('variationsProductId').value;
+    if (!productId || !colorName) {
+        showVariationMessage('error', 'Erro: informações insuficientes para carregar imagens.');
+        return;
+    }
+
+    currentColorBeingEdited = colorName;
+
+    const modalTitle = document.getElementById('colorImagesModalLabel');
+    if (modalTitle) {
+        modalTitle.innerHTML = `<i class="bi bi-image me-2"></i>Imagens - ${colorName}`;
+    }
+
+    const grid = document.getElementById('colorImagesGrid');
+    const emptyState = document.getElementById('colorImagesEmptyState');
+    const saveBtn = document.getElementById('saveColorImagesBtn');
+
+    if (!variationProductImages || variationProductImages.length === 0) {
+        if (grid) grid.innerHTML = '';
+        if (grid) grid.classList.add('d-none');
+        if (emptyState) {
+            emptyState.classList.remove('d-none');
+            emptyState.innerHTML = '<div class="alert alert-info mb-0"><i class="bi bi-info-circle me-1"></i>Adicione imagens ao produto para vinculá-las às cores.</div>';
+        }
+        if (saveBtn) saveBtn.disabled = true;
+    } else {
+        if (grid) {
+            grid.classList.remove('d-none');
+            const selectedForColor = variationColorImagesMap[colorName] || [];
+            const selectedLookup = Object.fromEntries(selectedForColor.map(value => [value, true]));
+
+            grid.innerHTML = variationProductImages.map((imagePath, index) => {
+                const imageUrl = variationProductImagesUrls[index] || '';
+                const isChecked = !!selectedLookup[imagePath];
+                return `
+                    <div class="col-6 col-md-4 col-lg-3 mb-3">
+                        <div class="card h-100 ${isChecked ? 'border-primary shadow-sm' : ''}" data-image-card>
+                            <div class="position-relative">
+                                <img src="${imageUrl}" class="card-img-top" alt="Imagem da variação" style="height: 120px; object-fit: cover;">
+                                <div class="form-check position-absolute top-0 end-0 m-2 bg-white rounded-pill px-2">
+                                    <input class="form-check-input color-image-checkbox" type="checkbox" value="${imagePath}" ${isChecked ? 'checked' : ''}>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            grid.querySelectorAll('.color-image-checkbox').forEach(checkbox => {
+                const card = checkbox.closest('[data-image-card]');
+                if (!card) {
+                    return;
+                }
+
+                checkbox.addEventListener('change', function() {
+                    if (this.checked) {
+                        card.classList.add('border-primary', 'shadow-sm');
+                    } else {
+                        card.classList.remove('border-primary', 'shadow-sm');
+                    }
+                });
+            });
+        }
+
+        if (emptyState) emptyState.classList.add('d-none');
+        if (saveBtn) saveBtn.disabled = false;
+    }
+
+    const modalElement = document.getElementById('colorImagesModal');
+    if (modalElement) {
+        const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+        modal.show();
+    }
+}
+
+function saveColorImages() {
+    const productId = document.getElementById('variationsProductId').value;
+    if (!productId || !currentColorBeingEdited) {
+        showVariationMessage('error', 'Erro: nenhuma cor selecionada.');
+        return;
+    }
+
+    const modalElement = document.getElementById('colorImagesModal');
+    const saveBtn = document.getElementById('saveColorImagesBtn');
+    const checkboxes = modalElement ? modalElement.querySelectorAll('.color-image-checkbox') : [];
+    const selectedImages = Array.from(checkboxes).filter(cb => cb.checked).map(cb => cb.value);
+
+    if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Salvando';
+    }
+
+    fetch(`/admin/products/${productId}/variations/color-images`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+        },
+        body: JSON.stringify({
+            color: currentColorBeingEdited,
+            images: selectedImages
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            variationColorImagesMap = data.color_images || {};
+            variationColorImagesUrlsMap = data.color_images_urls || {};
+
+            showVariationMessage('success', data.message || 'Imagens atualizadas com sucesso!');
+
+            // Recarregar lista de variações para exibir indicadores atualizados
+            loadVariations(productId);
+
+            setTimeout(() => {
+                if (modalElement) {
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    modal.hide();
+                }
+            }, 300);
+        } else {
+            showVariationMessage('error', data.message || 'Erro ao salvar imagens da cor.');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showVariationMessage('error', 'Erro ao salvar imagens da cor.');
+    })
+    .finally(() => {
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.innerHTML = '<i class="bi bi-check-circle me-1"></i>Salvar';
+        }
     });
 }
 

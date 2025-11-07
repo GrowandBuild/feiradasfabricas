@@ -200,6 +200,28 @@ class ProductController extends Controller
         
         $data['images'] = $imagePaths;
 
+        // Manter apenas imagens válidas nas variações por cor
+        if (is_array($product->variation_images) && !empty($product->variation_images)) {
+            $validImages = array_flip($imagePaths);
+            $filteredVariationImages = [];
+
+            foreach ($product->variation_images as $color => $images) {
+                if (!is_array($images)) {
+                    continue;
+                }
+
+                $filtered = array_values(array_filter($images, function ($image) use ($validImages) {
+                    return isset($validImages[$image]);
+                }));
+
+                if (!empty($filtered)) {
+                    $filteredVariationImages[$color] = $filtered;
+                }
+            }
+
+            $data['variation_images'] = $filteredVariationImages;
+        }
+
         // Log de alteração de estoque se necessário
         $oldStock = $product->stock_quantity;
         $newStock = $request->stock_quantity;
@@ -667,7 +689,66 @@ class ProductController extends Controller
             'colors' => $colors,
             'rams' => $rams,
             'storages' => $storages,
-            'variations' => $variationsList
+            'variations' => $variationsList,
+            'product_images' => $product->images ?? [],
+            'product_images_urls' => $product->all_images,
+            'color_images' => $product->variation_images ?? [],
+            'color_images_urls' => $product->variation_images_urls,
+        ]);
+    }
+
+    /**
+     * Atualiza as imagens associadas a uma cor específica
+     */
+    public function updateColorImages(Request $request, Product $product)
+    {
+        $request->validate([
+            'color' => 'required|string|max:255',
+            'images' => 'nullable|array',
+            'images.*' => 'string',
+        ]);
+
+        $color = trim($request->color);
+        $selectedImages = array_values(array_filter($request->images ?? []));
+
+        if ($color === '') {
+            return response()->json([
+                'success' => false,
+                'message' => 'Cor inválida.'
+            ], 422);
+        }
+
+        $availableImages = $product->images ?? [];
+
+        // Garantir que as imagens selecionadas existem no produto
+        $availableLookup = array_flip($availableImages);
+
+        foreach ($selectedImages as $image) {
+            if (!isset($availableLookup[$image])) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Alguma das imagens selecionadas não pertence ao produto.'
+                ], 422);
+            }
+        }
+
+        $variationImages = $product->variation_images ?? [];
+
+        if (empty($selectedImages)) {
+            unset($variationImages[$color]);
+        } else {
+            $variationImages[$color] = $selectedImages;
+        }
+
+        $product->update([
+            'variation_images' => $variationImages
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Imagens da cor atualizadas com sucesso!',
+            'color_images' => $variationImages,
+            'color_images_urls' => $product->fresh()->variation_images_urls,
         ]);
     }
 
@@ -939,9 +1020,26 @@ class ProductController extends Controller
                     }
                     
                     $extractedPath = $this->extractImagePath($image);
-                    if ($extractedPath && !in_array($extractedPath, $imagePaths)) {
-                        $imagePaths[] = $extractedPath;
-                        \Log::info('Imagem adicional mantida', ['path' => $extractedPath]);
+                    if ($extractedPath) {
+                        // Normalizar caminho para comparação (remover barras iniciais)
+                        $normalizedPath = ltrim($extractedPath, '/');
+                        
+                        // Verificar se já existe no array (comparando caminhos normalizados)
+                        $exists = false;
+                        foreach ($imagePaths as $existingPath) {
+                            $normalizedExisting = ltrim($existingPath, '/');
+                            if (strcasecmp($normalizedPath, $normalizedExisting) === 0) {
+                                $exists = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!$exists) {
+                            $imagePaths[] = $extractedPath;
+                            \Log::info('Imagem adicional mantida', ['path' => $extractedPath]);
+                        } else {
+                            \Log::info('Imagem adicional já existe, ignorando duplicata', ['path' => $extractedPath]);
+                        }
                     }
                 }
             }
@@ -1051,6 +1149,11 @@ class ProductController extends Controller
             return null;
         }
         
+        // Se já é um caminho relativo simples (sem http e sem / inicial), retornar direto
+        if (strpos($image, 'http') !== 0 && strpos($image, '/') !== 0) {
+            return $image;
+        }
+        
         // Se é URL absoluta, extrair o caminho
         if (strpos($image, 'http') === 0) {
             $parsed = parse_url($image);
@@ -1061,9 +1164,17 @@ class ProductController extends Controller
                 $path = substr($path, 9); // Remove '/storage/'
             } elseif (strpos($path, 'storage/') === 0) {
                 $path = substr($path, 8); // Remove 'storage/'
+            } elseif (strpos($path, '/') === 0) {
+                // Se começa com / mas não tem storage, remover a barra inicial
+                $path = substr($path, 1);
             }
             
             return !empty($path) ? $path : null;
+        }
+        
+        // Se começa com /, remover
+        if (strpos($image, '/') === 0) {
+            return substr($image, 1);
         }
         
         // Já é um caminho relativo

@@ -270,8 +270,25 @@ function renderExistingImages(images, featuredImage) {
     // Comparar usando caminhos limpos para evitar problemas com URLs diferentes
     const featuredPath = featuredImage ? extractImagePath(featuredImage) : null;
     const additionalImages = images.filter(img => {
+        if (!img) return false;
         const imgPath = extractImagePath(img);
-        return imgPath !== featuredPath;
+        const featuredPathClean = featuredPath ? extractImagePath(featuredPath) : null;
+        
+        // Comparar caminhos normalizados (sem barras iniciais, lowercase)
+        const normalizePath = (path) => {
+            if (!path) return '';
+            return path.replace(/^\/+/, '').toLowerCase();
+        };
+        
+        return normalizePath(imgPath) !== normalizePath(featuredPathClean);
+    });
+    
+    console.log('🔍 Filtragem de imagens:', {
+        totalImages: images.length,
+        featuredImage: featuredImage,
+        featuredPath: featuredPath,
+        additionalImagesCount: additionalImages.length,
+        additionalImages: additionalImages
     });
     
     if (additionalImages.length > 0) {
@@ -731,19 +748,44 @@ function showImageMessage(type, message) {
 function extractImagePath(imageUrl) {
     if (!imageUrl) return null;
     
+    // Se já é um caminho relativo (sem http), retornar direto
+    if (!imageUrl.startsWith('http') && !imageUrl.startsWith('/')) {
+        return imageUrl;
+    }
+    
     // Se é URL absoluta, extrair o caminho
     if (imageUrl.startsWith('http')) {
-        const parsed = new URL(imageUrl);
-        let path = parsed.pathname;
-        
-        // Remover /storage/ se presente
-        if (path.startsWith('/storage/')) {
-            path = path.substring(9); // Remove '/storage/'
-        } else if (path.startsWith('storage/')) {
-            path = path.substring(8); // Remove 'storage/'
+        try {
+            const parsed = new URL(imageUrl);
+            let path = parsed.pathname;
+            
+            // Remover /storage/ se presente
+            if (path.startsWith('/storage/')) {
+                path = path.substring(9); // Remove '/storage/'
+            } else if (path.startsWith('storage/')) {
+                path = path.substring(8); // Remove 'storage/'
+            } else if (path.startsWith('/')) {
+                // Se começa com / mas não tem storage, remover a barra inicial
+                path = path.substring(1);
+            }
+            
+            return path;
+        } catch (e) {
+            console.warn('Erro ao parsear URL:', imageUrl, e);
+            // Se falhar, tentar extrair manualmente
+            let path = imageUrl;
+            if (path.includes('/storage/')) {
+                path = path.split('/storage/')[1];
+            } else if (path.includes('storage/')) {
+                path = path.split('storage/')[1];
+            }
+            return path;
         }
-        
-        return path;
+    }
+    
+    // Se começa com /, remover
+    if (imageUrl.startsWith('/')) {
+        return imageUrl.substring(1);
     }
     
     return imageUrl;

@@ -107,19 +107,19 @@
         <h6 class="mb-0">Filtros e Busca</h6>
     </div>
     <div class="card-body">
-        <form method="GET" class="row g-3">
+        <form method="GET" id="filterForm" class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">
                     <i class="bi bi-search me-1"></i>Buscar
                 </label>
-                <input type="text" class="form-control" name="search" value="{{ request('search') }}" 
+                <input type="text" class="form-control filter-input" name="search" value="{{ request('search') }}" 
                        placeholder="Nome, SKU ou descrição">
             </div>
             <div class="col-md-2">
                 <label class="form-label">
                     <i class="bi bi-award me-1"></i>Marca
                 </label>
-                <select name="brand" class="form-select">
+                <select name="brand" class="form-select filter-select">
                     <option value="">Todas</option>
                     @php
                         $brands = \App\Models\Product::distinct()->pluck('brand')->filter()->sort();
@@ -135,7 +135,7 @@
                 <label class="form-label">
                     <i class="bi bi-tags me-1"></i>Categoria
                 </label>
-                <select name="category" class="form-select">
+                <select name="category" class="form-select filter-select">
                     <option value="">Todas</option>
                     @foreach($categories as $category)
                         <option value="{{ $category->id }}" {{ request('category') == $category->id ? 'selected' : '' }}>
@@ -148,7 +148,7 @@
                 <label class="form-label">
                     <i class="bi bi-toggle-on me-1"></i>Status
                 </label>
-                <select name="status" class="form-select">
+                <select name="status" class="form-select filter-select">
                     <option value="">Todos</option>
                     <option value="active" {{ request('status') === 'active' ? 'selected' : '' }}>Ativo</option>
                     <option value="inactive" {{ request('status') === 'inactive' ? 'selected' : '' }}>Inativo</option>
@@ -158,7 +158,7 @@
                 <label class="form-label">
                     <i class="bi bi-x-circle me-1"></i>Disponibilidade
                 </label>
-                <select name="availability" class="form-select">
+                <select name="availability" class="form-select filter-select">
                     <option value="">Todas</option>
                     <option value="available" {{ request('availability') === 'available' ? 'selected' : '' }}>Disponível</option>
                     <option value="unavailable" {{ request('availability') === 'unavailable' ? 'selected' : '' }}>Indisponível</option>
@@ -168,7 +168,7 @@
                 <label class="form-label">
                     <i class="bi bi-boxes me-1"></i>Estoque
                 </label>
-                <select name="stock_status" class="form-select">
+                <select name="stock_status" class="form-select filter-select">
                     <option value="">Todos</option>
                     <option value="low" {{ request('stock_status') === 'low' ? 'selected' : '' }}>Estoque Baixo</option>
                     <option value="out" {{ request('stock_status') === 'out' ? 'selected' : '' }}>Sem Estoque</option>
@@ -178,7 +178,7 @@
                 <label class="form-label">
                     <i class="bi bi-truck me-1"></i>Fornecedor
                 </label>
-                <select name="supplier" class="form-select">
+                <select name="supplier" class="form-select filter-select">
                     <option value="">Todos</option>
                     @php
                         $suppliers = \App\Models\Product::distinct()->whereNotNull('supplier')->pluck('supplier')->filter()->sort();
@@ -549,6 +549,9 @@
     function init() {
         console.log('🚀 Inicializando seleção de produtos...');
         
+        // Inicializar persistência de filtros
+        initFilterPersistence();
+        
         const selectAllCheckbox = document.getElementById('selectAll');
         const bulkActionsBar = document.getElementById('bulkActionsBar');
         const selectedCount = document.getElementById('selectedCount');
@@ -659,6 +662,79 @@
         // Inicializar
         updateBulkActionsBar();
         console.log('✅ Sistema de seleção inicializado com sucesso!');
+    }
+    
+    // Função para persistir filtros na URL
+    function initFilterPersistence() {
+        const filterForm = document.getElementById('filterForm');
+        if (!filterForm) return;
+        
+        // Função para atualizar URL e submeter formulário
+        function updateURL() {
+            const formData = new FormData(filterForm);
+            const params = new URLSearchParams();
+            
+            // Adicionar todos os parâmetros do formulário
+            for (const [key, value] of formData.entries()) {
+                if (value && value.trim() !== '') {
+                    params.set(key, value);
+                }
+            }
+            
+            // Atualizar URL sem recarregar a página
+            const newURL = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            window.history.pushState({}, '', newURL);
+            
+            // Submeter formulário para aplicar filtros
+            filterForm.submit();
+        }
+        
+        // Restaurar valores dos filtros da URL ao carregar a página
+        const urlParams = new URLSearchParams(window.location.search);
+        
+        // Restaurar valores dos selects
+        filterForm.querySelectorAll('.filter-select').forEach(select => {
+            const paramValue = urlParams.get(select.name);
+            if (paramValue !== null) {
+                select.value = paramValue;
+            }
+        });
+        
+        // Restaurar valor do input de busca
+        const searchInput = filterForm.querySelector('.filter-input[name="search"]');
+        if (searchInput) {
+            const searchValue = urlParams.get('search');
+            if (searchValue !== null) {
+                searchInput.value = searchValue;
+            }
+        }
+        
+        // Auto-submit quando filtros mudarem (com debounce para o input de busca)
+        let searchTimeout;
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    updateURL();
+                }, 800); // Aguardar 800ms após parar de digitar
+            });
+            
+            // Permitir Enter no input de busca para submeter imediatamente
+            searchInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    clearTimeout(searchTimeout);
+                    updateURL();
+                }
+            });
+        }
+        
+        // Auto-submit quando selects mudarem
+        filterForm.querySelectorAll('.filter-select').forEach(select => {
+            select.addEventListener('change', function() {
+                updateURL();
+            });
+        });
     }
 })();
 

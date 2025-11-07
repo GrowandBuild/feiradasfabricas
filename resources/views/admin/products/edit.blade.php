@@ -10,9 +10,19 @@
 <div class="row">
     <div class="col-lg-8">
         <div class="card">
-            <div class="card-header d-flex align-items-center">
-                <i class="bi bi-pencil-square me-2" style="color: var(--accent-color);"></i>
-                <h5 class="card-title mb-0">Informações do Produto</h5>
+            <div class="card-header d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-pencil-square me-2" style="color: var(--accent-color);"></i>
+                    <h5 class="card-title mb-0">Informações do Produto</h5>
+                </div>
+                <button type="button"
+                        class="btn btn-outline-primary btn-sm"
+                        data-product-id="{{ $product->id }}"
+                        data-product-name="{{ $product->name }}"
+                        data-bs-toggle="modal"
+                        data-bs-target="#variationsModal">
+                    <i class="bi bi-list-ul me-1"></i> Gerenciar Variações
+                </button>
             </div>
             <div class="card-body">
                 <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
@@ -478,6 +488,10 @@
         </div>
     </div>
 </div>
+
+@push('modals')
+    @include('admin.products.modals.variations')
+@endpush
 
 <script>
 // Aguardar o DOM carregar

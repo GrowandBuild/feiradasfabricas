@@ -44,54 +44,42 @@
                              onerror="this.src='{{ asset('images/no-image.svg') }}'">
                         
                         <!-- Contador de imagens -->
-                        @if($product->hasMultipleImages())
-                            <div class="image-counter position-absolute top-0 end-0 m-2">
-                                <span class="badge bg-dark bg-opacity-75">
-                                    <i class="fas fa-images me-1"></i>
-                                    <span id="current-image">1</span>/{{ $product->getImageCount() }}
-                                </span>
-                            </div>
-                        @endif
+                        <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
+                            <span class="badge bg-dark bg-opacity-75">
+                                <i class="fas fa-images me-1"></i>
+                                <span id="current-image">1</span>/<span id="total-images">{{ max($product->getImageCount(), 1) }}</span>
+                            </span>
+                        </div>
 
                         <!-- Setas de navegação (se houver múltiplas imagens) -->
-                        @if($product->hasMultipleImages())
-                            <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 gallery-nav" 
-                                    id="prev-image" onclick="changeImage(-1)">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                            <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y me-2 gallery-nav" 
-                                    id="next-image" onclick="changeImage(1)">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                        @endif
+                        <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
+                                id="prev-image" onclick="changeImage(-1)">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y me-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
+                                id="next-image" onclick="changeImage(1)">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
                     </div>
                 </div>
 
                 <!-- Miniaturas -->
-                @if($product->hasMultipleImages())
-                    <div class="thumbnails-container">
-                        <div class="thumbnails-wrapper d-flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: thin;">
-                            @foreach($product->all_images as $index => $image)
-                                <div class="thumbnail-item flex-shrink-0">
-                                    <img src="{{ $image }}" 
-                                         alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
-                                         class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
-                                         style="width: 80px; height: 80px; object-fit: contain; cursor: pointer; background-color: #f8f9fa;"
-                                         onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
-                                         onmouseover="this.style.transform='scale(1.1)'"
-                                         onmouseout="this.style.transform='scale(1)'"
-                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                                </div>
-                            @endforeach
-                        </div>
+                <div class="thumbnails-container">
+                    <div class="thumbnails-wrapper d-flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: thin;" id="thumbnailsWrapper">
+                        @foreach($product->all_images as $index => $image)
+                            <div class="thumbnail-item flex-shrink-0">
+                                <img src="{{ $image }}" 
+                                     alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
+                                     class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
+                                     style="width: 80px; height: 80px; object-fit: contain; cursor: pointer; background-color: #f8f9fa;"
+                                     onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
+                                     onmouseover="this.style.transform='scale(1.1)'"
+                                     onmouseout="this.style.transform='scale(1)'"
+                                     onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                            </div>
+                        @endforeach
                     </div>
-                @else
-                    <!-- Placeholder quando não há múltiplas imagens -->
-                    <div class="bg-light rounded d-flex align-items-center justify-content-center" 
-                         style="height: 80px;">
-                        <i class="fas fa-image text-muted"></i>
-                    </div>
-                @endif
+                </div>
             </div>
         </div>
 
@@ -646,62 +634,55 @@
 <script>
     // Variáveis globais para a galeria
     let currentImageIndex = 0;
-    const productImages = @json($product->all_images);
-    const totalImages = productImages.length;
+    const baseProductImages = @json($product->all_images);
+    const variationColorImages = @json($product->variation_images_urls ?? []);
+    const fallbackImage = "{{ asset('images/no-image.svg') }}";
+    let productImages = Array.isArray(baseProductImages) && baseProductImages.length ? [...baseProductImages] : [fallbackImage];
+    let totalImages = productImages.length;
 
-    // Função para definir a imagem principal
-    function setMainImage(imageSrc, imageNumber) {
+    function setMainImage(imageSrc, imageNumber = 1) {
         const mainImage = document.getElementById('main-product-image');
         const currentImageSpan = document.getElementById('current-image');
         const thumbnails = document.querySelectorAll('.thumbnail-img');
-        
-        // Atualizar imagem principal
-        mainImage.src = imageSrc;
-        
-        // Atualizar contador
+
+        if (mainImage) {
+            mainImage.src = imageSrc;
+            mainImage.style.opacity = '0.7';
+            setTimeout(() => {
+                mainImage.style.opacity = '1';
+            }, 150);
+        }
+
+        currentImageIndex = Math.max(0, Math.min(productImages.length - 1, imageNumber - 1));
+
         if (currentImageSpan) {
             currentImageSpan.textContent = imageNumber;
         }
-        
-        // Atualizar índice atual
-        currentImageIndex = imageNumber - 1;
-        
-        // Atualizar thumbnails ativas
+
         thumbnails.forEach((thumb, index) => {
-            thumb.classList.remove('active');
-            if (index === currentImageIndex) {
-                thumb.classList.add('active');
-            }
+            thumb.classList.toggle('active', index === currentImageIndex);
         });
-        
-        // Efeito de fade na troca de imagem
-        mainImage.style.opacity = '0.7';
-        setTimeout(() => {
-            mainImage.style.opacity = '1';
-        }, 150);
+
+        updateImageCounter(imageNumber, totalImages);
     }
 
-    // Função para navegar entre imagens
     function changeImage(direction) {
-        if (totalImages <= 1) return;
-        
+        if (totalImages <= 1) {
+            return;
+        }
+
         currentImageIndex += direction;
-        
-        // Loop circular
+
         if (currentImageIndex >= totalImages) {
             currentImageIndex = 0;
         } else if (currentImageIndex < 0) {
             currentImageIndex = totalImages - 1;
         }
-        
-        // Definir nova imagem
+
         setMainImage(productImages[currentImageIndex], currentImageIndex + 1);
-        
-        // Scroll automático para a thumbnail ativa
         scrollToActiveThumbnail();
     }
 
-    // Função para fazer scroll automático para a thumbnail ativa
     function scrollToActiveThumbnail() {
         const activeThumbnail = document.querySelector('.thumbnail-img.active');
         if (activeThumbnail) {
@@ -713,7 +694,86 @@
         }
     }
 
-    // Navegação por teclado
+    function updateImageCounter(current, total) {
+        const counter = document.getElementById('imageCounter');
+        const totalSpan = document.getElementById('total-images');
+        const currentSpan = document.getElementById('current-image');
+        const navButtons = document.querySelectorAll('.gallery-nav');
+
+        if (totalSpan) {
+            totalSpan.textContent = total;
+        }
+        if (currentSpan) {
+            currentSpan.textContent = current;
+        }
+
+        const shouldShowControls = total > 1;
+
+        if (counter) {
+            counter.classList.toggle('d-none', !shouldShowControls);
+        }
+
+        navButtons.forEach(btn => {
+            btn.classList.toggle('d-none', !shouldShowControls);
+        });
+    }
+
+    function renderThumbnails(images) {
+        const wrapper = document.getElementById('thumbnailsWrapper');
+        if (!wrapper) {
+            return;
+        }
+
+        if (!Array.isArray(images) || images.length === 0) {
+            wrapper.innerHTML = `
+                <div class="bg-light rounded d-flex align-items-center justify-content-center w-100" style="height: 80px;">
+                    <i class="fas fa-image text-muted"></i>
+                </div>
+            `;
+            productImages = [fallbackImage];
+            totalImages = 1;
+            setMainImage(fallbackImage, 1);
+            return;
+        }
+
+        productImages = [...images];
+        totalImages = productImages.length;
+        currentImageIndex = 0;
+
+        wrapper.innerHTML = productImages.map((image, index) => {
+            const safeImage = image.replace(/'/g, "\\'");
+            return `
+                <div class="thumbnail-item flex-shrink-0">
+                    <img src="${image}" 
+                         alt="{{ $product->name }} - Imagem ${index + 1 }}"
+                         class="thumbnail-img rounded border ${index === 0 ? 'active' : ''}"
+                         style="width: 80px; height: 80px; object-fit: contain; cursor: pointer; background-color: #f8f9fa;"
+                         onclick="setMainImage('${safeImage}', ${index + 1})"
+                         onmouseover="this.style.transform='scale(1.1)'"
+                         onmouseout="this.style.transform='scale(1)'"
+                         onerror="this.src='${fallbackImage}'">
+                </div>
+            `;
+        }).join('');
+
+        setMainImage(productImages[0], 1);
+    }
+
+    function applyColorImages(color) {
+        const normalizedColor = color || '';
+        let imagesToRender = baseProductImages;
+
+        if (normalizedColor && Array.isArray(variationColorImages[normalizedColor]) && variationColorImages[normalizedColor].length > 0) {
+            imagesToRender = variationColorImages[normalizedColor];
+        }
+
+        if (!Array.isArray(imagesToRender) || imagesToRender.length === 0) {
+            imagesToRender = [fallbackImage];
+        }
+
+        renderThumbnails(imagesToRender);
+    }
+
     document.addEventListener('keydown', function(e) {
         if (e.key === 'ArrowLeft') {
             changeImage(-1);
@@ -722,31 +782,25 @@
         }
     });
 
-    // Zoom na imagem principal (clique duplo)
-    document.getElementById('main-product-image').addEventListener('dblclick', function() {
-        if (this.style.transform === 'scale(2)') {
-            this.style.transform = 'scale(1)';
-            this.style.cursor = 'pointer';
-        } else {
-            this.style.transform = 'scale(2)';
-            this.style.cursor = 'zoom-out';
-        }
-    });
+    const mainImageElement = document.getElementById('main-product-image');
+    if (mainImageElement) {
+        mainImageElement.addEventListener('dblclick', function() {
+            if (this.style.transform === 'scale(2)') {
+                this.style.transform = 'scale(1)';
+                this.style.cursor = 'pointer';
+            } else {
+                this.style.transform = 'scale(2)';
+                this.style.cursor = 'zoom-out';
+            }
+        });
+    }
 
-    // Inicialização
     document.addEventListener('DOMContentLoaded', function() {
-        // Verificar se há múltiplas imagens
-        if (totalImages <= 1) {
-            // Ocultar elementos de navegação se não há múltiplas imagens
-            const navButtons = document.querySelectorAll('.gallery-nav');
-            const imageCounter = document.querySelector('.image-counter');
-            
-            navButtons.forEach(btn => btn.style.display = 'none');
-            if (imageCounter) imageCounter.style.display = 'none';
-        }
+        renderThumbnails(productImages);
 
-        // Inicializar seletores de variações
-        initVariationSelectors();
+        if (typeof initVariationSelectors === 'function') {
+            initVariationSelectors();
+        }
     });
 
     // Sistema de variações de produtos
@@ -759,20 +813,25 @@
         
         variationSelects.forEach(select => {
             select.addEventListener('change', function() {
+                if (this.dataset.variationType === 'color') {
+                    applyColorImages(this.value);
+                }
                 updateVariation();
             });
         });
 
-        // Carregar primeira variação ao carregar a página
-        // NOTA: Não atualizar o preço aqui, pois o preço correto é o do produto principal (B2C)
-        // calculado na página de admin, não o preço da variação
-        // updateVariation();
+        const colorSelect = document.getElementById('variation-color');
+        if (colorSelect) {
+            applyColorImages(colorSelect.value || '');
+        }
     }
 
     function updateVariation() {
         const ram = document.getElementById('variation-ram')?.value || '';
         const storage = document.getElementById('variation-storage')?.value || '';
         const color = document.getElementById('variation-color')?.value || '';
+
+        applyColorImages(color);
 
         // Construir URL da API
         const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
@@ -852,840 +911,6 @@
     }
     @endif
 </script>
-@endsection
-
-
-
-@section('scripts')
-
-@stack('scripts')
-
-<script>
-
-    // Variáveis globais para a galeria
-
-    let currentImageIndex = 0;
-
-    const productImages = @json($product->all_images);
-
-    const totalImages = productImages.length;
-
-
-
-    // Função para definir a imagem principal
-
-    function setMainImage(imageSrc, imageNumber) {
-
-        const mainImage = document.getElementById('main-product-image');
-
-        const currentImageSpan = document.getElementById('current-image');
-
-        const thumbnails = document.querySelectorAll('.thumbnail-img');
-
-        
-
-        // Atualizar imagem principal
-
-        mainImage.src = imageSrc;
-
-        
-
-        // Atualizar contador
-
-        if (currentImageSpan) {
-
-            currentImageSpan.textContent = imageNumber;
-
-        }
-
-        
-
-        // Atualizar índice atual
-
-        currentImageIndex = imageNumber - 1;
-
-        
-
-        // Atualizar thumbnails ativas
-
-        thumbnails.forEach((thumb, index) => {
-
-            thumb.classList.remove('active');
-
-            if (index === currentImageIndex) {
-
-                thumb.classList.add('active');
-
-            }
-
-        });
-
-        
-
-        // Efeito de fade na troca de imagem
-
-        mainImage.style.opacity = '0.7';
-
-        setTimeout(() => {
-
-            mainImage.style.opacity = '1';
-
-        }, 150);
-
-    }
-
-
-
-    // Função para navegar entre imagens
-
-    function changeImage(direction) {
-
-        if (totalImages <= 1) return;
-
-        
-
-        currentImageIndex += direction;
-
-        
-
-        // Loop circular
-
-        if (currentImageIndex >= totalImages) {
-
-            currentImageIndex = 0;
-
-        } else if (currentImageIndex < 0) {
-
-            currentImageIndex = totalImages - 1;
-
-        }
-
-        
-
-        // Definir nova imagem
-
-        setMainImage(productImages[currentImageIndex], currentImageIndex + 1);
-
-        
-
-        // Scroll automático para a thumbnail ativa
-
-        scrollToActiveThumbnail();
-
-    }
-
-
-
-    // Função para fazer scroll automático para a thumbnail ativa
-
-    function scrollToActiveThumbnail() {
-
-        const activeThumbnail = document.querySelector('.thumbnail-img.active');
-
-        if (activeThumbnail) {
-
-            activeThumbnail.scrollIntoView({
-
-                behavior: 'smooth',
-
-                block: 'nearest',
-
-                inline: 'center'
-
-            });
-
-        }
-
-    }
-
-
-
-    // Navegação por teclado
-
-    document.addEventListener('keydown', function(e) {
-
-        if (e.key === 'ArrowLeft') {
-
-            changeImage(-1);
-
-        } else if (e.key === 'ArrowRight') {
-
-            changeImage(1);
-
-        }
-
-    });
-
-
-
-    // Zoom na imagem principal (clique duplo)
-
-    document.getElementById('main-product-image').addEventListener('dblclick', function() {
-
-        if (this.style.transform === 'scale(2)') {
-
-            this.style.transform = 'scale(1)';
-
-            this.style.cursor = 'pointer';
-
-        } else {
-
-            this.style.transform = 'scale(2)';
-
-            this.style.cursor = 'zoom-out';
-
-        }
-
-    });
-
-
-
-    // Inicialização
-
-    document.addEventListener('DOMContentLoaded', function() {
-
-        // Verificar se há múltiplas imagens
-
-        if (totalImages <= 1) {
-
-            // Ocultar elementos de navegação se não há múltiplas imagens
-
-            const navButtons = document.querySelectorAll('.gallery-nav');
-
-            const imageCounter = document.querySelector('.image-counter');
-
-            
-
-            navButtons.forEach(btn => btn.style.display = 'none');
-
-            if (imageCounter) imageCounter.style.display = 'none';
-
-        }
-
-
-
-        // Inicializar seletores de variações
-
-        initVariationSelectors();
-
-    });
-
-
-
-    // Sistema de variações de produtos
-
-    @if($product->hasVariations())
-
-    const productSlug = '{{ $product->slug }}';
-
-    let selectedVariationId = null;
-
-
-
-    function initVariationSelectors() {
-
-        const variationSelects = document.querySelectorAll('.variation-select');
-
-        
-
-        variationSelects.forEach(select => {
-
-            select.addEventListener('change', function() {
-
-                updateVariation();
-
-            });
-
-        });
-
-
-
-        // Carregar primeira variação ao carregar a página
-        // NOTA: Não atualizar o preço aqui, pois o preço correto é o do produto principal (B2C)
-        // calculado na página de admin, não o preço da variação
-        // updateVariation();
-
-    }
-
-
-
-    function updateVariation() {
-
-        const ram = document.getElementById('variation-ram')?.value || '';
-
-        const storage = document.getElementById('variation-storage')?.value || '';
-
-        const color = document.getElementById('variation-color')?.value || '';
-
-
-
-        // Construir URL da API
-
-        const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
-
-        if (ram) url.searchParams.append('ram', ram);
-
-        if (storage) url.searchParams.append('storage', storage);
-
-        if (color) url.searchParams.append('color', color);
-
-
-
-        // Buscar variação
-
-        fetch(url)
-
-            .then(response => response.json())
-
-            .then(data => {
-
-                if (data.success && data.variation) {
-
-                    selectedVariationId = data.variation.id;
-
-                    
-
-                    // NÃO atualizar o preço - o preço correto é sempre o do produto principal (B2C)
-                    // calculado na página de admin, não o preço da variação
-                    // const priceDisplay = document.getElementById('product-price-display');
-                    // if (priceDisplay) {
-                    //     priceDisplay.textContent = 'R$ ' + data.variation.price;
-                    // }
-
-
-
-                    // Atualizar SKU
-
-                    const skuDisplay = document.getElementById('variation-sku-display');
-
-                    const skuSpan = document.getElementById('selected-variation-sku');
-
-                    if (skuDisplay && skuSpan) {
-
-                        skuSpan.textContent = data.variation.sku;
-
-                        skuDisplay.style.display = 'block';
-
-                    }
-
-
-
-                    // Atualizar estoque
-
-                    const stockDisplay = document.getElementById('variation-stock-display');
-
-                    const stockBadge = document.getElementById('variation-stock-badge');
-
-                    if (stockDisplay && stockBadge) {
-
-                        if (data.variation.in_stock && data.variation.stock_quantity > 0) {
-
-                            stockBadge.className = 'badge bg-success fs-6';
-
-                            stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
-
-                        } else {
-
-                            stockBadge.className = 'badge bg-danger fs-6';
-
-                            stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-
-                        }
-
-                        stockDisplay.style.display = 'block';
-
-                    }
-
-
-
-                    // Atualizar atributo data-variation-id no botão de adicionar ao carrinho
-
-                    const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
-
-                    if (addToCartBtn) {
-
-                        addToCartBtn.setAttribute('data-variation-id', data.variation.id);
-
-                        // Também atualizar no componente add-to-cart
-
-                        const addToCartComponent = document.querySelector('.add-to-cart-component');
-
-                        if (addToCartComponent) {
-
-                            addToCartComponent.setAttribute('data-variation-id', data.variation.id);
-
-                        }
-
-                    }
-
-                } else {
-
-                    // Variação não encontrada
-
-                    const priceDisplay = document.getElementById('product-price-display');
-
-                    if (priceDisplay) {
-
-                        priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ",", ".") }}';
-
-                    }
-
-                    
-
-                    const skuDisplay = document.getElementById('variation-sku-display');
-
-                    if (skuDisplay) {
-
-                        skuDisplay.style.display = 'none';
-
-                    }
-
-
-
-                    const stockDisplay = document.getElementById('variation-stock-display');
-
-                    if (stockDisplay) {
-
-                        stockDisplay.style.display = 'none';
-
-                    }
-
-
-
-                    selectedVariationId = null;
-
-                }
-
-            })
-
-            .catch(error => {
-
-                console.error('Erro ao buscar variação:', error);
-
-            });
-
-    }
-
-    @endif
-
-</script>
-
-@endsection
-
-@section('scripts')
-
-@stack('scripts')
-
-<script>
-
-    // Variáveis globais para a galeria
-
-    let currentImageIndex = 0;
-
-    const productImages = @json($product->all_images);
-
-    const totalImages = productImages.length;
-
-
-
-    // Função para definir a imagem principal
-
-    function setMainImage(imageSrc, imageNumber) {
-
-        const mainImage = document.getElementById('main-product-image');
-
-        const currentImageSpan = document.getElementById('current-image');
-
-        const thumbnails = document.querySelectorAll('.thumbnail-img');
-
-        
-
-        // Atualizar imagem principal
-
-        mainImage.src = imageSrc;
-
-        
-
-        // Atualizar contador
-
-        if (currentImageSpan) {
-
-            currentImageSpan.textContent = imageNumber;
-
-        }
-
-        
-
-        // Atualizar índice atual
-
-        currentImageIndex = imageNumber - 1;
-
-        
-
-        // Atualizar thumbnails ativas
-
-        thumbnails.forEach((thumb, index) => {
-
-            thumb.classList.remove('active');
-
-            if (index === currentImageIndex) {
-
-                thumb.classList.add('active');
-
-            }
-
-        });
-
-        
-
-        // Efeito de fade na troca de imagem
-
-        mainImage.style.opacity = '0.7';
-
-        setTimeout(() => {
-
-            mainImage.style.opacity = '1';
-
-        }, 150);
-
-    }
-
-
-
-    // Função para navegar entre imagens
-
-    function changeImage(direction) {
-
-        if (totalImages <= 1) return;
-
-        
-
-        currentImageIndex += direction;
-
-        
-
-        // Loop circular
-
-        if (currentImageIndex >= totalImages) {
-
-            currentImageIndex = 0;
-
-        } else if (currentImageIndex < 0) {
-
-            currentImageIndex = totalImages - 1;
-
-        }
-
-        
-
-        // Definir nova imagem
-
-        setMainImage(productImages[currentImageIndex], currentImageIndex + 1);
-
-        
-
-        // Scroll automático para a thumbnail ativa
-
-        scrollToActiveThumbnail();
-
-    }
-
-
-
-    // Função para fazer scroll automático para a thumbnail ativa
-
-    function scrollToActiveThumbnail() {
-
-        const activeThumbnail = document.querySelector('.thumbnail-img.active');
-
-        if (activeThumbnail) {
-
-            activeThumbnail.scrollIntoView({
-
-                behavior: 'smooth',
-
-                block: 'nearest',
-
-                inline: 'center'
-
-            });
-
-        }
-
-    }
-
-
-
-    // Navegação por teclado
-
-    document.addEventListener('keydown', function(e) {
-
-        if (e.key === 'ArrowLeft') {
-
-            changeImage(-1);
-
-        } else if (e.key === 'ArrowRight') {
-
-            changeImage(1);
-
-        }
-
-    });
-
-
-
-    // Zoom na imagem principal (clique duplo)
-
-    document.getElementById('main-product-image').addEventListener('dblclick', function() {
-
-        if (this.style.transform === 'scale(2)') {
-
-            this.style.transform = 'scale(1)';
-
-            this.style.cursor = 'pointer';
-
-        } else {
-
-            this.style.transform = 'scale(2)';
-
-            this.style.cursor = 'zoom-out';
-
-        }
-
-    });
-
-
-
-    // Inicialização
-
-    document.addEventListener('DOMContentLoaded', function() {
-
-        // Verificar se há múltiplas imagens
-
-        if (totalImages <= 1) {
-
-            // Ocultar elementos de navegação se não há múltiplas imagens
-
-            const navButtons = document.querySelectorAll('.gallery-nav');
-
-            const imageCounter = document.querySelector('.image-counter');
-
-            
-
-            navButtons.forEach(btn => btn.style.display = 'none');
-
-            if (imageCounter) imageCounter.style.display = 'none';
-
-        }
-
-
-
-        // Inicializar seletores de variações
-
-        initVariationSelectors();
-
-    });
-
-
-
-    // Sistema de variações de produtos
-
-    @if($product->hasVariations())
-
-    const productSlug = '{{ $product->slug }}';
-
-    let selectedVariationId = null;
-
-
-
-    function initVariationSelectors() {
-
-        const variationSelects = document.querySelectorAll('.variation-select');
-
-        
-
-        variationSelects.forEach(select => {
-
-            select.addEventListener('change', function() {
-
-                updateVariation();
-
-            });
-
-        });
-
-
-
-        // Carregar primeira variação ao carregar a página
-        // NOTA: Não atualizar o preço aqui, pois o preço correto é o do produto principal (B2C)
-        // calculado na página de admin, não o preço da variação
-        // updateVariation();
-
-    }
-
-
-
-    function updateVariation() {
-
-        const ram = document.getElementById('variation-ram')?.value || '';
-
-        const storage = document.getElementById('variation-storage')?.value || '';
-
-        const color = document.getElementById('variation-color')?.value || '';
-
-
-
-        // Construir URL da API
-
-        const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
-
-        if (ram) url.searchParams.append('ram', ram);
-
-        if (storage) url.searchParams.append('storage', storage);
-
-        if (color) url.searchParams.append('color', color);
-
-
-
-        // Buscar variação
-
-        fetch(url)
-
-            .then(response => response.json())
-
-            .then(data => {
-
-                if (data.success && data.variation) {
-
-                    selectedVariationId = data.variation.id;
-
-                    
-
-                    // NÃO atualizar o preço - o preço correto é sempre o do produto principal (B2C)
-                    // calculado na página de admin, não o preço da variação
-                    // const priceDisplay = document.getElementById('product-price-display');
-                    // if (priceDisplay) {
-                    //     priceDisplay.textContent = 'R$ ' + data.variation.price;
-                    // }
-
-
-
-                    // Atualizar SKU
-
-                    const skuDisplay = document.getElementById('variation-sku-display');
-
-                    const skuSpan = document.getElementById('selected-variation-sku');
-
-                    if (skuDisplay && skuSpan) {
-
-                        skuSpan.textContent = data.variation.sku;
-
-                        skuDisplay.style.display = 'block';
-
-                    }
-
-
-
-                    // Atualizar estoque
-
-                    const stockDisplay = document.getElementById('variation-stock-display');
-
-                    const stockBadge = document.getElementById('variation-stock-badge');
-
-                    if (stockDisplay && stockBadge) {
-
-                        if (data.variation.in_stock && data.variation.stock_quantity > 0) {
-
-                            stockBadge.className = 'badge bg-success fs-6';
-
-                            stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
-
-                        } else {
-
-                            stockBadge.className = 'badge bg-danger fs-6';
-
-                            stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-
-                        }
-
-                        stockDisplay.style.display = 'block';
-
-                    }
-
-
-
-                    // Atualizar atributo data-variation-id no botão de adicionar ao carrinho
-
-                    const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
-
-                    if (addToCartBtn) {
-
-                        addToCartBtn.setAttribute('data-variation-id', data.variation.id);
-
-                        // Também atualizar no componente add-to-cart
-
-                        const addToCartComponent = document.querySelector('.add-to-cart-component');
-
-                        if (addToCartComponent) {
-
-                            addToCartComponent.setAttribute('data-variation-id', data.variation.id);
-
-                        }
-
-                    }
-
-                } else {
-
-                    // Variação não encontrada
-
-                    const priceDisplay = document.getElementById('product-price-display');
-
-                    if (priceDisplay) {
-
-                        priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ",", ".") }}';
-
-                    }
-
-                    
-
-                    const skuDisplay = document.getElementById('variation-sku-display');
-
-                    if (skuDisplay) {
-
-                        skuDisplay.style.display = 'none';
-
-                    }
-
-
-
-                    const stockDisplay = document.getElementById('variation-stock-display');
-
-                    if (stockDisplay) {
-
-                        stockDisplay.style.display = 'none';
-
-                    }
-
-
-
-                    selectedVariationId = null;
-
-                }
-
-            })
-
-            .catch(error => {
-
-                console.error('Erro ao buscar variação:', error);
-
-            });
-
-    }
-
-    @endif
-
-</script>
-
 @endsection
 
 
