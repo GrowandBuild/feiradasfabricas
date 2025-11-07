@@ -3,6 +3,19 @@
 @section('title', $product->name)
 
 @section('content')
+@php
+    $variations = $product->activeVariations;
+    $variationData = $variations->map(function ($variation) {
+        return [
+            'id' => $variation->id,
+            'ram' => $variation->ram,
+            'storage' => $variation->storage,
+            'color' => $variation->color,
+            'in_stock' => (bool) $variation->in_stock,
+            'stock_quantity' => (int) $variation->stock_quantity,
+        ];
+    })->values();
+@endphp
 <div class="container py-5">
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
@@ -118,7 +131,6 @@
                     <!-- Seletores de Variações -->
                     <div class="product-variations mb-4">
                         @php
-                            $variations = $product->activeVariations;
                             $rams = $variations->pluck('ram')->unique()->filter()->sort()->values();
                             $storages = $variations->pluck('storage')->unique()->filter()->sort()->values();
                             $colors = $variations->pluck('color')->unique()->filter()->sort()->values();
@@ -386,6 +398,10 @@
         border-color: #007bff;
         box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
     }
+
+    .variation-select option.variation-option-disabled {
+        color: #9ca3af;
+    }
     
     .thumbnail-item {
         background-color: #f8f9fa;
@@ -642,6 +658,7 @@
     const baseProductImages = @json($product->all_images);
     const variationColorImages = @json($product->variation_images_urls ?? []);
     const fallbackImage = "{{ asset('images/no-image.svg') }}";
+    const activeVariationsData = @json($variationData);
     let productImages = Array.isArray(baseProductImages) && baseProductImages.length ? [...baseProductImages] : [fallbackImage];
     let totalImages = productImages.length;
 
@@ -837,6 +854,7 @@
         
         variationSelects.forEach(select => {
             select.addEventListener('change', function() {
+                syncVariationOptionAvailability();
                 if (this.dataset.variationType === 'color') {
                     applyColorImages(this.value);
                 }
@@ -848,14 +866,97 @@
         if (colorSelect) {
             applyColorImages(colorSelect.value || '');
         }
+
+        syncVariationOptionAvailability();
+    }
+
+    function isCombinationAvailable(ram, storage, color) {
+        return activeVariationsData.some(variation => {
+            if (variation.in_stock !== true || variation.stock_quantity <= 0) {
+                return false;
+            }
+
+            const matchesRam = !ram || variation.ram === ram;
+            const matchesStorage = !storage || variation.storage === storage;
+            const matchesColor = !color || variation.color === color;
+
+            return matchesRam && matchesStorage && matchesColor;
+        });
+    }
+
+    function syncVariationOptionAvailability() {
+        const ramSelect = document.getElementById('variation-ram');
+        const storageSelect = document.getElementById('variation-storage');
+        const colorSelect = document.getElementById('variation-color');
+
+        const selectedRam = ramSelect ? ramSelect.value : '';
+        const selectedStorage = storageSelect ? storageSelect.value : '';
+        const selectedColor = colorSelect ? colorSelect.value : '';
+
+        const evaluateOption = (type, value) => {
+            const ram = type === 'ram' ? value : selectedRam;
+            const storage = type === 'storage' ? value : selectedStorage;
+            const color = type === 'color' ? value : selectedColor;
+
+            return isCombinationAvailable(ram, storage, color);
+        };
+
+        const processSelect = (select, type) => {
+            if (!select) return;
+
+            let selectionChanged = false;
+            Array.from(select.options).forEach(option => {
+                if (option.value === '') {
+                    option.disabled = false;
+                    option.classList.remove('variation-option-disabled');
+                    return;
+                }
+
+                const available = evaluateOption(type, option.value);
+                option.disabled = !available;
+                option.classList.toggle('variation-option-disabled', !available);
+
+                if (!available && select.value === option.value) {
+                    selectionChanged = true;
+                }
+            });
+
+            if (selectionChanged) {
+                select.value = '';
+            }
+        };
+
+        processSelect(ramSelect, 'ram');
+        processSelect(storageSelect, 'storage');
+        processSelect(colorSelect, 'color');
     }
 
     function updateVariation() {
-        const ram = document.getElementById('variation-ram')?.value || '';
-        const storage = document.getElementById('variation-storage')?.value || '';
-        const color = document.getElementById('variation-color')?.value || '';
+        const ramSelect = document.getElementById('variation-ram');
+        const storageSelect = document.getElementById('variation-storage');
+        const colorSelect = document.getElementById('variation-color');
+        const unavailableMessage = document.getElementById('variation-unavailable-message');
+
+        const ram = ramSelect ? ramSelect.value : '';
+        const storage = storageSelect ? storageSelect.value : '';
+        const color = colorSelect ? colorSelect.value : '';
 
         applyColorImages(color);
+
+        if ((ramSelect && ramSelect.selectedOptions.length && ram === '') ||
+            (storageSelect && storageSelect.selectedOptions.length && storage === '') ||
+            (colorSelect && colorSelect.selectedOptions.length && color === '')) {
+            if (unavailableMessage) {
+                unavailableMessage.style.display = 'flex';
+            }
+            setAddToCartDisabled(true);
+            selectedVariationId = null;
+            return;
+        }
+
+        if (unavailableMessage) {
+            unavailableMessage.style.display = 'none';
+        }
 
         // Construir URL da API
         const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
