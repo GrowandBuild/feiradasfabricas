@@ -363,7 +363,7 @@
     .product-layout {
         display: grid;
         grid-template-areas: "thumbs image summary info";
-        grid-template-columns: 90px minmax(0, 1.1fr) minmax(0, 0.9fr) minmax(0, 0.8fr);
+        grid-template-columns: 90px minmax(0, 1fr) minmax(0, 0.85fr) minmax(0, 0.7fr);
         gap: 1.5rem;
         align-items: start;
     }
@@ -439,9 +439,9 @@
     
     .main-image-container {
         border-radius: 12px;
-        background: linear-gradient(135deg, #f8fafc, #eef2ff);
-        padding: 1.5rem;
-        box-shadow: 0 20px 45px rgba(148, 163, 184, 0.25);
+        background: #ffffff;
+        padding: 1.25rem;
+        box-shadow: 0 20px 45px rgba(148, 163, 184, 0.18);
         flex: 1;
     }
     
