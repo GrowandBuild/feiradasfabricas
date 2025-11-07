@@ -664,7 +664,7 @@ class ProductController extends Controller
             ->values();
         
         // Retornar todas as variações individuais para o estoque
-        $variationsList = $variations->where('is_active', true)->map(function($variation) {
+        $variationsList = $variations->map(function($variation) {
             $parts = [];
             if ($variation->ram) $parts[] = $variation->ram;
             if ($variation->storage) $parts[] = $variation->storage;
@@ -976,6 +976,39 @@ class ProductController extends Controller
             'message' => "Estoque de {$updated} variação(ões) atualizado(s)",
             'updated' => $updated
         ]);
+    }
+
+    /**
+     * Remove uma variação específica do produto
+     */
+    public function deleteVariation(Product $product, ProductVariation $variation)
+    {
+        if ($variation->product_id !== $product->id) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Variação não pertence a este produto.'
+            ], 404);
+        }
+
+        try {
+            $variation->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Variação removida com sucesso.'
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao remover variação', [
+                'product_id' => $product->id,
+                'variation_id' => $variation->id,
+                'exception' => $e
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Não foi possível remover a variação. Tente novamente.'
+            ], 500);
+        }
     }
 
     /**

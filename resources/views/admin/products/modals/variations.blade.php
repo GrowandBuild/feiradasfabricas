@@ -444,6 +444,7 @@ function createStorageItem(storage, productId) {
 function createStockItem(variation, productId) {
     const div = document.createElement('div');
     div.className = 'variation-stock-card border rounded-3 mb-2';
+    div.setAttribute('data-variation-id', variation.id);
     div.innerHTML = `
         <div class="variation-stock-header d-flex flex-wrap justify-content-between align-items-center">
             <div class="d-flex flex-column">
@@ -453,6 +454,7 @@ function createStockItem(variation, productId) {
                     ${variation.color ? `<span class="badge rounded-pill bg-secondary-subtle text-secondary">${variation.color}</span>` : ''}
                     ${variation.ram ? `<span class="badge rounded-pill bg-info-subtle text-info">${variation.ram}</span>` : ''}
                     ${variation.storage ? `<span class="badge rounded-pill bg-primary-subtle text-primary">${variation.storage}</span>` : ''}
+                    ${!variation.is_active ? '<span class="badge rounded-pill bg-dark-subtle text-dark">Inativa</span>' : ''}
                 </div>
             </div>
             <div class="d-flex align-items-center gap-2">
@@ -469,6 +471,12 @@ function createStockItem(variation, productId) {
                         </select>
                     </div>
                 </div>
+                <button type="button"
+                        class="btn btn-outline-danger btn-sm variation-delete"
+                        data-variation-id="${variation.id}"
+                        title="Excluir variação">
+                    <i class="bi bi-trash"></i>
+                </button>
             </div>
         </div>
         <div class="variation-stock-prices row gx-2 mt-3">
@@ -922,9 +930,11 @@ function initializeVariationPriceFields(stockItem) {
         return;
     }
 
+    const variationId = stockItem.getAttribute('data-variation-id');
     const costInput = stockItem.querySelector('.variation-cost');
     const priceInput = stockItem.querySelector('.variation-price');
     const b2bInput = stockItem.querySelector('.variation-b2b');
+    const deleteBtn = stockItem.querySelector('.variation-delete');
 
     const inputs = [costInput, priceInput, b2bInput];
 
@@ -965,6 +975,62 @@ function initializeVariationPriceFields(stockItem) {
             const parsed = parseCurrencyValue(this.value);
             this.value = parsed !== null ? formatCurrencyValue(parsed) : '';
         });
+    });
+
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', function() {
+            const id = this.getAttribute('data-variation-id');
+            const card = this.closest('.variation-stock-card');
+            confirmAndDeleteVariation(id, card);
+        });
+    }
+}
+
+function confirmAndDeleteVariation(variationId, cardElement) {
+    if (!variationId) {
+        return;
+    }
+
+    if (!confirm('Tem certeza que deseja remover esta variação? Esta ação não pode ser desfeita.')) {
+        return;
+    }
+
+    const productId = document.getElementById('variationsProductId').value;
+    if (!productId) {
+        showVariationMessage('error', 'Erro: produto não identificado.');
+        return;
+    }
+
+    const loaderClass = 'opacity-50';
+    if (cardElement) {
+        cardElement.classList.add(loaderClass);
+    }
+
+    fetch(`/admin/products/${productId}/variations/${variationId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showVariationMessage('success', data.message || 'Variação removida com sucesso.');
+            loadVariations(productId);
+        } else {
+            showVariationMessage('error', data.message || 'Não foi possível remover a variação.');
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao excluir variação:', error);
+        showVariationMessage('error', 'Erro ao remover variação.');
+    })
+    .finally(() => {
+        if (cardElement) {
+            cardElement.classList.remove(loaderClass);
+        }
     });
 }
 </script>
