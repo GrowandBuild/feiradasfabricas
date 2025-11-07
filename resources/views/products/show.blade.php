@@ -58,41 +58,41 @@
                         
                         <!-- Contador de imagens -->
                         <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
-                            <span class="badge bg-dark bg-opacity-75">
-                                <i class="fas fa-images me-1"></i>
+                                <span class="badge bg-dark bg-opacity-75">
+                                    <i class="fas fa-images me-1"></i>
                                 <span id="current-image">1</span>/<span id="total-images">{{ max($product->getImageCount(), 1) }}</span>
-                            </span>
-                        </div>
+                                </span>
+                            </div>
 
                         <!-- Setas de navegação (se houver múltiplas imagens) -->
                         <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
-                                id="prev-image" onclick="changeImage(-1)">
-                            <i class="fas fa-chevron-left"></i>
-                        </button>
+                                    id="prev-image" onclick="changeImage(-1)">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
                         <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y me-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
-                                id="next-image" onclick="changeImage(1)">
-                            <i class="fas fa-chevron-right"></i>
-                        </button>
+                                    id="next-image" onclick="changeImage(1)">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
                     </div>
                 </div>
 
                 <!-- Miniaturas -->
-                <div class="thumbnails-container">
+                    <div class="thumbnails-container">
                     <div class="thumbnails-wrapper d-flex gap-2 overflow-x-auto pb-2" style="scrollbar-width: thin;" id="thumbnailsWrapper">
-                        @foreach($product->all_images as $index => $image)
-                            <div class="thumbnail-item flex-shrink-0">
-                                <img src="{{ $image }}" 
-                                     alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
-                                     class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
-                                     style="width: 80px; height: 80px; object-fit: contain; cursor: pointer; background-color: #f8f9fa;"
-                                     onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
-                                     onmouseover="this.style.transform='scale(1.1)'"
-                                     onmouseout="this.style.transform='scale(1)'"
-                                     onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                            </div>
-                        @endforeach
+                            @foreach($product->all_images as $index => $image)
+                                <div class="thumbnail-item flex-shrink-0">
+                                    <img src="{{ $image }}" 
+                                         alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
+                                         class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
+                                         style="width: 80px; height: 80px; object-fit: contain; cursor: pointer; background-color: #f8f9fa;"
+                                         onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
+                                         onmouseover="this.style.transform='scale(1.1)'"
+                                         onmouseout="this.style.transform='scale(1)'"
+                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                </div>
+                            @endforeach
+                        </div>
                     </div>
-                </div>
             </div>
         </div>
 
@@ -666,21 +666,21 @@
         const mainImage = document.getElementById('main-product-image');
         const currentImageSpan = document.getElementById('current-image');
         const thumbnails = document.querySelectorAll('.thumbnail-img');
-
+        
         if (mainImage) {
-            mainImage.src = imageSrc;
+        mainImage.src = imageSrc;
             mainImage.style.opacity = '0.7';
             setTimeout(() => {
                 mainImage.style.opacity = '1';
             }, 150);
         }
-
+        
         currentImageIndex = Math.max(0, Math.min(productImages.length - 1, imageNumber - 1));
 
         if (currentImageSpan) {
             currentImageSpan.textContent = imageNumber;
         }
-
+        
         thumbnails.forEach((thumb, index) => {
             thumb.classList.toggle('active', index === currentImageIndex);
         });
@@ -692,15 +692,15 @@
         if (totalImages <= 1) {
             return;
         }
-
+        
         currentImageIndex += direction;
-
+        
         if (currentImageIndex >= totalImages) {
             currentImageIndex = 0;
         } else if (currentImageIndex < 0) {
             currentImageIndex = totalImages - 1;
         }
-
+        
         setMainImage(productImages[currentImageIndex], currentImageIndex + 1);
         scrollToActiveThumbnail();
     }
@@ -720,7 +720,7 @@
         const counter = document.getElementById('imageCounter');
         const totalSpan = document.getElementById('total-images');
         const currentSpan = document.getElementById('current-image');
-        const navButtons = document.querySelectorAll('.gallery-nav');
+            const navButtons = document.querySelectorAll('.gallery-nav');
 
         if (totalSpan) {
             totalSpan.textContent = total;
@@ -760,7 +760,7 @@
 
         productImages = [...images];
         totalImages = productImages.length;
-        currentImageIndex = 0;
+            currentImageIndex = 0;
 
         wrapper.innerHTML = productImages.map((image, index) => {
             const safeImage = image.replace(/'/g, "\\'");
@@ -807,21 +807,21 @@
     const mainImageElement = document.getElementById('main-product-image');
     if (mainImageElement) {
         mainImageElement.addEventListener('dblclick', function() {
-            if (this.style.transform === 'scale(2)') {
-                this.style.transform = 'scale(1)';
-                this.style.cursor = 'pointer';
-            } else {
-                this.style.transform = 'scale(2)';
-                this.style.cursor = 'zoom-out';
-            }
-        });
+        if (this.style.transform === 'scale(2)') {
+            this.style.transform = 'scale(1)';
+            this.style.cursor = 'pointer';
+        } else {
+            this.style.transform = 'scale(2)';
+            this.style.cursor = 'zoom-out';
+        }
+    });
     }
 
     document.addEventListener('DOMContentLoaded', function() {
         renderThumbnails(productImages);
 
         if (typeof initVariationSelectors === 'function') {
-            initVariationSelectors();
+        initVariationSelectors();
         }
     });
 
@@ -831,8 +831,8 @@
     let selectedVariationId = null;
 
     function setAddToCartDisabled(disabled) {
-        const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
-        const addToCartComponent = document.querySelector('.add-to-cart-component');
+                    const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
+                        const addToCartComponent = document.querySelector('.add-to-cart-component');
 
         if (addToCartBtn) {
             if (typeof addToCartBtn.disabled !== 'undefined') {
@@ -1002,7 +1002,7 @@
                         } else {
                             stockBadge.className = 'badge bg-danger fs-6';
                             stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-                            stockDisplay.style.display = 'block';
+                        stockDisplay.style.display = 'block';
                             setAddToCartDisabled(true);
                             if (unavailableMessage) {
                                 unavailableMessage.style.display = 'flex';
