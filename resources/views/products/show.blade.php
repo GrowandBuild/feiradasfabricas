@@ -92,8 +92,8 @@
                                 <i class="fas fa-chevron-right"></i>
                             </button>
                     </div>
-            </div>
-        </div>
+                    </div>
+                </div>
 
         <div class="product-column summary-area">
             <div class="product-details">
@@ -102,7 +102,7 @@
                         <div class="price-section">
                             <span class="h3 price-value" id="product-price-display">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
                             <span class="sub-price">Preço à vista</span>
-                        </div>
+                                </div>
                         <div class="stock-line" id="variation-stock-display" style="display: none;">
                             <span class="badge bg-success" id="variation-stock-badge"></span>
                         </div>
@@ -113,7 +113,7 @@
                                         <i class="fas fa-check-circle me-1"></i>
                                         Em estoque ({{ $product->stock_quantity }} unidades)
                                     </span>
-                                @else
+                @else
                                     <span class="badge bg-danger">
                                         <i class="fas fa-times-circle me-1"></i>
                                         Fora de estoque
@@ -123,8 +123,8 @@
                         @endunless
                         <div id="variation-sku-display" class="sku-line" style="display: none;">
                             <i class="bi bi-upc-scan"></i> <span id="selected-variation-sku"></span>
-                        </div>
-                    </div>
+            </div>
+        </div>
 
                     <div class="info-highlights mb-4">
                         <div class="highlight-item"><i class="bi bi-truck"></i> Entrega rápida e rastreada</div>
@@ -1363,7 +1363,7 @@
                         } else {
                             stockBadge.className = 'badge bg-danger';
                             stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-                            stockDisplay.style.display = 'block';
+                        stockDisplay.style.display = 'block';
                             setAddToCartDisabled(true);
                             if (unavailableMessage) {
                                 unavailableMessage.style.display = 'flex';
