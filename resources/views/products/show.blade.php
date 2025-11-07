@@ -13,8 +13,14 @@
             'color' => $variation->color,
             'in_stock' => (bool) $variation->in_stock,
             'stock_quantity' => (int) $variation->stock_quantity,
+            'price' => number_format($variation->price, 2, ',', '.'),
+            'b2b_price' => $variation->b2b_price ? number_format($variation->b2b_price, 2, ',', '.') : null,
         ];
     })->values();
+
+    $ramOptions = $variationData->pluck('ram')->filter()->unique()->values();
+    $storageOptions = $variationData->pluck('storage')->filter()->unique()->values();
+    $colorOptions = $variationData->pluck('color')->filter()->unique()->values();
 @endphp
 <div class="container py-5">
     <!-- Breadcrumb -->
@@ -130,54 +136,88 @@
                 @if($product->hasVariations())
                     <!-- Seletores de Variações -->
                     <div class="product-variations mb-4">
-                        @php
-                            $rams = $variations->pluck('ram')->unique()->filter()->sort()->values();
-                            $storages = $variations->pluck('storage')->unique()->filter()->sort()->values();
-                            $colors = $variations->pluck('color')->unique()->filter()->sort()->values();
-                            $firstVariation = $variations->first();
-                        @endphp
+                        <div class="variation-selector-group">
+                            @if($storageOptions->count() > 0)
+                                <div class="variation-selector mb-3">
+                                    <h6 class="variation-label">Armazenamento:</h6>
+                                    <div class="variation-options" id="storage-options">
+                                        @foreach($storageOptions as $storage)
+                                            @php
+                                                $lowestPrice = $variationData->where('storage', $storage)
+                                                    ->pluck('price')
+                                                    ->map(function($price) {
+                                                        return (float) str_replace(['.', ','], ['', '.'], $price);
+                                                    })
+                                                    ->min();
+                                            @endphp
+                                            <label class="variation-option" data-variation-type="storage" data-value="{{ $storage }}">
+                                                <input type="radio" name="storage" value="{{ $storage }}" {{ $loop->first ? 'checked' : '' }}>
+                                                <span class="variation-option-content">
+                                                    <span class="variation-option-title">{{ $storage }}</span>
+                                                    @if(!is_null($lowestPrice))
+                                                        <span class="variation-option-price">R$ {{ number_format($lowestPrice, 2, ',', '.') }}</span>
+                                                    @endif
+                                                </span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
 
-                        @if($rams->count() > 1)
-                            <div class="mb-3">
-                                <label for="variation-ram" class="form-label fw-bold">RAM:</label>
-                                <select id="variation-ram" class="form-select variation-select" data-variation-type="ram">
-                                    <option value="">Selecione a RAM</option>
-                                    @foreach($rams as $ram)
-                                        <option value="{{ $ram }}" {{ $firstVariation && $firstVariation->ram === $ram ? 'selected' : '' }}>
-                                            {{ $ram }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
+                            @if($colorOptions->count() > 0)
+                                <div class="variation-selector mb-3">
+                                    <h6 class="variation-label">Cor:</h6>
+                                    <div class="variation-options" id="color-options">
+                                        @foreach($colorOptions as $color)
+                                            @php
+                                                $lowestPrice = $variationData->where('color', $color)
+                                                    ->pluck('price')
+                                                    ->map(function($price) {
+                                                        return (float) str_replace(['.', ','], ['', '.'], $price);
+                                                    })
+                                                    ->min();
+                                            @endphp
+                                            <label class="variation-option" data-variation-type="color" data-value="{{ $color }}">
+                                                <input type="radio" name="color" value="{{ $color }}" {{ $loop->first ? 'checked' : '' }}>
+                                                <span class="variation-option-content">
+                                                    <span class="variation-option-title">{{ $color }}</span>
+                                                    @if(!is_null($lowestPrice))
+                                                        <span class="variation-option-price">R$ {{ number_format($lowestPrice, 2, ',', '.') }}</span>
+                                                    @endif
+                                                </span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
 
-                        @if($storages->count() > 1)
-                            <div class="mb-3">
-                                <label for="variation-storage" class="form-label fw-bold">Armazenamento:</label>
-                                <select id="variation-storage" class="form-select variation-select" data-variation-type="storage">
-                                    <option value="">Selecione o Armazenamento</option>
-                                    @foreach($storages as $storage)
-                                        <option value="{{ $storage }}" {{ $firstVariation && $firstVariation->storage === $storage ? 'selected' : '' }}>
-                                            {{ $storage }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
-
-                        @if($colors->count() > 1)
-                            <div class="mb-3">
-                                <label for="variation-color" class="form-label fw-bold">Cor:</label>
-                                <select id="variation-color" class="form-select variation-select" data-variation-type="color">
-                                    <option value="">Selecione a Cor</option>
-                                    @foreach($colors as $color)
-                                        <option value="{{ $color }}" {{ $firstVariation && $firstVariation->color === $color ? 'selected' : '' }}>
-                                            {{ $color }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
+                            @if($ramOptions->count() > 0)
+                                <div class="variation-selector mb-3">
+                                    <h6 class="variation-label">RAM:</h6>
+                                    <div class="variation-options" id="ram-options">
+                                        @foreach($ramOptions as $ram)
+                                            @php
+                                                $lowestPrice = $variationData->where('ram', $ram)
+                                                    ->pluck('price')
+                                                    ->map(function($price) {
+                                                        return (float) str_replace(['.', ','], ['', '.'], $price);
+                                                    })
+                                                    ->min();
+                                            @endphp
+                                            <label class="variation-option" data-variation-type="ram" data-value="{{ $ram }}">
+                                                <input type="radio" name="ram" value="{{ $ram }}" {{ $loop->first ? 'checked' : '' }}>
+                                                <span class="variation-option-content">
+                                                    <span class="variation-option-title">{{ $ram }}</span>
+                                                    @if(!is_null($lowestPrice))
+                                                        <span class="variation-option-price">R$ {{ number_format($lowestPrice, 2, ',', '.') }}</span>
+                                                    @endif
+                                                </span>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
 
                         <div id="variation-unavailable-message" class="alert alert-warning py-2 px-3 d-flex align-items-center gap-2" style="display: none;">
                             <i class="fas fa-exclamation-triangle"></i>
@@ -647,6 +687,87 @@
     .thumbnails-wrapper::-webkit-scrollbar-thumb:hover {
         background: #a8a8a8;
     }
+
+    .variation-selector-group {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .variation-selector {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .variation-label {
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+
+    .variation-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .variation-option {
+        border: 1px solid #d1d5db;
+        border-radius: 0.75rem;
+        padding: 0.5rem 0.85rem;
+        min-width: 110px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        background: #fff;
+        position: relative;
+    }
+
+    .variation-option input {
+        display: none;
+    }
+
+    .variation-option-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+        align-items: flex-start;
+    }
+
+    .variation-option-title {
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+
+    .variation-option-price {
+        font-size: 0.8rem;
+        color: #1f2937;
+        font-weight: 500;
+    }
+
+    .variation-option:hover {
+        border-color: #6366f1;
+        box-shadow: 0 8px 24px rgba(99, 102, 241, 0.1);
+    }
+
+    .variation-option.active {
+        border-color: #0d6efd;
+        background: rgba(13, 110, 253, 0.08);
+        box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.15);
+    }
+
+    .variation-option.disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        pointer-events: none;
+        background: #f3f4f6;
+    }
+
+    @media (max-width: 576px) {
+        .variation-option {
+            min-width: calc(50% - 0.75rem);
+        }
+    }
 </style>
 @endsection
 
@@ -849,26 +970,16 @@
         }
     }
 
-    function initVariationSelectors() {
-        const variationSelects = document.querySelectorAll('.variation-select');
-        
-        variationSelects.forEach(select => {
-            select.addEventListener('change', function() {
-                syncVariationOptionAvailability();
-                if (this.dataset.variationType === 'color') {
-                    applyColorImages(this.value);
-                }
-                updateVariation();
-            });
+    function getSelectedValue(type) {
+        const input = document.querySelector(`input[name="${type}"]:checked`);
+        return input ? input.value : '';
+    }
+
+    function refreshActiveVariationOptions() {
+        document.querySelectorAll('.variation-option').forEach(option => {
+            const input = option.querySelector('input');
+            option.classList.toggle('active', input && input.checked && !input.disabled);
         });
-
-        const colorSelect = document.getElementById('variation-color');
-        if (colorSelect) {
-            applyColorImages(colorSelect.value || '');
-        }
-
-        syncVariationOptionAvailability();
-        updateVariation();
     }
 
     function isCombinationAvailable(ram, storage, color) {
@@ -886,72 +997,101 @@
     }
 
     function syncVariationOptionAvailability() {
-        const ramSelect = document.getElementById('variation-ram');
-        const storageSelect = document.getElementById('variation-storage');
-        const colorSelect = document.getElementById('variation-color');
-
-        const selectedRam = ramSelect ? ramSelect.value : '';
-        const selectedStorage = storageSelect ? storageSelect.value : '';
-        const selectedColor = colorSelect ? colorSelect.value : '';
-
-        const evaluateOption = (type, value) => {
-            const ram = type === 'ram' ? value : selectedRam;
-            const storage = type === 'storage' ? value : selectedStorage;
-            const color = type === 'color' ? value : selectedColor;
-
-            return isCombinationAvailable(ram, storage, color);
+        const selected = {
+            ram: getSelectedValue('ram') || null,
+            storage: getSelectedValue('storage') || null,
+            color: getSelectedValue('color') || null,
         };
 
-        const processSelect = (select, type) => {
-            if (!select) return;
+        const types = ['storage', 'color', 'ram'];
 
-            let selectionChanged = false;
-            Array.from(select.options).forEach(option => {
-                if (option.value === '') {
-                    option.disabled = false;
-                    option.classList.remove('variation-option-disabled');
-                    return;
+        types.forEach(type => {
+            const options = Array.from(document.querySelectorAll(`label[data-variation-type="${type}"]`));
+            if (!options.length) {
+                return;
+            }
+
+            let firstAvailableInput = null;
+
+            options.forEach(option => {
+                const input = option.querySelector('input');
+                const value = input.value;
+
+                const isAvailable = isCombinationAvailable(
+                    type === 'ram' ? value : selected.ram,
+                    type === 'storage' ? value : selected.storage,
+                    type === 'color' ? value : selected.color
+                );
+
+                if (isAvailable && !firstAvailableInput) {
+                    firstAvailableInput = input;
                 }
 
-                const available = evaluateOption(type, option.value);
-                option.disabled = !available;
-                option.classList.toggle('variation-option-disabled', !available);
+                input.disabled = !isAvailable;
+                option.classList.toggle('disabled', !isAvailable);
 
-                if (!available && select.value === option.value) {
-                    selectionChanged = true;
+                if (!isAvailable && input.checked) {
+                    input.checked = false;
+                    selected[type] = null;
                 }
             });
 
-            if (selectionChanged) {
-                select.value = '';
+            if (!selected[type] && firstAvailableInput) {
+                firstAvailableInput.checked = true;
+                selected[type] = firstAvailableInput.value;
             }
-        };
+        });
 
-        processSelect(ramSelect, 'ram');
-        processSelect(storageSelect, 'storage');
-        processSelect(colorSelect, 'color');
+        refreshActiveVariationOptions();
+    }
+
+    function initVariationSelectors() {
+        const optionInputs = document.querySelectorAll('.variation-option input');
+        optionInputs.forEach(input => {
+            input.addEventListener('change', () => {
+                syncVariationOptionAvailability();
+                applyColorImages(getSelectedValue('color'));
+                updateVariation();
+            });
+        });
+
+        syncVariationOptionAvailability();
+        applyColorImages(getSelectedValue('color'));
+        updateVariation();
     }
 
     function updateVariation() {
-        const ramSelect = document.getElementById('variation-ram');
-        const storageSelect = document.getElementById('variation-storage');
-        const colorSelect = document.getElementById('variation-color');
+        const ram = getSelectedValue('ram');
+        const storage = getSelectedValue('storage');
+        const color = getSelectedValue('color');
         const unavailableMessage = document.getElementById('variation-unavailable-message');
 
-        const ram = ramSelect ? ramSelect.value : '';
-        const storage = storageSelect ? storageSelect.value : '';
-        const color = colorSelect ? colorSelect.value : '';
+        const combinationAvailable = isCombinationAvailable(ram, storage, color);
 
         applyColorImages(color);
 
-        if ((ramSelect && ramSelect.selectedOptions.length && ram === '') ||
-            (storageSelect && storageSelect.selectedOptions.length && storage === '') ||
-            (colorSelect && colorSelect.selectedOptions.length && color === '')) {
+        if (!combinationAvailable) {
             if (unavailableMessage) {
                 unavailableMessage.style.display = 'flex';
             }
             setAddToCartDisabled(true);
             selectedVariationId = null;
+
+            const priceDisplay = document.getElementById('product-price-display');
+            if (priceDisplay) {
+                priceDisplay.textContent = 'R$ {{ number_format($product->price, 2, ",", ".") }}';
+            }
+
+            const skuDisplay = document.getElementById('variation-sku-display');
+            if (skuDisplay) {
+                skuDisplay.style.display = 'none';
+            }
+
+            const stockDisplay = document.getElementById('variation-stock-display');
+            if (stockDisplay) {
+                stockDisplay.style.display = 'none';
+            }
+
             return;
         }
 
@@ -959,31 +1099,22 @@
             unavailableMessage.style.display = 'none';
         }
 
-        // Construir URL da API
         const url = new URL('{{ route("product.variation", $product->slug) }}', window.location.origin);
         if (ram) url.searchParams.append('ram', ram);
         if (storage) url.searchParams.append('storage', storage);
         if (color) url.searchParams.append('color', color);
 
-        // Buscar variação
         fetch(url)
             .then(response => response.json())
             .then(data => {
-                const unavailableMessage = document.getElementById('variation-unavailable-message');
-
                 if (data.success && data.variation) {
                     selectedVariationId = data.variation.id;
-
-                    if (unavailableMessage) {
-                        unavailableMessage.style.display = 'none';
-                    }
 
                     const priceDisplay = document.getElementById('product-price-display');
                     if (priceDisplay && data.variation.price) {
                         priceDisplay.textContent = 'R$ ' + data.variation.price;
                     }
 
-                    // Atualizar SKU
                     const skuDisplay = document.getElementById('variation-sku-display');
                     const skuSpan = document.getElementById('selected-variation-sku');
                     if (skuDisplay && skuSpan) {
@@ -991,7 +1122,6 @@
                         skuDisplay.style.display = 'block';
                     }
 
-                    // Atualizar estoque
                     const stockDisplay = document.getElementById('variation-stock-display');
                     const stockBadge = document.getElementById('variation-stock-badge');
                     if (stockDisplay && stockBadge) {
@@ -1003,7 +1133,7 @@
                         } else {
                             stockBadge.className = 'badge bg-danger fs-6';
                             stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-                        stockDisplay.style.display = 'block';
+                            stockDisplay.style.display = 'block';
                             setAddToCartDisabled(true);
                             if (unavailableMessage) {
                                 unavailableMessage.style.display = 'flex';
@@ -1011,18 +1141,15 @@
                         }
                     }
 
-                    // Atualizar atributo data-variation-id no botão de adicionar ao carrinho
                     const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
                     if (addToCartBtn) {
                         addToCartBtn.setAttribute('data-variation-id', data.variation.id);
-                        // Também atualizar no componente add-to-cart
                         const addToCartComponent = document.querySelector('.add-to-cart-component');
                         if (addToCartComponent) {
                             addToCartComponent.setAttribute('data-variation-id', data.variation.id);
                         }
                     }
                 } else {
-                    // Variação não encontrada
                     selectedVariationId = null;
 
                     const priceDisplay = document.getElementById('product-price-display');
