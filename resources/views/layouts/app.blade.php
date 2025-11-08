@@ -41,6 +41,10 @@
             box-sizing: border-box;
         }
 
+        html, body {
+            overflow-x: hidden;
+        }
+
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
@@ -97,22 +101,33 @@
             margin: 0 auto;
         }
 
+        .mobile-header {
+            display: none;
+            width: 100%;
+        }
+
+        .mobile-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-bottom: 0.75rem;
+        }
+
         .mobile-search-wrapper {
             display: none;
-            flex: 1;
-            max-width: 200px;
+            width: 100%;
         }
 
         .desktop-search-wrapper {
             display: block;
         }
 
-        .mobile-header-top {
+        .mobile-logo {
             display: none;
-            width: 100%;
         }
 
-        .mobile-logo {
+        .mobile-quick-actions {
             display: none;
         }
 
@@ -212,6 +227,82 @@
         .header-icon .cart-badge,
         .header-icon .cart-count {
             display: none !important;
+        }
+
+        .mobile-menu-button {
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            background: transparent;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            transition: background 0.3s ease, transform 0.2s ease;
+        }
+
+        .mobile-menu-button:hover,
+        .mobile-menu-button:focus {
+            background: rgba(255, 255, 255, 0.12);
+            outline: none;
+            transform: translateY(-1px);
+        }
+
+        .mobile-quick-actions {
+            display: none;
+            width: 100%;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .mobile-quick-actions .quick-action {
+            color: white;
+            font-size: 1.35rem;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            flex-shrink: 0;
+            transition: color 0.2s ease, transform 0.2s ease;
+        }
+
+        .mobile-quick-actions .quick-action:hover {
+            color: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        .mobile-quick-actions .quick-action-total {
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            padding: 0.35rem 0.9rem;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: white;
+            letter-spacing: 0.02em;
+            white-space: nowrap;
+        }
+
+        .mobile-quick-actions .quick-action-badge {
+            position: absolute;
+            top: -0.25rem;
+            right: -0.55rem;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            background: var(--secondary-color);
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 0.25rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
         }
 
 
@@ -323,19 +414,23 @@
                 margin-right: 1rem !important;
             }
 
-            .mobile-header-top {
+            .mobile-header {
                 display: flex !important;
-                flex-direction: row;
-                align-items: center;
-                margin-bottom: 0.5rem;
+                flex-direction: column;
                 width: 100%;
+            }
+
+            .mobile-top-bar {
+                margin-bottom: 0.75rem;
+            }
+
+            .mobile-menu-button {
+                display: flex !important;
             }
 
             .mobile-search-wrapper {
                 display: block !important;
-                flex: 1;
-                max-width: none;
-                min-width: 0;
+                width: 100%;
             }
 
             .mobile-search-wrapper .live-search-wrapper {
@@ -345,6 +440,14 @@
 
             .desktop-search-wrapper {
                 display: none !important;
+            }
+
+            .header-icons {
+                display: none !important;
+            }
+
+            .mobile-quick-actions {
+                display: flex !important;
             }
 
             .search-bar {
@@ -540,6 +643,26 @@
     @yield('styles')
 </head>
 <body>
+@php
+    $customerUser = \Illuminate\Support\Facades\Auth::guard('customer')->user();
+    $cartItemsCollection = collect();
+
+    if ($customerUser) {
+        $cartItemsCollection = \App\Models\CartItem::forCustomer($customerUser->id)->get(['quantity', 'price']);
+    } else {
+        $cartSessionId = session('cart_session_id');
+        if ($cartSessionId) {
+            $cartItemsCollection = \App\Models\CartItem::forSession($cartSessionId)->get(['quantity', 'price']);
+        }
+    }
+
+    $cartCount = $cartItemsCollection->sum('quantity');
+    $cartTotalValue = $cartItemsCollection->reduce(function ($carry, $item) {
+        return $carry + ($item->quantity * $item->price);
+    }, 0);
+
+    $cartTotalValueFormatted = number_format($cartTotalValue, 2, ',', '.');
+@endphp
     <!-- Header -->
     <nav class="navbar navbar-expand-lg navbar-custom">
         <div class="container">
@@ -555,14 +678,49 @@
                     @include('components.live-search')
                 </div>
 
-                <!-- Mobile: Logo and Search wrapper -->
-                <div class="mobile-header-top">
-                    <a class="navbar-brand mobile-logo" href="{{ route('home') }}">
-                        <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" class="logo-img">
-                    </a>
-                    <!-- Live Search Component (Mobile - ao lado da logo) -->
+                <!-- Mobile layout -->
+                <div class="mobile-header">
+                    <div class="mobile-top-bar">
+                        <a class="mobile-logo" href="{{ route('home') }}">
+                            <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" class="logo-img">
+                        </a>
+                        <button class="mobile-menu-button" type="button" aria-label="Abrir menu">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                    </div>
                     <div class="mobile-search-wrapper">
                         @include('components.live-search')
+                    </div>
+                    <div class="mobile-quick-actions">
+                        <a href="{{ route('home') }}" class="quick-action" title="Início">
+                            <i class="fas fa-store"></i>
+                        </a>
+                        <a href="#" class="quick-action" title="Notificações">
+                            <i class="fas fa-bell"></i>
+                        </a>
+                        <a href="{{ route('contact') }}" class="quick-action" title="Suporte">
+                            <i class="fas fa-headphones"></i>
+                        </a>
+                        @auth('customer')
+                            <a href="{{ route('orders.index') }}" class="quick-action" title="Minha Conta">
+                                <i class="fas fa-user"></i>
+                            </a>
+                        @elseauth('admin')
+                            <a href="{{ route('admin.dashboard') }}" class="quick-action" title="Painel Admin">
+                                <i class="fas fa-user-shield"></i>
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" class="quick-action" title="Entrar">
+                                <i class="fas fa-user"></i>
+                            </a>
+                        @endauth
+                        <div class="quick-action quick-action-total" title="Subtotal do carrinho">
+                            {{ 'R$ ' . $cartTotalValueFormatted }}
+                        </div>
+                        <a href="{{ route('cart.index') }}" class="quick-action quick-action-cart" title="Carrinho">
+                            <i class="fas fa-shopping-basket"></i>
+                            <span class="quick-action-badge">{{ $cartCount }}</span>
+                        </a>
                     </div>
                 </div>
 
@@ -579,15 +737,6 @@
                     </a>
                     <a href="{{ route('contact') }}" class="header-icon" title="Suporte">
                         <i class="fas fa-headphones"></i>
-                    </a>
-                    <a href="#" class="header-icon" title="Histórico">
-                        <i class="fas fa-history"></i>
-                    </a>
-                    <a href="#" class="header-icon" title="Comparar">
-                        <i class="fas fa-balance-scale"></i>
-                    </a>
-                    <a href="#" class="header-icon" title="Lista de Desejos">
-                        <i class="fas fa-list"></i>
                     </a>
                     <a href="{{ route('cart.index') }}" class="header-icon" title="Carrinho">
                         <i class="fas fa-shopping-cart"></i>

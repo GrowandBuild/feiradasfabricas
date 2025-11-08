@@ -2,13 +2,11 @@
 
 @section('title', 'Banners')
 @section('page-title', 'Gerenciar Banners')
+@section('page-icon', 'bi bi-image')
+@section('page-description', 'Gerencie os banners promocionais por departamento e acompanhe posições, períodos e status.')
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="mb-0">Banners</h4>
-        <p class="text-muted mb-0">Gerencie os banners promocionais por departamento</p>
-    </div>
+<div class="d-flex justify-content-end mb-4">
     <a href="{{ route('admin.banners.create') }}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Novo Banner
     </a>

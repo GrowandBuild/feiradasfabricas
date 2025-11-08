@@ -210,7 +210,120 @@
             background: var(--card-bg);
             box-shadow: var(--shadow-sm);
             border-bottom: 1px solid var(--border-color);
-            padding: 1rem 0;
+            padding: 0.9rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 900;
+        }
+
+        .admin-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .page-header-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+
+        .page-header-wrap .page-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.1) 0%, rgba(148, 163, 184, 0.2) 100%);
+            color: var(--primary-dark);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+        }
+
+        .page-heading {
+            margin: 0;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .page-description {
+            margin: 0.15rem 0 0;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        .page-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .admin-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .btn-go-store {
+            border: 1px solid var(--border-color);
+            background-color: transparent;
+            color: var(--text-secondary);
+            font-weight: 600;
+            padding: 0.45rem 0.9rem;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-size: 0.9rem;
+        }
+
+        .btn-go-store:hover {
+            color: white;
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+        }
+
+        .admin-user-chip {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.4rem 0.75rem;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.12);
+        }
+
+        .admin-user-chip .avatar {
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .admin-user-chip .admin-user-details {
+            line-height: 1.1;
+        }
+
+        .admin-user-chip .admin-user-details .name {
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .admin-user-chip .admin-user-details .role {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
         .btn {
@@ -381,6 +494,157 @@
 
             .main-content {
                 margin-left: 0;
+                padding-bottom: 90px;
+            }
+        }
+
+        .admin-bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--card-bg);
+            border-top: 1px solid var(--border-color);
+            padding: 0.35rem 0;
+            z-index: 999;
+            display: none;
+        }
+
+        .admin-bottom-nav .nav {
+            position: relative;
+            display: flex;
+            flex-direction: row;
+            flex-wrap: nowrap;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 0.35rem;
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding: 0 0.75rem;
+            -webkit-overflow-scrolling: touch;
+            scroll-snap-type: x proximity;
+        }
+
+        .admin-bottom-nav .nav::-webkit-scrollbar {
+            display: none;
+        }
+
+        .admin-bottom-nav .nav[data-admin-loop="true"] {
+            scroll-behavior: smooth;
+        }
+
+
+        .admin-bottom-nav .nav {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .admin-bottom-nav .nav-link {
+            flex: 0 0 auto;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            transition: all 0.2s ease;
+            scroll-snap-align: center;
+            min-width: 4.5rem;
+        }
+
+        .admin-bottom-nav .nav-link i {
+            font-size: 1.1rem;
+        }
+
+        .admin-bottom-nav .nav-link.active {
+            color: var(--accent-color);
+            background: rgba(255, 140, 0, 0.12);
+        }
+
+        @media (max-width: 992px) {
+            .page-heading {
+                font-size: 1.45rem;
+            }
+
+            .page-description {
+                font-size: 0.85rem;
+            }
+
+            .admin-header-actions {
+                width: 100%;
+                justify-content: flex-start;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .navbar-admin {
+                padding: 0.75rem 0;
+            }
+
+            .page-header-wrap {
+                gap: 0.65rem;
+            }
+
+            .page-header-wrap .page-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 1.2rem;
+            }
+
+            .page-heading {
+                font-size: 1.35rem;
+            }
+
+            .page-description {
+                font-size: 0.8rem;
+            }
+
+            .admin-header-actions {
+                gap: 0.6rem;
+            }
+
+            .btn-go-store {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.85rem;
+            }
+
+            .admin-user-chip {
+                padding: 0.35rem 0.6rem;
+                gap: 0.5rem;
+                background: rgba(148, 163, 184, 0.18);
+            }
+
+            .admin-user-chip .avatar {
+                width: 34px;
+                height: 34px;
+                font-size: 1rem;
+            }
+
+            .admin-bottom-nav {
+                display: block;
+            }
+        }
+
+        @media (max-width: 576px) {
+            .admin-header-top {
+                gap: 0.75rem;
+            }
+
+            .admin-header-actions {
+                flex-wrap: nowrap;
+                justify-content: space-between;
+            }
+
+            .admin-user-chip {
+                flex: 1 1 auto;
+                justify-content: flex-start;
+            }
+
+            .admin-user-chip .admin-user-details {
+                display: none;
             }
         }
 
@@ -479,14 +743,52 @@
                     <!-- Top Navbar -->
                     <nav class="navbar navbar-expand-lg navbar-admin">
                         <div class="container-fluid px-4">
-                            <div class="d-flex align-items-center">
-                                <div class="d-flex align-items-center">
-                                    <h4 class="mb-0 fw-bold" style="color: var(--accent-color);">@yield('page-title', 'Dashboard')</h4>
-                                    @yield('page-subtitle')
+                                <div class="d-flex flex-column gap-2 w-100">
+                                <div class="admin-header-top">
+                                    <div class="page-header-wrap">
+                                        <div class="page-icon">
+                                            <i class="@yield('page-icon', 'bi bi-speedometer2')"></i>
+                                        </div>
+                                        <div>
+                                            <div class="page-meta">
+                                                <h1 class="page-heading">@yield('page-title', 'Dashboard')</h1>
+                                                @yield('page-breadcrumb')
+                                            </div>
+                                            @php
+                                                $pageSubtitle = trim($__env->yieldContent('page-subtitle'));
+                                                $pageDescription = trim($__env->yieldContent('page-description'));
+                                            @endphp
+                                            @if(!empty($pageDescription))
+                                                <p class="page-description">{!! $pageDescription !!}</p>
+                                            @elseif(!empty($pageSubtitle))
+                                                <p class="page-description">{!! $pageSubtitle !!}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                    <div class="admin-header-actions">
+                                        @if(request()->routeIs('admin.dashboard'))
+                                            <a href="{{ route('home') }}" class="btn btn-go-store">
+                                                <i class="bi bi-arrow-return-left"></i>
+                                                Voltar para o site
+                                            </a>
+                                        @endif
+                                        <div class="admin-user-chip">
+                                            <div class="avatar">
+                                                <i class="bi bi-person-fill"></i>
+                                            </div>
+                                            <div class="admin-user-details">
+                                                <div class="name">{{ auth('admin')->user()->name }}</div>
+                                                <div class="role">Administrador</div>
+                                            </div>
+                                        </div>
+                                        <form action="{{ route('admin.logout') }}" method="POST" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Sair">
+                                                <i class="bi bi-box-arrow-right"></i>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div class="d-flex align-items-center gap-3">
                                 @if(session('success'))
                                     <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
                                         <i class="bi bi-check-circle me-2"></i>
@@ -501,23 +803,6 @@
                                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                                     </div>
                                 @endif
-                                
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="text-end d-none d-md-block">
-                                        <div class="fw-semibold text-dark">{{ auth('admin')->user()->name }}</div>
-                                        <small class="text-muted">Administrador</small>
-                                    </div>
-                                    <div class="avatar text-white rounded-circle d-flex align-items-center justify-content-center" 
-                                         style="width: 40px; height: 40px; background-color: var(--accent-color);">
-                                        <i class="bi bi-person-fill"></i>
-                                    </div>
-                                    <form action="{{ route('admin.logout') }}" method="POST" class="d-inline">
-                                        @csrf
-                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Sair">
-                                            <i class="bi bi-box-arrow-right"></i>
-                                        </button>
-                                    </form>
-                                </div>
                             </div>
                         </div>
                     </nav>
@@ -531,6 +816,53 @@
         </div>
     </div>
 
+    <nav class="admin-bottom-nav d-md-none" aria-label="Navegação Administrativa">
+        <div class="container-fluid px-3">
+            <div class="nav" data-admin-loop="true" data-admin-loop-width>
+                <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
+                    <i class="bi bi-box-seam"></i>
+                    <span>Produtos</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
+                    <i class="bi bi-tags"></i>
+                    <span>Categorias</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">
+                    <i class="bi bi-cart-check"></i>
+                    <span>Pedidos</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}">
+                    <i class="bi bi-people"></i>
+                    <span>Clientes</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}" href="{{ route('admin.banners.index') }}">
+                    <i class="bi bi-image"></i>
+                    <span>Banners</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.department-badges.*') ? 'active' : '' }}" href="{{ route('admin.department-badges.index') }}">
+                    <i class="bi bi-award"></i>
+                    <span>Selos</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">
+                    <i class="bi bi-ticket-perforated"></i>
+                    <span>Cupons</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
+                    <i class="bi bi-person-badge"></i>
+                    <span>Usuários</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}" href="{{ route('admin.settings.index') }}">
+                    <i class="bi bi-gear"></i>
+                    <span>Config.</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -539,5 +871,60 @@
     
     @stack('scripts')
     @yield('scripts')
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const loopContainers = document.querySelectorAll('.admin-bottom-nav [data-admin-loop="true"]');
+
+            loopContainers.forEach(function (container) {
+                const items = Array.from(container.querySelectorAll('.nav-link'));
+                if (items.length < 2) {
+                    return;
+                }
+
+                const originalWidth = container.scrollWidth;
+
+                items.forEach(function (item) {
+                    const clone = item.cloneNode(true);
+                    clone.setAttribute('data-admin-clone', 'true');
+                    container.appendChild(clone);
+                });
+
+                let isAdjusting = false;
+
+                container.addEventListener('scroll', function () {
+                    if (isAdjusting) {
+                        return;
+                    }
+
+                    if (container.scrollLeft >= originalWidth) {
+                        isAdjusting = true;
+                        const previousBehavior = container.style.scrollBehavior;
+                        container.style.scrollBehavior = 'auto';
+                        container.scrollLeft -= originalWidth;
+                        requestAnimationFrame(function () {
+                            container.style.scrollBehavior = previousBehavior;
+                            isAdjusting = false;
+                        });
+                    } else if (container.scrollLeft <= 0) {
+                        isAdjusting = true;
+                        const previousBehavior = container.style.scrollBehavior;
+                        container.style.scrollBehavior = 'auto';
+                        container.scrollLeft += originalWidth;
+                        requestAnimationFrame(function () {
+                            container.style.scrollBehavior = previousBehavior;
+                            isAdjusting = false;
+                        });
+                    }
+                });
+
+                container.style.scrollBehavior = 'auto';
+                container.scrollLeft = 1;
+                requestAnimationFrame(function () {
+                    container.style.scrollBehavior = '';
+                });
+            });
+        });
+    </script>
 </body>
 </html>

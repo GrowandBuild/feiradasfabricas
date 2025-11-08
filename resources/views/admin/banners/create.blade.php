@@ -30,13 +30,12 @@
                     @csrf
 
                     <div class="mb-3">
-                        <label for="title" class="form-label">Título *</label>
+                        <label for="title" class="form-label">Título <small class="text-muted">(obrigatório apenas quando exibido)</small></label>
                         <input type="text" 
                                class="form-control @error('title') is-invalid @enderror" 
                                id="title" 
                                name="title" 
-                               value="{{ old('title') }}" 
-                               required>
+                               value="{{ old('title') }}">
                         @error('title')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -498,6 +497,51 @@
                                             </div>
                                         </div>
                                     </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6>Botões - Desktop</h6>
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="show_primary_button_desktop" name="show_primary_button_desktop" 
+                                                           {{ old('show_primary_button_desktop', true) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="show_primary_button_desktop">
+                                                        Mostrar botão primário
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="show_secondary_button_desktop" name="show_secondary_button_desktop" 
+                                                           {{ old('show_secondary_button_desktop', true) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="show_secondary_button_desktop">
+                                                        Mostrar botão secundário
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6>Botões - Mobile</h6>
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="show_primary_button_mobile" name="show_primary_button_mobile" 
+                                                           {{ old('show_primary_button_mobile', true) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="show_primary_button_mobile">
+                                                        Mostrar botão primário
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="show_secondary_button_mobile" name="show_secondary_button_mobile" 
+                                                           {{ old('show_secondary_button_mobile', true) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="show_secondary_button_mobile">
+                                                        Mostrar botão secundário
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -624,6 +668,24 @@
             textShadowBlur.addEventListener('input', function() {
                 document.getElementById('text_shadow_blur_value').textContent = this.value;
             });
+        }
+
+        // Garantir obrigatoriedade condicional do título
+        const showTitleSwitch = document.getElementById('show_title');
+        const titleInput = document.getElementById('title');
+        const handleTitleRequirement = () => {
+            if (!titleInput) {
+                return;
+            }
+            if (showTitleSwitch && showTitleSwitch.checked) {
+                titleInput.setAttribute('required', 'required');
+            } else {
+                titleInput.removeAttribute('required');
+            }
+        };
+        handleTitleRequirement();
+        if (showTitleSwitch) {
+            showTitleSwitch.addEventListener('change', handleTitleRequirement);
         }
     });
 </script>

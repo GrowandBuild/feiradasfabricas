@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\ContactController;
 
@@ -17,7 +18,8 @@ use App\Http\Controllers\ContactController;
 */
 
 // Rotas públicas
-Route::get('/', [HomeController::class, 'index'])->name('home');
+Route::get('/', [DepartmentController::class, 'index'])->name('home')->defaults('slug', 'eletronicos');
+Route::get('/vitrine-departamentos', [HomeController::class, 'index'])->name('landing.departments');
 Route::get('/produtos', [HomeController::class, 'products'])->name('products');
 Route::get('/produto/{slug}', [HomeController::class, 'product'])->name('product');
 Route::get('/produto/{slug}/variacao', [HomeController::class, 'getProductVariation'])->name('product.variation');

@@ -61,6 +61,10 @@
         align-items: center;
     }
 
+    .hero-banner-overlay.no-overlay {
+        background: none !important;
+    }
+
     .hero-content-row {
         height: 50vh;
         min-height: 350px;
@@ -649,6 +653,21 @@
         box-shadow: 0 6px 16px rgba(30, 58, 138, 0.3);
     }
 
+    @media (max-width: 576px) {
+        .product-info .d-flex {
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .product-info .product-btn {
+            flex: 1 1 100% !important;
+        }
+
+        .product-info .btn-outline-primary {
+            width: 100%;
+        }
+    }
+
     /* Carrossel de Produtos */
     #productsCarousel {
         position: relative;
@@ -664,6 +683,7 @@
         transform: translateY(-50%);
         opacity: 0.8;
         transition: all 0.3s ease;
+        z-index: 5;
     }
 
     #productsCarousel .carousel-control-prev {
@@ -684,6 +704,34 @@
     #productsCarousel .carousel-control-next-icon {
         width: 20px;
         height: 20px;
+    }
+
+    @media (max-width: 576px) {
+        #productsCarousel .carousel-control-prev,
+        #productsCarousel .carousel-control-next {
+            width: 38px;
+            height: 38px;
+            left: auto;
+            right: auto;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 1;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.25);
+        }
+
+        #productsCarousel .carousel-control-prev {
+            left: 6px;
+        }
+
+        #productsCarousel .carousel-control-next {
+            right: 6px;
+        }
+
+        #productsCarousel .carousel-control-prev-icon,
+        #productsCarousel .carousel-control-next-icon {
+            width: 16px;
+            height: 16px;
+        }
     }
 
     /* Indicadores do carrossel */
@@ -719,6 +767,7 @@
         transform: translateY(-50%);
         opacity: 0.8;
         transition: all 0.3s ease;
+        z-index: 5;
     }
 
     #appleCarousel .carousel-control-prev {
@@ -740,6 +789,100 @@
     #appleCarousel .carousel-control-next-icon {
         width: 20px;
         height: 20px;
+    }
+
+    @media (max-width: 576px) {
+        #appleCarousel .carousel-control-prev,
+        #appleCarousel .carousel-control-next {
+            width: 38px;
+            height: 38px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 1;
+        }
+
+        #appleCarousel .carousel-control-prev {
+            left: 6px;
+        }
+
+        #appleCarousel .carousel-control-next {
+            right: 6px;
+        }
+
+        #appleCarousel .carousel-control-prev-icon,
+        #appleCarousel .carousel-control-next-icon {
+            width: 16px;
+            height: 16px;
+        }
+    }
+
+    /* Ajustes para demais carrosséis de marcas */
+    @media (max-width: 576px) {
+        #samsungCarousel .carousel-control-prev,
+        #samsungCarousel .carousel-control-next,
+        #xiaomiCarousel .carousel-control-prev,
+        #xiaomiCarousel .carousel-control-next,
+        #motorolaCarousel .carousel-control-prev,
+        #motorolaCarousel .carousel-control-next,
+        #infinixCarousel .carousel-control-prev,
+        #infinixCarousel .carousel-control-next,
+        #jblCarousel .carousel-control-prev,
+        #jblCarousel .carousel-control-next,
+        #oppoCarousel .carousel-control-prev,
+        #oppoCarousel .carousel-control-next,
+        #realmeCarousel .carousel-control-prev,
+        #realmeCarousel .carousel-control-next,
+        #tecnoCarousel .carousel-control-prev,
+        #tecnoCarousel .carousel-control-next {
+            width: 38px;
+            height: 38px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 1;
+            z-index: 5;
+        }
+
+        #samsungCarousel .carousel-control-prev,
+        #xiaomiCarousel .carousel-control-prev,
+        #motorolaCarousel .carousel-control-prev,
+        #infinixCarousel .carousel-control-prev,
+        #jblCarousel .carousel-control-prev,
+        #oppoCarousel .carousel-control-prev,
+        #realmeCarousel .carousel-control-prev,
+        #tecnoCarousel .carousel-control-prev {
+            left: 6px;
+        }
+
+        #samsungCarousel .carousel-control-next,
+        #xiaomiCarousel .carousel-control-next,
+        #motorolaCarousel .carousel-control-next,
+        #infinixCarousel .carousel-control-next,
+        #jblCarousel .carousel-control-next,
+        #oppoCarousel .carousel-control-next,
+        #realmeCarousel .carousel-control-next,
+        #tecnoCarousel .carousel-control-next {
+            right: 6px;
+        }
+
+        #samsungCarousel .carousel-control-prev-icon,
+        #samsungCarousel .carousel-control-next-icon,
+        #xiaomiCarousel .carousel-control-prev-icon,
+        #xiaomiCarousel .carousel-control-next-icon,
+        #motorolaCarousel .carousel-control-prev-icon,
+        #motorolaCarousel .carousel-control-next-icon,
+        #infinixCarousel .carousel-control-prev-icon,
+        #infinixCarousel .carousel-control-next-icon,
+        #jblCarousel .carousel-control-prev-icon,
+        #jblCarousel .carousel-control-next-icon,
+        #oppoCarousel .carousel-control-prev-icon,
+        #oppoCarousel .carousel-control-next-icon,
+        #realmeCarousel .carousel-control-prev-icon,
+        #realmeCarousel .carousel-control-next-icon,
+        #tecnoCarousel .carousel-control-prev-icon,
+        #tecnoCarousel .carousel-control-next-icon {
+            width: 16px;
+            height: 16px;
+        }
     }
 
     /* Indicadores do carrossel Apple */
@@ -1053,6 +1196,13 @@
     }
 
     /* Selos de Marcas (Department Badges) */
+    .badges-wrapper {
+        position: relative;
+        overflow: hidden;
+        width: 100%;
+        overscroll-behavior: contain;
+    }
+
     .badges-container {
         display: flex;
         flex-wrap: nowrap;
@@ -1060,7 +1210,17 @@
         align-items: center;
         gap: 15px;
         overflow-x: auto;
+        overflow-y: hidden;
         padding: 10px 0;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior-x: contain;
+        scroll-snap-type: x proximity;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+    .badges-container::-webkit-scrollbar {
+        display: none;
     }
 
     .badge-item {
@@ -1142,6 +1302,9 @@
     @media (max-width: 768px) {
         .badges-container {
             gap: 10px;
+            justify-content: flex-start;
+            padding: 10px 6px;
+            scroll-snap-type: x mandatory;
         }
         .badge-item {
             max-width: 90px;
@@ -1178,40 +1341,102 @@
         <div id="heroBannerCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
             <div class="carousel-inner">
                 @foreach($heroBanners as $index => $banner)
+                    @php
+                        $showTitle = $banner->show_title ?? true;
+                        $showDescription = $banner->show_description ?? true;
+                        $showPrimaryDesktop = $banner->show_primary_button_desktop ?? true;
+                        $showPrimaryMobile = $banner->show_primary_button_mobile ?? true;
+                        $showSecondaryDesktop = $banner->show_secondary_button_desktop ?? true;
+                        $showSecondaryMobile = $banner->show_secondary_button_mobile ?? true;
+                        $overlayEnabled = $banner->show_overlay ?? true;
+
+                        $overlayStyle = '';
+                        if ($overlayEnabled) {
+                            $rawOverlayColor = $banner->overlay_color ?? 'rgba(15,23,42,0.65)';
+                            if (\Illuminate\Support\Str::startsWith($rawOverlayColor, '#')) {
+                                $hex = ltrim($rawOverlayColor, '#');
+                                if (strlen($hex) === 3) {
+                                    $hex = preg_replace('/(.)/', '$1$1', $hex);
+                                }
+                                $rgb = [
+                                    hexdec(substr($hex, 0, 2)),
+                                    hexdec(substr($hex, 2, 2)),
+                                    hexdec(substr($hex, 4, 2)),
+                                ];
+                                $opacity = max(min($banner->overlay_opacity ?? 70, 100), 0) / 100;
+                                $overlayStyle = "background: rgba({$rgb[0]}, {$rgb[1]}, {$rgb[2]}, {$opacity});";
+                            } else {
+                                $overlayStyle = "background: {$rawOverlayColor};";
+                            }
+                        }
+
+                        $primaryButtonClasses = null;
+                        if ($showPrimaryDesktop || $showPrimaryMobile) {
+                            $primaryButtonClasses = 'btn hero-btn-primary align-items-center gap-2';
+                            if ($showPrimaryDesktop && $showPrimaryMobile) {
+                                $primaryButtonClasses .= ' d-inline-flex';
+                            } elseif ($showPrimaryDesktop) {
+                                $primaryButtonClasses .= ' d-none d-md-inline-flex';
+                            } else {
+                                $primaryButtonClasses .= ' d-inline-flex d-md-none';
+                            }
+                        }
+
+                        $secondaryButtonClasses = null;
+                        if ($showSecondaryDesktop || $showSecondaryMobile) {
+                            $secondaryButtonClasses = 'btn hero-btn-secondary align-items-center gap-2';
+                            if ($showSecondaryDesktop && $showSecondaryMobile) {
+                                $secondaryButtonClasses .= ' d-inline-flex';
+                            } elseif ($showSecondaryDesktop) {
+                                $secondaryButtonClasses .= ' d-none d-md-inline-flex';
+                            } else {
+                                $secondaryButtonClasses .= ' d-inline-flex d-md-none';
+                            }
+                        }
+
+                        $hasAnyButton = $primaryButtonClasses || $secondaryButtonClasses;
+                    @endphp
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <div class="hero-banner-full">
                             <div class="hero-banner-image" 
                                  style="background-image: url('{{ $banner->image ? asset('storage/' . $banner->image) : '' }}');">
-                                <div class="hero-banner-overlay">
+                                <div class="hero-banner-overlay {{ $overlayEnabled ? '' : 'no-overlay' }}" @if($overlayEnabled && $overlayStyle) style="{{ $overlayStyle }}" @endif>
                                     <div class="container">
                                         <div class="row align-items-center hero-content-row">
                                             <div class="col-lg-8">
                                                 <div class="hero-banner-content">
-                                                    <h1 class="hero-banner-title">{{ $banner->title ?: 'Feira das Fábricas' }}</h1>
-                                                    @if($banner->description)
-                                                        <p class="hero-banner-subtitle">{{ $banner->description }}</p>
-                                                    @else
+                                                    @if($showTitle)
+                                                        <h1 class="hero-banner-title">{{ $banner->title ?: 'Feira das Fábricas' }}</h1>
+                                                    @endif
+
+                                                    @if($showDescription)
                                                         <p class="hero-banner-subtitle">
-                                                            O melhor em eletrônicos e tecnologia para sua empresa e para você.
+                                                            {{ $banner->description ?: 'O melhor em eletrônicos e tecnologia para sua empresa e para você.' }}
                                                         </p>
                                                     @endif
-                                                    <div class="hero-banner-actions">
-                                                        <a href="{{ route('products') }}" class="btn hero-btn-primary">
-                                                            <i class="fas fa-shopping-bag me-2"></i>
-                                                            Ver Produtos
-                                                        </a>
-                                                        @if($banner->link)
-                                                            <a href="{{ $banner->link }}" class="btn hero-btn-secondary">
-                                                                <i class="fas fa-arrow-right me-2"></i>
-                                                                Saiba Mais
-                                                            </a>
-                                                        @else
-                                                            <a href="{{ route('contact') }}" class="btn hero-btn-secondary">
-                                                                <i class="fas fa-phone me-2"></i>
-                                                                Contato
-                                                            </a>
-                                                        @endif
-                                                    </div>
+
+                                                    @if($hasAnyButton)
+                                                        <div class="hero-banner-actions">
+                                                            @if($primaryButtonClasses)
+                                                                <a href="{{ route('products') }}" class="{{ $primaryButtonClasses }}">
+                                                                    <i class="fas fa-shopping-bag me-2"></i>
+                                                                    Ver Produtos
+                                                                </a>
+                                                            @endif
+
+                                                            @if($secondaryButtonClasses)
+                                                                @php
+                                                                    $secondaryHref = $banner->link ?: route('contact');
+                                                                    $secondaryLabel = $banner->link ? 'Saiba Mais' : 'Contato';
+                                                                    $secondaryIcon = $banner->link ? 'fas fa-arrow-right' : 'fas fa-phone';
+                                                                @endphp
+                                                                <a href="{{ $secondaryHref }}" class="{{ $secondaryButtonClasses }}">
+                                                                    <i class="{{ $secondaryIcon }} me-2"></i>
+                                                                    {{ $secondaryLabel }}
+                                                                </a>
+                                                            @endif
+                                                        </div>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </div>
@@ -1270,27 +1495,29 @@
 @if($departmentBadges && $departmentBadges->count() > 0)
 <section class="section-elegant" style="padding: 30px 0; background: var(--elegant-white);">
     <div class="container">
-        <div class="badges-container">
-            @foreach($departmentBadges as $badge)
-                <div class="badge-item text-center">
-                        @if($badge->link)
-                            <a href="{{ $badge->link }}" class="badge-link" title="{{ $badge->title }}">
-                        @else
-                            <div class="badge-link" title="{{ $badge->title }}">
-                        @endif
-                            <div class="badge-circle">
-                                <img src="{{ $badge->image_url }}" 
-                                     alt="{{ $badge->title }}" 
-                                     class="badge-image">
-                            </div>
-                            <p class="badge-title">{{ $badge->title }}</p>
-                        @if($badge->link)
-                            </a>
-                        @else
-                            </div>
-                        @endif
-                    </div>
-            @endforeach
+        <div class="badges-wrapper" data-badge-loop>
+            <div class="badges-container">
+                @foreach($departmentBadges as $badge)
+                    <div class="badge-item text-center" data-badge-item>
+                            @if($badge->link)
+                                <a href="{{ $badge->link }}" class="badge-link" title="{{ $badge->title }}">
+                            @else
+                                <div class="badge-link" title="{{ $badge->title }}">
+                            @endif
+                                <div class="badge-circle">
+                                    <img src="{{ $badge->image_url }}" 
+                                         alt="{{ $badge->title }}" 
+                                         class="badge-image">
+                                </div>
+                                <p class="badge-title">{{ $badge->title }}</p>
+                            @if($badge->link)
+                                </a>
+                            @else
+                                </div>
+                            @endif
+                        </div>
+                @endforeach
+            </div>
         </div>
     </div>
 </section>
@@ -1347,7 +1574,7 @@
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <div class="row">
                             @foreach($chunk as $product)
-                                <div class="col-lg-3 col-md-6 mb-2">
+                                <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card">
                                         <div class="product-image">
                                             @if($product->first_image)
@@ -1448,7 +1675,7 @@
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <div class="row">
                             @foreach($chunk as $product)
-                                <div class="col-lg-3 col-md-6 mb-2">
+                                <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card apple-card">
                                         <div class="product-image">
                                             @if($product->first_image)
@@ -1548,7 +1775,7 @@
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <div class="row">
                             @foreach($chunk as $product)
-                                <div class="col-lg-3 col-md-6 mb-2">
+                                <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
                                         <div class="product-image">
                                             @if($product->first_image)
@@ -1648,7 +1875,7 @@
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <div class="row">
                             @foreach($chunk as $product)
-                                <div class="col-lg-3 col-md-6 mb-2">
+                                <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
                                         <div class="product-image">
                                             @if($product->first_image)
@@ -1748,7 +1975,7 @@
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <div class="row">
                             @foreach($chunk as $product)
-                                <div class="col-lg-3 col-md-6 mb-2">
+                                <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
                                         <div class="product-image">
                                             @if($product->first_image)
@@ -1850,7 +2077,7 @@
                         <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                             <div class="row">
                                 @foreach($chunk as $product)
-                                    <div class="col-lg-3 col-md-6 mb-2">
+                                    <div class="col-lg-3 col-md-6 col-6 mb-2">
                                         <div class="product-card brand-card">
                                             <div class="product-image">
                                                 @if($product->first_image)
@@ -1959,7 +2186,7 @@
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <div class="row">
                             @foreach($chunk as $product)
-                                <div class="col-lg-3 col-md-6 mb-2">
+                                <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
                                         <div class="product-image">
                                             @if($product->first_image)
@@ -2059,7 +2286,7 @@
                         <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                             <div class="row">
                                 @foreach($chunk as $product)
-                                    <div class="col-lg-3 col-md-6 mb-2">
+                                    <div class="col-lg-3 col-md-6 col-6 mb-2">
                                         <div class="product-card brand-card">
                                             <div class="product-image">
                                                 @if($product->first_image)
@@ -2168,7 +2395,7 @@
                         <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                             <div class="row">
                                 @foreach($chunk as $product)
-                                    <div class="col-lg-3 col-md-6 mb-2">
+                                    <div class="col-lg-3 col-md-6 col-6 mb-2">
                                         <div class="product-card brand-card">
                                             <div class="product-image">
                                                 @if($product->first_image)
@@ -2277,7 +2504,7 @@
                     <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
                         <div class="row">
                             @foreach($chunk as $product)
-                                <div class="col-lg-3 col-md-6 mb-2">
+                                <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
                                         <div class="product-image">
                                             @if($product->first_image)
@@ -2374,3 +2601,65 @@
     </div>
 </section>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const wrappers = document.querySelectorAll('[data-badge-loop]');
+
+        wrappers.forEach(function (wrapper) {
+            const scroller = wrapper.querySelector('.badges-container');
+            if (!scroller) {
+                return;
+            }
+
+            const items = Array.from(scroller.querySelectorAll('[data-badge-item]'));
+            if (items.length < 2) {
+                return;
+            }
+
+            const originalWidth = scroller.scrollWidth;
+
+            items.forEach(function (item) {
+                const clone = item.cloneNode(true);
+                clone.setAttribute('data-badge-clone', 'true');
+                scroller.appendChild(clone);
+            });
+
+            let isAdjusting = false;
+
+            scroller.addEventListener('scroll', function () {
+                if (isAdjusting) {
+                    return;
+                }
+
+            if (scroller.scrollLeft >= originalWidth) {
+                    isAdjusting = true;
+                const previousBehavior = scroller.style.scrollBehavior;
+                scroller.style.scrollBehavior = 'auto';
+                scroller.scrollLeft -= originalWidth;
+                requestAnimationFrame(function () {
+                    scroller.style.scrollBehavior = previousBehavior;
+                    isAdjusting = false;
+                });
+                } else if (scroller.scrollLeft <= 0) {
+                    isAdjusting = true;
+                const previousBehavior = scroller.style.scrollBehavior;
+                scroller.style.scrollBehavior = 'auto';
+                scroller.scrollLeft += originalWidth;
+                requestAnimationFrame(function () {
+                    scroller.style.scrollBehavior = previousBehavior;
+                    isAdjusting = false;
+                });
+                }
+            });
+
+        scroller.style.scrollBehavior = 'auto';
+        scroller.scrollLeft = 1;
+        requestAnimationFrame(function () {
+            scroller.style.scrollBehavior = '';
+        });
+        });
+    });
+</script>
+@endpush

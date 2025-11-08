@@ -7,7 +7,7 @@
                 class="form-control live-search-input" 
                 name="q" 
                 id="liveSearchInput"
-                placeholder="Procurar na Feira das Fábricas" 
+                placeholder="Procurar na Feira das Fabricas" 
                 value="{{ request('q') }}"
                 autocomplete="off"
                 aria-label="Buscar produtos"

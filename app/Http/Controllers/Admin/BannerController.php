@@ -52,16 +52,27 @@ class BannerController extends Controller
     public function store(Request $request)
     {
         // Tratar campos booleanos antes da validação
-        $request->merge([
-            'is_active' => $request->has('is_active') ? 1 : 0,
-            'show_title' => $request->has('show_title') ? 1 : 0,
-            'show_description' => $request->has('show_description') ? 1 : 0,
-            'show_overlay' => $request->has('show_overlay') ? 1 : 0,
-        ]);
+        $booleanFields = [
+            'is_active',
+            'show_title',
+            'show_description',
+            'show_overlay',
+            'show_primary_button_desktop',
+            'show_primary_button_mobile',
+            'show_secondary_button_desktop',
+            'show_secondary_button_mobile',
+        ];
+
+        foreach ($booleanFields as $field) {
+            $request->merge([$field => $request->boolean($field)]);
+        }
+
+        $titleRule = $request->boolean('show_title') ? 'required|string|max:255' : 'nullable|string|max:255';
+        $descriptionRule = $request->boolean('show_description') ? 'required|string' : 'nullable|string';
 
         $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'title' => $titleRule,
+            'description' => $descriptionRule,
             'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'link' => 'nullable|string|max:255',
@@ -96,9 +107,13 @@ class BannerController extends Controller
             'banner_height' => 'nullable|string|max:10',
             'banner_padding_top' => 'nullable|integer|min:0|max:100',
             'banner_padding_bottom' => 'nullable|integer|min:0|max:100',
-            'show_title' => 'nullable|in:0,1',
-            'show_description' => 'nullable|in:0,1',
-            'show_overlay' => 'nullable|in:0,1',
+            'show_title' => 'boolean',
+            'show_description' => 'boolean',
+            'show_overlay' => 'boolean',
+            'show_primary_button_desktop' => 'boolean',
+            'show_primary_button_mobile' => 'boolean',
+            'show_secondary_button_desktop' => 'boolean',
+            'show_secondary_button_mobile' => 'boolean',
             'overlay_color' => 'nullable|string|max:20',
             'overlay_opacity' => 'nullable|integer|min:0|max:100',
         ], [
@@ -124,10 +139,9 @@ class BannerController extends Controller
         ]);
 
         $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
-        $data['show_title'] = $request->has('show_title');
-        $data['show_description'] = $request->has('show_description');
-        $data['show_overlay'] = $request->has('show_overlay');
+        foreach ($booleanFields as $field) {
+            $data[$field] = $request->boolean($field);
+        }
 
         // Garantir que campos de cor vazios sejam null (para permitir reset)
         $colorFields = ['text_color', 'description_color', 'text_shadow_color', 'banner_background_color', 'overlay_color'];
@@ -183,17 +197,28 @@ class BannerController extends Controller
     public function update(Request $request, Banner $banner)
     {
         // Tratar campos booleanos antes da validação
-        $request->merge([
-            'is_active' => $request->has('is_active') ? 1 : 0,
-            'show_title' => $request->has('show_title') ? 1 : 0,
-            'show_description' => $request->has('show_description') ? 1 : 0,
-            'show_overlay' => $request->has('show_overlay') ? 1 : 0,
-        ]);
+        $booleanFields = [
+            'is_active',
+            'show_title',
+            'show_description',
+            'show_overlay',
+            'show_primary_button_desktop',
+            'show_primary_button_mobile',
+            'show_secondary_button_desktop',
+            'show_secondary_button_mobile',
+        ];
+
+        foreach ($booleanFields as $field) {
+            $request->merge([$field => $request->boolean($field)]);
+        }
+
+        $titleRule = $request->boolean('show_title') ? 'required|string|max:255' : 'nullable|string|max:255';
+        $descriptionRule = $request->boolean('show_description') ? 'required|string' : 'nullable|string';
 
         try {
             $validated = $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
+            'title' => $titleRule,
+            'description' => $descriptionRule,
             'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'mobile_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp|max:10240',
             'link' => 'nullable|string|max:255',
@@ -228,9 +253,13 @@ class BannerController extends Controller
             'banner_height' => 'nullable|string|max:10',
             'banner_padding_top' => 'nullable|integer|min:0|max:100',
             'banner_padding_bottom' => 'nullable|integer|min:0|max:100',
-            'show_title' => 'nullable|in:0,1',
-            'show_description' => 'nullable|in:0,1',
-            'show_overlay' => 'nullable|in:0,1',
+            'show_title' => 'boolean',
+            'show_description' => 'boolean',
+            'show_overlay' => 'boolean',
+            'show_primary_button_desktop' => 'boolean',
+            'show_primary_button_mobile' => 'boolean',
+            'show_secondary_button_desktop' => 'boolean',
+            'show_secondary_button_mobile' => 'boolean',
             'overlay_color' => 'nullable|string|max:20',
             'overlay_opacity' => 'nullable|integer|min:0|max:100',
         ], [
@@ -266,10 +295,9 @@ class BannerController extends Controller
         }
 
         $data = $request->all();
-        $data['is_active'] = $request->has('is_active');
-        $data['show_title'] = $request->has('show_title');
-        $data['show_description'] = $request->has('show_description');
-        $data['show_overlay'] = $request->has('show_overlay');
+        foreach ($booleanFields as $field) {
+            $data[$field] = $request->boolean($field);
+        }
 
         // Garantir que campos de cor vazios sejam null (para permitir reset)
         $colorFields = ['text_color', 'description_color', 'text_shadow_color', 'banner_background_color', 'overlay_color'];

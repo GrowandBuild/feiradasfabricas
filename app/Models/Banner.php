@@ -51,6 +51,10 @@ class Banner extends Model
         'show_title',
         'show_description',
         'show_overlay',
+        'show_primary_button_desktop',
+        'show_primary_button_mobile',
+        'show_secondary_button_desktop',
+        'show_secondary_button_mobile',
         'overlay_color',
         'overlay_opacity',
     ];
@@ -62,6 +66,10 @@ class Banner extends Model
         'show_title' => 'boolean',
         'show_description' => 'boolean',
         'show_overlay' => 'boolean',
+        'show_primary_button_desktop' => 'boolean',
+        'show_primary_button_mobile' => 'boolean',
+        'show_secondary_button_desktop' => 'boolean',
+        'show_secondary_button_mobile' => 'boolean',
     ];
 
     public function isActive()

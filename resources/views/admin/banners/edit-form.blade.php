@@ -15,13 +15,12 @@
     @method('PUT')
 
     <div class="mb-3">
-        <label for="title" class="form-label">Título *</label>
+        <label for="title" class="form-label">Título <small class="text-muted">(obrigatório apenas quando exibido)</small></label>
         <input type="text" 
                class="form-control @error('title') is-invalid @enderror" 
                id="title" 
                name="title" 
-               value="{{ old('title', $banner->title) }}" 
-               required>
+               value="{{ old('title', $banner->title) }}">
         @error('title')
             <div class="invalid-feedback">{{ $message }}</div>
         @enderror
@@ -390,6 +389,112 @@
                         <div class="col-md-12">
                             <h6 class="border-bottom pb-2 mb-3">Espaçamentos e Layout Avançado</h6>
                             <p class="text-muted small">As configurações de layout avançado estão disponíveis, mas geralmente não são necessárias para a maioria dos banners.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h6>Elementos Visíveis</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="modal_show_title" name="show_title" 
+                                   {{ old('show_title', $banner->show_title) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="modal_show_title">
+                                Mostrar Título
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="modal_show_description" name="show_description" 
+                                   {{ old('show_description', $banner->show_description) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="modal_show_description">
+                                Mostrar Descrição
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="modal_show_overlay" name="show_overlay" 
+                                   {{ old('show_overlay', $banner->show_overlay) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="modal_show_overlay">
+                                Mostrar Overlay
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Configurações do Overlay</h6>
+                    <div class="mb-3">
+                        <label for="modal_overlay_color" class="form-label">Cor do Overlay</label>
+                        <input type="color" 
+                               class="form-control form-control-color" 
+                               id="modal_overlay_color" 
+                               name="overlay_color" 
+                               value="{{ old('overlay_color', $banner->overlay_color ?? '#000000') }}">
+                    </div>
+                    <div class="mb-3">
+                        <label for="modal_overlay_opacity" class="form-label">Opacidade do Overlay (%)</label>
+                        <input type="range" 
+                               class="form-range" 
+                               id="modal_overlay_opacity" 
+                               name="overlay_opacity" 
+                               min="0" 
+                               max="100" 
+                               value="{{ old('overlay_opacity', $banner->overlay_opacity ?? 70) }}">
+                        <div class="d-flex justify-content-between">
+                            <small>0%</small>
+                            <small id="modal_overlay_opacity_value">{{ old('overlay_opacity', $banner->overlay_opacity ?? 70) }}%</small>
+                            <small>100%</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <h6>Botões - Desktop</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="modal_show_primary_button_desktop" name="show_primary_button_desktop" 
+                                   {{ old('show_primary_button_desktop', $banner->show_primary_button_desktop ?? true) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="modal_show_primary_button_desktop">
+                                Mostrar botão primário
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="modal_show_secondary_button_desktop" name="show_secondary_button_desktop" 
+                                   {{ old('show_secondary_button_desktop', $banner->show_secondary_button_desktop ?? true) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="modal_show_secondary_button_desktop">
+                                Mostrar botão secundário
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>Botões - Mobile</h6>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="modal_show_primary_button_mobile" name="show_primary_button_mobile" 
+                                   {{ old('show_primary_button_mobile', $banner->show_primary_button_mobile ?? true) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="modal_show_primary_button_mobile">
+                                Mostrar botão primário
+                            </label>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="modal_show_secondary_button_mobile" name="show_secondary_button_mobile" 
+                                   {{ old('show_secondary_button_mobile', $banner->show_secondary_button_mobile ?? true) ? 'checked' : '' }}>
+                            <label class="form-check-label" for="modal_show_secondary_button_mobile">
+                                Mostrar botão secundário
+                            </label>
                         </div>
                     </div>
                 </div>
