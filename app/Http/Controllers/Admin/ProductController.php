@@ -1064,21 +1064,25 @@ class ProductController extends Controller
      */
     public function deleteVariation(Request $request, Product $product, $variationId)
     {
-        // Buscar a variação manualmente para evitar erro de route model binding
-        $variation = ProductVariation::find($variationId);
+        // Converter o ID para inteiro para garantir que seja um número válido
+        $variationId = (int) $variationId;
+        
+        if ($variationId <= 0) {
+            return response()->json([
+                'success' => false,
+                'message' => 'ID de variação inválido.'
+            ], 422);
+        }
+
+        // Buscar a variação manualmente verificando se pertence ao produto
+        $variation = ProductVariation::where('id', $variationId)
+            ->where('product_id', $product->id)
+            ->first();
         
         if (!$variation) {
             return response()->json([
                 'success' => false,
-                'message' => 'Variação não encontrada.'
-            ], 404);
-        }
-
-        // Verificar se a variação pertence ao produto
-        if ($variation->product_id !== $product->id) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Variação não pertence a este produto.'
+                'message' => 'Variação não encontrada ou não pertence a este produto.'
             ], 404);
         }
 
@@ -1093,7 +1097,8 @@ class ProductController extends Controller
             \Log::error('Erro ao remover variação', [
                 'product_id' => $product->id,
                 'variation_id' => $variationId,
-                'exception' => $e
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
             ]);
 
             return response()->json([

@@ -1195,6 +1195,13 @@ function initializeVariationPriceFields(stockItem) {
         deleteBtn.addEventListener('click', function() {
             const id = this.getAttribute('data-variation-id');
             const card = this.closest('.variation-stock-card');
+            
+            if (!id) {
+                console.error('ID da variação não encontrado no atributo data-variation-id');
+                showVariationMessage('error', 'Erro: ID da variação não encontrado.');
+                return;
+            }
+            
             confirmAndDeleteVariation(id, card);
         });
     }
@@ -1202,8 +1209,19 @@ function initializeVariationPriceFields(stockItem) {
 
 function confirmAndDeleteVariation(variationId, cardElement) {
     if (!variationId) {
+        showVariationMessage('error', 'ID da variação não encontrado.');
         return;
     }
+
+    // Converter o ID para número para garantir que seja válido
+    const id = parseInt(variationId, 10);
+    if (isNaN(id) || id <= 0) {
+        console.error('ID da variação inválido:', variationId);
+        showVariationMessage('error', 'ID da variação inválido.');
+        return;
+    }
+    
+    console.log('Excluindo variação com ID:', id);
 
     if (!confirm('Tem certeza que deseja remover esta variação? Esta ação não pode ser desfeita.')) {
         return;
@@ -1220,7 +1238,7 @@ function confirmAndDeleteVariation(variationId, cardElement) {
         cardElement.classList.add(loaderClass);
     }
 
-    fetch(`/admin/products/${productId}/variations/${variationId}`, {
+    fetch(`/admin/products/${productId}/variations/${id}`, {
         method: 'DELETE',
         headers: {
             'Content-Type': 'application/json',
