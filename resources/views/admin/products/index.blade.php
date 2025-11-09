@@ -227,6 +227,9 @@
                             <button type="button" onclick="submitBulkAction('mark_available')" class="btn btn-success btn-sm">
                                 <i class="bi bi-check-circle me-1"></i>Marcar como Disponível
                             </button>
+                            <button type="button" onclick="submitBulkAction('delete')" class="btn btn-danger btn-sm">
+                                <i class="bi bi-trash me-1"></i>Excluir Selecionados
+                            </button>
                             <button type="button" id="clearSelection" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-x me-1"></i>Limpar
                             </button>
@@ -652,8 +655,21 @@
                 return false;
             }
 
-            const actionText = action === 'mark_unavailable' ? 'marcar como indisponível' : 'marcar como disponível';
-            if (confirm(`Tem certeza que deseja ${actionText} ${checkedBoxes.length} produto(s)?`)) {
+            let actionText = '';
+            let confirmMessage = '';
+            
+            if (action === 'delete') {
+                actionText = 'excluir';
+                confirmMessage = `⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nTem certeza que deseja excluir ${checkedBoxes.length} produto(s) selecionado(s)?\n\nTodos os dados, imagens e variações serão permanentemente removidos.`;
+            } else if (action === 'mark_unavailable') {
+                actionText = 'marcar como indisponível';
+                confirmMessage = `Tem certeza que deseja ${actionText} ${checkedBoxes.length} produto(s)?`;
+            } else if (action === 'mark_available') {
+                actionText = 'marcar como disponível';
+                confirmMessage = `Tem certeza que deseja ${actionText} ${checkedBoxes.length} produto(s)?`;
+            }
+            
+            if (confirm(confirmMessage)) {
                 document.getElementById('bulkAction').value = action;
                 document.getElementById('bulkActionForm').submit();
             }

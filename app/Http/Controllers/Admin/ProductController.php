@@ -314,7 +314,7 @@ class ProductController extends Controller
     public function bulkAction(Request $request)
     {
         $request->validate([
-            'action' => 'required|in:mark_unavailable,mark_available',
+            'action' => 'required|in:mark_unavailable,mark_available,delete',
             'product_ids' => 'required|string',
         ]);
 
@@ -338,26 +338,67 @@ class ProductController extends Controller
 
         $action = $request->action;
         $count = 0;
+        $skippedCount = 0;
 
         foreach ($existingIds as $productId) {
             $product = Product::find($productId);
             if ($product) {
                 if ($action === 'mark_unavailable') {
                     $product->is_unavailable = true;
+                    $product->save();
+                    $count++;
                 } elseif ($action === 'mark_available') {
                     $product->is_unavailable = false;
+                    $product->save();
+                    $count++;
+                } elseif ($action === 'delete') {
+                    // Verificar se o produto tem pedidos associados
+                    if ($product->orderItems()->count() > 0) {
+                        $skippedCount++;
+                        continue; // Pular este produto, não pode ser excluído
+                    }
+                    
+                    // Excluir imagens do produto
+                    if ($product->images) {
+                        $images = is_array($product->images) ? $product->images : json_decode($product->images, true);
+                        if (is_array($images)) {
+                            foreach ($images as $image) {
+                                if ($image && Storage::disk('public')->exists($image)) {
+                                    Storage::disk('public')->delete($image);
+                                }
+                            }
+                        }
+                    }
+                    
+                    // Excluir variações do produto
+                    $product->variations()->delete();
+                    
+                    // Excluir relacionamentos com categorias
+                    $product->categories()->detach();
+                    
+                    // Excluir itens do carrinho relacionados
+                    $product->cartItems()->delete();
+                    
+                    // Excluir o produto
+                    $product->delete();
+                    $count++;
                 }
-                $product->save();
-                $count++;
             }
         }
 
-        $message = $action === 'mark_unavailable' 
-            ? "{$count} produto(s) marcado(s) como indisponível(is)!" 
-            : "{$count} produto(s) marcado(s) como disponível(is)!";
+        $message = match($action) {
+            'mark_unavailable' => "{$count} produto(s) marcado(s) como indisponível(is)!",
+            'mark_available' => "{$count} produto(s) marcado(s) como disponível(is)!",
+            'delete' => $skippedCount > 0 
+                ? "{$count} produto(s) excluído(s) com sucesso! {$skippedCount} produto(s) não puderam ser excluídos por possuírem pedidos associados."
+                : "{$count} produto(s) excluído(s) com sucesso!",
+            default => "Ação realizada com sucesso!"
+        };
+
+        $messageType = ($action === 'delete' && $skippedCount > 0 && $count > 0) ? 'warning' : 'success';
 
         return redirect()->back()
-                        ->with('success', $message);
+                        ->with($messageType, $message);
     }
 
     /**
