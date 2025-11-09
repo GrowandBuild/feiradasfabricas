@@ -99,9 +99,14 @@
                         <div class="mb-3">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <label class="form-label fw-bold mb-0">Gerenciar Estoque por Variação</label>
-                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAllStock()">
-                                    <i class="bi bi-check-all me-1"></i>Salvar Todos
-                                </button>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteInactiveVariations()" title="Excluir todas as variações desativadas">
+                                        <i class="bi bi-trash me-1"></i>Excluir Desativadas
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAllStock()">
+                                        <i class="bi bi-check-all me-1"></i>Salvar Todos
+                                    </button>
+                                </div>
                             </div>
                             <div class="alert alert-info">
                                 <i class="bi bi-info-circle me-2"></i>
@@ -1270,6 +1275,46 @@ function confirmAndDeleteVariation(variationId, cardElement) {
         if (cardElement) {
             cardElement.classList.remove(loaderClass);
         }
+    });
+}
+
+function deleteInactiveVariations() {
+    const productId = document.getElementById('variationsProductId').value;
+    if (!productId) {
+        showVariationMessage('error', 'Erro: produto não identificado.');
+        return;
+    }
+
+    if (!confirm('⚠️ ATENÇÃO: Esta ação é IRREVERSÍVEL!\n\nTem certeza que deseja excluir TODAS as variações desativadas deste produto?\n\nEsta ação não pode ser desfeita.')) {
+        return;
+    }
+
+    fetch(`/admin/products/${productId}/variations/inactive/delete-all`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        }
+    })
+    .then(async response => {
+        const data = await response.json();
+        
+        if (!response.ok) {
+            showVariationMessage('error', data.message || 'Não foi possível remover as variações desativadas.');
+            return;
+        }
+        
+        if (data.success) {
+            showVariationMessage('success', data.message || 'Variações desativadas removidas com sucesso.');
+            loadVariations(productId);
+        } else {
+            showVariationMessage('error', data.message || 'Não foi possível remover as variações desativadas.');
+        }
+    })
+    .catch(error => {
+        console.error('Erro ao excluir variações desativadas:', error);
+        showVariationMessage('error', 'Erro ao remover variações desativadas. Tente novamente.');
     });
 }
 </script>

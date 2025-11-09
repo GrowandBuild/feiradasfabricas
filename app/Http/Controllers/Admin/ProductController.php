@@ -1109,6 +1109,45 @@ class ProductController extends Controller
     }
 
     /**
+     * Remove todas as variações desativadas de um produto
+     */
+    public function deleteInactiveVariations(Product $product)
+    {
+        try {
+            $inactiveVariations = $product->variations()->where('is_active', false)->get();
+            
+            if ($inactiveVariations->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nenhuma variação desativada encontrada.'
+                ], 404);
+            }
+
+            $count = 0;
+            foreach ($inactiveVariations as $variation) {
+                $variation->delete();
+                $count++;
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => "{$count} variação(ões) desativada(s) removida(s) com sucesso."
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao remover variações desativadas', [
+                'product_id' => $product->id,
+                'exception' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Não foi possível remover as variações desativadas. Tente novamente.'
+            ], 500);
+        }
+    }
+
+    /**
      * Remove todas as variações que correspondem a um determinado valor de cor/RAM/armazenamento
      */
     public function deleteVariationValue(Request $request, Product $product)
