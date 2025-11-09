@@ -261,12 +261,15 @@
                     </thead>
                     <tbody>
                         @foreach($products as $product)
-                            <tr class="{{ $product->is_unavailable ? 'table-secondary opacity-75' : '' }}">
+                            <tr class="product-row {{ $product->is_unavailable ? 'table-secondary opacity-75' : '' }}" 
+                                data-product-id="{{ $product->id }}"
+                                style="cursor: pointer;">
                                 <td class="text-center" style="padding: 8px 4px;">
                                     <input type="checkbox" 
                                            class="form-check-input product-checkbox" 
                                            value="{{ $product->id }}"
-                                           data-product-id="{{ $product->id }}">
+                                           data-product-id="{{ $product->id }}"
+                                           onclick="event.stopPropagation();">
                                 </td>
                                 <td class="text-center" style="padding: 8px 4px;">
                                     @if($product->first_image)
@@ -319,7 +322,7 @@
                                         <span class="text-muted" style="font-size: 0.75rem;">-</span>
                                     @endif
                                 </td>
-                                <td style="padding: 6px 4px;">
+                                <td style="padding: 6px 4px;" onclick="event.stopPropagation();">
                                     <div class="price-editor" data-product-id="{{ $product->id }}" style="min-width: 180px; max-width: 200px;">
                                         <!-- Custo -->
                                         <div class="mb-1">
@@ -333,10 +336,11 @@
                                                            value="{{ $product->cost_price ? number_format($product->cost_price, 2, ',', '.') : '0,00' }}" 
                                                            style="font-size: 0.7rem; padding: 1px 4px;"
                                                            placeholder="0,00"
-                                                           onblur="normalizeAndUpdatePrice({{ $product->id }}, this.value)">
+                                                           onblur="normalizeAndUpdatePrice({{ $product->id }}, this.value)"
+                                                           onclick="event.stopPropagation();">
                                                     <button class="btn btn-sm btn-outline-success" 
                                                             type="button" 
-                                                            onclick="normalizeAndUpdatePrice({{ $product->id }}, document.querySelector('[data-product-id=\'{{ $product->id }}\'].cost-price-field').value)"
+                                                            onclick="event.stopPropagation(); normalizeAndUpdatePrice({{ $product->id }}, document.querySelector('[data-product-id=\'{{ $product->id }}\'].cost-price-field').value)"
                                                             style="font-size: 0.65rem; padding: 1px 4px;"
                                                             title="Salvar">
                                                         <i class="bi bi-check" style="font-size: 0.7rem;"></i>
@@ -356,7 +360,8 @@
                                                            value="{{ $product->profit_margin_b2b ? ($product->profit_margin_b2b % 1 == 0 ? number_format($product->profit_margin_b2b, 0, ',', '.') : number_format($product->profit_margin_b2b, 2, ',', '.')) : '10' }}" 
                                                            style="font-size: 0.65rem; padding: 1px 3px;"
                                                            placeholder="10"
-                                                           onblur="updateProfitMargin({{ $product->id }}, 'b2b', this.value)">
+                                                           onblur="updateProfitMargin({{ $product->id }}, 'b2b', this.value)"
+                                                           onclick="event.stopPropagation();">
                                                     <span class="input-group-text" style="font-size: 0.6rem; padding: 1px 3px;">%</span>
                                                 </div>
                                             </div>
@@ -369,7 +374,8 @@
                                                            value="{{ $product->profit_margin_b2c ? ($product->profit_margin_b2c % 1 == 0 ? number_format($product->profit_margin_b2c, 0, ',', '.') : number_format($product->profit_margin_b2c, 2, ',', '.')) : '20' }}" 
                                                            style="font-size: 0.65rem; padding: 1px 3px;"
                                                            placeholder="20"
-                                                           onblur="updateProfitMargin({{ $product->id }}, 'b2c', this.value)">
+                                                           onblur="updateProfitMargin({{ $product->id }}, 'b2c', this.value)"
+                                                           onclick="event.stopPropagation();">
                                                     <span class="input-group-text" style="font-size: 0.6rem; padding: 1px 3px;">%</span>
                                                 </div>
                                             </div>
@@ -430,7 +436,8 @@
                                             data-bs-toggle="modal" 
                                             data-bs-target="#variationsModal"
                                             style="font-size: 0.7rem; padding: 2px 8px;"
-                                            title="Gerenciar Variações">
+                                            title="Gerenciar Variações"
+                                            onclick="event.stopPropagation();">
                                         <i class="bi bi-list-ul me-1"></i>
                                         <span>{{ $product->variations()->count() }}</span>
                                     </button>
@@ -448,7 +455,7 @@
                                     </div>
                                 </td>
                                 <td class="text-center" style="padding: 8px 4px;">
-                                    <div class="btn-group btn-group-sm" role="group">
+                                    <div class="btn-group btn-group-sm" role="group" onclick="event.stopPropagation();">
                                         <a href="{{ route('admin.products.show', $product) }}" 
                                            class="btn btn-outline-info" title="Visualizar" style="padding: 2px 6px; font-size: 0.75rem;">
                                             <i class="bi bi-eye"></i>
@@ -533,6 +540,19 @@
     #imagesModal .modal-body {
         max-height: calc(100vh - 200px);
         overflow-y: auto;
+    }
+    
+    /* Estilos para linhas de produtos clicáveis */
+    .product-row {
+        transition: background-color 0.2s ease;
+    }
+    
+    .product-row:hover {
+        background-color: rgba(249, 115, 22, 0.05) !important;
+    }
+    
+    .product-row:active {
+        background-color: rgba(249, 115, 22, 0.1) !important;
     }
 </style>
 @endsection
@@ -644,6 +664,19 @@
                 updateBulkActionsBar();
             });
         }
+
+        // Tornar linhas de produtos clicáveis para seleção
+        document.querySelectorAll('.product-row').forEach(row => {
+            row.addEventListener('click', function(e) {
+                // Não fazer nada se o clique foi em um elemento interativo
+                // (já tem stopPropagation nos elementos interativos)
+                const checkbox = this.querySelector('.product-checkbox');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    updateBulkActionsBar();
+                }
+            });
+        });
 
         // Função para submeter ação em massa
         window.submitBulkAction = function(action) {
