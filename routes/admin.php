@@ -42,7 +42,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/{product}/variations/add', [ProductController::class, 'addVariation'])->name('products.variations.add');
         Route::post('products/{product}/variations/update-stock', [ProductController::class, 'updateStock'])->name('products.variations.update-stock');
         Route::post('products/{product}/variations/color-images', [ProductController::class, 'updateColorImages'])->name('products.variations.color-images');
-        Route::delete('products/{product}/variations/{variation}', [ProductController::class, 'deleteVariation'])->name('products.variations.destroy');
+        Route::delete('products/{product}/variations/{variationId}', [ProductController::class, 'deleteVariation'])->name('products.variations.destroy');
         Route::delete('products/{product}/variations/value', [ProductController::class, 'deleteVariationValue'])->name('products.variations.delete-value');
         Route::post('products/{product}/variations/color-hex', [ProductController::class, 'updateColorHex'])->name('products.variations.color-hex');
         Route::get('products/{product}/images', [ProductController::class, 'getImages'])->name('products.images');

@@ -1228,8 +1228,15 @@ function confirmAndDeleteVariation(variationId, cardElement) {
             'Accept': 'application/json'
         }
     })
-    .then(response => response.json())
-    .then(data => {
+    .then(async response => {
+        const data = await response.json();
+        
+        if (!response.ok) {
+            // Se a resposta não foi OK, mostrar mensagem de erro
+            showVariationMessage('error', data.message || 'Não foi possível remover a variação.');
+            return;
+        }
+        
         if (data.success) {
             showVariationMessage('success', data.message || 'Variação removida com sucesso.');
             loadVariations(productId);
@@ -1239,7 +1246,7 @@ function confirmAndDeleteVariation(variationId, cardElement) {
     })
     .catch(error => {
         console.error('Erro ao excluir variação:', error);
-        showVariationMessage('error', 'Erro ao remover variação.');
+        showVariationMessage('error', 'Erro ao remover variação. Tente novamente.');
     })
     .finally(() => {
         if (cardElement) {
