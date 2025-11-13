@@ -10,6 +10,106 @@ use Illuminate\Support\Facades\DB;
 
 class SearchController extends Controller
 {
+    /**
+     * Extrai atributos da busca (cores, armazenamento, RAM) e normaliza tokens
+     */
+    private function parseQueryAttributes(string $query): array
+    {
+        $q = mb_strtolower(trim($query));
+
+        // Mapa de sinônimos e termos de cores; manter em único lugar para reutilização
+        $colorSynonyms = [
+            'preto' => ['preto','black','grafite','graphite','black titanium','titanium black'],
+            'branco' => ['branco','white','starlight','luz das estrelas','white titanium'],
+            'azul' => ['azul','blue','sierra blue','pacific blue','blue titanium'],
+            'verde' => ['verde','green','alpine green'],
+            'roxo' => ['roxo','purple','deep purple'],
+            'rosa' => ['rosa','pink','rose','rose gold'],
+            'dourado' => ['dourado','gold','champagne'],
+            'prateado' => ['prateado','silver'],
+            // Adicionar termo "space" isolado para capturar buscas como "space" e mapear para Space Gray / Space Black
+            'cinza' => ['cinza','gray','grey','space gray','space grey','space','natural titanium','desert titanium'],
+            'titanium' => ['titanium','titânio','natural titanium','desert titanium','black titanium','white titanium','blue titanium','rose titanium'],
+        ];
+
+        $colorsDetected = [];
+        $detectedSynonymTerms = [];
+        foreach ($colorSynonyms as $norm => $list) {
+            foreach ($list as $term) {
+                $termLower = mb_strtolower($term);
+                if (mb_strpos($q, $termLower) !== false) {
+                    $colorsDetected[$norm] = true;
+                    // Agregar todos os sinônimos dessa cor para matching em JOIN e imagem
+                    foreach ($list as $syn) {
+                        $detectedSynonymTerms[] = mb_strtolower($syn);
+                    }
+                    break;
+                }
+            }
+        }
+
+        // Normalizar armazenamento: aceitar 128, 128g, 128gb, 1tb, 2tb etc.
+        $storageDetected = [];
+        if (preg_match_all('/\b(64|128|256|512)\s*(gb|g|giga)?\b/i', $query, $m)) {
+            foreach ($m[1] as $val) { $storageDetected[] = intval($val).' GB'; }
+        }
+        if (preg_match_all('/\b(1|2)\s*(tb|tera)\b/i', $query, $m2)) {
+            foreach ($m2[1] as $val) { $storageDetected[] = intval($val).' TB'; }
+        }
+
+        // RAM comum em celulares
+        $ramDetected = [];
+        if (preg_match_all('/\b(4|6|8|12|16)\s*(gb|g)\b/i', $query, $m3)) {
+            foreach ($m3[1] as $val) { $ramDetected[] = intval($val).' GB'; }
+        }
+
+        return [
+            'colors' => array_keys($colorsDetected), // lista normalizada (chave)
+            'color_terms' => array_values(array_unique($detectedSynonymTerms)), // lista de sinônimos detectados
+            'storage' => array_unique($storageDetected),
+            'ram' => array_unique($ramDetected),
+        ];
+    }
+
+    /**
+     * Escolhe as imagens certas para um produto dado os atributos procurados
+     */
+    private function chooseImagesForProduct(Product $product, array $attrs): array
+    {
+        // 1) Tentar pelas imagens de variação por cor (variation_images)
+        $map = $product->variation_images_urls ?? [];
+        if (!empty($attrs['colors']) || !empty($attrs['color_terms'])) {
+            // Usar sinônimos detectados se existirem, senão lista normalizada
+            $searchColors = !empty($attrs['color_terms']) ? $attrs['color_terms'] : $attrs['colors'];
+            foreach ($map as $colorKey => $imgs) {
+                $ck = mb_strtolower($colorKey);
+                foreach ($searchColors as $sc) {
+                    if (mb_strpos($ck, mb_strtolower($sc)) !== false && !empty($imgs)) {
+                        return $imgs;
+                    }
+                }
+            }
+        }
+
+        // 2) Sem cor detectada ou sem imagens específicas, usar imagens do produto
+        $images = [];
+        if ($product->images) {
+            $source = is_array($product->images) ? $product->images : (json_decode($product->images, true) ?: []);
+            foreach ($source as $image) {
+                if (empty($image)) continue;
+                $lower = mb_strtolower((string)$image);
+                // pular prováveis logos/ícones de marca/arquivos svg
+                if (str_ends_with($lower, '.svg') || str_contains($lower, '/brand') || str_contains($lower, '/brands') || str_contains($lower, 'logo')) {
+                    continue;
+                }
+                if (strpos($image, 'http') === 0) { $images[] = $image; continue; }
+                if (strpos($image, '/') === 0) { $images[] = url(ltrim($image,'/')); continue; }
+                $images[] = url('storage/'.$image);
+            }
+        }
+        if (empty($images)) { $images[] = url('images/no-image.png'); }
+        return $images;
+    }
     public function search(Request $request)
     {
         $startTime = microtime(true);
@@ -30,8 +130,11 @@ class SearchController extends Controller
             }
         }
 
+        // Extrair atributos (cor/armazenamento/RAM) para uma busca consciente de variação
+        $attrs = $this->parseQueryAttributes($query);
+
         // Busca principal com otimizações para tempo real
-        $searchQuery = $this->buildSearchQuery($query, $filters, $sort);
+        $searchQuery = $this->buildSearchQuery($query, $filters, $sort, $attrs);
         
         if ($isRealTime) {
             // Para busca em tempo real, limitar resultados e usar cache
@@ -76,6 +179,15 @@ class SearchController extends Controller
             'real_time' => $isRealTime,
         ];
 
+        // Enriquecer produtos com imagem da variação, quando aplicável
+        $products->setCollection(
+            $products->getCollection()->map(function($p) use ($attrs) {
+                $p->variant_images = $this->chooseImagesForProduct($p, $attrs);
+                $p->cover_image = $p->variant_images[0] ?? $p->first_image ?? null;
+                return $p;
+            })
+        );
+
         $response = [
             'products' => $products,
             'suggestions' => $suggestions,
@@ -91,115 +203,6 @@ class SearchController extends Controller
         }
 
         return response()->json($response);
-    }
-
-    public function autocomplete(Request $request)
-    {
-        $query = $request->get('q', '');
-        
-        if (strlen($query) < 2) {
-            return response()->json([
-                'suggestions' => [],
-                'trending' => $this->getTrendingSearches(),
-                'recent' => $this->getRecentSearches($request),
-            ]);
-        }
-
-        $suggestions = [
-            'products' => $this->getProductSuggestions($query),
-            'categories' => $this->getCategorySuggestions($query),
-            'brands' => $this->getBrandSuggestions($query),
-            'related_searches' => $this->getRelatedSearchSuggestions($query),
-        ];
-
-        return response()->json($suggestions);
-    }
-
-    /**
-     * Busca Live Search - Retorna produtos formatados para exibição em tempo real
-     */
-    public function liveSearch(Request $request)
-    {
-        $query = $request->get('q', '');
-        $limit = $request->get('limit', 8);
-        
-        if (strlen($query) < 2) {
-            return response()->json([
-                'products' => [],
-                'total' => 0,
-            ]);
-        }
-
-        // Buscar produtos ativos, disponíveis e em estoque
-        $products = Product::where('is_active', true)
-            ->where('is_unavailable', false) // Apenas produtos disponíveis
-            ->where('in_stock', true)
-            ->where(function($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%")
-                  ->orWhere('short_description', 'like', "%{$query}%")
-                  ->orWhere('brand', 'like', "%{$query}%")
-                  ->orWhere('model', 'like', "%{$query}%")
-                  ->orWhere('sku', 'like', "%{$query}%");
-            })
-            ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-            ->orderByRaw("
-                CASE 
-                    WHEN name LIKE ? THEN 1
-                    WHEN name LIKE ? THEN 2
-                    WHEN brand LIKE ? THEN 3
-                    ELSE 4
-                END
-            ", ["{$query}%", "%{$query}%", "%{$query}%"])
-            ->limit($limit)
-            ->get(['id', 'name', 'slug', 'short_description', 'description', 'price', 'brand', 'images']);
-
-        // Formatar produtos para resposta
-        $formattedProducts = $products->map(function($product) {
-            // Processar imagens
-            $images = [];
-            if ($product->images) {
-                if (is_string($product->images)) {
-                    $decoded = json_decode($product->images, true);
-                    $images = is_array($decoded) ? $decoded : [$product->images];
-                } elseif (is_array($product->images)) {
-                    $images = $product->images;
-                }
-            }
-            
-            // Converter URLs relativas para absolutas se necessário
-            $formattedImages = [];
-            foreach ($images as $image) {
-                if (empty($image)) {
-                    $formattedImages[] = url('images/no-image.png');
-                } elseif (strpos($image, 'http') === 0 || strpos($image, 'https') === 0) {
-                    $formattedImages[] = $image;
-                } elseif (strpos($image, '/') === 0) {
-                    $formattedImages[] = url(ltrim($image, '/'));
-                } else {
-                    $formattedImages[] = url('storage/' . $image);
-                }
-            }
-
-            // Usar sempre o preço do produto principal (B2C) calculado na página de admin
-            // Este é o preço definitivo e válido ajustado através da página de gestão
-            return [
-                'id' => $product->id,
-                'name' => $product->name,
-                'slug' => $product->slug,
-                'short_description' => $product->short_description,
-                'description' => $product->description,
-                'price' => (float) $product->price, // Preço B2C calculado na página de admin
-                'brand' => $product->brand,
-                'images' => $formattedImages,
-            ];
-        });
-
-        return response()->json([
-            'products' => $formattedProducts,
-            'total' => $formattedProducts->count(),
-            'query' => $query,
-        ]);
     }
 
     public function voiceSearch(Request $request)
@@ -294,34 +297,74 @@ class SearchController extends Controller
         ];
     }
 
-    private function buildSearchQuery($query, $filters, $sort)
+    private function buildSearchQuery($query, $filters, $sort, $attrs = [])
     {
-        $searchQuery = Product::query();
+    $searchQuery = Product::query();
         
         // Sempre filtrar apenas produtos disponíveis
-        $searchQuery->where('is_unavailable', false);
+    $searchQuery->where('products.is_unavailable', false);
 
         // Busca textual
         if (!empty($query)) {
-            $searchQuery->where(function($q) use ($query) {
-                $q->where('name', 'like', "%{$query}%")
-                  ->orWhere('description', 'like', "%{$query}%")
-                  ->orWhere('brand', 'like', "%{$query}%")
-                  ->orWhere('model', 'like', "%{$query}%")
-                  ->orWhere('sku', 'like', "%{$query}%");
+                        $searchQuery->where(function($q) use ($query) {
+                                $q->where('products.name', 'like', "%{$query}%")
+                                    ->orWhere('products.description', 'like', "%{$query}%")
+                                    ->orWhere('products.brand', 'like', "%{$query}%")
+                                    ->orWhere('products.model', 'like', "%{$query}%")
+                                    ->orWhere('products.sku', 'like', "%{$query}%");
                 
                 // Busca por especificações
-                $q->orWhereJsonContains('specifications', $query);
+                $q->orWhereJsonContains('products.specifications', $query);
             });
         }
 
         // Aplicar filtros
         $this->applyFilters($searchQuery, $filters);
 
+        // Se a busca menciona cor/armazenamento, unir com variações para melhorar relevância
+    $joinVariations = !empty($attrs['colors']) || !empty($attrs['color_terms']) || !empty($attrs['storage']) || !empty($attrs['ram']);
+        if ($joinVariations) {
+            $searchQuery->leftJoin('product_variations as pv', 'pv.product_id', '=', 'products.id');
+            if (!empty($attrs['colors']) || !empty($attrs['color_terms'])) {
+                $colorsLower = array_map('mb_strtolower', array_unique(array_merge(
+                    (array) ($attrs['colors'] ?? []),
+                    (array) ($attrs['color_terms'] ?? [])
+                )));
+                $searchQuery->where(function($q) use ($colorsLower) {
+                    foreach ($colorsLower as $c) {
+                        $q->orWhereRaw('LOWER(pv.color) LIKE ?', ["%{$c}%"]);
+                    }
+                });
+            }
+            if (!empty($attrs['storage'])) {
+                $storages = (array) $attrs['storage'];
+                $searchQuery->where(function($q) use ($storages) {
+                    foreach ($storages as $s) {
+                        // comparar removendo espaços/maiúsculas (ex.: 128 GB)
+                        $comp = mb_strtolower(str_replace(' ', '', $s));
+                        $q->orWhereRaw('REPLACE(LOWER(pv.storage), " ", "") LIKE ?', ["%{$comp}%"]);
+                    }
+                });
+            }
+            if (!empty($attrs['ram'])) {
+                $rams = (array) $attrs['ram'];
+                $searchQuery->where(function($q) use ($rams) {
+                    foreach ($rams as $r) {
+                        $comp = mb_strtolower(str_replace(' ', '', $r));
+                        $q->orWhereRaw('REPLACE(LOWER(pv.ram), " ", "") LIKE ?', ["%{$comp}%"]);
+                    }
+                });
+            }
+            $searchQuery->select('products.*')->distinct();
+        }
+
         // Aplicar ordenação
         $this->applySorting($searchQuery, $sort);
 
-        return $searchQuery->with(['categories']);
+        // Eager loading necessário
+        $withs = ['categories'];
+        if ($joinVariations) { $withs[] = 'variations'; }
+        return $searchQuery->with($withs);
     }
 
     private function applyFilters($query, $filters)
@@ -367,32 +410,32 @@ class SearchController extends Controller
 
     private function applySorting($query, $sort)
     {
-        // Sempre priorizar produtos disponíveis primeiro
-        $query->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-              ->orderBy('in_stock', 'desc')
-              ->orderBy('is_active', 'desc');
+      // Sempre priorizar produtos disponíveis primeiro (qualificar para evitar ambiguidade após JOIN)
+      $query->orderBy('products.is_unavailable', 'asc') // Disponíveis primeiro
+          ->orderBy('products.in_stock', 'desc')
+          ->orderBy('products.is_active', 'desc');
         
         switch ($sort) {
             case 'price_asc':
-                $query->orderBy('price', 'asc');
+                $query->orderBy('products.price', 'asc');
                 break;
             case 'price_desc':
-                $query->orderBy('price', 'desc');
+                $query->orderBy('products.price', 'desc');
                 break;
             case 'name':
-                $query->orderBy('name', 'asc');
+                $query->orderBy('products.name', 'asc');
                 break;
             case 'newest':
-                $query->orderBy('created_at', 'desc');
+                $query->orderBy('products.created_at', 'desc');
                 break;
             case 'rating':
-                $query->orderBy('rating', 'desc');
+                $query->orderBy('products.rating', 'desc');
                 break;
             case 'popularity':
-                $query->orderBy('sales_count', 'desc');
+                $query->orderBy('products.sales_count', 'desc');
                 break;
             default: // relevance
-                $query->orderBy('name', 'asc');
+                $query->orderBy('products.name', 'asc');
                 break;
         }
     }
@@ -658,5 +701,221 @@ class SearchController extends Controller
                      ->orderBy('product_count', 'desc')
                      ->limit(10)
                      ->get();
+    }
+
+    /**
+     * Autocomplete para a barra de busca (sugestões rápidas)
+     */
+    public function autocomplete(Request $request)
+    {
+        $query = trim((string) $request->get('q', ''));
+        if ($query === '') {
+            return response()->json([
+                'results' => [],
+                'related' => [],
+            ]);
+        }
+
+        $products = $this->getProductSuggestions($query);
+        $categories = $this->getCategorySuggestions($query);
+        $brands = $this->getBrandSuggestions($query);
+        $related = $this->getRelatedSearchSuggestions($query);
+
+        $results = $products
+            ->merge($categories)
+            ->merge($brands)
+            ->values();
+
+        return response()->json([
+            'results' => $results,
+            'related' => $related,
+        ]);
+    }
+
+    /**
+     * Live search: resultados rápidos e ranqueados, conscientes de variação
+     */
+    public function liveSearch(Request $request)
+    {
+        $query = trim((string) $request->get('q', ''));
+        $limit = (int) $request->get('limit', 12);
+
+        // Aceitar consultas de 1 caractere; se vazio, retornar lista vazia
+        if ($query === '' || mb_strlen($query) < 1) {
+            return response()->json([
+                'count' => 0,
+                'items' => [],
+                'query' => $query,
+            ]);
+        }
+
+        $lowerq = mb_strtolower($query);
+        $tokens = preg_split('/\s+/', $lowerq) ?: [];
+
+        $attrs = $this->parseQueryAttributes($query);
+
+        $qb = Product::query()
+            ->where('products.is_active', true);
+
+        // Filtro textual amplo
+        $qb->where(function($q) use ($lowerq) {
+            $q->whereRaw('LOWER(products.name) LIKE ?', ["%{$lowerq}%"]) 
+              ->orWhereRaw('LOWER(products.brand) LIKE ?', ["%{$lowerq}%"]) 
+              ->orWhereRaw('LOWER(products.model) LIKE ?', ["%{$lowerq}%"]) 
+              ->orWhereRaw('LOWER(products.sku) LIKE ?', ["%{$lowerq}%"]);
+        });
+
+        // Join com variações somente se for útil (cores/armazenamento/ram detectados)
+        $joinVariations = !empty($attrs['colors']) || !empty($attrs['color_terms']) || !empty($attrs['storage']) || !empty($attrs['ram']);
+        if ($joinVariations) {
+            $qb->leftJoin('product_variations as pv', 'pv.product_id', '=', 'products.id');
+
+            if (!empty($attrs['colors']) || !empty($attrs['color_terms'])) {
+                $colorsLower = array_map('mb_strtolower', array_unique(array_merge(
+                    (array) ($attrs['colors'] ?? []),
+                    (array) ($attrs['color_terms'] ?? [])
+                )));
+                $qb->where(function($q) use ($colorsLower) {
+                    foreach ($colorsLower as $c) {
+                        $q->orWhereRaw('LOWER(pv.color) LIKE ?', ["%{$c}%"]);
+                    }
+                });
+            }
+            if (!empty($attrs['storage'])) {
+                $storages = (array) $attrs['storage'];
+                $qb->where(function($q) use ($storages) {
+                    foreach ($storages as $s) {
+                        $comp = mb_strtolower(str_replace(' ', '', $s));
+                        $q->orWhereRaw('REPLACE(LOWER(pv.storage), " ", "") LIKE ?', ["%{$comp}%"]);
+                    }
+                });
+            }
+            if (!empty($attrs['ram'])) {
+                $rams = (array) $attrs['ram'];
+                $qb->where(function($q) use ($rams) {
+                    foreach ($rams as $r) {
+                        $comp = mb_strtolower(str_replace(' ', '', $r));
+                        $q->orWhereRaw('REPLACE(LOWER(pv.ram), " ", "") LIKE ?', ["%{$comp}%"]);
+                    }
+                });
+            }
+
+            $qb->select('products.*')->distinct();
+        }
+
+        // Relevância: dar boost para matches fortes e casos especiais (ex.: "pro max", "iphone x")
+        $scorePieces = [];
+        $bindings = [];
+        $scorePieces[] = 'CASE WHEN LOWER(products.name) = ? THEN 100 WHEN LOWER(products.name) LIKE ? THEN 90 WHEN LOWER(products.name) LIKE ? THEN 80 ELSE 0 END';
+        $bindings[] = $lowerq;
+        $bindings[] = "%{$lowerq}%";
+        $bindings[] = "{$lowerq}%";
+        $scorePieces[] = 'CASE WHEN LOWER(products.brand) LIKE ? THEN 10 ELSE 0 END';
+        $bindings[] = "%{$lowerq}%";
+
+        // Boosts contextuais
+        if (str_contains($lowerq, 'pro') && str_contains($lowerq, 'max')) {
+            $scorePieces[] = "CASE WHEN LOWER(products.name) LIKE '%pro max%' THEN 25 ELSE 0 END";
+        }
+        if (preg_match('/\\biphone\\b/i', $lowerq)) {
+            $scorePieces[] = "CASE WHEN LOWER(products.brand) = 'apple' OR LOWER(products.name) LIKE '%iphone%' THEN 15 ELSE 0 END";
+        }
+        if (preg_match('/\\bx\\b/i', $lowerq)) {
+            $scorePieces[] = "CASE WHEN LOWER(products.name) LIKE '%iphone x%' THEN 20 ELSE 0 END";
+        }
+        if ($lowerq === 'max') {
+            $scorePieces[] = "CASE WHEN LOWER(products.name) LIKE '%pro max%' THEN 30 ELSE 0 END";
+        }
+
+    $scoreSql = implode(' + ', $scorePieces) . ' as relevance_score';
+    $qb->selectRaw($scoreSql, $bindings)->addSelect('products.*');
+
+        // Ordenação: relevância, depois disponibilidade, depois estoque
+        $qb->orderByDesc('relevance_score')
+           ->orderBy('products.is_unavailable', 'asc')
+           ->orderBy('products.in_stock', 'desc')
+           ->orderBy('products.name', 'asc');
+
+        // Trazer variações para montar display_name/variant_url
+        $qb->with('variations');
+
+    $items = $qb->limit($limit)->get();
+
+        // Mapear para payload enxuto da live search
+    $mapped = $items->map(function(Product $p) use ($attrs) {
+            // Escolher variação mais compatível (se houver)
+            $bestVar = null;
+            $bestScore = -1;
+            foreach ($p->variations as $v) {
+                $score = 0;
+                if (!empty($attrs['color_terms'])) {
+                    foreach ($attrs['color_terms'] as $term) {
+                        if ($v->color && mb_stripos($v->color, $term) !== false) { $score += 2; break; }
+                    }
+                } elseif (!empty($attrs['colors'])) {
+                    foreach ($attrs['colors'] as $term) {
+                        if ($v->color && mb_stripos($v->color, $term) !== false) { $score += 2; break; }
+                    }
+                }
+                if (!empty($attrs['storage'])) {
+                    foreach ($attrs['storage'] as $s) {
+                        $comp = mb_strtolower(str_replace(' ', '', $s));
+                        if ($v->storage && mb_strtolower(str_replace(' ', '', $v->storage)) === $comp) { $score += 2; break; }
+                    }
+                }
+                if (!empty($attrs['ram'])) {
+                    foreach ($attrs['ram'] as $r) {
+                        $comp = mb_strtolower(str_replace(' ', '', $r));
+                        if ($v->ram && mb_strtolower(str_replace(' ', '', $v->ram)) === $comp) { $score += 1; break; }
+                    }
+                }
+                if ($score > $bestScore) { $bestScore = $score; $bestVar = $v; }
+            }
+
+            $images = $this->chooseImagesForProduct($p, $attrs);
+
+            $displayName = $p->name;
+            $variantUrl = null;
+            if ($bestVar) {
+                $parts = [];
+                if ($bestVar->storage) $parts[] = $bestVar->storage;
+                if ($bestVar->ram) $parts[] = $bestVar->ram;
+                if ($bestVar->color) $parts[] = $bestVar->color;
+                if (!empty($parts)) {
+                    $displayName .= ' — ' . implode(' / ', $parts);
+                }
+                // Em vez de enviar para a rota da variação, enviar para a página do produto com pré-seleção via querystring
+                $params = [];
+                if ($bestVar->color) { $params['color'] = $bestVar->color; }
+                if ($bestVar->storage) { $params['storage'] = $bestVar->storage; }
+                if ($bestVar->ram) { $params['ram'] = $bestVar->ram; }
+                $qs = http_build_query($params);
+                $variantUrl = url('/produto/' . $p->slug . ($qs ? ('?' . $qs) : ''));
+            }
+
+            return [
+                'id' => $p->id,
+                'name' => $p->name,
+                'brand' => $p->brand,
+                'price' => $p->price,
+                'in_stock' => (bool) $p->in_stock,
+                'is_unavailable' => (bool) $p->is_unavailable,
+                'slug' => $p->slug,
+                'image' => $images[0] ?? null,
+                'images' => $images,
+                'cover_image' => $images[0] ?? null,
+                'short_description' => $p->short_description,
+                'description' => $p->description,
+                'display_name' => $displayName,
+                'variant_url' => $variantUrl,
+                'product_url' => url('/produto/' . $p->slug),
+            ];
+        });
+
+        return response()->json([
+            'count' => $mapped->count(),
+            'products' => $mapped,
+            'query' => $query,
+        ]);
     }
 }

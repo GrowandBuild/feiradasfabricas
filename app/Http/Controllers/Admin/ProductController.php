@@ -16,8 +16,11 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with('categories');
+        $query = Product::with(['categories', 'variations']);
 
+        // Se for requisição AJAX (Smart Search), buscar TODOS os produtos (incluindo inativos)
+        $isSmartSearch = $request->ajax() || $request->wantsJson();
+        
         // Filtros
         if ($request->filled('search')) {
             $search = $request->search;
@@ -28,21 +31,21 @@ class ProductController extends Controller
             });
         }
 
-        if ($request->filled('brand')) {
+        if ($request->filled('brand') && !$isSmartSearch) {
             $query->where('brand', $request->brand);
         }
 
-        if ($request->filled('category')) {
+        if ($request->filled('category') && !$isSmartSearch) {
             $query->whereHas('categories', function ($q) use ($request) {
                 $q->where('categories.id', $request->category);
             });
         }
 
-        if ($request->filled('status')) {
+        if ($request->filled('status') && !$isSmartSearch) {
             $query->where('is_active', $request->status === 'active');
         }
 
-        if ($request->filled('stock_status')) {
+        if ($request->filled('stock_status') && !$isSmartSearch) {
             if ($request->stock_status === 'low') {
                 $query->whereColumn('stock_quantity', '<=', 'min_stock');
             } elseif ($request->stock_status === 'out') {
@@ -50,11 +53,11 @@ class ProductController extends Controller
             }
         }
 
-        if ($request->filled('supplier')) {
+        if ($request->filled('supplier') && !$isSmartSearch) {
             $query->where('supplier', $request->supplier);
         }
 
-        if ($request->filled('availability')) {
+        if ($request->filled('availability') && !$isSmartSearch) {
             if ($request->availability === 'unavailable') {
                 $query->where('is_unavailable', true);
             } elseif ($request->availability === 'available') {
@@ -65,9 +68,39 @@ class ProductController extends Controller
         $products = $query->paginate(20);
         $categories = Category::all();
         
+        // Se for requisição AJAX (Smart Search), retornar JSON
+        if ($isSmartSearch) {
+            return response()->json([
+                'products' => $products->map(function($product) {
+                    return [
+                        'id' => $product->id,
+                        'name' => $product->name,
+                        'brand' => $product->brand,
+                        'price' => $product->price,
+                        'first_image' => $product->first_image,
+                        'sku' => $product->sku,
+                        'is_active' => $product->is_active,
+                        'is_unavailable' => $product->is_unavailable
+                    ];
+                })
+            ]);
+        }
+        
+        // Buscar todas as cores cadastradas no banco com seus hexadecimais
+        $colorsFromDB = ProductVariation::whereNotNull('color')
+            ->whereNotNull('color_hex')
+            ->select('color', 'color_hex')
+            ->distinct()
+            ->get()
+            ->pluck('color_hex', 'color')
+            ->map(function($hex) {
+                return strtolower($hex);
+            })
+            ->toArray();
+        
         // Não criar valores padrão aqui - deixar a view usar os defaults apenas para exibição
 
-        return view('admin.products.index', compact('products', 'categories'));
+        return view('admin.products.index', compact('products', 'categories', 'colorsFromDB'));
     }
 
     public function create()
@@ -303,6 +336,19 @@ class ProductController extends Controller
             'stock_quantity' => $newStock,
             'in_stock' => $newStock > 0,
         ]);
+
+        // Se for requisição AJAX, retornar JSON
+        if ($request->expectsJson() || $request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Estoque ajustado com sucesso!',
+                'data' => [
+                    'old_stock' => $oldStock,
+                    'new_stock' => $newStock,
+                    'change' => $quantityChange,
+                ]
+            ]);
+        }
 
         return redirect()->back()
                         ->with('success', 'Estoque ajustado com sucesso!');
@@ -1405,6 +1451,115 @@ class ProductController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao remover imagem: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Atualiza preço de uma variação específica
+     */
+    public function updateVariationPrice(Request $request, $variationId)
+    {
+        try {
+            $request->validate([
+                'field' => 'required|in:cost_price,b2b_price,b2c_price',
+                'value' => 'required|numeric|min:0'
+            ]);
+            
+            $variation = ProductVariation::with('product')->findOrFail($variationId);
+            $product = $variation->product;
+            
+            $field = $request->field;
+            $value = $request->value;
+            
+            // Atualizar o campo solicitado
+            $updateData = [$field => $value];
+            
+            // Se está atualizando o custo, recalcular B2B e B2C automaticamente
+            if ($field === 'cost_price' && $value > 0) {
+                $profitMarginB2B = $product->profit_margin_b2b ?? 10.00;
+                $profitMarginB2C = $product->profit_margin_b2c ?? 20.00;
+                
+                // Calcular B2B e B2C baseado nas margens do produto pai
+                $updateData['b2b_price'] = $value * (1 + ($profitMarginB2B / 100));
+                $updateData['price'] = $value * (1 + ($profitMarginB2C / 100));
+            }
+            
+            $variation->update($updateData);
+            
+            // Recarregar para pegar valores atualizados
+            $variation->refresh();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Preço atualizado com sucesso!',
+                'variation' => [
+                    'id' => $variation->id,
+                    'cost_price' => $variation->cost_price,
+                    'b2b_price' => $variation->b2b_price,
+                    'b2c_price' => $variation->price, // B2C é armazenado em 'price'
+                    'profit_margin_b2b' => $product->profit_margin_b2b ?? 10.00,
+                    'profit_margin_b2c' => $product->profit_margin_b2c ?? 20.00,
+                ],
+                'formatted' => [
+                    'cost_price' => number_format($variation->cost_price, 2, ',', '.'),
+                    'b2b_price' => number_format($variation->b2b_price, 2, ',', '.'),
+                    'b2c_price' => number_format($variation->price, 2, ',', '.'),
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dados inválidos',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar preço da variação: ' . $e->getMessage(), [
+                'variation_id' => $variationId,
+                'exception' => $e
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar preço: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Atualiza a descrição do produto
+     */
+    public function updateDescription(Request $request, Product $product)
+    {
+        try {
+            $request->validate([
+                'description' => 'nullable|string|max:5000'
+            ]);
+            
+            $product->update([
+                'description' => $request->description
+            ]);
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Descrição atualizada com sucesso!',
+                'description' => $product->description
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dados inválidos',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar descrição: ' . $e->getMessage(), [
+                'product_id' => $product->id,
+                'exception' => $e
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar descrição: ' . $e->getMessage()
             ], 500);
         }
     }

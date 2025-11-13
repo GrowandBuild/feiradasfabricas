@@ -46,6 +46,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('products/{product}/variations/value', [ProductController::class, 'deleteVariationValue'])->name('products.variations.delete-value');
         Route::delete('products/{product}/variations/inactive/delete-all', [ProductController::class, 'deleteInactiveVariations'])->name('products.variations.delete-inactive');
         Route::post('products/{product}/variations/color-hex', [ProductController::class, 'updateColorHex'])->name('products.variations.color-hex');
+        Route::post('products/variations/{variation}/update-price', [ProductController::class, 'updateVariationPrice'])->name('products.variations.update-price');
+        Route::post('products/{product}/update-description', [ProductController::class, 'updateDescription'])->name('products.update-description');
         Route::get('products/{product}/images', [ProductController::class, 'getImages'])->name('products.images');
         Route::post('products/{product}/update-images', [ProductController::class, 'updateImages'])->name('products.update-images');
         Route::post('products/{product}/remove-image', [ProductController::class, 'removeImage'])->name('products.remove-image');

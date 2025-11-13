@@ -30,8 +30,8 @@
                 {{-- Resultados serão inseridos aqui via JavaScript --}}
             </div>
             
-            <div class="live-search-footer">
-                <a href="{{ route('products') }}" class="text-decoration-none">
+            <div class="live-search-footer" id="liveSearchFooter">
+                <a href="{{ route('products') }}" class="text-decoration-none" id="liveSearchFooterLink">
                     Ver todos os resultados
                     <i class="fas fa-arrow-right ms-1"></i>
                 </a>
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentRequest.abort();
         }
         
-        if (!query || query.length < 2) {
+        if (!query || query.length < 1) {
             searchResults.style.display = 'none';
             return;
         }
@@ -423,7 +423,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Fazer requisição AJAX
         const url = new URL('/api/search/live', window.location.origin);
         url.searchParams.append('q', query);
-        url.searchParams.append('limit', '8');
+    // Definir limite dinâmico: desktop 12, mobile 8
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    url.searchParams.append('limit', isMobile ? '8' : '12');
         
         const controller = new AbortController();
         currentRequest = controller;
@@ -472,9 +474,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Exibir resultados
     function displayResults(products) {
         const html = products.map(product => {
-            const image = product.images && product.images.length > 0 
+            const image = product.cover_image || product.image || (product.images && product.images.length > 0 
                 ? product.images[0] 
-                : '/images/no-image.png';
+                : '/images/no-image.png');
             
             const description = product.short_description || product.description || '';
             const shortDescription = description.length > 60 
@@ -483,19 +485,19 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const price = formatPrice(product.price);
             // Construir URL do produto
-            let productUrl = '/produto/';
-            if (product.slug) {
-                productUrl += product.slug;
-            } else {
-                productUrl += product.id;
-            }
+            let productUrl = product.variant_url || (function(){
+                let base = '/produto/';
+                if (product.slug) { return base + product.slug; }
+                return base + product.id;
+            })();
+            const title = product.display_name || product.name;
             
             return `
                 <a href="${productUrl}" class="live-search-item">
-                    <img src="${image}" alt="${escapeHtml(product.name)}" class="live-search-item-image" 
-                         data-fallback="{{ asset('images/no-image.png') }}">
+                <img src="${image}" alt="${escapeHtml(title)}" class="live-search-item-image" 
+                    data-fallback="{{ asset('images/no-image.png') }}">
                     <div class="live-search-item-content">
-                        <div class="live-search-item-name">${escapeHtml(product.name)}</div>
+                        <div class="live-search-item-name">${escapeHtml(title)}</div>
                         ${shortDescription ? `<div class="live-search-item-description">${escapeHtml(shortDescription)}</div>` : ''}
                         <div class="live-search-item-footer">
                             ${product.brand ? `<span class="live-search-item-brand">${escapeHtml(product.brand)}</span>` : ''}
@@ -506,7 +508,9 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
         }).join('');
         
-        searchContent.innerHTML = html;
+    searchContent.innerHTML = html;
+    // Atualizar link do rodapé com query e total
+    updateFooterLink(products.length);
         
         // Prevenir flicker: adicionar event listeners após inserir HTML
         const images = searchContent.querySelectorAll('.live-search-item-image');
@@ -554,6 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 <small>Tente buscar com outros termos</small>
             </div>
         `;
+        updateFooterLink(0);
     }
     
     // Exibir mensagem de erro
@@ -583,6 +588,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Event listener no input
+    function updateFooterLink(total){
+        const footerLink = document.getElementById('liveSearchFooterLink');
+        if(!footerLink) return;
+        const q = searchInput.value.trim();
+        const url = new URL('{{ route('products') }}', window.location.origin);
+        if(q.length >= 2){ url.searchParams.set('q', q); }
+        footerLink.href = url.toString();
+        footerLink.innerHTML = total > 0
+            ? `Ver todos os resultados (${total}) <i class="fas fa-arrow-right ms-1"></i>`
+            : `Ver todos os resultados <i class="fas fa-arrow-right ms-1"></i>`;
+    }
+
     searchInput.addEventListener('input', function(e) {
         const query = e.target.value.trim();
         console.log('⌨️ Input digitado:', query);
@@ -599,8 +616,9 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.addEventListener('focus', function() {
         console.log('👁️ Input focado');
         const query = searchInput.value.trim();
-        if (query.length >= 2) {
+        if (query.length >= 1) {
             searchResults.style.display = 'block';
+            updateFooterLink(searchContent.querySelectorAll('.live-search-item').length);
         }
     });
     
@@ -626,7 +644,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Manter dropdown aberto ao focar no input
     searchInput.addEventListener('focus', function() {
         const query = searchInput.value.trim();
-        if (query.length >= 2) {
+        if (query.length >= 1) {
             searchResults.style.display = 'block';
         }
     });

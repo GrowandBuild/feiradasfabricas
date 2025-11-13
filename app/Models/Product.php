@@ -182,14 +182,8 @@ class Product extends Model
                 return $firstImage;
             }
             
-            // Se for um caminho relativo, usar Storage::url() que gera a URL correta
-            // Isso funciona tanto com link simbólico quanto sem ele em produção
-            try {
-                return Storage::disk('public')->url($firstImage);
-            } catch (\Exception $e) {
-                // Fallback para asset() se houver algum problema
-                return asset('storage/' . $firstImage);
-            }
+            // Se for um caminho relativo, retornar caminho relativo absoluto para usar o mesmo host/porta da requisição atual
+            return '/storage/' . ltrim($firstImage, '/');
         }
         return asset('images/no-image.svg'); // Imagem padrão
     }
@@ -207,13 +201,8 @@ class Product extends Model
                     return $image;
                 }
                 
-                // Se for um caminho relativo, usar Storage::url() que gera a URL correta
-                try {
-                    return Storage::disk('public')->url($image);
-                } catch (\Exception $e) {
-                    // Fallback para asset() se houver algum problema
-                    return asset('storage/' . $image);
-                }
+                // Se for um caminho relativo, retornar caminho relativo absoluto
+                return '/storage/' . ltrim($image, '/');
             }, $images);
         }
         return [];
@@ -240,11 +229,8 @@ class Product extends Model
                     return $image;
                 }
 
-                try {
-                    return Storage::disk('public')->url($image);
-                } catch (\Exception $e) {
-                    return asset('storage/' . $image);
-                }
+                // Retornar caminho relativo absoluto
+                return '/storage/' . ltrim($image, '/');
             }, array_filter($images))); // remove valores vazios
         }
 

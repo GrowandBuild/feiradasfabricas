@@ -23,6 +23,7 @@ class ProductVariation extends Model
         'in_stock',
         'is_active',
         'sort_order',
+        'slug',
     ];
 
     protected $casts = [
@@ -39,6 +40,44 @@ class ProductVariation extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Calcula o preço B2C baseado no custo e margem de lucro do produto pai
+     */
+    public function getB2cPriceAttribute()
+    {
+        // Se já tem um valor definido explicitamente, usar ele
+        if (isset($this->attributes['price']) && $this->attributes['price'] > 0) {
+            return $this->attributes['price'];
+        }
+
+        // Se tem custo e produto pai com margem, calcular
+        if ($this->cost_price && $this->product) {
+            $margin = $this->product->profit_margin_b2c ?? 20.00;
+            return $this->cost_price * (1 + ($margin / 100));
+        }
+
+        return $this->attributes['price'] ?? 0;
+    }
+
+    /**
+     * Calcula o preço B2B baseado no custo e margem de lucro do produto pai
+     */
+    public function getCalculatedB2bPriceAttribute()
+    {
+        // Se já tem um valor definido explicitamente, usar ele
+        if (isset($this->attributes['b2b_price']) && $this->attributes['b2b_price'] > 0) {
+            return $this->attributes['b2b_price'];
+        }
+
+        // Se tem custo e produto pai com margem, calcular
+        if ($this->cost_price && $this->product) {
+            $margin = $this->product->profit_margin_b2b ?? 10.00;
+            return $this->cost_price * (1 + ($margin / 100));
+        }
+
+        return $this->attributes['b2b_price'] ?? 0;
     }
 
     /**
@@ -76,5 +115,30 @@ class ProductVariation extends Model
         if ($this->color) $parts[] = $this->color;
         
         return implode(' / ', $parts);
+    }
+
+    /**
+     * Gera slug amigável para a variação (usado em URL indexável)
+     */
+    public function getGeneratedSlugAttribute(): string
+    {
+        $base = $this->product ? $this->product->slug : 'produto';
+        $segments = [];
+        if ($this->color) { $segments[] = str_replace([' /','/','  '], ' ', strtolower($this->color)); }
+        if ($this->storage) { $segments[] = strtolower(str_replace(' ', '', $this->storage)); }
+        if ($this->ram) { $segments[] = strtolower(str_replace(' ', '', $this->ram)); }
+        $tail = implode('-', array_filter(array_map(function($s){
+            $s = preg_replace('/[^a-z0-9]+/','-',$s); return trim($s,'-');
+        }, $segments)));
+        return $tail ?: $base;
+    }
+
+    protected static function booted()
+    {
+        static::saving(function(self $variation){
+            if (empty($variation->slug)) {
+                $variation->slug = $variation->generated_slug;
+            }
+        });
     }
 }

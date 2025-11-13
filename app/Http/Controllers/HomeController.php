@@ -121,6 +121,99 @@ class HomeController extends Controller
     }
 
     /**
+     * Página indexável de uma variação específica (/produto/{slug}/{variantSlug})
+     */
+    public function productVariant($slug, $variantSlug)
+    {
+        $product = Product::active()
+            ->where('slug', $slug)
+            ->with(['categories', 'activeVariations'])
+            ->firstOrFail();
+
+        // Encontrar variação pela slug gerada previamente
+        $variation = $product->activeVariations->first(function($v) use ($variantSlug) {
+            return $v->slug === $variantSlug;
+        });
+
+        if (!$variation) {
+            abort(404);
+        }
+
+        // Preparar título e meta dinâmicos
+        $variantTitleParts = [$product->name];
+        if ($variation->color) $variantTitleParts[] = $variation->color;
+        if ($variation->storage) $variantTitleParts[] = $variation->storage;
+        if ($variation->ram) $variantTitleParts[] = $variation->ram;
+        $pageTitle = implode(' ', $variantTitleParts);
+
+        // Selecionar imagens por cor se existir
+        $variantImages = [];
+        $variationImagesMap = $product->variation_images_urls ?? [];
+        if ($variation->color && isset($variationImagesMap[$variation->color]) && count($variationImagesMap[$variation->color]) > 0) {
+            $variantImages = $variationImagesMap[$variation->color];
+        } else {
+            $variantImages = $product->all_images;
+        }
+
+        // Metadados SEO
+        $metaDescription = sprintf(
+            '%s disponível na cor %s, armazenamento %s%s. Compre com garantia e entrega rápida.',
+            $product->name,
+            $variation->color ?? '—',
+            $variation->storage ?? '—',
+            $variation->ram ? ' e RAM '.$variation->ram : ''
+        );
+
+        // JSON-LD Schema Product + Offer
+        $schemaProduct = [
+            '@context' => 'https://schema.org',
+            '@type' => 'Product',
+            'name' => $pageTitle,
+            'image' => $variantImages,
+            'sku' => $variation->sku ?? $product->sku,
+            'brand' => [
+                '@type' => 'Brand',
+                'name' => $product->brand ?? 'Marca'
+            ],
+            'description' => $metaDescription,
+            'offers' => [
+                '@type' => 'Offer',
+                'priceCurrency' => 'BRL',
+                'price' => (string) ($variation->price ?: $product->price),
+                'availability' => $variation->in_stock ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+                'url' => url()->current(),
+            ],
+            'color' => $variation->color,
+            'additionalProperty' => array_values(array_filter([
+                $variation->storage ? ['@type' => 'PropertyValue','name' => 'Armazenamento','value' => $variation->storage] : null,
+                $variation->ram ? ['@type' => 'PropertyValue','name' => 'RAM','value' => $variation->ram] : null,
+            ])),
+        ];
+
+        // Produtos relacionados (mesma categoria) - manter
+        $relatedProducts = Product::active()
+            ->available()
+            ->inStock()
+            ->where('id', '!=', $product->id)
+            ->whereHas('categories', function($q) use ($product) {
+                $q->whereIn('categories.id', $product->categories->pluck('id'));
+            })
+            ->orderBy('is_unavailable', 'asc')
+            ->take(4)
+            ->get();
+
+        return view('products.variant', [
+            'product' => $product,
+            'variation' => $variation,
+            'variantImages' => $variantImages,
+            'pageTitle' => $pageTitle,
+            'metaDescription' => $metaDescription,
+            'schemaProduct' => $schemaProduct,
+            'relatedProducts' => $relatedProducts,
+        ]);
+    }
+
+    /**
      * Buscar variação de produto por RAM e armazenamento (AJAX)
      */
     public function getProductVariation(Request $request, $slug)

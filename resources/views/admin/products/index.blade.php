@@ -7,33 +7,43 @@
 @endsection
 
 @section('content')
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div class="d-flex align-items-center">
-        <div class="rounded-circle p-3 me-3" style="background-color: rgba(249, 115, 22, 0.1);">
-            <i class="bi bi-box-seam" style="font-size: 1.5rem; color: var(--accent-color);"></i>
+<!-- Header Melhorado -->
+<div class="card mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center">
+                <div class="rounded-circle p-3 me-3" style="background-color: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);">
+                    <i class="bi bi-box-seam" style="font-size: 1.8rem; color: white;"></i>
+                </div>
+                <div>
+                    <h3 class="mb-1 text-white fw-bold">Gerenciar Produtos</h3>
+                    <p class="mb-0 text-white" style="opacity: 0.9;">
+                        <i class="bi bi-database me-1"></i>
+                        <strong>{{ $products->total() }}</strong> produtos cadastrados
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{{ route('admin.products.import') }}" class="btn btn-light shadow-sm" style="font-weight: 500;">
+                    <i class="bi bi-upload me-1"></i> Importar
+                </a>
+                <a href="{{ route('admin.products.create') }}" class="btn btn-white shadow" style="font-weight: 600; background-color: white; color: #f97316;">
+                    <i class="bi bi-plus-circle me-1"></i> Novo Produto
+                </a>
+            </div>
         </div>
-        <div>
-            <h4 class="mb-0">Produtos</h4>
-            <p class="text-muted mb-0">{{ $products->total() }} produtos cadastrados</p>
-        </div>
-    </div>
-    <div class="d-flex gap-2">
-        <a href="{{ route('admin.products.import') }}" class="btn btn-outline-primary">
-            <i class="bi bi-upload me-1"></i> Importar
-        </a>
-        <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
-            <i class="bi bi-plus-circle me-1"></i> Novo Produto
-        </a>
     </div>
 </div>
 
-<!-- Controlador Global de Margens de Lucro -->
-<div class="card mb-4 border-warning">
-    <div class="card-header d-flex align-items-center" style="background-color: #fff3cd; border-bottom: 2px solid #ffc107;">
-        <i class="bi bi-sliders me-2" style="color: #856404; font-size: 1.2rem;"></i>
-        <h6 class="mb-0 fw-bold" style="color: #856404;">Controlador Global de Margens de Lucro</h6>
+<!-- Controlador Global de Margens de Lucro - Redesenhado -->
+<div class="card mb-4 border-0 shadow-sm" style="border-left: 4px solid #f97316 !important;">
+    <div class="card-header d-flex align-items-center" style="background: linear-gradient(to right, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.2);">
+        <div class="rounded-circle p-2 me-2" style="background-color: #f97316;">
+            <i class="bi bi-sliders" style="color: white; font-size: 1rem;"></i>
+        </div>
+        <h6 class="mb-0 fw-bold" style="color: #f97316;">Controlador Global de Margens de Lucro</h6>
     </div>
-    <div class="card-body">
+    <div class="card-body" style="background-color: #fafafa;">
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label fw-semibold">
@@ -84,29 +94,31 @@
             </div>
             <div class="col-md-2">
                 <button type="button" 
-                        class="btn btn-warning w-100 fw-bold" 
+                        class="btn w-100 fw-bold shadow-sm" 
                         id="apply-global-margins"
-                        style="height: 38px;">
+                        style="height: 38px; background-color: #f97316; border-color: #f97316; color: white;">
                     <i class="bi bi-arrow-repeat me-1"></i>
                     Aplicar
                 </button>
             </div>
         </div>
-        <div class="alert alert-info mt-3 mb-0" style="font-size: 0.875rem;">
-            <i class="bi bi-info-circle me-1"></i>
+        <div class="alert alert-info mt-3 mb-0 border-0" style="font-size: 0.875rem; background-color: rgba(13, 110, 253, 0.1); color: #084298;">
+            <i class="bi bi-info-circle-fill me-2" style="color: #0d6efd;"></i>
             <strong>Atenção:</strong> Esta ação irá atualizar as margens de lucro e recalcular os preços de todos os produtos que possuem preço de custo definido. 
             Produtos sem custo não serão afetados.
         </div>
     </div>
 </div>
 
-<!-- Filtros -->
-<div class="card mb-4">
-    <div class="card-header d-flex align-items-center">
-        <i class="bi bi-funnel me-2" style="color: var(--accent-color);"></i>
-        <h6 class="mb-0">Filtros e Busca</h6>
+<!-- Filtros - Redesenhado -->
+<div class="card mb-4 border-0 shadow-sm">
+    <div class="card-header d-flex align-items-center" style="background: linear-gradient(to right, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.15);">
+        <div class="rounded-circle p-2 me-2" style="background-color: rgba(249, 115, 22, 0.15);">
+            <i class="bi bi-funnel" style="color: #f97316; font-size: 0.9rem;"></i>
+        </div>
+        <h6 class="mb-0 fw-semibold" style="color: #374151;">Filtros e Busca</h6>
     </div>
-    <div class="card-body">
+    <div class="card-body" style="background-color: #fafafa;">
         <form method="GET" id="filterForm" class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">
@@ -191,16 +203,19 @@
                 </select>
             </div>
             <div class="col-md-1 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary w-100" title="Filtrar">
+                <button type="submit" class="btn w-100 shadow-sm" title="Filtrar" style="background-color: #f97316; border-color: #f97316; color: white; font-weight: 500;">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
         </form>
         
         @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status', 'supplier']))
-            <div class="mt-3 d-flex align-items-center">
-                <span class="text-muted me-2">Filtros ativos:</span>
-                <a href="{{ route('admin.products.index') }}" class="btn btn-sm btn-outline-secondary">
+            <div class="mt-3 p-2 d-flex align-items-center justify-content-between" style="background-color: white; border-radius: 6px; border-left: 3px solid #f97316;">
+                <span class="text-muted me-2" style="font-size: 0.85rem;">
+                    <i class="bi bi-funnel-fill me-1" style="color: #f97316;"></i>
+                    <strong>Filtros ativos</strong>
+                </span>
+                <a href="{{ route('admin.products.index') }}" class="btn btn-sm shadow-sm" style="background-color: #f97316; border-color: #f97316; color: white; font-weight: 500;">
                     <i class="bi bi-x-circle me-1"></i>Limpar filtros
                 </a>
             </div>
@@ -209,26 +224,32 @@
 </div>
 
 <!-- Lista de Produtos -->
-<div class="card">
-    <div class="card-body">
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
         @if($products->count() > 0)
-            <!-- Barra de Ações em Massa -->
-            <div id="bulkActionsBar" class="mb-3 p-3 bg-light rounded d-none">
+            <!-- Barra de Ações em Massa - Redesenhada -->
+            <div id="bulkActionsBar" class="m-3 p-3 rounded d-none" style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); border-left: 4px solid #f97316;">
                 <form id="bulkActionForm" action="{{ route('admin.products.bulk-availability') }}" method="POST">
                     @csrf
-                    <div class="d-flex align-items-center justify-content-between">
-                        <div>
-                            <span id="selectedCount" class="fw-semibold">0</span> produto(s) selecionado(s)
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center">
+                            <div class="rounded-circle p-2 me-2" style="background-color: #f97316;">
+                                <i class="bi bi-check2-square" style="color: white; font-size: 1rem;"></i>
+                            </div>
+                            <div>
+                                <span id="selectedCount" class="fw-bold" style="font-size: 1.5rem; color: #f97316;">0</span>
+                                <span class="text-muted ms-1">produto(s) selecionado(s)</span>
+                            </div>
                         </div>
-                        <div class="d-flex gap-2">
-                            <button type="button" onclick="submitBulkAction('mark_unavailable')" class="btn btn-warning btn-sm">
-                                <i class="bi bi-x-circle me-1"></i>Marcar como Indisponível
+                        <div class="d-flex gap-2 flex-wrap">
+                            <button type="button" onclick="submitBulkAction('mark_unavailable')" class="btn btn-sm shadow-sm" style="background-color: #fbbf24; border-color: #fbbf24; color: white; font-weight: 500;">
+                                <i class="bi bi-x-circle me-1"></i>Indisponível
                             </button>
-                            <button type="button" onclick="submitBulkAction('mark_available')" class="btn btn-success btn-sm">
-                                <i class="bi bi-check-circle me-1"></i>Marcar como Disponível
+                            <button type="button" onclick="submitBulkAction('mark_available')" class="btn btn-success btn-sm shadow-sm" style="font-weight: 500;">
+                                <i class="bi bi-check-circle me-1"></i>Disponível
                             </button>
-                            <button type="button" onclick="submitBulkAction('delete')" class="btn btn-danger btn-sm">
-                                <i class="bi bi-trash me-1"></i>Excluir Selecionados
+                            <button type="button" onclick="submitBulkAction('delete')" class="btn btn-danger btn-sm shadow-sm" style="font-weight: 500;">
+                                <i class="bi bi-trash me-1"></i>Excluir
                             </button>
                             <button type="button" id="clearSelection" class="btn btn-outline-secondary btn-sm">
                                 <i class="bi bi-x me-1"></i>Limpar
@@ -241,177 +262,457 @@
             </div>
 
             <div class="table-responsive">
-                <table class="table table-hover align-middle table-sm" style="font-size: 0.875rem;">
-                    <thead class="table-light">
+                <table class="table table-hover align-middle mb-0" style="font-size: 0.95rem;">
+                    <thead style="background: linear-gradient(to right, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.2);">
                         <tr>
-                            <th class="text-center" style="width: 30px; padding: 8px 4px;">
-                                <input type="checkbox" id="selectAll" class="form-check-input" title="Selecionar todos">
+                            <th class="text-center" style="width: 40px; padding: 16px 8px;">
+                                <input type="checkbox" id="selectAll" class="form-check-input" title="Selecionar todos" style="cursor: pointer; width: 20px; height: 20px;">
                             </th>
-                            <th class="text-center" style="width: 45px; padding: 8px 4px;">
-                                <i class="bi bi-image text-muted"></i>
-                            </th>
-                            <th style="min-width: 150px; max-width: 220px; padding: 8px;">Produto</th>
-                            <th style="width: 80px; padding: 8px 4px;">Marca</th>
-                            <th style="width: 200px; padding: 8px 4px;">Preço e Margens</th>
-                            <th class="text-center" style="width: 70px; padding: 8px 4px;">Estoque</th>
-                            <th class="text-center" style="width: 100px; padding: 8px 4px;">Variações</th>
-                            <th class="text-center" style="width: 100px; padding: 8px 4px;">Status</th>
-                            <th class="text-center" style="width: 90px; padding: 8px 4px;">Ações</th>
+                            <th style="width: 320px; padding: 16px; font-weight: 600; color: #374151; font-size: 0.95rem;">Produto</th>
+                            <th style="width: 100px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Marca</th>
+                            <th style="width: 240px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Preço e Margens</th>
+                            <th class="text-center" style="width: 90px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Estoque</th>
+                            <th class="text-center" style="width: 120px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Variações</th>
+                            <th class="text-center" style="width: 120px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Status</th>
+                            <th class="text-center" style="width: 110px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach($products as $product)
                             <tr class="product-row {{ $product->is_unavailable ? 'table-secondary opacity-75' : '' }}" 
+                                id="product-{{ $product->id }}"
                                 data-product-id="{{ $product->id }}"
                                 style="cursor: pointer;">
-                                <td class="text-center" style="padding: 8px 4px;">
+                                <td class="text-center" style="padding: 14px 8px;">
                                     <input type="checkbox" 
                                            class="form-check-input product-checkbox" 
                                            value="{{ $product->id }}"
                                            data-product-id="{{ $product->id }}"
-                                           onclick="event.stopPropagation();">
+                                           onclick="event.stopPropagation();"
+                                           style="width: 20px; height: 20px;">
                                 </td>
-                                <td class="text-center" style="padding: 8px 4px;">
-                                    @if($product->first_image)
-                                        <img src="{{ $product->first_image }}" 
-                                             alt="{{ $product->name }}" 
-                                             class="rounded product-thumbnail" 
-                                             style="width: 40px; height: 40px; object-fit: cover; cursor: pointer; transition: transform 0.2s;"
-                                             data-product-id="{{ $product->id }}"
-                                             data-product-name="{{ $product->name }}"
-                                             data-bs-toggle="modal" 
-                                             data-bs-target="#imagesModal"
-                                             onclick="event.stopPropagation();"
-                                             onmouseover="this.style.transform='scale(1.1)'"
-                                             onmouseout="this.style.transform='scale(1)'"
-                                             onerror="this.onerror=null; this.src='{{ asset('images/no-image.svg') }}';"
-                                             title="Clique para editar imagens">
-                                    @else
-                                        <div class="d-flex align-items-center justify-content-center product-thumbnail" 
-                                             style="width: 40px; height: 40px; cursor: pointer; transition: transform 0.2s;"
-                                             data-product-id="{{ $product->id }}"
-                                             data-product-name="{{ $product->name }}"
-                                             data-bs-toggle="modal" 
-                                             data-bs-target="#imagesModal"
-                                             onclick="event.stopPropagation();"
-                                             onmouseover="this.style.transform='scale(1.1)'"
-                                             onmouseout="this.style.transform='scale(1)'"
-                                             title="Clique para adicionar imagens">
-                                            <i class="bi bi-image" style="font-size: 1rem; color: #fd7e14;"></i>
+                                <!-- COLUNA: Produto com Foto, Título e Descrição -->
+                                <td style="padding: 12px;" onclick="event.stopPropagation();">
+                                    <div class="d-flex gap-3">
+                                        <!-- Miniatura -->
+                                        <div class="flex-shrink-0">
+                                            @if($product->first_image)
+                                                <img src="{{ $product->first_image }}" 
+                                                     alt="{{ $product->name }}" 
+                                                     class="rounded product-thumbnail" 
+                                                     style="width: 70px; height: 70px; object-fit: cover; cursor: pointer; transition: transform 0.2s;"
+                                                     data-product-id="{{ $product->id }}"
+                                                     data-product-name="{{ $product->name }}"
+                                                     data-bs-toggle="modal" 
+                                                     data-bs-target="#imagesModal"
+                                                     onmouseover="this.style.transform='scale(1.1)'"
+                                                     onmouseout="this.style.transform='scale(1)'"
+                                                     onerror="this.onerror=null; this.src='{{ asset('images/no-image.svg') }}';"
+                                                     title="Clique para editar imagens">
+                                            @else
+                                                <div class="d-flex align-items-center justify-content-center product-thumbnail rounded" 
+                                                     style="width: 70px; height: 70px; background-color: #f3f4f6; cursor: pointer; transition: transform 0.2s;"
+                                                     data-product-id="{{ $product->id }}"
+                                                     data-product-name="{{ $product->name }}"
+                                                     data-bs-toggle="modal" 
+                                                     data-bs-target="#imagesModal"
+                                                     onmouseover="this.style.transform='scale(1.1)'"
+                                                     onmouseout="this.style.transform='scale(1)'"
+                                                     title="Clique para adicionar imagens">
+                                                    <i class="bi bi-image" style="font-size: 1.2rem; color: #d1d5db;"></i>
+                                                </div>
+                                            @endif
                                         </div>
-                                    @endif
-                                </td>
-                                <td style="padding: 8px;">
-                                    <div style="line-height: 1.3;">
-                                        <div class="fw-semibold" style="font-size: 0.875rem; margin-bottom: 2px;">{{ Str::limit($product->name, 35) }}</div>
-                                        <div class="d-flex flex-wrap gap-1" style="margin-top: 2px;">
+                                        
+                                        <!-- Título e Descrição -->
+                                        <div class="flex-grow-1" style="min-width: 0;">
+                                            <!-- Título e Badge -->
+                                            <div class="d-flex align-items-center gap-2 mb-2">
+                                                <div class="fw-semibold" style="font-size: 1rem; color: #1f2937; line-height: 1.3;">
+                                                    {{ Str::limit($product->name, 40) }}
+                                                </div>
                                                 @if($product->is_featured)
-                                                <span class="badge bg-warning" style="font-size: 0.7rem; padding: 2px 6px;">
-                                                    <i class="bi bi-star-fill" style="font-size: 0.7rem;"></i>
+                                                    <span class="badge bg-warning" style="font-size: 0.75rem; padding: 3px 7px;">
+                                                        <i class="bi bi-star-fill" style="font-size: 0.7rem;"></i>
                                                     </span>
                                                 @endif
+                                            </div>
+                                            
+                                            <!-- Descrição Editável -->
+                                            <div class="description-preview-container" 
+                                                 style="cursor: pointer; transition: all 0.2s ease; padding: 6px; margin: -6px; border-radius: 4px;"
+                                                 data-product-id="{{ $product->id }}"
+                                                 data-product-name="{{ $product->name }}"
+                                                 data-product-description="{{ htmlspecialchars($product->description ?? '') }}"
+                                                 data-bs-toggle="modal"
+                                                 data-bs-target="#descriptionModal"
+                                                 onmouseover="this.style.backgroundColor='rgba(249, 115, 22, 0.05)'"
+                                                 onmouseout="this.style.backgroundColor='transparent'"
+                                                 title="Clique para editar descrição completa">
+                                                @if($product->description)
+                                                    <div class="description-preview" style="font-size: 0.85rem; color: #6b7280; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 4px;">
+                                                        {{ $product->description }}
+                                                    </div>
+                                                    <small class="d-flex align-items-center" style="font-size: 0.75rem;">
+                                                        <i class="bi bi-pencil me-1" style="color: #f97316; font-size: 0.75rem;"></i>
+                                                        <span style="color: #f97316;">Editar descrição</span>
+                                                    </small>
+                                                @else
+                                                    <div class="text-muted d-flex align-items-center" style="font-size: 0.8rem; padding: 6px 0;">
+                                                        <i class="bi bi-file-text me-1" style="font-size: 0.95rem; color: #d1d5db;"></i>
+                                                        <span style="color: #9ca3af;">Sem descrição</span>
+                                                        <i class="bi bi-plus-circle ms-2 me-1" style="font-size: 0.8rem; color: #f97316;"></i>
+                                                        <span style="color: #f97316;">Adicionar</span>
+                                                    </div>
+                                                @endif
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
-                                <td style="padding: 8px 4px;">
+                                <td style="padding: 12px 8px;">
                                     @if($product->brand)
-                                        <span class="badge bg-primary" style="font-size: 0.75rem; padding: 3px 6px;">
+                                        <span class="badge bg-primary" style="font-size: 0.85rem; padding: 5px 10px;">
                                             {{ Str::limit($product->brand, 12) }}
                                         </span>
                                     @else
-                                        <span class="text-muted" style="font-size: 0.75rem;">-</span>
+                                        <span class="text-muted" style="font-size: 0.85rem;">-</span>
                                     @endif
                                 </td>
-                                <td style="padding: 6px 4px;" onclick="event.stopPropagation();">
-                                    <div class="price-editor" data-product-id="{{ $product->id }}" style="min-width: 180px; max-width: 200px;">
-                                        <!-- Custo -->
-                                        <div class="mb-1">
-                                            <div class="d-flex align-items-center mb-0">
-                                                <label class="form-label mb-0 me-1" style="font-size: 0.65rem; color: #6c757d; white-space: nowrap;">Custo:</label>
-                                                <div class="input-group input-group-sm flex-grow-1" style="min-width: 0;">
-                                                    <span class="input-group-text" style="font-size: 0.65rem; padding: 1px 4px;">R$</span>
-                                                    <input type="text" 
-                                                           class="form-control form-control-sm cost-price-field" 
-                                                           data-product-id="{{ $product->id }}"
-                                                           value="{{ $product->cost_price ? number_format($product->cost_price, 2, ',', '.') : '0,00' }}" 
-                                                           style="font-size: 0.7rem; padding: 1px 4px;"
-                                                           placeholder="0,00"
-                                                           onblur="normalizeAndUpdatePrice({{ $product->id }}, this.value)"
-                                                           onclick="event.stopPropagation();">
-                                                    <button class="btn btn-sm btn-outline-success" 
-                                                            type="button" 
-                                                            onclick="event.stopPropagation(); normalizeAndUpdatePrice({{ $product->id }}, document.querySelector('[data-product-id=\'{{ $product->id }}\'].cost-price-field').value)"
-                                                            style="font-size: 0.65rem; padding: 1px 4px;"
-                                                            title="Salvar">
-                                                        <i class="bi bi-check" style="font-size: 0.7rem;"></i>
-                                                    </button>
+                                <td style="padding: 10px 8px;" onclick="event.stopPropagation();">
+                                    @php
+                                        $hasVariations = $product->variations->count() > 0;
+                                    @endphp
+                                    
+                                    @if($hasVariations)
+                                        <!-- PRODUTO COM VARIAÇÕES - Layout Compacto e Elegante -->
+                                        <div class="variations-price-list" style="min-width: 260px; max-width: 280px;">
+                                            <!-- Header com contador -->
+                                            <div class="mb-2 px-3 py-2 d-flex align-items-center justify-content-between" 
+                                                 style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); 
+                                                        border-left: 3px solid #f97316; 
+                                                        border-radius: 4px;">
+                                                <small style="font-size: 0.8rem; font-weight: 600; color: #f97316;">
+                                                    <i class="bi bi-list-ul me-1"></i>{{ $product->variations->count() }} Variações
+                                                </small>
+                                            </div>
+                                            
+                                            @foreach($product->variations->sortBy(function($v) { return $v->color . $v->ram . $v->storage; }) as $variation)
+                                                <div class="variation-price-item mb-2 p-3" 
+                                                     style="background: linear-gradient(to right, #ffffff 0%, #fafafa 100%); 
+                                                            border-left: 2px solid #f97316; 
+                                                            border-radius: 4px; 
+                                                            box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                                                    
+                                                    <!-- Badges de Identificação - Uma linha horizontal -->
+                                                    <div class="d-flex align-items-center gap-1 mb-2 flex-wrap">
+                                                        @if($variation->color)
+                                                            @php
+                                                                // Normalizar nome e preparar bases
+                                                                $colorNameOriginal = $variation->color;
+                                                                $colorName = strtolower(trim($colorNameOriginal));
+                                                                // Normalizar array de cores do banco para comparação case-insensitive
+                                                                $colorsFromDBLower = array_change_key_case($colorsFromDB, CASE_LOWER);
+                                                                
+                                                                // Mapa exato
+                                                                $colorMap = [
+                                                                    'preto' => '#000000','black'=>'#000000',
+                                                                    'branco' => '#FFFFFF','white'=>'#FFFFFF',
+                                                                    'vermelho'=>'#DC143C','red'=>'#DC143C',
+                                                                    'azul'=>'#1E90FF','blue'=>'#1E90FF',
+                                                                    'verde'=>'#32CD32','green'=>'#32CD32',
+                                                                    'amarelo'=>'#FFD700','yellow'=>'#FFD700',
+                                                                    'laranja'=>'#FF8C00','orange'=>'#FF8C00',
+                                                                    'roxo'=>'#9370DB','purple'=>'#9370DB',
+                                                                    'rosa'=>'#FF69B4','pink'=>'#FF69B4',
+                                                                    'marrom'=>'#8B4513','brown'=>'#8B4513',
+                                                                    'cinza'=>'#808080','gray'=>'#808080','grey'=>'#808080',
+                                                                    // Metálicos
+                                                                    'dourado'=>'#FFD700','gold'=>'#FFD700',
+                                                                    'prateado'=>'#C0C0C0','silver'=>'#C0C0C0',
+                                                                    'rose gold'=>'#B76E79',
+                                                                    // Apple especiais
+                                                                    'space gray'=>'#52514D','space grey'=>'#52514D',
+                                                                    'midnight'=>'#191970','meia-noite'=>'#191970',
+                                                                    'starlight'=>'#F5F5DC','luz das estrelas'=>'#F5F5DC',
+                                                                    'pacific blue'=>'#4682B4',
+                                                                    'sierra blue'=>'#6CA6CD',
+                                                                    'graphite'=>'#4B4B4B','grafite'=>'#4B4B4B',
+                                                                    'alpine green'=>'#2F4F4F',
+                                                                    'deep purple'=>'#663399',
+                                                                    // Titanium series
+                                                                    'black titanium'=>'#3E3E3C',
+                                                                    'white titanium'=>'#E8E8E3',
+                                                                    'blue titanium'=>'#5C6A7A',
+                                                                    'natural titanium'=>'#B8B5AB',
+                                                                    'desert titanium'=>'#C4B5A0',
+                                                                    // Outras
+                                                                    'coral'=>'#FF7F50',
+                                                                    'lavanda'=>'#E6E6FA','lavender'=>'#E6E6FA',
+                                                                    'mint'=>'#98FF98','menta'=>'#98FF98',
+                                                                    'cream'=>'#FFFDD0','creme'=>'#FFFDD0',
+                                                                    'pearl'=>'#F0EAD6','pérola'=>'#F0EAD6',
+                                                                    'navy'=>'#000080','marinho'=>'#000080',
+                                                                    'burgundy'=>'#800020','bordô'=>'#800020',
+                                                                ];
+                                                                // Palavras-chave
+                                                                $keywordMap = [
+                                                                    'titanium'=>'#B8B5AB',
+                                                                    'titânio'=>'#B8B5AB',
+                                                                    'desert'=>'#C4B5A0',
+                                                                    'natural'=>'#B8B5AB',
+                                                                    'phantom'=>'#2C2C2C',
+                                                                    'graphite'=>'#4B4B4B',
+                                                                    'sierra'=>'#6CA6CD',
+                                                                    'midnight'=>'#191970',
+                                                                    'starlight'=>'#F5F5DC',
+                                                                    'alpine'=>'#2F4F4F',
+                                                                    'cloud'=>'#F0F8FF',
+                                                                    'sky'=>'#87CEEB',
+                                                                    'ocean'=>'#006994',
+                                                                    'forest'=>'#228B22',
+                                                                    'sand'=>'#F4A460',
+                                                                    'stone'=>'#8B8680',
+                                                                    'bronze'=>'#CD7F32',
+                                                                    'copper'=>'#B87333',
+                                                                    'champagne'=>'#F7E7CE',
+                                                                ];
+                                                                
+                                                                // Prioridade 1: hex cadastrado na variação
+                                                                $colorHex = $variation->color_hex ?: null;
+                                                                // Prioridade 2: banco de dados (case-insensitive)
+                                                                if (!$colorHex && isset($colorsFromDBLower[$colorName])) {
+                                                                    $colorHex = $colorsFromDBLower[$colorName];
+                                                                }
+                                                                // Prioridade 3: mapa exato
+                                                                if (!$colorHex && isset($colorMap[$colorName])) {
+                                                                    $colorHex = $colorMap[$colorName];
+                                                                }
+                                                                // Prioridade 4: palavras-chave
+                                                                if (!$colorHex) {
+                                                                    foreach ($keywordMap as $kw => $hex) {
+                                                                        if (strpos($colorName, $kw) !== false) { $colorHex = $hex; break; }
+                                                                    }
+                                                                }
+                                                                // Fallback final
+                                                                if (!$colorHex) { $colorHex = '#6c757d'; }
+                                                                // Garantir #
+                                                                if ($colorHex[0] !== '#') { $colorHex = '#' . $colorHex; }
+                                                                // Contraste
+                                                                if (preg_match('/^#([A-Fa-f0-9]{6})$/',$colorHex)) {
+                                                                    $r = hexdec(substr($colorHex,1,2));
+                                                                    $g = hexdec(substr($colorHex,3,2));
+                                                                    $b = hexdec(substr($colorHex,5,2));
+                                                                    $brightness = (($r*299)+($g*587)+($b*114))/1000;
+                                                                    $textColor = $brightness > 155 ? '#000' : '#fff';
+                                                                } else { $textColor = '#fff'; }
+                                                            @endphp
+                                                            <span class="badge" style="font-size:0.7rem;padding:3px 7px;background-color:{{ $colorHex }};color:{{ $textColor }};border-radius:3px;border:1px solid rgba(0,0,0,0.2);box-shadow:0 2px 4px rgba(0,0,0,0.15);" title="Cor: {{ $variation->color }} ({{ $colorHex }})">
+                                                                {{ Str::limit($variation->color, 8) }}
+                                                            </span>
+                                                        @endif
+                                                        @if($variation->ram)
+                                                            <span class="badge" style="font-size: 0.7rem; padding: 3px 7px; background-color: #0dcaf0; color: #000; border-radius: 3px; border: 1px solid rgba(0,0,0,0.1);">
+                                                                {{ $variation->ram }}
+                                                            </span>
+                                                        @endif
+                                                        @if($variation->storage)
+                                                            <span class="badge" style="font-size: 0.7rem; padding: 3px 7px; background-color: #6c757d; color: #fff; border-radius: 3px; border: 1px solid rgba(0,0,0,0.1);">
+                                                                {{ $variation->storage }}
+                                                            </span>
+                                                        @endif
+                                                    </div>
+                                                    
+                                                    <!-- Grid de Preços - 3 linhas compactas -->
+                                                    <div class="prices-grid">
+                                                        <!-- Custo -->
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <span style="font-size: 0.75rem; color: #6c757d; min-width: 40px; font-weight: 500;">Custo</span>
+                                                            <div class="input-group input-group-sm flex-grow-1">
+                                                                <span class="input-group-text" style="font-size: 0.75rem; padding: 4px 6px; background-color: #f8f9fa; border-color: #dee2e6;">R$</span>
+                                                                <input type="text" 
+                                                                       class="form-control form-control-sm variation-cost-field" 
+                                                                       data-variation-id="{{ $variation->id }}"
+                                                                       data-product-id="{{ $product->id }}"
+                                                                       value="{{ $variation->cost_price ? number_format($variation->cost_price, 2, ',', '.') : '0,00' }}" 
+                                                                       style="font-size: 0.8rem; padding: 4px 8px; border-color: #dee2e6;"
+                                                                       placeholder="0,00"
+                                                                       onblur="updateVariationPrice({{ $variation->id }}, 'cost_price', this.value)"
+                                                                       onclick="event.stopPropagation();">
+                                                                <button class="btn btn-sm" 
+                                                                        type="button" 
+                                                                        onclick="event.stopPropagation(); updateVariationPrice({{ $variation->id }}, 'cost_price', this.closest('.input-group').querySelector('.variation-cost-field').value)"
+                                                                        style="font-size: 0.75rem; padding: 4px 8px; background-color: #f97316; border-color: #f97316; color: white;"
+                                                                        title="Salvar">
+                                                                    <i class="bi bi-check-lg"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- B2C -->
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <span style="font-size: 0.75rem; color: #198754; min-width: 40px; font-weight: 600;">B2C</span>
+                                                            <div class="input-group input-group-sm flex-grow-1">
+                                                                <span class="input-group-text" style="font-size: 0.75rem; padding: 4px 6px; background-color: #d1e7dd; border-color: #a3cfbb; color: #0a3622;">R$</span>
+                                                                <input type="text" 
+                                                                       class="form-control form-control-sm variation-b2c-field" 
+                                                                       data-variation-id="{{ $variation->id }}"
+                                                                       data-product-id="{{ $product->id }}"
+                                                                       value="{{ $variation->price ? number_format($variation->price, 2, ',', '.') : '0,00' }}" 
+                                                                       style="font-size: 0.8rem; padding: 4px 8px; border-color: #a3cfbb; font-weight: 600; color: #198754;"
+                                                                       placeholder="0,00"
+                                                                       onblur="updateVariationPrice({{ $variation->id }}, 'b2c_price', this.value)"
+                                                                       onclick="event.stopPropagation();">
+                                                                <button class="btn btn-sm" 
+                                                                        type="button" 
+                                                                        onclick="event.stopPropagation(); updateVariationPrice({{ $variation->id }}, 'b2c_price', this.closest('.input-group').querySelector('.variation-b2c-field').value)"
+                                                                        style="font-size: 0.75rem; padding: 4px 8px; background-color: #f97316; border-color: #f97316; color: white;"
+                                                                        title="Salvar">
+                                                                    <i class="bi bi-check-lg"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                        
+                                                        <!-- B2B -->
+                                                        <div class="d-flex align-items-center">
+                                                            <span style="font-size: 0.75rem; color: #0d6efd; min-width: 40px; font-weight: 600;">B2B</span>
+                                                            <div class="input-group input-group-sm flex-grow-1">
+                                                                <span class="input-group-text" style="font-size: 0.75rem; padding: 4px 6px; background-color: #cfe2ff; border-color: #9ec5fe; color: #052c65;">R$</span>
+                                                                <input type="text" 
+                                                                       class="form-control form-control-sm variation-b2b-field" 
+                                                                       data-variation-id="{{ $variation->id }}"
+                                                                       data-product-id="{{ $product->id }}"
+                                                                       value="{{ $variation->b2b_price ? number_format($variation->b2b_price, 2, ',', '.') : '0,00' }}" 
+                                                                       style="font-size: 0.8rem; padding: 4px 8px; border-color: #9ec5fe; font-weight: 600; color: #0d6efd;"
+                                                                       placeholder="0,00"
+                                                                       onblur="updateVariationPrice({{ $variation->id }}, 'b2b_price', this.value)"
+                                                                       onclick="event.stopPropagation();">
+                                                                <button class="btn btn-sm" 
+                                                                        type="button" 
+                                                                        onclick="event.stopPropagation(); updateVariationPrice({{ $variation->id }}, 'b2b_price', this.closest('.input-group').querySelector('.variation-b2b-field').value)"
+                                                                        style="font-size: 0.75rem; padding: 4px 8px; background-color: #f97316; border-color: #f97316; color: white;"
+                                                                        title="Salvar">
+                                                                    <i class="bi bi-check-lg"></i>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                            
+                                            <!-- Botão Gerenciar -->
+                                            <button type="button" 
+                                                    class="btn btn-sm w-100" 
+                                                    data-product-id="{{ $product->id }}"
+                                                    data-product-name="{{ $product->name }}"
+                                                    data-bs-toggle="modal" 
+                                                    data-bs-target="#variationsModal"
+                                                    style="font-size: 0.7rem; padding: 4px; background-color: #f97316; border-color: #f97316; color: white; font-weight: 500;"
+                                                    onclick="event.stopPropagation();">
+                                                <i class="bi bi-gear me-1"></i>Gerenciar Variações
+                                            </button>
+                                        </div>
+                                    @else
+                                        <!-- PRODUTO SEM VARIAÇÕES - Mostrar campos editáveis do produto pai -->
+                                        <div class="price-editor" data-product-id="{{ $product->id }}" style="min-width: 180px; max-width: 200px;">
+                                            <!-- Custo -->
+                                            <div class="mb-1">
+                                                <div class="d-flex align-items-center mb-0">
+                                                    <label class="form-label mb-0 me-1" style="font-size: 0.65rem; color: #6c757d; white-space: nowrap;">Custo:</label>
+                                                    <div class="input-group input-group-sm flex-grow-1" style="min-width: 0;">
+                                                        <span class="input-group-text" style="font-size: 0.65rem; padding: 1px 4px;">R$</span>
+                                                        <input type="text" 
+                                                               class="form-control form-control-sm cost-price-field" 
+                                                               data-product-id="{{ $product->id }}"
+                                                               value="{{ $product->cost_price ? number_format($product->cost_price, 2, ',', '.') : '0,00' }}" 
+                                                               style="font-size: 0.7rem; padding: 1px 4px;"
+                                                               placeholder="0,00"
+                                                               onblur="normalizeAndUpdatePrice({{ $product->id }}, this.value)"
+                                                               onclick="event.stopPropagation();">
+                                                        <button class="btn btn-sm btn-outline-success" 
+                                                                type="button" 
+                                                                onclick="event.stopPropagation(); normalizeAndUpdatePrice({{ $product->id }}, document.querySelector('[data-product-id=\'{{ $product->id }}\'].cost-price-field').value)"
+                                                                style="font-size: 0.65rem; padding: 1px 4px;"
+                                                                title="Salvar">
+                                                            <i class="bi bi-check" style="font-size: 0.7rem;"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Margens de Lucro - Layout Compacto -->
+                                            <div class="mb-1" style="border-top: 1px solid #e0e0e0; padding-top: 3px;">
+                                                <div class="d-flex gap-1 align-items-center mb-1">
+                                                    <label class="form-label mb-0 me-1" style="font-size: 0.6rem; color: #6c757d; white-space: nowrap; min-width: 45px;">B2B:</label>
+                                                    <div class="input-group input-group-sm flex-grow-1" style="min-width: 0;">
+                                                        <input type="text" 
+                                                               class="form-control form-control-sm profit-b2b-field" 
+                                                               data-product-id="{{ $product->id }}"
+                                                               value="{{ $product->profit_margin_b2b ? ($product->profit_margin_b2b % 1 == 0 ? number_format($product->profit_margin_b2b, 0, ',', '.') : number_format($product->profit_margin_b2b, 2, ',', '.')) : '10' }}" 
+                                                               style="font-size: 0.65rem; padding: 1px 3px;"
+                                                               placeholder="10"
+                                                               onblur="updateProfitMargin({{ $product->id }}, 'b2b', this.value)"
+                                                               onclick="event.stopPropagation();">
+                                                        <span class="input-group-text" style="font-size: 0.6rem; padding: 1px 3px;">%</span>
+                                                    </div>
+                                                </div>
+                                                <div class="d-flex gap-1 align-items-center">
+                                                    <label class="form-label mb-0 me-1" style="font-size: 0.6rem; color: #6c757d; white-space: nowrap; min-width: 45px;">B2C:</label>
+                                                    <div class="input-group input-group-sm flex-grow-1" style="min-width: 0;">
+                                                        <input type="text" 
+                                                               class="form-control form-control-sm profit-b2c-field" 
+                                                               data-product-id="{{ $product->id }}"
+                                                               value="{{ $product->profit_margin_b2c ? ($product->profit_margin_b2c % 1 == 0 ? number_format($product->profit_margin_b2c, 0, ',', '.') : number_format($product->profit_margin_b2c, 2, ',', '.')) : '20' }}" 
+                                                               style="font-size: 0.65rem; padding: 1px 3px;"
+                                                               placeholder="20"
+                                                               onblur="updateProfitMargin({{ $product->id }}, 'b2c', this.value)"
+                                                               onclick="event.stopPropagation();">
+                                                        <span class="input-group-text" style="font-size: 0.6rem; padding: 1px 3px;">%</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Preços Calculados - Layout Compacto -->
+                                            <div class="calculated-prices" style="border-top: 1px solid #e0e0e0; padding-top: 3px;">
+                                                @php
+                                                    $b2bPrice = $product->b2b_price ?? $product->price;
+                                                    $b2cPrice = $product->price;
+                                                    $b2bMargin = $product->profit_margin_b2b ?? 10.00;
+                                                    $b2cMargin = $product->profit_margin_b2c ?? 20.00;
+                                                    $hasInvertedMargins = $b2bMargin > $b2cMargin;
+                                                    $hasInvertedPrices = $b2bPrice > $b2cPrice;
+                                                @endphp
+                                                @if($hasInvertedMargins || $hasInvertedPrices)
+                                                    <div class="alert alert-warning p-1 mb-1" style="font-size: 0.6rem; line-height: 1.1; padding: 2px 4px !important;">
+                                                        <i class="bi bi-exclamation-triangle" style="font-size: 0.65rem;"></i>
+                                                        <strong>B2B > B2C</strong>
+                                                    </div>
+                                                @endif
+                                                <div class="d-flex justify-content-between align-items-center mb-0" style="font-size: 0.75rem; line-height: 1.2;">
+                                                    <span class="text-success fw-semibold">B2C:</span>
+                                                    <span class="text-success fw-semibold">R$ <span class="b2c-price-display">{{ number_format($b2cPrice, 2, ',', '.') }}</span></span>
+                                                    <small class="text-muted" style="font-size: 0.6rem;">({{ number_format($b2cMargin, 0, ',', '.') }}%)</small>
+                                                </div>
+                                                <div class="d-flex justify-content-between align-items-center" style="font-size: 0.75rem; line-height: 1.2;">
+                                                    <span class="text-primary fw-semibold">B2B:</span>
+                                                    <span class="text-primary fw-semibold">R$ <span class="b2b-price-display">{{ number_format($b2bPrice, 2, ',', '.') }}</span></span>
+                                                    <small class="text-muted" style="font-size: 0.6rem;">({{ number_format($b2bMargin, 0, ',', '.') }}%)</small>
                                                 </div>
                                             </div>
                                         </div>
-                                        
-                                        <!-- Margens de Lucro - Layout Compacto -->
-                                        <div class="mb-1" style="border-top: 1px solid #e0e0e0; padding-top: 3px;">
-                                            <div class="d-flex gap-1 align-items-center mb-1">
-                                                <label class="form-label mb-0 me-1" style="font-size: 0.6rem; color: #6c757d; white-space: nowrap; min-width: 45px;">B2B:</label>
-                                                <div class="input-group input-group-sm flex-grow-1" style="min-width: 0;">
-                                                    <input type="text" 
-                                                           class="form-control form-control-sm profit-b2b-field" 
-                                                           data-product-id="{{ $product->id }}"
-                                                           value="{{ $product->profit_margin_b2b ? ($product->profit_margin_b2b % 1 == 0 ? number_format($product->profit_margin_b2b, 0, ',', '.') : number_format($product->profit_margin_b2b, 2, ',', '.')) : '10' }}" 
-                                                           style="font-size: 0.65rem; padding: 1px 3px;"
-                                                           placeholder="10"
-                                                           onblur="updateProfitMargin({{ $product->id }}, 'b2b', this.value)"
-                                                           onclick="event.stopPropagation();">
-                                                    <span class="input-group-text" style="font-size: 0.6rem; padding: 1px 3px;">%</span>
-                                                </div>
-                                            </div>
-                                            <div class="d-flex gap-1 align-items-center">
-                                                <label class="form-label mb-0 me-1" style="font-size: 0.6rem; color: #6c757d; white-space: nowrap; min-width: 45px;">B2C:</label>
-                                                <div class="input-group input-group-sm flex-grow-1" style="min-width: 0;">
-                                                    <input type="text" 
-                                                           class="form-control form-control-sm profit-b2c-field" 
-                                                           data-product-id="{{ $product->id }}"
-                                                           value="{{ $product->profit_margin_b2c ? ($product->profit_margin_b2c % 1 == 0 ? number_format($product->profit_margin_b2c, 0, ',', '.') : number_format($product->profit_margin_b2c, 2, ',', '.')) : '20' }}" 
-                                                           style="font-size: 0.65rem; padding: 1px 3px;"
-                                                           placeholder="20"
-                                                           onblur="updateProfitMargin({{ $product->id }}, 'b2c', this.value)"
-                                                           onclick="event.stopPropagation();">
-                                                    <span class="input-group-text" style="font-size: 0.6rem; padding: 1px 3px;">%</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        
-                                        <!-- Preços Calculados - Layout Compacto -->
-                                        <div class="calculated-prices" style="border-top: 1px solid #e0e0e0; padding-top: 3px;">
-                                            @php
-                                                $b2bPrice = $product->b2b_price ?? $product->price;
-                                                $b2cPrice = $product->price;
-                                                $b2bMargin = $product->profit_margin_b2b ?? 10.00;
-                                                $b2cMargin = $product->profit_margin_b2c ?? 20.00;
-                                                $hasInvertedMargins = $b2bMargin > $b2cMargin;
-                                                $hasInvertedPrices = $b2bPrice > $b2cPrice;
-                                            @endphp
-                                            @if($hasInvertedMargins || $hasInvertedPrices)
-                                                <div class="alert alert-warning p-1 mb-1" style="font-size: 0.6rem; line-height: 1.1; padding: 2px 4px !important;">
-                                                    <i class="bi bi-exclamation-triangle" style="font-size: 0.65rem;"></i>
-                                                    <strong>B2B > B2C</strong>
-                                                </div>
-                                            @endif
-                                            <div class="d-flex justify-content-between align-items-center mb-0" style="font-size: 0.75rem; line-height: 1.2;">
-                                                <span class="text-success fw-semibold">B2C:</span>
-                                                <span class="text-success fw-semibold">R$ <span class="b2c-price-display">{{ number_format($b2cPrice, 2, ',', '.') }}</span></span>
-                                                <small class="text-muted" style="font-size: 0.6rem;">({{ number_format($b2cMargin, 0, ',', '.') }}%)</small>
-                                            </div>
-                                            <div class="d-flex justify-content-between align-items-center" style="font-size: 0.75rem; line-height: 1.2;">
-                                                <span class="text-primary fw-semibold">B2B:</span>
-                                                <span class="text-primary fw-semibold">R$ <span class="b2b-price-display">{{ number_format($b2bPrice, 2, ',', '.') }}</span></span>
-                                                <small class="text-muted" style="font-size: 0.6rem;">({{ number_format($b2bMargin, 0, ',', '.') }}%)</small>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    @endif
                                 </td>
                                 <td class="text-center" style="padding: 8px 4px;">
-                                    <div style="line-height: 1.2;">
+                                    <div style="line-height: 1.2; cursor: pointer; transition: transform 0.2s;"
+                                         class="stock-trigger"
+                                         data-product-id="{{ $product->id }}"
+                                         data-product-name="{{ $product->name }}"
+                                         data-current-stock="{{ $product->current_stock }}"
+                                         data-bs-toggle="modal" 
+                                         data-bs-target="#adjustStockModal"
+                                         onclick="event.stopPropagation();"
+                                         onmouseover="this.style.transform='scale(1.1)'"
+                                         onmouseout="this.style.transform='scale(1)'"
+                                         title="Clique para ajustar estoque">
                                         <span class="fw-semibold" style="font-size: 0.875rem;">{{ $product->current_stock }}</span>
                                         @if($product->isLowStock())
                                             <span class="badge bg-danger d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
@@ -428,40 +729,40 @@
                                         @endif
                                     </div>
                                 </td>
-                                <td class="text-center" style="padding: 8px 4px;">
+                                <td class="text-center" style="padding: 12px 8px;">
                                     <button type="button" 
                                             class="btn btn-sm btn-outline-primary variations-btn" 
                                             data-product-id="{{ $product->id }}"
                                             data-product-name="{{ $product->name }}"
                                             data-bs-toggle="modal" 
                                             data-bs-target="#variationsModal"
-                                            style="font-size: 0.7rem; padding: 2px 8px;"
+                                            style="font-size: 0.85rem; padding: 5px 12px;"
                                             title="Gerenciar Variações"
                                             onclick="event.stopPropagation();">
                                         <i class="bi bi-list-ul me-1"></i>
                                         <span>{{ $product->variations()->count() }}</span>
                                     </button>
                                 </td>
-                                <td class="text-center" style="padding: 8px 4px;">
-                                    <div style="line-height: 1.2;">
-                                        <span class="badge bg-{{ $product->is_active ? 'success' : 'danger' }} d-block" style="font-size: 0.7rem; padding: 2px 4px; margin-bottom: 2px;">
-                                            <i class="bi bi-{{ $product->is_active ? 'check-circle' : 'x-circle' }}" style="font-size: 0.7rem;"></i>
+                                <td class="text-center" style="padding: 12px 8px;">
+                                    <div style="line-height: 1.4;">
+                                        <span class="badge bg-{{ $product->is_active ? 'success' : 'danger' }} d-block" style="font-size: 0.8rem; padding: 4px 8px; margin-bottom: 4px;">
+                                            <i class="bi bi-{{ $product->is_active ? 'check-circle' : 'x-circle' }}" style="font-size: 0.8rem;"></i>
                                         </span>
                                         @if($product->is_unavailable)
-                                            <span class="badge bg-warning d-block" style="font-size: 0.7rem; padding: 2px 4px;">
-                                                <i class="bi bi-exclamation-triangle" style="font-size: 0.7rem;"></i>
+                                            <span class="badge bg-warning d-block" style="font-size: 0.8rem; padding: 4px 8px;">
+                                                <i class="bi bi-exclamation-triangle" style="font-size: 0.8rem;"></i>
                                             </span>
                                         @endif
                                     </div>
                                 </td>
-                                <td class="text-center" style="padding: 8px 4px;">
+                                <td class="text-center" style="padding: 12px 8px;">
                                     <div class="btn-group btn-group-sm" role="group" onclick="event.stopPropagation();">
                                         <a href="{{ route('admin.products.show', $product) }}" 
-                                           class="btn btn-outline-info" title="Visualizar" style="padding: 2px 6px; font-size: 0.75rem;">
+                                           class="btn btn-outline-info" title="Visualizar" style="padding: 6px 10px; font-size: 0.9rem;">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a href="{{ route('admin.products.edit', $product) }}" 
-                                           class="btn btn-outline-primary" title="Editar" style="padding: 2px 6px; font-size: 0.75rem;">
+                                           class="btn btn-outline-primary" title="Editar" style="padding: 6px 10px; font-size: 0.9rem;">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <form action="{{ route('admin.products.destroy', $product) }}" 
@@ -469,7 +770,7 @@
                                               onsubmit="return confirm('Tem certeza que deseja excluir este produto?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger" title="Excluir" style="padding: 2px 6px; font-size: 0.75rem;">
+                                            <button type="submit" class="btn btn-outline-danger" title="Excluir" style="padding: 6px 10px; font-size: 0.9rem;">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -481,11 +782,14 @@
                 </table>
             </div>
 
-            <!-- Paginação -->
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4 pt-3 border-top">
+            <!-- Paginação Melhorada -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center p-4" style="background-color: #fafafa; border-top: 2px solid rgba(249, 115, 22, 0.1);">
                 <div class="mb-3 mb-md-0">
-                    <p class="text-muted mb-0">
-                        Mostrando <strong>{{ $products->firstItem() ?? 0 }}</strong> a <strong>{{ $products->lastItem() ?? 0 }}</strong> de <strong>{{ $products->total() }}</strong> resultados
+                    <p class="mb-0" style="color: #6b7280; font-size: 0.95rem;">
+                        Mostrando 
+                        <span class="fw-bold" style="color: #f97316;">{{ $products->firstItem() ?? 0 }}</span> a 
+                        <span class="fw-bold" style="color: #f97316;">{{ $products->lastItem() ?? 0 }}</span> de 
+                        <span class="fw-bold" style="color: #f97316;">{{ $products->total() }}</span> resultados
                     </p>
                 </div>
                 <div>
@@ -493,26 +797,28 @@
                 </div>
             </div>
         @else
-            <div class="text-center py-5">
-                <div class="bg-light rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
-                     style="width: 100px; height: 100px;">
-                    <i class="bi bi-box text-muted" style="font-size: 3rem;"></i>
+            <div class="text-center py-5 m-4">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
+                     style="width: 120px; height: 120px; background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%);">
+                    <i class="bi bi-box" style="font-size: 3.5rem; color: #f97316;"></i>
                 </div>
-                <h5 class="text-muted mb-3">Nenhum produto encontrado</h5>
-                <p class="text-muted mb-4">
+                <h4 class="mb-3" style="color: #374151; font-weight: 600;">Nenhum produto encontrado</h4>
+                <p class="text-muted mb-4" style="font-size: 1rem;">
                     @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status', 'supplier']))
+                        <i class="bi bi-funnel me-1"></i>
                         Nenhum produto corresponde aos filtros aplicados.
                     @else
+                        <i class="bi bi-info-circle me-1"></i>
                         Comece criando seu primeiro produto para a loja.
                     @endif
                 </p>
                 <div class="d-flex gap-2 justify-content-center">
                     @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status', 'supplier']))
-                        <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">
+                        <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary shadow-sm">
                             <i class="bi bi-arrow-left me-1"></i> Limpar Filtros
                         </a>
                     @endif
-                    <a href="{{ route('admin.products.create') }}" class="btn btn-primary">
+                    <a href="{{ route('admin.products.create') }}" class="btn shadow" style="background-color: #f97316; border-color: #f97316; color: white; font-weight: 500;">
                         <i class="bi bi-plus-circle me-1"></i> Criar Produto
                     </a>
                 </div>
@@ -527,6 +833,118 @@
 
 <!-- Incluir Modal de Imagens -->
 @include('admin.products.modals.images')
+
+<!-- Modal de Edição de Descrição -->
+<div class="modal fade" id="descriptionModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form id="descriptionForm" method="POST">
+                @csrf
+                <div class="modal-header" style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="bi bi-file-text me-2"></i>Editar Descrição do Produto
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold d-flex align-items-center">
+                            <i class="bi bi-box me-2" style="color: #f97316;"></i>
+                            Produto
+                        </label>
+                        <p class="text-muted mb-0 fs-5 fw-semibold" id="description-product-name"></p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold d-flex align-items-center">
+                            <i class="bi bi-file-text me-2" style="color: #f97316;"></i>
+                            Descrição Completa
+                        </label>
+                        <textarea name="description" 
+                                  id="description-content" 
+                                  class="form-control" 
+                                  rows="10" 
+                                  placeholder="Digite a descrição completa do produto aqui..."
+                                  style="resize: vertical; min-height: 200px;"></textarea>
+                        <small class="text-muted mt-1 d-block">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Descreva características, especificações técnicas, benefícios e diferenciais do produto.
+                        </small>
+                    </div>
+                    
+                    <div class="alert alert-info border-0" style="background-color: rgba(13, 110, 253, 0.1); color: #084298;">
+                        <i class="bi bi-lightbulb-fill me-2" style="color: #0d6efd;"></i>
+                        <strong>Dica:</strong> Uma boa descrição aumenta as chances de venda! Seja claro, objetivo e destaque os benefícios.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn shadow" style="background-color: #f97316; border-color: #f97316; color: white; font-weight: 500;">
+                        <i class="bi bi-check-circle me-1"></i>Salvar Descrição
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ajuste de Estoque -->
+<div class="modal fade" id="adjustStockModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="adjustStockForm" method="POST">
+                @csrf
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-box-seam me-2"></i>Ajustar Estoque
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Produto</label>
+                        <p class="text-muted mb-0" id="stock-product-name"></p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Estoque Atual</label>
+                        <p class="text-primary fs-4 mb-0" id="stock-current-value">0 unidades</p>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Tipo de Ajuste</label>
+                        <select name="type" id="stock-type" class="form-select" required>
+                            <option value="in">Entrada (adicionar ao estoque)</option>
+                            <option value="out">Saída (remover do estoque)</option>
+                            <option value="adjustment">Ajuste Manual (definir novo valor)</option>
+                        </select>
+                        <small class="text-muted mt-1 d-block">
+                            <strong>Entrada:</strong> adiciona ao estoque atual<br>
+                            <strong>Saída:</strong> remove do estoque atual<br>
+                            <strong>Ajuste:</strong> define um novo valor absoluto
+                        </small>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Quantidade</label>
+                        <input type="number" name="quantity" id="stock-quantity" class="form-control" min="0" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Observações</label>
+                        <textarea name="notes" id="stock-notes" class="form-control" rows="3" placeholder="Motivo do ajuste (opcional)"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-circle me-1"></i>Salvar Ajuste
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @endpush
 
 @section('styles')
@@ -544,15 +962,132 @@
     
     /* Estilos para linhas de produtos clicáveis */
     .product-row {
-        transition: background-color 0.2s ease;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid #f3f4f6;
     }
     
     .product-row:hover {
-        background-color: rgba(249, 115, 22, 0.05) !important;
+        background: linear-gradient(to right, rgba(249, 115, 22, 0.04) 0%, rgba(249, 115, 22, 0.01) 100%) !important;
+        box-shadow: 0 1px 3px rgba(249, 115, 22, 0.1);
+        transform: translateX(2px);
     }
     
     .product-row:active {
-        background-color: rgba(249, 115, 22, 0.1) !important;
+        background-color: rgba(249, 115, 22, 0.08) !important;
+    }
+    
+    /* Checkboxes maiores e mais clicáveis */
+    .product-checkbox {
+        cursor: pointer;
+        width: 18px;
+        height: 18px;
+    }
+    
+    .product-checkbox:checked {
+        background-color: #f97316;
+        border-color: #f97316;
+    }
+    
+    /* Botões de ação com hover suave */
+    .btn-group .btn {
+        transition: all 0.2s ease;
+    }
+    
+    .btn-group .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    /* Cards com sombra suave */
+    .card {
+        transition: box-shadow 0.3s ease;
+    }
+    
+    /* Inputs com foco laranja */
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #f97316;
+        box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.15);
+    }
+    
+    /* Badges modernos */
+    .badge {
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        padding: 0.35em 0.65em;
+    }
+    
+    /* Animação no contador de seleção */
+    #selectedCount {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    /* Paginação personalizada */
+    .pagination .page-link {
+        color: #f97316;
+        border-color: #dee2e6;
+        transition: all 0.2s ease;
+    }
+    
+    .pagination .page-link:hover {
+        color: #fff;
+        background-color: #f97316;
+        border-color: #f97316;
+        transform: translateY(-1px);
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: #f97316;
+        border-color: #f97316;
+    }
+    
+    /* Estilos para lista de variações */
+    .variations-price-list {
+        max-height: 450px;
+        overflow-y: auto;
+        overflow-x: visible;
+    }
+    
+    .variations-price-list::-webkit-scrollbar {
+        width: 4px;
+    }
+    
+    .variations-price-list::-webkit-scrollbar-track {
+        background: rgba(249, 115, 22, 0.05);
+        border-radius: 2px;
+    }
+    
+    .variations-price-list::-webkit-scrollbar-thumb {
+        background: rgba(249, 115, 22, 0.3);
+        border-radius: 2px;
+    }
+    
+    .variations-price-list::-webkit-scrollbar-thumb:hover {
+        background: rgba(249, 115, 22, 0.5);
+    }
+    
+    .variation-price-item {
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .variation-price-item:hover {
+        box-shadow: 0 3px 8px rgba(249, 115, 22, 0.15);
+        transform: translateX(2px);
+        border-left-width: 3px;
+    }
+    
+    /* Animação suave nos inputs das variações */
+    .variation-cost-field:focus,
+    .variation-b2b-field:focus,
+    .variation-b2c-field:focus {
+        border-color: #f97316 !important;
+        box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.15) !important;
+    }
+    
+    /* Estilo para os badges de variação */
+    .variation-price-item .badge {
+        font-weight: 500;
+        letter-spacing: 0.3px;
     }
 </style>
 @endsection
@@ -1102,6 +1637,114 @@ function updateProfitMargin(productId, type, inputValue) {
     });
 }
 
+// Função para atualizar preços das variações
+function updateVariationPrice(variationId, field, inputValue) {
+    const normalizedPrice = normalizePrice(inputValue);
+    
+    if (normalizedPrice === null || normalizedPrice < 0 || isNaN(normalizedPrice)) {
+        alert('Por favor, insira um preço válido.');
+        const input = document.querySelector(`[data-variation-id='${variationId}'].variation-${field.replace('_', '-')}-field`);
+        const originalValue = input.getAttribute('data-original-value') || '0,00';
+        input.value = originalValue;
+        return;
+    }
+    
+    const input = document.querySelector(`[data-variation-id='${variationId}']`);
+    
+    // Salvar valor original para possível rollback
+    if (!input.getAttribute('data-original-value')) {
+        input.setAttribute('data-original-value', input.value);
+    }
+    
+    // Atualizar o valor exibido no campo com formato brasileiro
+    const fieldInput = document.querySelector(`[data-variation-id='${variationId}'].variation-${field.replace('_', '-')}-field`);
+    if (fieldInput) {
+        fieldInput.value = normalizedPrice.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+    
+    // Encontrar todos os campos desta variação para possível atualização
+    const variationContainer = fieldInput ? fieldInput.closest('.variation-price-item') : null;
+    const costField = variationContainer ? variationContainer.querySelector('.variation-cost-field') : null;
+    const b2bField = variationContainer ? variationContainer.querySelector('.variation-b2b-field') : null;
+    const b2cField = variationContainer ? variationContainer.querySelector('.variation-b2c-field') : null;
+    
+    // Mostrar loading
+    const originalValue = input.getAttribute('data-original-value') || input.value;
+    if (fieldInput) fieldInput.disabled = true;
+    
+    fetch(`/admin/products/variations/${variationId}/update-price`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+            field: field,
+            value: parseFloat(normalizedPrice)
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Se atualizou o custo, atualizar também B2B e B2C automaticamente
+            if (field === 'cost_price' && data.formatted) {
+                if (b2bField && data.formatted.b2b_price) {
+                    b2bField.value = data.formatted.b2b_price;
+                    b2bField.setAttribute('data-original-value', data.formatted.b2b_price);
+                    b2bField.classList.add('border-success');
+                    setTimeout(() => b2bField.classList.remove('border-success'), 2000);
+                }
+                if (b2cField && data.formatted.b2c_price) {
+                    b2cField.value = data.formatted.b2c_price;
+                    b2cField.setAttribute('data-original-value', data.formatted.b2c_price);
+                    b2cField.classList.add('border-success');
+                    setTimeout(() => b2cField.classList.remove('border-success'), 2000);
+                }
+            }
+            
+            // Atualizar valor original salvo
+            if (fieldInput) {
+                fieldInput.setAttribute('data-original-value', fieldInput.value);
+                
+                // Mostrar feedback visual
+                fieldInput.classList.add('border-success');
+                setTimeout(() => {
+                    fieldInput.classList.remove('border-success');
+                }, 2000);
+            }
+        } else {
+            alert('Erro ao atualizar preço: ' + (data.message || 'Erro desconhecido'));
+            // Restaurar valor original formatado
+            const originalNormalized = normalizePrice(originalValue);
+            if (originalNormalized !== null && fieldInput) {
+                fieldInput.value = originalNormalized.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao atualizar preço. Tente novamente.');
+        // Restaurar valor original formatado
+        const originalNormalized = normalizePrice(originalValue);
+        if (originalNormalized !== null && fieldInput) {
+            fieldInput.value = originalNormalized.toLocaleString('pt-BR', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+    })
+    .finally(() => {
+        if (fieldInput) fieldInput.disabled = false;
+    });
+}
+
 // Permitir Enter para salvar e formatação inteligente
 document.addEventListener('DOMContentLoaded', function() {
     // Campos de preço de custo
@@ -1129,6 +1772,37 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             } else if (this.value && this.value !== '') {
                 // Se o valor não é válido, restaurar original
+                this.value = this.getAttribute('data-original-value') || '0,00';
+            }
+        });
+    });
+    
+    // Campos de variações (custo, B2B, B2C)
+    document.querySelectorAll('.variation-cost-field, .variation-b2b-field, .variation-b2c-field').forEach(input => {
+        // Salvar valor original
+        input.setAttribute('data-original-value', input.value);
+        
+        // Evento Enter
+        input.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const variationId = this.getAttribute('data-variation-id');
+                let field = 'cost_price';
+                if (this.classList.contains('variation-b2b-field')) field = 'b2b_price';
+                if (this.classList.contains('variation-b2c-field')) field = 'b2c_price';
+                updateVariationPrice(variationId, field, this.value);
+            }
+        });
+        
+        // Formatar ao perder foco
+        input.addEventListener('blur', function(e) {
+            const normalized = normalizePrice(this.value);
+            if (normalized !== null && normalized >= 0 && !isNaN(normalized)) {
+                this.value = normalized.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                });
+            } else if (this.value && this.value !== '') {
                 this.value = this.getAttribute('data-original-value') || '0,00';
             }
         });
@@ -1262,6 +1936,153 @@ document.addEventListener('DOMContentLoaded', function() {
                 this.innerHTML = originalText;
             });
         });
+    }
+    
+    // Modal de Ajuste de Estoque
+    const adjustStockModal = document.getElementById('adjustStockModal');
+    if (adjustStockModal) {
+        adjustStockModal.addEventListener('show.bs.modal', function (event) {
+            const trigger = event.relatedTarget;
+            const productId = trigger.getAttribute('data-product-id');
+            const productName = trigger.getAttribute('data-product-name');
+            const currentStock = trigger.getAttribute('data-current-stock');
+            
+            // Atualizar informações no modal
+            document.getElementById('stock-product-name').textContent = productName;
+            document.getElementById('stock-current-value').textContent = currentStock + ' unidades';
+            
+            // Atualizar action do form
+            const form = document.getElementById('adjustStockForm');
+            form.action = `/admin/products/${productId}/adjust-stock`;
+            
+            // Limpar campos
+            document.getElementById('stock-quantity').value = '';
+            document.getElementById('stock-notes').value = '';
+            document.getElementById('stock-type').value = 'in';
+        });
+        
+        // Submeter formulário
+        document.getElementById('adjustStockForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const actionUrl = this.action;
+            
+            fetch(actionUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Fechar modal
+                    const modal = bootstrap.Modal.getInstance(adjustStockModal);
+                    modal.hide();
+                    
+                    // Mostrar mensagem de sucesso
+                    alert(data.message || 'Estoque ajustado com sucesso!');
+                    
+                    // Recarregar página
+                    window.location.reload();
+                } else {
+                    alert('Erro: ' + (data.message || 'Não foi possível ajustar o estoque'));
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao ajustar estoque. Tente novamente.');
+            });
+        });
+    }
+    
+    // Modal de Edição de Descrição
+    const descriptionModal = document.getElementById('descriptionModal');
+    if (descriptionModal) {
+        descriptionModal.addEventListener('show.bs.modal', function (event) {
+            const trigger = event.relatedTarget;
+            const productId = trigger.getAttribute('data-product-id');
+            const productName = trigger.getAttribute('data-product-name');
+            const productDescription = trigger.getAttribute('data-product-description');
+            
+            // Atualizar informações no modal
+            document.getElementById('description-product-name').textContent = productName;
+            document.getElementById('description-content').value = productDescription || '';
+            
+            // Atualizar action do form
+            const form = document.getElementById('descriptionForm');
+            form.action = `/admin/products/${productId}/update-description`;
+        });
+        
+        // Submeter formulário
+        document.getElementById('descriptionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const actionUrl = this.action;
+            
+            fetch(actionUrl, {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Fechar modal
+                    const modal = bootstrap.Modal.getInstance(descriptionModal);
+                    modal.hide();
+                    
+                    // Mostrar mensagem de sucesso
+                    alert(data.message || 'Descrição atualizada com sucesso!');
+                    
+                    // Recarregar página
+                    window.location.reload();
+                } else {
+                    alert('Erro: ' + (data.message || 'Não foi possível atualizar a descrição'));
+                }
+            })
+            .catch(error => {
+                console.error('Erro:', error);
+                alert('Erro ao atualizar descrição. Tente novamente.');
+            });
+        });
+    }
+    
+    // Destacar produto quando vier da busca inteligente
+    const urlParams = new URLSearchParams(window.location.search);
+    const highlightId = urlParams.get('highlight');
+    
+    if (highlightId) {
+        const productRow = document.getElementById(`product-${highlightId}`);
+        if (productRow) {
+            // Scroll suave até o produto
+            setTimeout(() => {
+                productRow.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                
+                // Adicionar animação de destaque
+                productRow.style.backgroundColor = 'rgba(249, 115, 22, 0.2)';
+                productRow.style.transform = 'scale(1.02)';
+                productRow.style.transition = 'all 0.3s ease';
+                productRow.style.boxShadow = '0 4px 12px rgba(249, 115, 22, 0.3)';
+                
+                // Remover destaque após 3 segundos
+                setTimeout(() => {
+                    productRow.style.backgroundColor = '';
+                    productRow.style.transform = '';
+                    productRow.style.boxShadow = '';
+                }, 3000);
+            }, 500);
+        }
     }
 });
 </script>

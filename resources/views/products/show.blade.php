@@ -1342,8 +1342,28 @@
     document.addEventListener('DOMContentLoaded', function() {
         renderThumbnails(productImages);
 
+        // Pré-seleção por querystring (?color=...&storage=...&ram=...)
+        const params = new URLSearchParams(window.location.search);
+        const qsColor = params.get('color');
+        const qsStorage = params.get('storage');
+        const qsRam = params.get('ram');
+
         if (typeof initVariationSelectors === 'function') {
-        initVariationSelectors();
+            initVariationSelectors();
+            // Aplicar valores da query após inicializar os seletores
+            if (qsStorage) setOptionSelected('storage', qsStorage);
+            if (qsColor) setOptionSelected('color', qsColor);
+            if (qsRam) setOptionSelected('ram', qsRam);
+            // Sincronizar disponibilidade e atualizar variação/imagens
+            if (typeof syncVariationOptionAvailability === 'function') {
+                syncVariationOptionAvailability();
+            }
+            if (typeof applyColorImages === 'function') {
+                applyColorImages(getSelectedValue('color'));
+            }
+            if (typeof updateVariation === 'function') {
+                updateVariation();
+            }
         }
     });
 

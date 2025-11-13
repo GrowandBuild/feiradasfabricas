@@ -22,7 +22,12 @@ Route::get('/', [DepartmentController::class, 'index'])->name('home')->defaults(
 Route::get('/vitrine-departamentos', [HomeController::class, 'index'])->name('landing.departments');
 Route::get('/produtos', [HomeController::class, 'products'])->name('products');
 Route::get('/produto/{slug}', [HomeController::class, 'product'])->name('product');
+// Página indexável da variação específica
+Route::get('/produto/{slug}/{variantSlug}', [HomeController::class, 'productVariant'])->name('product.variant');
+// Endpoint AJAX para detalhes de variação
 Route::get('/produto/{slug}/variacao', [HomeController::class, 'getProductVariation'])->name('product.variation');
+// Sitemap
+Route::get('/sitemap.xml', [App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
 Route::get('/contato', [ContactController::class, 'index'])->name('contact');
 Route::post('/contato', [ContactController::class, 'send'])->name('contact.send');
 
