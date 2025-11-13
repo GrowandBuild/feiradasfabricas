@@ -64,16 +64,16 @@ Route::prefix('payment')->name('payment.')->group(function () {
 Route::prefix('customer')->name('customer.')->group(function () {
     // Login
     Route::get('/login', [CustomerAuthController::class, 'showLoginForm'])->name('login');
-    Route::post('/login', [CustomerAuthController::class, 'login'])->name('login');
+    Route::post('/login', [CustomerAuthController::class, 'login'])->name('login.submit');
     Route::post('/logout', [CustomerAuthController::class, 'logout'])->name('logout');
     
     // Registro B2C
     Route::get('/register', [CustomerAuthController::class, 'showRegisterForm'])->name('register');
-    Route::post('/register', [CustomerAuthController::class, 'register'])->name('register');
+    Route::post('/register', [CustomerAuthController::class, 'register'])->name('register.submit');
     
     // Registro B2B
     Route::get('/register-b2b', [CustomerAuthController::class, 'showB2BRegisterForm'])->name('register.b2b');
-    Route::post('/register-b2b', [CustomerAuthController::class, 'registerB2B'])->name('register.b2b');
+    Route::post('/register-b2b', [CustomerAuthController::class, 'registerB2B'])->name('register.b2b.submit');
 });
 
 // Rotas do carrinho
