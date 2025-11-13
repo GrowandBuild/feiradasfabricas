@@ -31,6 +31,8 @@ class Customer extends Authenticatable
         'city',
         'state',
         'zip_code',
+        'shipping_cep',
+        'shipping_option',
         'country',
         'b2b_status',
         'b2b_notes',
@@ -46,6 +48,7 @@ class Customer extends Authenticatable
         'email_verified_at' => 'datetime',
         'is_active' => 'boolean',
         'credit_limit' => 'decimal:2',
+        'shipping_option' => 'array',
     ];
 
     /**

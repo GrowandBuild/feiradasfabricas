@@ -598,9 +598,30 @@
                             <span style="font-family: 'Inter', sans-serif; font-weight: 500; color: #374151;">Subtotal:</span>
                             <span id="subtotal" style="font-family: 'Poppins', sans-serif; font-weight: 700; color: #1f2937; font-size: 1.1rem;">R$ {{ number_format($subtotal, 2, ',', '.') }}</span>
                         </div>
-                        <div class="d-flex justify-content-between mb-3">
+                        <div class="d-flex justify-content-between mb-3 align-items-center">
                             <span style="font-family: 'Inter', sans-serif; font-weight: 500; color: #374151;">Frete:</span>
-                            <span style="font-family: 'Inter', sans-serif; color: #6b7280;">Calculado no checkout</span>
+                            <div class="text-end">
+                                <div id="shipping-amount" style="font-family: 'Poppins', sans-serif; font-weight: 700; color: #1f2937; font-size: 1.1rem;">R$ 0,00</div>
+                                <div id="shipping-method" class="small text-muted"></div>
+                            </div>
+                        </div>
+                        @php
+                            $shippingItems = [];
+                            foreach ($cartItems as $ci) {
+                                $qty = max(1, (int) $ci->quantity);
+                                for ($i = 0; $i < $qty; $i++) {
+                                    $shippingItems[] = [
+                                        'weight' => (float) ($ci->product->weight ?? 0.3),
+                                        'length' => (float) ($ci->product->length ?? 20),
+                                        'height' => (float) ($ci->product->height ?? 20),
+                                        'width'  => (float) ($ci->product->width ?? 20),
+                                        'value'  => (float) ($ci->price ?? $ci->product->price ?? 0),
+                                    ];
+                                }
+                            }
+                        @endphp
+                        <div class="mb-3">
+                            <x-shipping-calculator :items="$shippingItems" />
                         </div>
                         <div class="d-flex justify-content-between mb-3">
                             <span style="font-family: 'Inter', sans-serif; font-weight: 500; color: #374151;">Desconto:</span>
@@ -669,6 +690,7 @@ document.addEventListener('DOMContentLoaded', function() {
         init() {
             this.bindEvents();
             this.setupImageLoading();
+            this.refreshSummary();
         }
 
         setupImageLoading() {
@@ -849,25 +871,34 @@ document.addEventListener('DOMContentLoaded', function() {
             return await response.json();
         }
 
-            updateCartInterface(data) {
+        async refreshSummary(){
+            try{
+                const res = await fetch('/api/cart/summary');
+                const json = await res.json();
+                if(json&&json.success){
+                    const s=json.summary||{};
+                    const sel=json.selection||{};
+                    const elSub=document.getElementById('subtotal');
+                    const elShip=document.getElementById('shipping-amount');
+                    const elTot=document.getElementById('total');
+                    const elMethod=document.getElementById('shipping-method');
+                    if(elSub&&s.subtotal) elSub.textContent=`R$ ${s.subtotal}`;
+                    if(elShip&&s.shipping) elShip.textContent=`R$ ${s.shipping}`;
+                    if(elTot&&s.total) elTot.textContent=`R$ ${s.total}`;
+                    if(elMethod && sel && sel.service_name){
+                        elMethod.textContent = `${sel.service_name} · ${(sel.provider||'').charAt(0).toUpperCase()+(sel.provider||'').slice(1)}`;
+                    }
+                }
+            }catch(e){}
+        }
+
+            async updateCartInterface(data) {
                 // Atualizar contador do carrinho no header
                 const cartCount = document.querySelector('.cart-count');
                 if (cartCount && data.cart_count !== undefined) {
                     cartCount.textContent = data.cart_count;
                 }
-                
-                // Atualizar subtotal e total
-                if (data.subtotal !== undefined) {
-                    const subtotalElement = document.getElementById('subtotal');
-                    const totalElement = document.getElementById('total');
-                    if (subtotalElement) {
-                        subtotalElement.textContent = `R$ ${data.subtotal}`;
-                    }
-                    if (totalElement) {
-                        totalElement.textContent = `R$ ${data.subtotal}`;
-                    }
-                }
-                
+
                 // Atualizar total do item específico
                 if (data.item_total !== undefined) {
                     const itemRow = document.querySelector(`tr[data-item-id="${data.item_id}"]`);
@@ -876,6 +907,34 @@ document.addEventListener('DOMContentLoaded', function() {
                         if (totalCell) {
                             totalCell.textContent = `R$ ${data.item_total}`;
                         }
+                    }
+                }
+
+                // Buscar resumo atualizado (inclui frete, se selecionado)
+                try {
+                    const res = await fetch('/api/cart/summary');
+                    const json = await res.json();
+                    if (json && json.success) {
+                        const s = json.summary||{};
+                        const sel = json.selection||{};
+                        const elSub = document.getElementById('subtotal');
+                        const elShip = document.getElementById('shipping-amount');
+                        const elTot = document.getElementById('total');
+                        const elMethod = document.getElementById('shipping-method');
+                        if (elSub && s.subtotal) elSub.textContent = `R$ ${s.subtotal}`;
+                        if (elShip && s.shipping) elShip.textContent = `R$ ${s.shipping}`;
+                        if (elTot && s.total) elTot.textContent = `R$ ${s.total}`;
+                        if (elMethod && sel && sel.service_name) {
+                            elMethod.textContent = `${sel.service_name} · ${(sel.provider||'').charAt(0).toUpperCase()+(sel.provider||'').slice(1)}`;
+                        }
+                    }
+                } catch (e) {
+                    // fallback: usar subtotal de resposta
+                    if (data.subtotal !== undefined) {
+                        const elSub = document.getElementById('subtotal');
+                        const elTot = document.getElementById('total');
+                        if (elSub) elSub.textContent = `R$ ${data.subtotal}`;
+                        if (elTot) elTot.textContent = `R$ ${data.subtotal}`;
                     }
                 }
             }

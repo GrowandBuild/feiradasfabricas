@@ -734,6 +734,10 @@
 
                 <!-- Header Icons -->
                 <div class="header-icons ms-auto">
+                    @include('components.shipping-mini')
+                    <a href="#" class="header-icon" title="Frete e prazo" data-bs-toggle="offcanvas" data-bs-target="#shippingOffcanvas" aria-controls="shippingOffcanvas">
+                        <i class="fas fa-truck"></i>
+                    </a>
                     <a href="#" class="header-icon" title="Loja">
                         <i class="fas fa-store"></i>
                     </a>
@@ -878,6 +882,8 @@
             </div>
         </div>
     </footer>
+
+    @include('components.shipping-offcanvas')
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

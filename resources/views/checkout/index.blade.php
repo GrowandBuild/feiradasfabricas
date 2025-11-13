@@ -433,11 +433,32 @@
                             </div>
                             <div class="summary-item">
                                 <span>Frete:</span>
-                                <span>Grátis</span>
+                                <span class="text-end">
+                                    <div id="shipping-amount">R$ 0,00</div>
+                                    <div id="shipping-method" class="small text-muted"></div>
+                                </span>
+                            </div>
+                            @php
+                                $shippingItems = [];
+                                foreach ($cartItems as $ci) {
+                                    $qty = max(1, (int) $ci->quantity);
+                                    for ($i = 0; $i < $qty; $i++) {
+                                        $shippingItems[] = [
+                                            'weight' => (float) ($ci->product->weight ?? 0.3),
+                                            'length' => (float) ($ci->product->length ?? 20),
+                                            'height' => (float) ($ci->product->height ?? 20),
+                                            'width'  => (float) ($ci->product->width ?? 20),
+                                            'value'  => (float) ($ci->price ?? $ci->product->price ?? 0),
+                                        ];
+                                    }
+                                }
+                            @endphp
+                            <div class="mb-2">
+                                <x-shipping-calculator :items="$shippingItems" />
                             </div>
                             <div class="summary-total d-flex justify-content-between">
                                 <span>Total:</span>
-                                <span>R$ {{ number_format($subtotal, 2, ',', '.') }}</span>
+                                <span id="total">R$ {{ number_format($subtotal, 2, ',', '.') }}</span>
                             </div>
                         </div>
                         
@@ -463,5 +484,27 @@ function selectPayment(method) {
     document.getElementById(method).closest('.payment-method').classList.add('selected');
     document.getElementById(method).checked = true;
 }
+// Update monetary summary when shipping is selected or on load
+document.addEventListener('DOMContentLoaded', function(){
+    function refreshSummary(){
+        fetch('/api/cart/summary').then(r=>r.json()).then(j=>{
+            if(!j||!j.success) return;
+            const s=j.summary||{};
+            const sel=j.selection||{};
+            const elShip=document.getElementById('shipping-amount');
+            const elTot=document.getElementById('total');
+            const elMethod=document.getElementById('shipping-method');
+            if(elShip&&s.shipping){ elShip.textContent='R$ '+s.shipping; }
+            if(elTot&&s.total){ elTot.textContent='R$ '+s.total; }
+            if(elMethod && sel && sel.service_name){
+                const prov = (sel.provider||'');
+                const provName = prov.charAt(0).toUpperCase()+prov.slice(1);
+                elMethod.textContent = `${sel.service_name} · ${provName}`;
+            }
+        }).catch(()=>{});
+    }
+    refreshSummary();
+    window.addEventListener('shipping:selected', refreshSummary);
+});
 </script>
 @endsection

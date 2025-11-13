@@ -22,6 +22,19 @@
     $ramOptions = $variationData->pluck('ram')->filter()->unique()->values();
     $storageOptions = $variationData->pluck('storage')->filter()->unique()->values();
     $colorOptions = $variationData->pluck('color')->filter()->unique()->values();
+
+    // Shipping items payload (fallback defaults if missing)
+    $pkgWeight = $product->weight ?? 0.3; // kg
+    $pkgLength = $product->length ?? 20;  // cm
+    $pkgWidth  = $product->width  ?? 20;  // cm
+    $pkgHeight = $product->height ?? 20;  // cm
+    $shippingItems = [[
+        'weight' => (float) $pkgWeight,
+        'length' => (float) $pkgLength,
+        'height' => (float) $pkgHeight,
+        'width'  => (float) $pkgWidth,
+        'value'  => (float) ($product->price ?? 0)
+    ]];
 @endphp
 <div class="container py-5">
     <!-- Breadcrumb -->
@@ -103,6 +116,14 @@
                             <span class="h3 price-value" id="product-price-display">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
                             <span class="sub-price">Preço à vista</span>
                                 </div>
+                        <div class="d-flex justify-content-between align-items-center mt-2 gap-2">
+                            <div class="text-muted small">Frete estimado:</div>
+                            <div class="text-end">
+                                <div id="shipping-amount" class="fw-semibold">R$ 0,00</div>
+                                <div id="shipping-method" class="small text-muted"></div>
+                                <button class="btn btn-sm btn-link p-0 small" type="button" data-bs-toggle="offcanvas" data-bs-target="#shippingOffcanvas" aria-controls="shippingOffcanvas">Frete e prazo</button>
+                            </div>
+                        </div>
                         <div class="stock-line" id="variation-stock-display" style="display: none;">
                             <span class="badge bg-success" id="variation-stock-badge"></span>
                         </div>
@@ -243,6 +264,9 @@
                         </button>
                         @endif
                     </div>
+
+                <!-- Shipping Calculator Widget -->
+                <x-shipping-calculator :items="$shippingItems" />
 
                 <button class="btn btn-outline-secondary w-100" style="border-color:#ff9900; color:#ff9900;">
                     <i class="far fa-heart me-2"></i>
@@ -1365,6 +1389,22 @@
                 updateVariation();
             }
         }
+
+        // Atualizar exibição de frete/método caso já exista seleção salva (sessão)
+        (function refreshShippingDisplay(){
+            fetch('/api/cart/summary').then(r=>r.json()).then(j=>{
+                if(!j||!j.success) return;
+                const s=j.summary||{}; const sel=j.selection||{};
+                const elShip=document.getElementById('shipping-amount');
+                const elMethod=document.getElementById('shipping-method');
+                if(elShip&&s.shipping){ elShip.textContent='R$ '+s.shipping; }
+                if(elMethod && sel && sel.service_name){
+                    const prov = (sel.provider||'');
+                    const provName = prov.charAt(0).toUpperCase()+prov.slice(1);
+                    elMethod.textContent = `${sel.service_name} · ${provName}`;
+                }
+            }).catch(()=>{});
+        })();
     });
 
     // Sistema de variações de produtos
@@ -1595,6 +1635,20 @@
                             addToCartComponent.setAttribute('data-variation-id', data.variation.id);
                         }
                     }
+
+                    // Trigger shipping recalculation with selected variation price
+                    try {
+                        const priceStr = data.variation.price || '';
+                        const priceNum = parseFloat(String(priceStr).replace(/\./g, '').replace(',', '.')) || 0;
+                        const items = [{
+                            weight: {{ (float) $pkgWeight }},
+                            length: {{ (float) $pkgLength }},
+                            height: {{ (float) $pkgHeight }},
+                            width:  {{ (float) $pkgWidth }},
+                            value:  priceNum,
+                        }];
+                        window.dispatchEvent(new CustomEvent('shipping:recalculate',{ detail: { items } }));
+                    } catch (e) {}
                 } else {
                     selectedVariationId = null;
                     setAddToCartDisabled(true);
