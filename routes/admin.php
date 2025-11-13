@@ -101,8 +101,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Funcionalidades Avançadas de Produtos
         
         // Importação de Produtos
-        Route::get('products/import', [App\Http\Controllers\Admin\ProductImportController::class, 'showImportForm'])->name('products.import');
-        Route::post('products/import', [App\Http\Controllers\Admin\ProductImportController::class, 'import'])->name('products.import');
+    Route::get('products/import', [App\Http\Controllers\Admin\ProductImportController::class, 'showImportForm'])->name('products.import');
+    Route::post('products/import', [App\Http\Controllers\Admin\ProductImportController::class, 'import'])->name('products.import.store');
         Route::get('products/import/template', [App\Http\Controllers\Admin\ProductImportController::class, 'downloadTemplate'])->name('products.import.template');
 
         // Clonagem de Produtos
