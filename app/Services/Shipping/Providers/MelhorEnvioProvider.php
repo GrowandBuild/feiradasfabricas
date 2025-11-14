@@ -93,14 +93,23 @@ class MelhorEnvioProvider implements ShippingProviderInterface
             $response = null; $lastUrl = null; $lastStatus = null; $lastBody = null;
             foreach ($hostCandidates as $host) {
                 foreach ($pathCandidates as $path) {
-                    $calculateUrl = rtrim($host,'/').$path;
-                    $lastUrl = $calculateUrl;
-                    $response = $http->post($calculateUrl, $payload);
-                    $lastStatus = $response->status();
-                    $lastBody = substr($response->body(), 0, 240);
-                    // Accept only JSON responses; if HTML or invalid, try next
-                    if ($response->successful() && is_array($response->json())) {
-                        break 2; // got a plausible JSON; proceed
+                    try {
+                        $calculateUrl = rtrim($host,'/').$path;
+                        $lastUrl = $calculateUrl;
+                        $response = $http->post($calculateUrl, $payload);
+                        $lastStatus = $response->status();
+                        $lastBody = substr($response->body(), 0, 240);
+                        // Accept only JSON responses; if HTML or invalid, try next
+                        if ($response->successful() && is_array($response->json())) {
+                            break 2; // got a plausible JSON; proceed
+                        }
+                    } catch (\Throwable $e) {
+                        // Network/DNS or transport error for this attempt; try next candidate
+                        Log::warning('MelhorEnvio tentativa falhou', [
+                            'url' => $lastUrl,
+                            'error' => $e->getMessage(),
+                        ]);
+                        continue;
                     }
                 }
             }
@@ -140,7 +149,7 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                 return [ $this->errorQuote(null, 'Erro HTTP '.($lastStatus ?? 'n/a')) ];
             }
 
-            $data = $response->json();
+            $data = $response ? $response->json() : null;
             if (!is_array($data)) {
                 Log::error('MelhorEnvio resposta inválida', [
                     'raw' => $lastBody,
