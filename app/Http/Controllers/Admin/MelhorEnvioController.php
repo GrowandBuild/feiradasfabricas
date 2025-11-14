@@ -49,6 +49,10 @@ class MelhorEnvioController extends Controller
         $enabledIds = collect(array_filter(array_map('trim', explode(',', $enabledIdsRaw))))->filter()->values()->all();
 
         $base = $sandbox ? 'https://sandbox.melhorenvio.com.br' : 'https://www.melhorenvio.com.br';
+        // Candidatos de host (alguns ambientes não respondem em www)
+        $candidates = $sandbox
+            ? ['https://sandbox.melhorenvio.com.br']
+            : ['https://www.melhorenvio.com.br', 'https://melhorenvio.com.br', 'https://api.melhorenvio.com.br'];
         $companiesEndpoint = $base . '/api/v2/shipment/companies'; // endpoint estimado (se mudar, adaptar)
     $services = [];
     $error = null;
@@ -57,45 +61,53 @@ class MelhorEnvioController extends Controller
         $apiBodySnippet = null;
         $apiUrl = $companiesEndpoint;
         try {
-            $http = \Http::timeout(12)->withHeaders([
+            $httpBase = \Http::timeout(12)->withHeaders([
                 'Accept' => 'application/json',
                 'User-Agent' => 'FeiraDasFabricas Admin/1.0'
             ]);
             if ($token) {
-                $http = $http->withToken($token);
+                $httpBase = $httpBase->withToken($token);
             } elseif ($clientId && $clientSecret) {
-                $http = $http->withBasicAuth($clientId, $clientSecret);
+                $httpBase = $httpBase->withBasicAuth($clientId, $clientSecret);
             }
-            $resp = $http->get($companiesEndpoint);
-            $apiStatus = $resp->status();
-            $apiBodySnippet = substr($resp->body(), 0, 800);
-            if ($resp->successful()) {
-                $json = $resp->json();
-                // Estrutura esperada: lista de companies cada uma com services
-                if (is_array($json)) {
-                    foreach ($json as $company) {
-                        $companyName = $company['name'] ?? ($company['company'] ?? 'Transportadora');
-                        $companyServices = $company['services'] ?? [];
-                        if (is_array($companyServices)) {
-                            foreach ($companyServices as $svc) {
-                                $id = (string) ($svc['id'] ?? '');
-                                if ($id === '') continue;
-                                $services[] = [
-                                    'id' => $id,
-                                    'name' => $svc['name'] ?? ('Serviço '.$id),
-                                    'company' => $companyName,
-                                    'enabled' => in_array($id, $enabledIds, true),
-                                    'delivery_time' => $svc['delivery_time'] ?? null,
-                                ];
+
+            foreach ($candidates as $host) {
+                $apiUrl = rtrim($host, '/').'/api/v2/shipment/companies';
+                $resp = $httpBase->get($apiUrl);
+                $apiStatus = $resp->status();
+                $apiBodySnippet = substr($resp->body(), 0, 800);
+                $companiesEndpoint = $apiUrl; // para exibir na view/log
+
+                if ($resp->successful()) {
+                    // Tenta decodificar JSON; se vier HTML, json() pode retornar null
+                    $json = $resp->json();
+                    if (is_array($json)) {
+                        foreach ($json as $company) {
+                            $companyName = $company['name'] ?? ($company['company'] ?? 'Transportadora');
+                            $companyServices = $company['services'] ?? [];
+                            if (is_array($companyServices)) {
+                                foreach ($companyServices as $svc) {
+                                    $id = (string) ($svc['id'] ?? '');
+                                    if ($id === '') continue;
+                                    $services[] = [
+                                        'id' => $id,
+                                        'name' => $svc['name'] ?? ('Serviço '.$id),
+                                        'company' => $companyName,
+                                        'enabled' => in_array($id, $enabledIds, true),
+                                        'delivery_time' => $svc['delivery_time'] ?? null,
+                                    ];
+                                }
                             }
                         }
-                    }
-                    if (!empty($services)) {
-                        $fromApi = true;
+                        if (!empty($services)) {
+                            $fromApi = true;
+                            break; // sucesso, sai do loop de hosts
+                        }
                     }
                 }
-            } else {
-                $error = 'Falha ao buscar serviços (HTTP '.$resp->status().')';
+            }
+            if (!$fromApi && !$error) {
+                $error = 'Não foi possível obter a lista pela API (resposta não-JSON ou vazia).';
             }
         } catch (\Throwable $e) {
             $error = 'Exceção ao buscar serviços: '.$e->getMessage();
