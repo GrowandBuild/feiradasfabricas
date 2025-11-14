@@ -1052,6 +1052,10 @@
                             <i class="bi bi-gear"></i> 
                             <span>Configurações</span>
                         </a>
+                        <a class="nav-link ps-5 {{ request()->routeIs('admin.shipping-providers.index') ? 'active' : '' }}" href="{{ route('admin.shipping-providers.index') }}">
+                            <i class="bi bi-toggle-on"></i>
+                            <span>Status Providers</span>
+                        </a>
                         <a class="nav-link {{ request()->routeIs('admin.melhor-envio.index') ? 'active' : '' }}" href="{{ route('admin.melhor-envio.index') }}">
                             <i class="bi bi-truck"></i>
                             <span>Melhor Envio</span>

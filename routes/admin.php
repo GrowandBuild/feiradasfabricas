@@ -101,6 +101,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('settings/melhor-envio/services', [MelhorEnvioController::class, 'services'])->name('melhor-envio.services');
     Route::post('settings/melhor-envio/services', [MelhorEnvioController::class, 'servicesSave'])->name('melhor-envio.services.save');
 
+    // Painel de Status dos Providers de Frete (ativar/desativar)
+    Route::get('settings/shipping/providers', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'index'])->name('shipping-providers.index');
+    Route::post('settings/shipping/providers', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'save'])->name('shipping-providers.save');
+
         // Gerenciamento de Usuários Admin (apenas para usuários com permissão)
         Route::middleware('permission:users.manage')->group(function () {
             Route::resource('users', App\Http\Controllers\Admin\UserManagementController::class);
