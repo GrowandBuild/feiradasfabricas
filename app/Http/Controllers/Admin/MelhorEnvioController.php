@@ -23,6 +23,11 @@ class MelhorEnvioController extends Controller
             // Advanced (hidden by default)
             'client_id' => (string) setting('melhor_envio_client_id', ''),
             'client_secret' => (string) setting('melhor_envio_client_secret', ''),
+            // Defaults de dimensões/peso
+            'default_weight' => (float) setting('shipping_default_weight', 0.3),
+            'default_length' => (int) setting('shipping_default_length', 20),
+            'default_height' => (int) setting('shipping_default_height', 20),
+            'default_width'  => (int) setting('shipping_default_width', 20),
         ];
         return view('admin.melhor-envio.index', $data);
     }
@@ -38,6 +43,11 @@ class MelhorEnvioController extends Controller
             // Advanced (optional)
             'melhor_envio_client_id' => 'nullable|string',
             'melhor_envio_client_secret' => 'nullable|string',
+            // Defaults
+            'shipping_default_weight' => 'nullable|numeric|min:0.01',
+            'shipping_default_length' => 'nullable|integer|min:1',
+            'shipping_default_height' => 'nullable|integer|min:1',
+            'shipping_default_width'  => 'nullable|integer|min:1',
         ]);
 
         // Persist settings
@@ -62,6 +72,19 @@ class MelhorEnvioController extends Controller
         }
         if (array_key_exists('melhor_envio_client_secret', $validated)) {
             Setting::set('melhor_envio_client_secret', trim((string) $validated['melhor_envio_client_secret']));
+        }
+        // Defaults persistence
+        if (array_key_exists('shipping_default_weight', $validated)) {
+            Setting::set('shipping_default_weight', (float) $validated['shipping_default_weight'], 'number');
+        }
+        if (array_key_exists('shipping_default_length', $validated)) {
+            Setting::set('shipping_default_length', (int) $validated['shipping_default_length'], 'number');
+        }
+        if (array_key_exists('shipping_default_height', $validated)) {
+            Setting::set('shipping_default_height', (int) $validated['shipping_default_height'], 'number');
+        }
+        if (array_key_exists('shipping_default_width', $validated)) {
+            Setting::set('shipping_default_width', (int) $validated['shipping_default_width'], 'number');
         }
 
         if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {

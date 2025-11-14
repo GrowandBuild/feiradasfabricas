@@ -17,11 +17,12 @@ class ShippingController extends Controller
         $validated = $request->validate([
             'destination_cep' => ['required','regex:/^[0-9\-\.]{8,9}$/'],
             'items' => ['array','required'],
-            'items.*.weight' => ['numeric','min:0.01'],
-            'items.*.length' => ['numeric','min:1'],
-            'items.*.height' => ['numeric','min:1'],
-            'items.*.width' => ['numeric','min:1'],
-            'items.*.value' => ['numeric','min:0'],
+            // Tornar campos opcionais e aplicar fallback depois
+            'items.*.weight' => ['nullable','numeric','min:0.01'],
+            'items.*.length' => ['nullable','numeric','min:1'],
+            'items.*.height' => ['nullable','numeric','min:1'],
+            'items.*.width' => ['nullable','numeric','min:1'],
+            'items.*.value' => ['nullable','numeric','min:0'],
         ]);
 
         $destCep = $addressService->normalizeCep($validated['destination_cep']);
@@ -33,13 +34,18 @@ class ShippingController extends Controller
         $origin = ['cep' => setting('correios_cep_origem', '')];
 
         $packages = [];
+        $defWeight = (float) setting('shipping_default_weight', 0.3);
+        $defLength = (int) setting('shipping_default_length', 20);
+        $defHeight = (int) setting('shipping_default_height', 20);
+        $defWidth  = (int) setting('shipping_default_width', 20);
+
         foreach ($validated['items'] as $item) {
             $packages[] = [
-                'weight' => $item['weight'],
-                'length' => $item['length'],
-                'height' => $item['height'],
-                'width'  => $item['width'],
-                'value'  => $item['value'] ?? 0,
+                'weight' => isset($item['weight']) && $item['weight'] > 0 ? (float)$item['weight'] : $defWeight,
+                'length' => isset($item['length']) && $item['length'] > 0 ? (int)$item['length'] : $defLength,
+                'height' => isset($item['height']) && $item['height'] > 0 ? (int)$item['height'] : $defHeight,
+                'width'  => isset($item['width'])  && $item['width']  > 0 ? (int)$item['width']  : $defWidth,
+                'value'  => isset($item['value'])  && $item['value']  >= 0 ? (float)$item['value']  : 0,
             ];
         }
 

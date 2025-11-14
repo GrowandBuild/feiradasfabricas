@@ -50,6 +50,29 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
             <div class="form-text">Deixe em branco para usar os padrões. Separe por vírgulas.</div>
           </div>
 
+          <div class="border rounded p-3 mb-3 bg-light">
+            <h6 class="mb-2">Padrões de Peso e Dimensões (fallback)</h6>
+            <div class="row g-3">
+              <div class="col-6 col-md-3">
+                <label class="form-label">Peso (kg)</label>
+                <input type="number" step="0.01" min="0.01" class="form-control" name="shipping_default_weight" value="{{ $default_weight }}">
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label">Comprimento (cm)</label>
+                <input type="number" min="1" class="form-control" name="shipping_default_length" value="{{ $default_length }}">
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label">Altura (cm)</label>
+                <input type="number" min="1" class="form-control" name="shipping_default_height" value="{{ $default_height }}">
+              </div>
+              <div class="col-6 col-md-3">
+                <label class="form-label">Largura (cm)</label>
+                <input type="number" min="1" class="form-control" name="shipping_default_width" value="{{ $default_width }}">
+              </div>
+            </div>
+            <div class="form-text mt-2">Usados automaticamente quando o produto não tiver valores próprios definidos. Ajudam a evitar falha na cotação.</div>
+          </div>
+
           <details class="mb-3">
             <summary class="mb-2"><strong>Avançado (opcional) – Client ID/Secret</strong></summary>
             <div class="row g-3">
