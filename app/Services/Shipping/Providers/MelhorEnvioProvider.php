@@ -45,9 +45,8 @@ class MelhorEnvioProvider implements ShippingProviderInterface
             ? ['https://sandbox.melhorenvio.com.br']
             : ['https://www.melhorenvio.com.br', 'https://melhorenvio.com.br', 'https://api.melhorenvio.com.br'];
         $pathCandidates = [
-            '/api/v2/me/shipment/calculate',
-            '/api/v2/shipment/calculate',
-            '/api/v2/shipping/calculate',
+            '/api/v2/me/shipment/calculate',      // principal (POST)
+            '/api/v2/shipment/calculate',         // alternativa (POST)
         ];
 
         // Merge all packages (aggregator already sends one, but we safeguard multi)
@@ -100,8 +99,19 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                         $lastStatus = $response->status();
                         $lastBody = substr($response->body(), 0, 240);
                         // Accept only JSON responses; if HTML or invalid, try next
-                        if ($response->successful() && is_array($response->json())) {
-                            break 2; // got a plausible JSON; proceed
+                        if ($response->successful()) {
+                            $json = null;
+                            try { $json = $response->json(); } catch (\Throwable $e) { $json = null; }
+                            if (is_array($json)) {
+                                break 2; // got a plausible JSON; proceed
+                            }
+                            // Log a debug hint when success code but not JSON (provável HTML)
+                            \Log::debug('MelhorEnvio resposta não-JSON, tentando próximo endpoint', [
+                                'url' => $lastUrl,
+                                'status' => $lastStatus,
+                                'content_type' => $response->header('content-type'),
+                                'body_snippet' => $lastBody,
+                            ]);
                         }
                     } catch (\Throwable $e) {
                         // Network/DNS or transport error for this attempt; try next candidate
