@@ -26,8 +26,10 @@ class MelhorEnvioProvider implements ShippingProviderInterface
     $serviceIdsSetting = trim((string) (setting('melhor_envio_service_ids', env('MELHOR_ENVIO_SERVICE_IDS', ''))));
         $servicesParam = $serviceIdsSetting !== '' ? $serviceIdsSetting : self::DEFAULT_SERVICE_IDS;
 
-        if (empty($clientId) || empty($clientSecret)) {
-            return [ $this->errorQuote(null, 'Credenciais Melhor Envio não configuradas') ];
+        $hasToken = !empty($token);
+        $hasBasic = !empty($clientId) && !empty($clientSecret);
+        if (!$hasToken && !$hasBasic) {
+            return [ $this->errorQuote(null, 'Configure um Token ou Client ID/Secret do Melhor Envio') ];
         }
 
         $originCep = preg_replace('/[^0-9]/','', $origin['cep'] ?? setting('correios_cep_origem') ?? '');
@@ -53,7 +55,7 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                 ]);
 
             // Prefer bearer token if provided; else basic auth
-            $http = !empty($token)
+            $http = $hasToken
                 ? $http->withToken($token)
                 : $http->withBasicAuth($clientId, $clientSecret);
 

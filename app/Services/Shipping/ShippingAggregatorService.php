@@ -52,7 +52,20 @@ class ShippingAggregatorService
         $originCep = $origin['cep'] ?? 'na';
         $signature = md5(json_encode($packages));
         $providersNames = implode(',', array_map(fn($p) => $p->getName(), $this->providers));
-        return "shipping_quotes:$originCep:$dest:$providersNames:$signature";
+        // Include a small signature of relevant settings to avoid stale cache after config changes
+        try {
+            $settingsSig = md5(json_encode([
+                'origin' => setting('correios_cep_origem', ''),
+                'me_enabled' => (bool) setting('melhor_envio_enabled', false),
+                'me_sandbox' => (bool) setting('melhor_envio_sandbox', true),
+                'me_services'=> (string) setting('melhor_envio_service_ids', ''),
+                // Token hashed to not expose
+                'me_token'   => substr(md5((string) setting('melhor_envio_token', '')),0,8),
+            ]));
+        } catch (\Throwable $e) {
+            $settingsSig = 'na';
+        }
+        return "shipping_quotes:$originCep:$dest:$providersNames:$signature:$settingsSig";
     }
 
     protected function aggregatePackages(array $packages): array
