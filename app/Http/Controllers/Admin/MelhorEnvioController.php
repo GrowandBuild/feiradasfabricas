@@ -53,7 +53,13 @@ class MelhorEnvioController extends Controller
         $candidates = $sandbox
             ? ['https://sandbox.melhorenvio.com.br']
             : ['https://www.melhorenvio.com.br', 'https://melhorenvio.com.br', 'https://api.melhorenvio.com.br'];
-        $companiesEndpoint = $base . '/api/v2/shipment/companies'; // endpoint estimado (se mudar, adaptar)
+        // Candidatos de path (algumas rotas exigem prefixo /me)
+        $pathCandidates = [
+            '/api/v2/me/shipment/companies',
+            '/api/v2/shipment/companies',
+            '/api/v2/shipping/companies',
+        ];
+        $companiesEndpoint = $base . $pathCandidates[0]; // default exibido inicialmente
     $services = [];
     $error = null;
     $fromApi = false; // indicador se veio da API oficial
@@ -72,36 +78,38 @@ class MelhorEnvioController extends Controller
             }
 
             foreach ($candidates as $host) {
-                $apiUrl = rtrim($host, '/').'/api/v2/shipment/companies';
-                $resp = $httpBase->get($apiUrl);
-                $apiStatus = $resp->status();
-                $apiBodySnippet = substr($resp->body(), 0, 800);
-                $companiesEndpoint = $apiUrl; // para exibir na view/log
+                foreach ($pathCandidates as $path) {
+                    $apiUrl = rtrim($host, '/').$path;
+                    $resp = $httpBase->get($apiUrl);
+                    $apiStatus = $resp->status();
+                    $apiBodySnippet = substr($resp->body(), 0, 800);
+                    $companiesEndpoint = $apiUrl; // para exibir na view/log
 
-                if ($resp->successful()) {
-                    // Tenta decodificar JSON; se vier HTML, json() pode retornar null
-                    $json = $resp->json();
-                    if (is_array($json)) {
-                        foreach ($json as $company) {
-                            $companyName = $company['name'] ?? ($company['company'] ?? 'Transportadora');
-                            $companyServices = $company['services'] ?? [];
-                            if (is_array($companyServices)) {
-                                foreach ($companyServices as $svc) {
-                                    $id = (string) ($svc['id'] ?? '');
-                                    if ($id === '') continue;
-                                    $services[] = [
-                                        'id' => $id,
-                                        'name' => $svc['name'] ?? ('Serviço '.$id),
-                                        'company' => $companyName,
-                                        'enabled' => in_array($id, $enabledIds, true),
-                                        'delivery_time' => $svc['delivery_time'] ?? null,
-                                    ];
+                    if ($resp->successful()) {
+                        // Tenta decodificar JSON; se vier HTML, json() pode retornar null
+                        $json = $resp->json();
+                        if (is_array($json)) {
+                            foreach ($json as $company) {
+                                $companyName = $company['name'] ?? ($company['company'] ?? 'Transportadora');
+                                $companyServices = $company['services'] ?? [];
+                                if (is_array($companyServices)) {
+                                    foreach ($companyServices as $svc) {
+                                        $id = (string) ($svc['id'] ?? '');
+                                        if ($id === '') continue;
+                                        $services[] = [
+                                            'id' => $id,
+                                            'name' => $svc['name'] ?? ('Serviço '.$id),
+                                            'company' => $companyName,
+                                            'enabled' => in_array($id, $enabledIds, true),
+                                            'delivery_time' => $svc['delivery_time'] ?? null,
+                                        ];
+                                    }
                                 }
                             }
-                        }
-                        if (!empty($services)) {
-                            $fromApi = true;
-                            break; // sucesso, sai do loop de hosts
+                            if (!empty($services)) {
+                                $fromApi = true;
+                                break 2; // sucesso: sai dos dois loops
+                            }
                         }
                     }
                 }

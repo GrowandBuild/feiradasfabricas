@@ -76,7 +76,7 @@ Gerencie quais serviços/transportadoras serão usados nas cotações. Similar a
     <div class="card">
       <div class="card-header">Ajuda</div>
       <div class="card-body small">
-        <p>Esta lista é obtida da API (<code>/shipment/companies</code>). Se não foi possível carregar, exibimos uma lista base de serviços comuns.</p>
+  <p>Esta lista é obtida da API (<code>/me/shipment/companies</code> ou variantes compatíveis). Se não foi possível carregar, exibimos uma lista base de serviços comuns.</p>
         <ul>
           <li>Desmarcar um serviço -> ele deixa de aparecer na cotação.</li>
           <li>Marcar -> incluído na próxima requisição.</li>
