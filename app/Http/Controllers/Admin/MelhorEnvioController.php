@@ -129,11 +129,28 @@ class MelhorEnvioController extends Controller
             }
 
             $status = $response ? $response->status() : 0;
+            $msgBase = $status === 401
+                ? 'Autenticação falhou. Verifique Token / Client ID/Secret e se o ambiente coincide com onde o token foi gerado.'
+                : ('Falha ao conectar: ' . ($lastError ?: 'Erro desconhecido'));
+
+            // Adicionar detalhes de diagnóstico (apenas se app.debug = true)
+            $debug = config('app.debug');
+            if ($debug) {
+                Log::warning('Melhor Envio teste falhou', [
+                    'status' => $status,
+                    'sandbox' => $sandbox,
+                    'endpoint' => $baseUrl,
+                    'has_token' => !empty($token),
+                    'token_hash' => substr(md5((string)$token),0,10),
+                    'has_basic' => (!empty($clientId) && !empty($clientSecret)),
+                    'body' => $lastError,
+                ]);
+            }
             return response()->json([
                 'success' => false,
-                'message' => $status === 401
-                    ? 'Autenticação falhou. Verifique o Token (ou Client ID/Secret) e o ambiente (Sandbox/Produção).'
-                    : ('Falha ao conectar: ' . ($lastError ?: 'Erro desconhecido') . ($status ? " (HTTP $status)" : '')),
+                'message' => $msgBase . ($status ? " (HTTP $status)" : ''),
+                'status' => $status,
+                'token_hash' => $debug && $token ? substr(md5((string)$token),0,8) : null,
             ], 400);
         } catch (\Throwable $e) {
             Log::error('Erro ao testar Melhor Envio', ['e' => $e->getMessage()]);
@@ -141,6 +158,57 @@ class MelhorEnvioController extends Controller
                 'success' => false,
                 'message' => 'Exceção ao conectar: ' . $e->getMessage()
             ], 500);
+        }
+    }
+
+    // Ajuste: garantir trim do token ao salvar via OAuth
+    public function oauthCallback(Request $request)
+    {
+        $savedState = session('melhor_envio_oauth_state');
+        $sessionSandbox = session('melhor_envio_oauth_sandbox', true);
+        $state = $request->query('state');
+        $code = $request->query('code');
+
+        if (!$code) {
+            return redirect()->route('admin.melhor-envio.index')->with('error', 'Código de autorização ausente.');
+        }
+
+        if (!$savedState || $state !== $savedState) {
+            return redirect()->route('admin.melhor-envio.index')->with('error', 'State inválido na autorização.');
+        }
+
+        $clientId = setting('melhor_envio_client_id');
+        $clientSecret = setting('melhor_envio_client_secret');
+        $redirectUri = route('admin.melhor-envio.callback');
+
+        $tokenUrl = $sessionSandbox
+            ? 'https://sandbox.melhorenvio.com.br/oauth/token'
+            : 'https://www.melhorenvio.com.br/oauth/token';
+
+        try {
+            $response = Http::asForm()->timeout(15)->post($tokenUrl, [
+                'grant_type' => 'authorization_code',
+                'client_id' => $clientId,
+                'client_secret' => $clientSecret,
+                'redirect_uri' => $redirectUri,
+                'code' => $code,
+            ]);
+
+            if ($response->successful()) {
+                $data = $response->json();
+                $accessToken = trim((string)($data['access_token'] ?? ''));
+                if ($accessToken) {
+                    Setting::set('melhor_envio_token', $accessToken);
+                    $request->session()->forget(['melhor_envio_oauth_state', 'melhor_envio_oauth_sandbox']);
+                    return redirect()->route('admin.melhor-envio.index')->with('success', 'Conta autorizada e Token salvo com sucesso.');
+                }
+                return redirect()->route('admin.melhor-envio.index')->with('error', 'Resposta sem access_token.');
+            }
+
+            return redirect()->route('admin.melhor-envio.index')->with('error', 'Falha ao obter token: ' . $response->body());
+        } catch (\Throwable $e) {
+            Log::error('Erro OAuth Melhor Envio', ['e' => $e->getMessage()]);
+            return redirect()->route('admin.melhor-envio.index')->with('error', 'Erro na autorização: ' . $e->getMessage());
         }
     }
 
@@ -178,54 +246,5 @@ class MelhorEnvioController extends Controller
     }
 
     // OAuth: Callback para trocar o code por token e salvar
-    public function oauthCallback(Request $request)
-    {
-        $savedState = session('melhor_envio_oauth_state');
-        $sessionSandbox = session('melhor_envio_oauth_sandbox', true);
-        $state = $request->query('state');
-        $code = $request->query('code');
-
-        if (!$code) {
-            return redirect()->route('admin.melhor-envio.index')->with('error', 'Código de autorização ausente.');
-        }
-
-        if (!$savedState || $state !== $savedState) {
-            return redirect()->route('admin.melhor-envio.index')->with('error', 'State inválido na autorização.');
-        }
-
-        $clientId = setting('melhor_envio_client_id');
-        $clientSecret = setting('melhor_envio_client_secret');
-        $redirectUri = route('admin.melhor-envio.callback');
-
-        $tokenUrl = $sessionSandbox
-            ? 'https://sandbox.melhorenvio.com.br/oauth/token'
-            : 'https://www.melhorenvio.com.br/oauth/token';
-
-        try {
-            $response = Http::asForm()->timeout(15)->post($tokenUrl, [
-                'grant_type' => 'authorization_code',
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret,
-                'redirect_uri' => $redirectUri,
-                'code' => $code,
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
-                $accessToken = $data['access_token'] ?? null;
-                if ($accessToken) {
-                    Setting::set('melhor_envio_token', $accessToken);
-                    // Limpar dados de sessão da autorização
-                    $request->session()->forget(['melhor_envio_oauth_state', 'melhor_envio_oauth_sandbox']);
-                    return redirect()->route('admin.melhor-envio.index')->with('success', 'Conta autorizada e Token salvo com sucesso.');
-                }
-                return redirect()->route('admin.melhor-envio.index')->with('error', 'Resposta sem access_token.');
-            }
-
-            return redirect()->route('admin.melhor-envio.index')->with('error', 'Falha ao obter token: ' . $response->body());
-        } catch (\Throwable $e) {
-            Log::error('Erro OAuth Melhor Envio', ['e' => $e->getMessage()]);
-            return redirect()->route('admin.melhor-envio.index')->with('error', 'Erro na autorização: ' . $e->getMessage());
-        }
-    }
+    // (Método duplicado removido - versão consolidada acima)
 }
