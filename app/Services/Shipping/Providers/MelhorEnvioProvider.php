@@ -40,10 +40,15 @@ class MelhorEnvioProvider implements ShippingProviderInterface
             return [ $this->errorQuote(null, 'CEP origem/destino inválido') ];
         }
 
-        // Melhor Envio sandbox and production endpoints differ only by host
-        $calculateUrl = $sandbox
-            ? 'https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate'
-            : 'https://www.melhorenvio.com.br/api/v2/me/shipment/calculate';
+        // Endpoints candidates (host and path) – some environments respond only on specific combos
+        $hostCandidates = $sandbox
+            ? ['https://sandbox.melhorenvio.com.br']
+            : ['https://www.melhorenvio.com.br', 'https://melhorenvio.com.br', 'https://api.melhorenvio.com.br'];
+        $pathCandidates = [
+            '/api/v2/me/shipment/calculate',
+            '/api/v2/shipment/calculate',
+            '/api/v2/shipping/calculate',
+        ];
 
         // Merge all packages (aggregator already sends one, but we safeguard multi)
         $merged = $this->mergePackages($packages);
@@ -85,7 +90,20 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                 'services' => $servicesParam,
             ];
 
-            $response = $http->post($calculateUrl, $payload);
+            $response = null; $lastUrl = null; $lastStatus = null; $lastBody = null;
+            foreach ($hostCandidates as $host) {
+                foreach ($pathCandidates as $path) {
+                    $calculateUrl = rtrim($host,'/').$path;
+                    $lastUrl = $calculateUrl;
+                    $response = $http->post($calculateUrl, $payload);
+                    $lastStatus = $response->status();
+                    $lastBody = substr($response->body(), 0, 240);
+                    // Accept only JSON responses; if HTML or invalid, try next
+                    if ($response->successful() && is_array($response->json())) {
+                        break 2; // got a plausible JSON; proceed
+                    }
+                }
+            }
 
             // Se 401 com bearer e temos refresh_token, tenta uma única vez renovar e repetir
             if ($response->status() === 401 && $hasToken && $refreshToken) {
@@ -106,10 +124,10 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                 }
             }
 
-            if (!$response->successful()) {
-                $bodySnippet = substr($response->body(), 0, 240);
+            if (!$response || !$response->successful()) {
+                $bodySnippet = $lastBody;
                 Log::warning('MelhorEnvio HTTP failure', [
-                    'status' => $response->status(),
+                    'status' => $lastStatus,
                     'body_snippet' => $bodySnippet,
                     'sandbox' => $sandbox,
                     'token_hash' => $hasToken ? substr(md5((string)$token),0,8) : null,
@@ -117,16 +135,18 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                     'dest_cep' => $destCep,
                     'merged' => $merged,
                     'services_param' => $servicesParam,
+                    'url' => $lastUrl,
                 ]);
-                return [ $this->errorQuote(null, 'Erro HTTP '.$response->status()) ];
+                return [ $this->errorQuote(null, 'Erro HTTP '.($lastStatus ?? 'n/a')) ];
             }
 
             $data = $response->json();
             if (!is_array($data)) {
                 Log::error('MelhorEnvio resposta inválida', [
-                    'raw' => $response->body(),
+                    'raw' => $lastBody,
                     'sandbox' => $sandbox,
                     'token_hash' => $hasToken ? substr(md5((string)$token),0,8) : null,
+                    'url' => $lastUrl,
                 ]);
                 return [ $this->errorQuote(null, 'Resposta inválida Melhor Envio') ];
             }
