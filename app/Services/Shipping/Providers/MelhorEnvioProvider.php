@@ -137,6 +137,45 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                                 'content_type' => $response->header('content-type'),
                                 'body_snippet' => $lastBody,
                             ]);
+                        } else if ($lastStatus === 405 && str_starts_with($path, '/api/v2/shipment/calculate')) {
+                            // Fallback: alguns ambientes exigem GET neste endpoint
+                            $qp = [
+                                'from_postal_code' => $originCep,
+                                'to_postal_code' => $destCep,
+                                'width' => $payload['products'][0]['width'] ?? 20,
+                                'height' => $payload['products'][0]['height'] ?? 20,
+                                'length' => $payload['products'][0]['length'] ?? 20,
+                                'weight' => $payload['products'][0]['weight'] ?? 1,
+                                'insurance_value' => $payload['products'][0]['insurance_value'] ?? 0,
+                                'services' => $servicesParam,
+                            ];
+                            try {
+                                $getResp = $http->get($calculateUrl, $qp);
+                                $lastStatus = $getResp->status();
+                                $lastBody = substr($getResp->body(), 0, 240);
+                                if ($getResp->successful()) {
+                                    $json = null; try { $json = $getResp->json(); } catch(\Throwable $e) { $json = null; }
+                                    if (is_array($json)) {
+                                        \Log::debug('MelhorEnvio fallback GET OK', [ 'url' => $calculateUrl, 'status' => $lastStatus ]);
+                                        $response = $getResp; // use GET response adiante
+                                        break 2;
+                                    }
+                                }
+                                \Log::debug('MelhorEnvio fallback GET falhou', [
+                                    'url' => $calculateUrl,
+                                    'status' => $lastStatus,
+                                    'body_snippet' => $lastBody,
+                                ]);
+                            } catch (\Throwable $e) {
+                                \Log::warning('MelhorEnvio fallback GET exceção', ['url' => $calculateUrl, 'error' => $e->getMessage()]);
+                            }
+                        } else {
+                            // Não-success (ex.: 4xx/5xx) — log leve e tentar próximo
+                            \Log::debug('MelhorEnvio tentativa sem sucesso', [
+                                'url' => $calculateUrl,
+                                'status' => $lastStatus,
+                                'body_snippet' => $lastBody,
+                            ]);
                         }
                     } catch (\Throwable $e) {
                         // Network/DNS or transport error for this attempt; try next candidate

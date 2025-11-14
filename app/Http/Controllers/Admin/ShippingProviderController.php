@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Setting;
+use Illuminate\Support\Facades\Http;
 
 class ShippingProviderController extends Controller
 {
@@ -145,5 +146,84 @@ class ShippingProviderController extends Controller
             'shipping_config' => $shippingConfig,
         ]);
         return response()->json(['ok' => true, 'diagnose' => $providersInfo, 'config' => $shippingConfig]);
+    }
+
+    public function testMelhorEnvio(Request $request)
+    {
+        // Parâmetros de teste (com defaults)
+        $originCep = preg_replace('/[^0-9]/','', $request->input('from_cep', Setting::get('correios_cep_origem') ?? ''));
+        $destCep   = preg_replace('/[^0-9]/','', $request->input('to_cep', '01001000'));
+        $length = (int)($request->input('length', config('shipping.defaults.length', 20)));
+        $height = (int)($request->input('height', config('shipping.defaults.height', 20)));
+        $width  = (int)($request->input('width',  config('shipping.defaults.width', 20)));
+        $weight = (float)($request->input('weight', config('shipping.defaults.fallback_weight', 1.0)));
+        $insurance = (float)($request->input('insurance_value', 0));
+        $services = trim((string)($request->input('services', Setting::get('melhor_envio_service_ids') ?? '')));
+        if ($services === '') { $services = '1,2,3,4,17'; }
+
+        if (strlen((string)$originCep) < 8 || strlen((string)$destCep) < 8) {
+            return response()->json(['ok' => false, 'message' => 'Informe CEPs válidos (origem e destino)'], 422);
+        }
+
+        $sandbox = (bool) Setting::get('melhor_envio_sandbox', env('MELHOR_ENVIO_SANDBOX', true));
+        $hosts = $sandbox
+            ? ['https://sandbox.melhorenvio.com.br']
+            : ['https://www.melhorenvio.com.br','https://melhorenvio.com.br','https://api.melhorenvio.com.br'];
+
+        $probe = [];
+        foreach ($hosts as $host) {
+            $h = parse_url($host, PHP_URL_HOST);
+            $dnsIp = null; $dnsRecords = null; $status = null; $body = null; $ctype = null; $err = null;
+            try { $dnsIp = @gethostbyname($h); } catch (\Throwable $e) { $dnsIp = null; }
+            try { if (function_exists('dns_get_record')) { $dnsRecords = @dns_get_record($h, DNS_A + DNS_AAAA); } } catch (\Throwable $e) { $dnsRecords = null; }
+            try {
+                $url = rtrim($host,'/').'/api/v2/shipment/calculate';
+                $resp = Http::timeout(8)->get($url, [
+                    'from_postal_code' => $originCep,
+                    'to_postal_code' => $destCep,
+                    'width' => $width,
+                    'height' => $height,
+                    'length' => $length,
+                    'weight' => $weight,
+                    'insurance_value' => $insurance,
+                    'services' => $services,
+                ]);
+                $status = $resp->status();
+                $ctype = $resp->header('content-type');
+                $body = substr($resp->body(), 0, 200);
+            } catch (\Throwable $e) {
+                $err = $e->getMessage();
+            }
+            $probe[] = [
+                'host' => $host,
+                'dns_ip' => $dnsIp,
+                'dns_records' => $dnsRecords,
+                'get_status' => $status,
+                'content_type' => $ctype,
+                'body_snippet' => $body,
+                'error' => $err,
+            ];
+        }
+
+        // Chama provider real para tentar cotar
+        try {
+            /** @var \App\Services\Shipping\Providers\MelhorEnvioProvider $provider */
+            $provider = app(\App\Services\Shipping\Providers\MelhorEnvioProvider::class);
+            $quotes = $provider->quote(['cep'=>$originCep], ['cep'=>$destCep], [[
+                'length'=>$length,'height'=>$height,'width'=>$width,'weight'=>$weight,'value'=>$insurance
+            ]]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok'=>false,'message'=>'Exceção ao cotar: '.$e->getMessage(),'probe'=>$probe], 500);
+        }
+        $firstError = null; if (is_array($quotes)) { foreach ($quotes as $q) { if (!empty($q['error'])) { $firstError = $q['error']; break; } } }
+        return response()->json([
+            'ok' => true,
+            'probe' => $probe,
+            'quotes' => $quotes,
+            'count' => is_array($quotes) ? count($quotes) : 0,
+            'first_error' => $firstError,
+            'used_defaults' => compact('length','height','width','weight','insurance','services'),
+            'sandbox' => $sandbox,
+        ]);
     }
 }

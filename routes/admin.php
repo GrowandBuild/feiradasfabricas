@@ -106,6 +106,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('settings/shipping/providers', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'save'])->name('shipping-providers.save');
     Route::post('settings/shipping/providers/clear-cache', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'clearCache'])->name('shipping-providers.clear-cache');
     Route::post('settings/shipping/providers/opcache-reset', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'opcacheReset'])->name('shipping-providers.opcache-reset');
+    Route::post('settings/shipping/providers/test-me', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'testMelhorEnvio'])->name('shipping-providers.test-me');
     Route::get('shipping/diagnose', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'diagnose'])->name('shipping-providers.diagnose');
 
         // Gerenciamento de Usuários Admin (apenas para usuários com permissão)
