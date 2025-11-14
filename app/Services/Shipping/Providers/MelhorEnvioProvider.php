@@ -10,6 +10,9 @@ class MelhorEnvioProvider implements ShippingProviderInterface
 {
     /** Default fallback service IDs when none configured */
     private const DEFAULT_SERVICE_IDS = '1,2,3,4,17';
+    /** Version marker for deploy diagnostics */
+    private const VERSION = '20251114';
+    private static bool $bootLogged = false;
 
     public function getName(): string { return 'melhor_envio'; }
 
@@ -48,6 +51,18 @@ class MelhorEnvioProvider implements ShippingProviderInterface
             '/api/v2/me/shipment/calculate',      // principal (POST)
             '/api/v2/shipment/calculate',         // alternativa (POST)
         ];
+
+        // Log de versão (apenas uma vez por ciclo de vida PHP) para confirmar deploy em produção
+        if (!self::$bootLogged) {
+            Log::info('MelhorEnvioProvider iniciado', [
+                'version' => self::VERSION,
+                'sandbox' => (bool)$sandbox,
+                'hosts' => $hostCandidates,
+                'paths' => $pathCandidates,
+                'services_param' => $servicesParam,
+            ]);
+            self::$bootLogged = true;
+        }
 
         // Merge all packages (aggregator already sends one, but we safeguard multi)
         $merged = $this->mergePackages($packages);
