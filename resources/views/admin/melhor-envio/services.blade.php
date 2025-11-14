@@ -54,7 +54,16 @@ Gerencie quais serviços/transportadoras serão usados nas cotações. Similar a
           <div>
             <small class="text-muted">Selecione os serviços que serão considerados nas cotações. Se nenhum for marcado, o sistema usará o fallback padrão.</small><br>
             @unless($fromApi)
-              <small class="text-muted">Exibindo lista estática (fallback). Verifique token, escopo <code>shipping-companies</code> e endpoint para carregar lista real.</small><br>
+              <small class="text-muted">Exibindo lista estática (fallback). Verifique token, escopo <code>shipping-companies</code>, endpoint e ambiente.</small><br>
+              @if($apiStatus)
+                <small class="text-muted">Status: <strong>{{ $apiStatus }}</strong> | URL: <code>{{ $apiUrl }}</code></small><br>
+                @if($apiBodySnippet)
+                  <details class="mt-1">
+                    <summary class="small">Ver resposta (parcial)</summary>
+                    <pre class="small" style="white-space:pre-wrap; max-height:200px; overflow:auto;">{{ $apiBodySnippet }}</pre>
+                  </details>
+                @endif
+              @endif
             @endunless
             @if($error)<small class="text-danger">Aviso: {{ $error }}</small>@endif
           </div>

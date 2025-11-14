@@ -53,6 +53,9 @@ class MelhorEnvioController extends Controller
     $services = [];
     $error = null;
     $fromApi = false; // indicador se veio da API oficial
+        $apiStatus = null;
+        $apiBodySnippet = null;
+        $apiUrl = $companiesEndpoint;
         try {
             $http = \Http::timeout(12)->withHeaders([
                 'Accept' => 'application/json',
@@ -64,6 +67,8 @@ class MelhorEnvioController extends Controller
                 $http = $http->withBasicAuth($clientId, $clientSecret);
             }
             $resp = $http->get($companiesEndpoint);
+            $apiStatus = $resp->status();
+            $apiBodySnippet = substr($resp->body(), 0, 800);
             if ($resp->successful()) {
                 $json = $resp->json();
                 // Estrutura esperada: lista de companies cada uma com services
@@ -114,6 +119,14 @@ class MelhorEnvioController extends Controller
                     'delivery_time' => null,
                 ];
             }
+            // Log detalhado quando cai em fallback
+            Log::warning('MelhorEnvio Services fallback usado', [
+                'sandbox' => $sandbox,
+                'endpoint' => $companiesEndpoint,
+                'status' => $apiStatus,
+                'body_snippet' => $apiBodySnippet,
+                'has_token' => !empty($token),
+            ]);
         }
 
         return view('admin.melhor-envio.services', [
@@ -121,6 +134,9 @@ class MelhorEnvioController extends Controller
             'error' => $error,
             'sandbox' => $sandbox,
             'fromApi' => $fromApi,
+            'apiStatus' => $apiStatus,
+            'apiUrl' => $apiUrl,
+            'apiBodySnippet' => $apiBodySnippet,
         ]);
     }
 
