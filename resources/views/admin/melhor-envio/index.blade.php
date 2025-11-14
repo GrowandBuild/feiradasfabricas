@@ -23,6 +23,20 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
             <label class="form-check-label" for="me_enabled">Ativar Melhor Envio</label>
           </div>
 
+          @if($token)
+            <div class="alert {{ $token_minutes_left !== null && $token_minutes_left < 60 ? 'alert-warning' : 'alert-info' }} py-2">
+              <i class="bi bi-shield-lock me-1"></i>
+              <strong>Token ativo.</strong>
+              @if($expires_at)
+                Expira em: {{ $expires_at }}
+                @if($token_minutes_left !== null)
+                  ({{ $token_minutes_left }} min restantes)
+                @endif
+              @endif
+              @if(!empty($token_scopes_payload))<br><small>Escopos concedidos: {{ implode(', ', $token_scopes_payload) }}</small>@endif
+            </div>
+          @endif
+
           <div class="mb-3">
             <label for="me_token" class="form-label">Token (Bearer)</label>
             <input type="text" class="form-control" id="me_token" name="melhor_envio_token" value="{{ $token }}" placeholder="Cole seu token aqui">
@@ -112,6 +126,11 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
               <span class="spinner-border spinner-border-sm me-2 d-none" id="testSpinner"></span>
               <i class="bi bi-plug"></i> Testar conexão
             </button>
+            @if($token && $expires_at)
+              <button type="button" class="btn btn-outline-warning" id="btnForceRefresh" title="Forçar refresh do token">
+                <i class="bi bi-arrow-repeat"></i> Refresh
+              </button>
+            @endif
           </div>
         </form>
       </div>
@@ -151,6 +170,7 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
   const testResult = document.getElementById('testResult');
   const csrf = document.querySelector('meta[name="csrf-token"]').content;
   const btnCopyRedirect = document.getElementById('btnCopyRedirect');
+  const btnForceRefresh = document.getElementById('btnForceRefresh');
 
   // mask CEP
   const cep = document.getElementById('me_cep_origem');
@@ -225,6 +245,26 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
       navigator.clipboard.writeText(v).then(()=>{
         showToast('Callback URL copiada.', 'success');
       });
+    });
+  }
+
+  if(btnForceRefresh){
+    btnForceRefresh.addEventListener('click', async ()=>{
+      showToast('Tentando refresh do token...', 'info');
+      try{
+        const res = await fetch("{{ route('admin.melhor-envio.test') }}", { // usa teste para acionar lógica de refresh se expirado
+          method:'POST', headers:{'X-CSRF-TOKEN':csrf,'Accept':'application/json'}
+        });
+        const j = await res.json();
+        if(j.success){
+          showToast('Refresh concluído (token válido).', 'success');
+        } else {
+          showToast('Falha ao validar após refresh: '+(j.message||'Erro'), 'danger');
+        }
+        setTimeout(()=> location.reload(), 1200);
+      }catch(e){
+        showToast('Erro no refresh: '+e.message, 'danger');
+      }
     });
   }
 })();

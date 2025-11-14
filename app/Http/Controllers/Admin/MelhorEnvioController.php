@@ -26,6 +26,9 @@ class MelhorEnvioController extends Controller
             // OAuth
             'scopes' => (string) setting('melhor_envio_scopes', 'users-read,shipping-companies,shipping-calculate'),
             'oauth_redirect' => route('admin.melhor-envio.callback'),
+            'expires_at' => (string) setting('melhor_envio_token_expires_at', ''),
+            'token_minutes_left' => $this->computeMinutesLeft(setting('melhor_envio_token_expires_at')),
+            'token_scopes_payload' => $this->decodeJwtScopes(setting('melhor_envio_token')), // tentativa de ler scopes do JWT
             // Defaults de dimensões/peso
             'default_weight' => (float) setting('shipping_default_weight', 0.3),
             'default_length' => (int) setting('shipping_default_length', 20),
@@ -330,5 +333,23 @@ class MelhorEnvioController extends Controller
         } catch (\Throwable $e) {
             Log::error('Exceção refresh Melhor Envio', ['error'=>$e->getMessage()]);
         }
+    }
+
+    private function computeMinutesLeft(?string $expiresAt): ?int
+    {
+        if (!$expiresAt) return null;
+        try { $dt = \Carbon\Carbon::parse($expiresAt); return max($dt->diffInMinutes(now(), false) * -1, 0); } catch (\Throwable $e) { return null; }
+    }
+
+    private function decodeJwtScopes(?string $token): array
+    {
+        if (!$token || strpos($token, '.') === false) return [];
+        try {
+            [$h,$p,$s] = explode('.', $token);
+            $payload = json_decode(base64_decode(strtr($p, '-_', '+/')), true);
+            $scopes = $payload['scopes'] ?? [];
+            if (is_string($scopes)) { $scopes = [$scopes]; }
+            return is_array($scopes) ? $scopes : [];
+        } catch (\Throwable $e) { return []; }
     }
 }
