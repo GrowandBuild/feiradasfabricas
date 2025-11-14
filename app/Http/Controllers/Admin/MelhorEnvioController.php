@@ -279,7 +279,8 @@ class MelhorEnvioController extends Controller
             'redirect_uri' => $redirectUri,
             'response_type' => 'code',
             'state' => $state,
-            // 'scope' => 'read,write', // escopo opcional; deixe comentado se não for necessário
+            // Escopo solicitado: 'read' para permitir acesso ao endpoint /me. Adicione 'write' se precisar criar pedidos.
+            'scope' => 'read',
         ]);
 
         return redirect()->away($authUrl . '?' . $query);
