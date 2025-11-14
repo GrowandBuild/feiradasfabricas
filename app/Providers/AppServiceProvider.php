@@ -32,9 +32,15 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(\App\Services\Shipping\ShippingAggregatorService::class, function ($app) {
             $providers = [];
             $cfg = config('shipping.providers', []);
-            // Helper closure to decide enablement (setting overrides config if true)
+            // Helper: se houver setting explícito (0/1), ele prevalece; senão usa config
             $enabled = function(string $key) use ($cfg) {
-                return setting($key.'_enabled', false) || ($cfg[$key] ?? false);
+                try {
+                    $val = \App\Models\Setting::get($key.'_enabled');
+                    if ($val !== null) {
+                        return (bool) $val; // setting explícito vence
+                    }
+                } catch (\Throwable $e) {}
+                return (bool) ($cfg[$key] ?? false);
             };
             if ($enabled('correios'))      $providers[] = $app->make(\App\Services\Shipping\Providers\CorreiosProvider::class);
             if ($enabled('jadlog'))        $providers[] = $app->make(\App\Services\Shipping\Providers\JadlogProvider::class);
