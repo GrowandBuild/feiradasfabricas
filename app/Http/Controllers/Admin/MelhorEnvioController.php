@@ -38,6 +38,96 @@ class MelhorEnvioController extends Controller
         return view('admin.melhor-envio.index', $data);
     }
 
+    // Página de gerenciamento de serviços / transportadoras
+    public function services(Request $request)
+    {
+        $sandbox = (bool) setting('melhor_envio_sandbox', true);
+        $token = setting('melhor_envio_token');
+        $clientId = setting('melhor_envio_client_id');
+        $clientSecret = setting('melhor_envio_client_secret');
+        $enabledIdsRaw = (string) setting('melhor_envio_service_ids', '');
+        $enabledIds = collect(array_filter(array_map('trim', explode(',', $enabledIdsRaw))))->filter()->values()->all();
+
+        $base = $sandbox ? 'https://sandbox.melhorenvio.com.br' : 'https://www.melhorenvio.com.br';
+        $companiesEndpoint = $base . '/api/v2/shipment/companies'; // endpoint estimado (se mudar, adaptar)
+        $services = [];
+        $error = null;
+        try {
+            $http = \Http::timeout(12)->withHeaders([
+                'Accept' => 'application/json',
+                'User-Agent' => 'FeiraDasFabricas Admin/1.0'
+            ]);
+            if ($token) {
+                $http = $http->withToken($token);
+            } elseif ($clientId && $clientSecret) {
+                $http = $http->withBasicAuth($clientId, $clientSecret);
+            }
+            $resp = $http->get($companiesEndpoint);
+            if ($resp->successful()) {
+                $json = $resp->json();
+                // Estrutura esperada: lista de companies cada uma com services
+                if (is_array($json)) {
+                    foreach ($json as $company) {
+                        $companyName = $company['name'] ?? ($company['company'] ?? 'Transportadora');
+                        $companyServices = $company['services'] ?? [];
+                        if (is_array($companyServices)) {
+                            foreach ($companyServices as $svc) {
+                                $id = (string) ($svc['id'] ?? '');
+                                if ($id === '') continue;
+                                $services[] = [
+                                    'id' => $id,
+                                    'name' => $svc['name'] ?? ('Serviço '.$id),
+                                    'company' => $companyName,
+                                    'enabled' => in_array($id, $enabledIds, true),
+                                    'delivery_time' => $svc['delivery_time'] ?? null,
+                                ];
+                            }
+                        }
+                    }
+                }
+            } else {
+                $error = 'Falha ao buscar serviços (HTTP '.$resp->status().')';
+            }
+        } catch (\Throwable $e) {
+            $error = 'Exceção ao buscar serviços: '.$e->getMessage();
+        }
+
+        // Fallback estático se nada veio
+        if (empty($services)) {
+            $staticDefaults = [
+                ['id'=>'1','name'=>'Correios PAC','company'=>'Correios'],
+                ['id'=>'2','name'=>'Correios SEDEX','company'=>'Correios'],
+                ['id'=>'3','name'=>'Jadlog Econômico','company'=>'Jadlog'],
+                ['id'=>'4','name'=>'Jadlog Expresso','company'=>'Jadlog'],
+                ['id'=>'17','name'=>'Melhor Envio Flex','company'=>'Melhor Envio'],
+            ];
+            foreach ($staticDefaults as $sd) {
+                $services[] = [
+                    'id' => $sd['id'],
+                    'name' => $sd['name'],
+                    'company' => $sd['company'],
+                    'enabled' => in_array($sd['id'], $enabledIds, true),
+                    'delivery_time' => null,
+                ];
+            }
+        }
+
+        return view('admin.melhor-envio.services', [
+            'services' => $services,
+            'error' => $error,
+            'sandbox' => $sandbox,
+        ]);
+    }
+
+    public function servicesSave(Request $request)
+    {
+        $ids = $request->input('service_ids', []);
+        if (!is_array($ids)) { $ids = []; }
+        $clean = collect($ids)->map(fn($i)=>trim(preg_replace('/[^0-9]/','',$i)))->filter()->unique()->values()->all();
+        \App\Models\Setting::set('melhor_envio_service_ids', implode(',', $clean));
+        return redirect()->route('admin.melhor-envio.services')->with('success', 'Serviços atualizados.');
+    }
+
     public function save(Request $request)
     {
         $validated = $request->validate([
