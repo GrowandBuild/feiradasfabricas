@@ -22,6 +22,7 @@
             </div>
             <div class="d-flex gap-2">
                 <button class="btn btn-sm btn-outline-secondary" onclick="clearCache()"><i class="bi bi-arrow-clockwise"></i> Limpar Cache</button>
+                <button class="btn btn-sm btn-outline-info" onclick="runDiagnose()"><i class="bi bi-activity"></i> Diagnóstico</button>
                 <button class="btn btn-sm btn-primary" onclick="saveProviders()"><i class="bi bi-save"></i> Salvar Alterações</button>
             </div>
         </div>
@@ -135,6 +136,15 @@ async function clearCache(){
     } catch(e){
         alert(e.message);
     }
+}
+async function runDiagnose(){
+    try {
+        const resp = await fetch("{{ route('admin.shipping-providers.diagnose') }}", { headers:{'Accept':'application/json'} });
+        const data = await resp.json();
+        if(!data.ok) throw new Error('Falha no diagnóstico');
+        console.log('Diagnóstico Providers', data.diagnose);
+        showToast('Diagnóstico registrado no log');
+    } catch(e){ alert(e.message); }
 }
 function showToast(msg){
     const div = document.createElement('div');

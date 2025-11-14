@@ -84,4 +84,39 @@ class ShippingProviderController extends Controller
             return response()->json(['ok' => false, 'message' => 'Falha ao limpar cache: ' . $e->getMessage()], 500);
         }
     }
+
+    public function diagnose(Request $request)
+    {
+        // Monta lista de providers ativos e seus metadados
+        $aggregator = app(\App\Services\Shipping\ShippingAggregatorService::class);
+        $providersInfo = [];
+        foreach ($this->providers as $key => $meta) {
+            $enabledVal = Setting::get($key.'_enabled');
+            $enabled = $enabledVal !== null ? (bool)$enabledVal : (bool) config('shipping.providers.'.$key, false);
+            $classMap = [
+                'correios' => \App\Services\Shipping\Providers\CorreiosProvider::class,
+                'jadlog' => \App\Services\Shipping\Providers\JadlogProvider::class,
+                'total_express' => \App\Services\Shipping\Providers\TotalExpressProvider::class,
+                'loggi' => \App\Services\Shipping\Providers\LoggiProvider::class,
+                'melhor_envio' => \App\Services\Shipping\Providers\MelhorEnvioProvider::class,
+            ];
+            $class = $classMap[$key] ?? null;
+            $version = ($class && defined($class.'::VERSION')) ? constant($class.'::VERSION') : 'n/a';
+            $providersInfo[] = [
+                'key' => $key,
+                'label' => $meta['label'],
+                'enabled' => $enabled,
+                'version' => $version,
+                'override' => $enabledVal,
+                'config_default' => (bool) config('shipping.providers.'.$key, false),
+            ];
+        }
+        \Log::info('Shipping diagnose', [
+            'timestamp' => now()->toDateTimeString(),
+            'providers' => $providersInfo,
+            'app_env' => config('app.env'),
+            'php_version' => PHP_VERSION,
+        ]);
+        return response()->json(['ok' => true, 'diagnose' => $providersInfo]);
+    }
 }

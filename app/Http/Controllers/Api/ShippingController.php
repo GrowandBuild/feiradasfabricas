@@ -50,6 +50,16 @@ class ShippingController extends Controller
         }
 
         $quotes = $aggregator->quotes($origin, $destination, $packages);
+        // Debug: log payload delivered to frontend (limited info)
+        try {
+            $providers = array_values(array_unique(array_map(function($q){ return $q['provider'] ?? 'unknown'; }, (array)$quotes)));
+            \Log::info('QUOTES ENTREGUES AO FRONT', [
+                'dest_cep' => $destCep,
+                'count' => is_array($quotes) ? count($quotes) : 0,
+                'providers' => $providers,
+                'has_errors' => is_array($quotes) ? (bool)count(array_filter($quotes, fn($q)=>!empty($q['error']))) : null,
+            ]);
+        } catch (\Throwable $e) {}
 
         return response()->json([
             'success' => true,

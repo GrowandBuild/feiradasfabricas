@@ -105,6 +105,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('settings/shipping/providers', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'index'])->name('shipping-providers.index');
     Route::post('settings/shipping/providers', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'save'])->name('shipping-providers.save');
     Route::post('settings/shipping/providers/clear-cache', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'clearCache'])->name('shipping-providers.clear-cache');
+    Route::get('shipping/diagnose', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'diagnose'])->name('shipping-providers.diagnose');
 
         // Gerenciamento de Usuários Admin (apenas para usuários com permissão)
         Route::middleware('permission:users.manage')->group(function () {
