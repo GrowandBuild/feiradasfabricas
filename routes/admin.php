@@ -104,6 +104,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Painel de Status dos Providers de Frete (ativar/desativar)
     Route::get('settings/shipping/providers', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'index'])->name('shipping-providers.index');
     Route::post('settings/shipping/providers', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'save'])->name('shipping-providers.save');
+    Route::post('settings/shipping/providers/clear-cache', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'clearCache'])->name('shipping-providers.clear-cache');
 
         // Gerenciamento de Usuários Admin (apenas para usuários com permissão)
         Route::middleware('permission:users.manage')->group(function () {

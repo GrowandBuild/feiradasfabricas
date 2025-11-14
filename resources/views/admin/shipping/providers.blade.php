@@ -16,8 +16,14 @@
 
     <div class="card mb-4">
         <div class="card-header d-flex justify-content-between align-items-center">
-            <span>Status Atual</span>
-            <button class="btn btn-sm btn-primary" onclick="saveProviders()"><i class="bi bi-save"></i> Salvar Alterações</button>
+            <div class="d-flex align-items-center gap-3">
+                <span>Status Atual</span>
+                <span class="badge bg-primary" id="active_count_badge"></span>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" onclick="clearCache()"><i class="bi bi-arrow-clockwise"></i> Limpar Cache</button>
+                <button class="btn btn-sm btn-primary" onclick="saveProviders()"><i class="bi bi-save"></i> Salvar Alterações</button>
+            </div>
         </div>
         <div class="card-body">
             <div class="table-responsive">
@@ -86,6 +92,7 @@ function updateRowStatus(key){
     const active = document.getElementById('toggle_'+key).checked;
     badge.textContent = active ? 'Ativo' : 'Inativo';
     badge.className = 'badge rounded-pill '+(active ? 'bg-success' : 'bg-secondary');
+    updateActiveCount();
 }
 function selectAll(state){
     @foreach($providers as $p)
@@ -112,6 +119,23 @@ async function saveProviders(){
         alert(e.message);
     }
 }
+async function clearCache(){
+    try {
+        const resp = await fetch("{{ route('admin.shipping-providers.clear-cache') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+            }
+        });
+        const data = await resp.json();
+        if(!data.ok) throw new Error(data.message || 'Falha ao limpar cache');
+        showToast('Cache limpo');
+    } catch(e){
+        alert(e.message);
+    }
+}
 function showToast(msg){
     const div = document.createElement('div');
     div.className='position-fixed top-0 end-0 p-3';
@@ -120,5 +144,11 @@ function showToast(msg){
     document.body.appendChild(div);
     setTimeout(()=>div.remove(),3500);
 }
+function updateActiveCount(){
+    const keys = @json(array_keys($providers));
+    let count = 0; keys.forEach(k => { if(document.getElementById('toggle_'+k).checked) count++; });
+    document.getElementById('active_count_badge').textContent = count + ' ativo(s)';
+}
+updateActiveCount();
 </script>
 @endsection

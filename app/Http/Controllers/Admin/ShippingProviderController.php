@@ -74,4 +74,14 @@ class ShippingProviderController extends Controller
             'message' => 'Status atualizado com sucesso.'
         ]);
     }
+
+    public function clearCache(Request $request)
+    {
+        try {
+            \Artisan::call('optimize:clear');
+            return response()->json(['ok' => true, 'message' => 'Caches limpos']);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => 'Falha ao limpar cache: ' . $e->getMessage()], 500);
+        }
+    }
 }
