@@ -53,11 +53,16 @@ class ShippingController extends Controller
         // Debug: log payload delivered to frontend (limited info)
         try {
             $providers = array_values(array_unique(array_map(function($q){ return $q['provider'] ?? 'unknown'; }, (array)$quotes)));
+            $firstError = null;
+            if (is_array($quotes)) {
+                foreach ($quotes as $q) { if (!empty($q['error'])) { $firstError = $q['error']; break; } }
+            }
             \Log::info('QUOTES ENTREGUES AO FRONT', [
                 'dest_cep' => $destCep,
                 'count' => is_array($quotes) ? count($quotes) : 0,
                 'providers' => $providers,
                 'has_errors' => is_array($quotes) ? (bool)count(array_filter($quotes, fn($q)=>!empty($q['error']))) : null,
+                'first_error' => $firstError,
             ]);
         } catch (\Throwable $e) {}
 

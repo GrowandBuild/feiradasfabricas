@@ -16,13 +16,18 @@ class CorreiosProvider implements ShippingProviderInterface
     public function quote(array $origin, array $destination, array $packages): array
     {
         // Aggregate packages into single dimensions (simplified first iteration)
+        $minWeight = (float) config('shipping.defaults.min_weight', 0.3);
+        $defL = (int) config('shipping.defaults.length', 20);
+        $defH = (int) config('shipping.defaults.height', 20);
+        $defW = (int) config('shipping.defaults.width', 20);
+
         $totalWeight = 0.0;
         $maxLength = $maxHeight = $maxWidth = 0;
         foreach ($packages as $p) {
-            $totalWeight += (float)($p['weight'] ?? 0.2);
-            $maxLength = max($maxLength, (int)($p['length'] ?? 20));
-            $maxHeight = max($maxHeight, (int)($p['height'] ?? 20));
-            $maxWidth  = max($maxWidth,  (int)($p['width'] ?? 20));
+            $totalWeight += (float)($p['weight'] ?? 0.0);
+            $maxLength = max($maxLength, (int)($p['length'] ?? 0));
+            $maxHeight = max($maxHeight, (int)($p['height'] ?? 0));
+            $maxWidth  = max($maxWidth,  (int)($p['width'] ?? 0));
         }
 
     // Real credentials (contract) are optional; if you only have CPF (sem contrato), leave empty.
@@ -60,17 +65,17 @@ class CorreiosProvider implements ShippingProviderInterface
         foreach ($services as $serviceCode) {
             try {
                 // Use HTTPS and explicit XML return to improve reliability
-                $response = Http::timeout(15)->get('https://ws.correios.com.br/calculador/CalcPrecoPrazo.aspx', [
+                $response = Http::timeout((int)config('shipping.timeout', 10))->get('https://ws.correios.com.br/calculador/CalcPrecoPrazo.aspx', [
                     // Credenciais são opcionais no CalcPrecoPrazo; se não houver, envia vazio
                     'nCdEmpresa' => $companyCode ?? '',
                     'sDsSenha' => $password ?? '',
                     'sCepOrigem' => preg_replace('/[^0-9]/','', $origin['cep'] ?? $originCepSetting),
                     'sCepDestino' => $destCep,
-                    'nVlPeso' => max($totalWeight, 0.3),
+                    'nVlPeso' => max($totalWeight, $minWeight),
                     'nCdFormato' => '1',
-                    'nVlComprimento' => $maxLength ?: 20,
-                    'nVlAltura' => $maxHeight ?: 20,
-                    'nVlLargura' => $maxWidth ?: 20,
+                    'nVlComprimento' => $maxLength ?: $defL,
+                    'nVlAltura' => $maxHeight ?: $defH,
+                    'nVlLargura' => $maxWidth ?: $defW,
                     'nVlDiametro' => 0,
                     'sCdMaoPropria' => 'n',
                     'nVlValorDeclarado' => 0,

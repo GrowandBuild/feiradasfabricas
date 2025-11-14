@@ -85,6 +85,27 @@ class ShippingProviderController extends Controller
         }
     }
 
+    public function opcacheReset(Request $request)
+    {
+        try {
+            $actions = [];
+            if (function_exists('opcache_reset')) {
+                $ok = @opcache_reset();
+                $actions[] = ['opcache_reset' => $ok ? 'ok' : 'fail'];
+            } else {
+                $actions[] = ['opcache_reset' => 'not-available'];
+            }
+            if (function_exists('apcu_clear_cache')) {
+                @apcu_clear_cache();
+                $actions[] = ['apcu_clear_cache' => 'ok'];
+            }
+            \Log::info('Admin OpCache reset acionado', ['actions' => $actions]);
+            return response()->json(['ok' => true, 'message' => 'OpCache/APCu reset acionado', 'actions' => $actions]);
+        } catch (\Throwable $e) {
+            return response()->json(['ok' => false, 'message' => 'Falha ao resetar OpCache: ' . $e->getMessage()], 500);
+        }
+    }
+
     public function diagnose(Request $request)
     {
         // Monta lista de providers ativos e seus metadados
@@ -111,12 +132,18 @@ class ShippingProviderController extends Controller
                 'config_default' => (bool) config('shipping.providers.'.$key, false),
             ];
         }
+        $shippingConfig = [
+            'timeout' => config('shipping.timeout'),
+            'cache_ttl' => config('shipping.cache_ttl'),
+            'defaults' => config('shipping.defaults'),
+        ];
         \Log::info('Shipping diagnose', [
             'timestamp' => now()->toDateTimeString(),
             'providers' => $providersInfo,
             'app_env' => config('app.env'),
             'php_version' => PHP_VERSION,
+            'shipping_config' => $shippingConfig,
         ]);
-        return response()->json(['ok' => true, 'diagnose' => $providersInfo]);
+        return response()->json(['ok' => true, 'diagnose' => $providersInfo, 'config' => $shippingConfig]);
     }
 }

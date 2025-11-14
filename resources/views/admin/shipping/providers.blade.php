@@ -72,7 +72,12 @@
     </div>
 
     <div class="card">
-        <div class="card-header">Operações</div>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>Operações</span>
+            <div>
+                <button class="btn btn-outline-warning btn-sm" onclick="opcacheReset()"><i class="bi bi-lightning"></i> Reset OpCache</button>
+            </div>
+        </div>
         <div class="card-body">
             <button class="btn btn-outline-secondary btn-sm" onclick="selectAll(true)"><i class="bi bi-check2-all"></i> Ativar Todos</button>
             <button class="btn btn-outline-secondary btn-sm ms-2" onclick="selectAll(false)"><i class="bi bi-x-circle"></i> Desativar Todos</button>
@@ -142,8 +147,23 @@ async function runDiagnose(){
         const resp = await fetch("{{ route('admin.shipping-providers.diagnose') }}", { headers:{'Accept':'application/json'} });
         const data = await resp.json();
         if(!data.ok) throw new Error('Falha no diagnóstico');
-        console.log('Diagnóstico Providers', data.diagnose);
+        console.log('Diagnóstico Providers', data);
         showToast('Diagnóstico registrado no log');
+    } catch(e){ alert(e.message); }
+}
+async function opcacheReset(){
+    try {
+        const resp = await fetch("{{ route('admin.shipping-providers.opcache-reset') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').getAttribute('content')
+            }
+        });
+        const data = await resp.json();
+        if(!data.ok) throw new Error(data.message || 'Falha ao resetar OpCache');
+        showToast('OpCache reset acionado');
     } catch(e){ alert(e.message); }
 }
 function showToast(msg){

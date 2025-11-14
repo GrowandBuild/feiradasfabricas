@@ -39,7 +39,10 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
 
           <div class="mb-3">
             <label for="me_token" class="form-label">Token (Bearer)</label>
-            <input type="text" class="form-control" id="me_token" name="melhor_envio_token" value="{{ $token }}" placeholder="Cole seu token aqui">
+            <div class="input-group">
+              <input type="password" class="form-control" id="me_token" name="melhor_envio_token" value="{{ $token }}" placeholder="Cole seu token aqui" autocomplete="off">
+              <button class="btn btn-outline-secondary" type="button" id="toggleToken" title="Mostrar/ocultar">👁️</button>
+            </div>
             <div class="form-text">Recomendado. Você pode gerar e colar um Token de acesso. Alternativamente, use Client ID/Secret (aba avançada).</div>
           </div>
 
@@ -183,7 +186,7 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
   btnSave.addEventListener('click', async ()=>{
     const fd = new FormData(form);
     // Switch fields send 'on' – convert to boolean
-    fd.set('melhor_envio_enabled', document.getElementById('me_enabled').checked ? '1' : '0');
+  fd.set('melhor_envio_enabled', document.getElementById('me_enabled').checked ? '1' : '0');
 
     try{
       const res = await fetch("{{ route('admin.melhor-envio.save') }}", {
@@ -268,5 +271,13 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
     });
   }
 })();
+</script>
+<script>
+// Toggle exibição token (segurança básica UI)
+document.getElementById('toggleToken')?.addEventListener('click', function(){
+  const inp = document.getElementById('me_token');
+  if(!inp) return;
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+});
 </script>
 @endsection

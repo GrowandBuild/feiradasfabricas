@@ -89,15 +89,21 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                 ? $http->withToken($token)
                 : $http->withBasicAuth($clientId, $clientSecret);
 
+            // Defaults from config
+            $defL = (int) config('shipping.defaults.length', 20);
+            $defH = (int) config('shipping.defaults.height', 20);
+            $defW = (int) config('shipping.defaults.width', 20);
+            $fallbackWeight = (float) config('shipping.defaults.fallback_weight', 1.0);
+
             $payload = [
                 'from' => ['postal_code' => $originCep],
                 'to'   => ['postal_code' => $destCep],
                 'products' => [[
                     'id' => 'pkg-1',
-                    'width' => $merged['width'] ?? 20,
-                    'height' => $merged['height'] ?? 20,
-                    'length' => $merged['length'] ?? 20,
-                    'weight' => $merged['weight'] ?? 1,
+                    'width' => $merged['width'] ?? $defW,
+                    'height' => $merged['height'] ?? $defH,
+                    'length' => $merged['length'] ?? $defL,
+                    'weight' => $merged['weight'] ?? $fallbackWeight,
                     'insurance_value' => $merged['value'] ?? 0,
                     'quantity' => 1,
                 ]],
@@ -118,6 +124,10 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                             $json = null;
                             try { $json = $response->json(); } catch (\Throwable $e) { $json = null; }
                             if (is_array($json)) {
+                                \Log::debug('MelhorEnvio endpoint OK', [
+                                    'url' => $calculateUrl,
+                                    'status' => $lastStatus,
+                                ]);
                                 break 2; // got a plausible JSON; proceed
                             }
                             // Log a debug hint when success code but not JSON (provável HTML)
