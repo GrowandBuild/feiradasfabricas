@@ -96,6 +96,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('settings/melhor-envio', [MelhorEnvioController::class, 'index'])->name('melhor-envio.index');
     Route::post('settings/melhor-envio', [MelhorEnvioController::class, 'save'])->name('melhor-envio.save');
     Route::post('settings/melhor-envio/test', [MelhorEnvioController::class, 'test'])->name('melhor-envio.test');
+    Route::get('settings/melhor-envio/authorize', [MelhorEnvioController::class, 'authorizeStart'])->name('melhor-envio.authorize');
+    Route::get('settings/melhor-envio/callback', [MelhorEnvioController::class, 'oauthCallback'])->name('melhor-envio.callback');
 
         // Gerenciamento de Usuários Admin (apenas para usuários com permissão)
         Route::middleware('permission:users.manage')->group(function () {

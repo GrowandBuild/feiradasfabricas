@@ -68,6 +68,9 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
             <button type="button" class="btn btn-primary" id="btnSave">
               <i class="bi bi-save"></i> Salvar
             </button>
+            <a href="{{ route('admin.melhor-envio.authorize') }}" class="btn btn-outline-secondary">
+              <i class="bi bi-key"></i> Autorizar conta
+            </a>
             <button type="button" class="btn btn-outline-primary" id="btnTest">
               <span class="spinner-border spinner-border-sm me-2 d-none" id="testSpinner"></span>
               <i class="bi bi-plug"></i> Testar conexão
@@ -127,7 +130,11 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
     try{
       const res = await fetch("{{ route('admin.melhor-envio.save') }}", {
         method: 'POST',
-        headers: { 'X-CSRF-TOKEN': csrf },
+        headers: { 
+          'X-CSRF-TOKEN': csrf,
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
         body: fd
       });
       const j = await res.json().catch(()=>({success:false,message:'Erro ao salvar'}));
