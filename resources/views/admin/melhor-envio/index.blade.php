@@ -85,6 +85,20 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
                 <input type="password" class="form-control" id="me_client_secret" name="melhor_envio_client_secret" value="{{ $client_secret }}">
               </div>
             </div>
+            <div class="row g-3 mt-1">
+              <div class="col-12">
+                <label for="me_scopes" class="form-label">Escopos OAuth (separados por vírgula)</label>
+                <input type="text" class="form-control" id="me_scopes" name="melhor_envio_scopes" value="{{ $scopes }}" placeholder="users-read,shipping-companies,shipping-calculate">
+                <div class="form-text">Use apenas o necessário. Para cotação, recomendamos: <code>users-read, shipping-companies, shipping-calculate</code>.</div>
+              </div>
+              <div class="col-12">
+                <label class="form-label">Callback URL (registre no painel do Melhor Envio)</label>
+                <div class="input-group">
+                  <input type="text" readonly class="form-control" value="{{ $oauth_redirect }}">
+                  <button type="button" class="btn btn-outline-secondary" id="btnCopyRedirect">Copiar</button>
+                </div>
+              </div>
+            </div>
           </details>
 
           <div class="d-flex gap-2">
@@ -136,6 +150,7 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
   const testSpinner = document.getElementById('testSpinner');
   const testResult = document.getElementById('testResult');
   const csrf = document.querySelector('meta[name="csrf-token"]').content;
+  const btnCopyRedirect = document.getElementById('btnCopyRedirect');
 
   // mask CEP
   const cep = document.getElementById('me_cep_origem');
@@ -202,6 +217,15 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
     el.innerHTML = `<i class="bi bi-info-circle me-2"></i>${msg}`;
     document.querySelector('.container-fluid.p-4').prepend(el);
     setTimeout(()=> el.remove(), 4000);
+  }
+
+  if(btnCopyRedirect){
+    btnCopyRedirect.addEventListener('click', ()=>{
+      const v = btnCopyRedirect.previousElementSibling.value;
+      navigator.clipboard.writeText(v).then(()=>{
+        showToast('Callback URL copiada.', 'success');
+      });
+    });
   }
 })();
 </script>

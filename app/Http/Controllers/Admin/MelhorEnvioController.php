@@ -23,6 +23,9 @@ class MelhorEnvioController extends Controller
             // Advanced (hidden by default)
             'client_id' => (string) setting('melhor_envio_client_id', ''),
             'client_secret' => (string) setting('melhor_envio_client_secret', ''),
+            // OAuth
+            'scopes' => (string) setting('melhor_envio_scopes', 'users-read,shipping-companies,shipping-calculate'),
+            'oauth_redirect' => route('admin.melhor-envio.callback'),
             // Defaults de dimensões/peso
             'default_weight' => (float) setting('shipping_default_weight', 0.3),
             'default_length' => (int) setting('shipping_default_length', 20),
@@ -43,6 +46,7 @@ class MelhorEnvioController extends Controller
             // Advanced (optional)
             'melhor_envio_client_id' => 'nullable|string',
             'melhor_envio_client_secret' => 'nullable|string',
+            'melhor_envio_scopes' => 'nullable|string',
             // Defaults
             'shipping_default_weight' => 'nullable|numeric|min:0.01',
             'shipping_default_length' => 'nullable|integer|min:1',
@@ -72,6 +76,9 @@ class MelhorEnvioController extends Controller
         }
         if (array_key_exists('melhor_envio_client_secret', $validated)) {
             Setting::set('melhor_envio_client_secret', trim((string) $validated['melhor_envio_client_secret']));
+        }
+        if (array_key_exists('melhor_envio_scopes', $validated)) {
+            Setting::set('melhor_envio_scopes', trim((string) $validated['melhor_envio_scopes']));
         }
         // Defaults persistence
         if (array_key_exists('shipping_default_weight', $validated)) {
@@ -279,8 +286,8 @@ class MelhorEnvioController extends Controller
             'redirect_uri' => $redirectUri,
             'response_type' => 'code',
             'state' => $state,
-            // Escopo solicitado: 'read' para permitir acesso ao endpoint /me. Adicione 'write' se precisar criar pedidos.
-            'scope' => 'read',
+            // Escopos: obtidos da configuração; separados por espaço conforme padrão OAuth
+            'scope' => trim(str_replace(',', ' ', (string) setting('melhor_envio_scopes', 'users-read shipping-companies shipping-calculate'))),
         ]);
 
         return redirect()->away($authUrl . '?' . $query);

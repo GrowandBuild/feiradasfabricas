@@ -444,65 +444,7 @@
                                 </div>
                             </div>
 
-                            <!-- Melhor Envio -->
-                            <div class="col-lg-6 mb-4">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="bg-danger bg-opacity-10 rounded-circle p-3 me-3">
-                                                <i class="bi bi-box-seam text-danger fs-4"></i>
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0">Melhor Envio</h6>
-                                                <small class="text-muted">Plataforma de envios integrada</small>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Status</label>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="melhor_envio_enabled" 
-                                                       {{ setting('melhor_envio_enabled', false) ? 'checked' : '' }}
-                                                       onchange="updateStatusText('melhor_envio_enabled')">
-                                                <label class="form-check-label" for="melhor_envio_enabled" id="melhor_envio_enabled_label">
-                                                    {{ setting('melhor_envio_enabled', false) ? 'Ativo' : 'Inativo' }}
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="melhor_envio_client_id" class="form-label">Client ID</label>
-                                            <input type="text" class="form-control" id="melhor_envio_client_id" 
-                                                   value="{{ setting('melhor_envio_client_id', '') }}" placeholder="Client ID do Melhor Envio">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="melhor_envio_client_secret" class="form-label">Client Secret</label>
-                                            <input type="password" class="form-control" id="melhor_envio_client_secret" 
-                                                   value="{{ setting('melhor_envio_client_secret', '') }}" placeholder="Client Secret do Melhor Envio">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="melhor_envio_sandbox" class="form-label">Ambiente</label>
-                                            <select class="form-select" id="melhor_envio_sandbox">
-                                                <option value="1" {{ setting('melhor_envio_sandbox', true) ? 'selected' : '' }}>Sandbox (Teste)</option>
-                                                <option value="0" {{ !setting('melhor_envio_sandbox', true) ? 'selected' : '' }}>Produção</option>
-                                            </select>
-                                        </div>
-                                        @if(setting('melhor_envio_token'))
-                                        <div class="alert alert-info mb-3">
-                                            <i class="bi bi-info-circle me-2"></i>
-                                            <strong>Token configurado:</strong> O token foi obtido via OAuth e está ativo.
-                                        </div>
-                                        @endif
-                                        <button class="btn btn-danger btn-sm" onclick="saveDeliveryConfig('melhor_envio')">
-                                            <i class="bi bi-check-lg me-1"></i>Salvar
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="testDeliveryConnection('melhor_envio')">
-                                            <i class="bi bi-wifi me-1"></i>Testar
-                                        </button>
-                                        <button class="btn btn-outline-primary btn-sm ms-2" onclick="authorizeMelhorEnvio()" title="Autorizar aplicativo no Melhor Envio">
-                                            <i class="bi bi-key me-1"></i>Autorizar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
+                            {{-- Bloco Melhor Envio removido: usar página dedicada em admin/melhor-envio para evitar duplicação e sobrescrita de ambiente/token. --}}
                         </div>
                     </div>
 
@@ -1283,65 +1225,6 @@ function testDeliveryConnection(provider) {
 }
 
 // Função para autorizar Melhor Envio via OAuth
-function authorizeMelhorEnvio() {
-    const clientId = document.getElementById('melhor_envio_client_id')?.value;
-    const clientSecret = document.getElementById('melhor_envio_client_secret')?.value;
-    const sandbox = document.getElementById('melhor_envio_sandbox')?.value === '1';
-    
-    if (!clientId || !clientSecret) {
-        alert('Por favor, configure o Client ID e Client Secret primeiro e salve as configurações.');
-        return;
-    }
-    
-    // Primeiro salvar as configurações para garantir que estão no banco
-    const formData = new FormData();
-    formData.append('_token', '{{ csrf_token() }}');
-    formData.append('_method', 'PUT');
-    
-    const fields = ['melhor_envio_enabled', 'melhor_envio_client_id', 'melhor_envio_client_secret', 'melhor_envio_sandbox'];
-    fields.forEach(field => {
-        const element = document.getElementById(field);
-        if (element) {
-            formData.append(field, element.type === 'checkbox' ? (element.checked ? '1' : '0') : element.value);
-        }
-    });
-    
-    // Salvar primeiro
-    fetch('{{ route("admin.settings.update") }}', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Construir URL de autorização OAuth
-            const baseUrl = sandbox 
-                ? 'https://sandbox.melhorenvio.com.br'
-                : 'https://www.melhorenvio.com.br';
-            
-            const redirectUri = encodeURIComponent('{{ route("auth.callback", ["provider" => "melhor_envio"]) }}');
-            const authUrl = `${baseUrl}/oauth/authorize?` + new URLSearchParams({
-                client_id: clientId,
-                redirect_uri: redirectUri,
-                response_type: 'code',
-                scope: 'read write'
-            });
-            
-            // Redirecionar para autorização
-            window.location.href = authUrl;
-        } else {
-            alert('Erro ao salvar configurações: ' + (data.message || 'Erro desconhecido'));
-        }
-    })
-    .catch(error => {
-        console.error('Erro:', error);
-        alert('Erro ao salvar configurações antes de autorizar.');
-    });
-}
 
 // Função para mostrar modal de conexão
 function showConnectionModal(data) {
@@ -1405,7 +1288,7 @@ function getDeliveryFields(provider) {
         'total_express': ['total_express_enabled', 'total_express_api_key', 'total_express_sandbox'],
         'jadlog': ['jadlog_enabled', 'jadlog_cnpj', 'jadlog_api_key', 'jadlog_sandbox'],
         'loggi': ['loggi_enabled', 'loggi_api_key', 'loggi_sandbox'],
-        'melhor_envio': ['melhor_envio_enabled', 'melhor_envio_client_id', 'melhor_envio_client_secret', 'melhor_envio_sandbox']
+    // 'melhor_envio' removido (configuração agora exclusiva na página dedicada)
     };
     return fields[provider] || [];
 }
