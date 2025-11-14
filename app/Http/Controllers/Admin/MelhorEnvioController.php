@@ -50,8 +50,9 @@ class MelhorEnvioController extends Controller
 
         $base = $sandbox ? 'https://sandbox.melhorenvio.com.br' : 'https://www.melhorenvio.com.br';
         $companiesEndpoint = $base . '/api/v2/shipment/companies'; // endpoint estimado (se mudar, adaptar)
-        $services = [];
-        $error = null;
+    $services = [];
+    $error = null;
+    $fromApi = false; // indicador se veio da API oficial
         try {
             $http = \Http::timeout(12)->withHeaders([
                 'Accept' => 'application/json',
@@ -83,6 +84,9 @@ class MelhorEnvioController extends Controller
                                 ];
                             }
                         }
+                    }
+                    if (!empty($services)) {
+                        $fromApi = true;
                     }
                 }
             } else {
@@ -116,6 +120,7 @@ class MelhorEnvioController extends Controller
             'services' => $services,
             'error' => $error,
             'sandbox' => $sandbox,
+            'fromApi' => $fromApi,
         ]);
     }
 

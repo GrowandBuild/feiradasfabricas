@@ -12,7 +12,14 @@ Gerencie quais serviços/transportadoras serão usados nas cotações. Similar a
   <div class="col-12 col-xl-9">
     <div class="card mb-4">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span>Serviços Disponíveis @if($sandbox)<span class="badge bg-secondary ms-2">Sandbox</span>@endif</span>
+        <span>Serviços Disponíveis
+          @if($sandbox)<span class="badge bg-secondary ms-2">Sandbox</span>@endif
+          @if($fromApi)
+            <span class="badge bg-success ms-2">API</span>
+          @else
+            <span class="badge bg-warning text-dark ms-2" title="Usando lista base porque não foi possível obter da API">Fallback</span>
+          @endif
+        </span>
         <a href="{{ route('admin.melhor-envio.index') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left"></i> Voltar</a>
       </div>
       <form method="POST" action="{{ route('admin.melhor-envio.services.save') }}">
@@ -46,6 +53,9 @@ Gerencie quais serviços/transportadoras serão usados nas cotações. Similar a
         <div class="p-3 border-top bg-light d-flex justify-content-between align-items-center">
           <div>
             <small class="text-muted">Selecione os serviços que serão considerados nas cotações. Se nenhum for marcado, o sistema usará o fallback padrão.</small><br>
+            @unless($fromApi)
+              <small class="text-muted">Exibindo lista estática (fallback). Verifique token, escopo <code>shipping-companies</code> e endpoint para carregar lista real.</small><br>
+            @endunless
             @if($error)<small class="text-danger">Aviso: {{ $error }}</small>@endif
           </div>
           <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Salvar serviços</button>
