@@ -104,6 +104,14 @@ class MelhorEnvioController extends Controller
             ? 'https://sandbox.melhorenvio.com.br/api/v2/me'
             : 'https://www.melhorenvio.com.br/api/v2/me';
 
+        // Refresh automático se expirado (quando temos refresh_token salvo)
+        $expiresAt = setting('melhor_envio_token_expires_at');
+        $refreshToken = setting('melhor_envio_refresh_token');
+        if ($token && $refreshToken && $expiresAt && now()->greaterThanOrEqualTo($expiresAt)) {
+            $this->attemptRefreshToken($sandbox, $clientId, $clientSecret, $refreshToken);
+            $token = setting('melhor_envio_token'); // recarrega token possivelmente renovado
+        }
+
         try {
             $response = null;
             $lastError = null;
@@ -166,6 +174,8 @@ class MelhorEnvioController extends Controller
                     'has_token' => !empty($token),
                     'token_hash' => substr(md5((string)$token),0,10),
                     'has_basic' => (!empty($clientId) && !empty($clientSecret)),
+                    'expires_at' => $expiresAt,
+                    'now' => now()->toDateTimeString(),
                     'body' => $lastError,
                 ]);
             }
@@ -174,6 +184,7 @@ class MelhorEnvioController extends Controller
                 'message' => $msgBase . ($status ? " (HTTP $status)" : ''),
                 'status' => $status,
                 'token_hash' => $debug && $token ? substr(md5((string)$token),0,8) : null,
+                'expires_at' => $expiresAt,
             ], 400);
         } catch (\Throwable $e) {
             Log::error('Erro ao testar Melhor Envio', ['e' => $e->getMessage()]);
@@ -220,8 +231,14 @@ class MelhorEnvioController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 $accessToken = trim((string)($data['access_token'] ?? ''));
+                $refreshToken = trim((string)($data['refresh_token'] ?? ''));
+                $expiresIn = (int)($data['expires_in'] ?? 0);
                 if ($accessToken) {
                     Setting::set('melhor_envio_token', $accessToken);
+                    if ($refreshToken) { Setting::set('melhor_envio_refresh_token', $refreshToken); }
+                    if ($expiresIn > 0) {
+                        Setting::set('melhor_envio_token_expires_at', now()->addSeconds(max($expiresIn - 60,0))->toDateTimeString());
+                    }
                     $request->session()->forget(['melhor_envio_oauth_state', 'melhor_envio_oauth_sandbox']);
                     return redirect()->route('admin.melhor-envio.index')->with('success', 'Conta autorizada e Token salvo com sucesso.');
                 }
@@ -270,4 +287,40 @@ class MelhorEnvioController extends Controller
 
     // OAuth: Callback para trocar o code por token e salvar
     // (Método duplicado removido - versão consolidada acima)
+
+    protected function attemptRefreshToken(bool $sandbox, ?string $clientId, ?string $clientSecret, string $refreshToken): void
+    {
+        try {
+            $tokenUrl = $sandbox
+                ? 'https://sandbox.melhorenvio.com.br/oauth/token'
+                : 'https://www.melhorenvio.com.br/oauth/token';
+            $payload = [
+                'grant_type' => 'refresh_token',
+                'refresh_token' => $refreshToken,
+            ];
+            if ($clientId && $clientSecret) {
+                $payload['client_id'] = $clientId;
+                $payload['client_secret'] = $clientSecret;
+            }
+            $resp = Http::asForm()->timeout(12)->post($tokenUrl, $payload);
+            if ($resp->successful()) {
+                $data = $resp->json();
+                if (!empty($data['access_token'])) {
+                    Setting::set('melhor_envio_token', trim((string)$data['access_token']));
+                }
+                if (!empty($data['refresh_token'])) {
+                    Setting::set('melhor_envio_refresh_token', trim((string)$data['refresh_token']));
+                }
+                if (!empty($data['expires_in'])) {
+                    $expiresIn = (int)$data['expires_in'];
+                    Setting::set('melhor_envio_token_expires_at', now()->addSeconds(max($expiresIn - 60,0))->toDateTimeString());
+                }
+                Log::info('Melhor Envio token atualizado via refresh');
+            } else {
+                Log::warning('Falha ao renovar token Melhor Envio', ['status'=>$resp->status(),'body'=>substr($resp->body(),0,200)]);
+            }
+        } catch (\Throwable $e) {
+            Log::error('Exceção refresh Melhor Envio', ['error'=>$e->getMessage()]);
+        }
+    }
 }

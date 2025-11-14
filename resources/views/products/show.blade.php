@@ -23,11 +23,15 @@
     $storageOptions = $variationData->pluck('storage')->filter()->unique()->values();
     $colorOptions = $variationData->pluck('color')->filter()->unique()->values();
 
-    // Shipping items payload (fallback defaults if missing)
-    $pkgWeight = $product->weight ?? 0.3; // kg
-    $pkgLength = $product->length ?? 20;  // cm
-    $pkgWidth  = $product->width  ?? 20;  // cm
-    $pkgHeight = $product->height ?? 20;  // cm
+    // Shipping items payload (usa padrões globais se produto não definiu)
+    $defWeight = setting('shipping_default_weight', 0.3);
+    $defLength = setting('shipping_default_length', 20);
+    $defWidth  = setting('shipping_default_width', 20);
+    $defHeight = setting('shipping_default_height', 20);
+    $pkgWeight = $product->weight ?: $defWeight; // kg
+    $pkgLength = $product->length ?: $defLength;  // cm
+    $pkgWidth  = $product->width  ?: $defWidth;  // cm
+    $pkgHeight = $product->height ?: $defHeight;  // cm
     $shippingItems = [[
         'weight' => (float) $pkgWeight,
         'length' => (float) $pkgLength,
