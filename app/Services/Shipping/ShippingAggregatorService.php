@@ -23,14 +23,27 @@ class ShippingAggregatorService
     public function quotes(array $origin, array $destination, array $packages): array
     {
         $cacheKey = $this->buildCacheKey($origin, $destination, $packages);
-        $ttl = config('shipping.cache_ttl', 900);
+        $ttl = (int) config('shipping.cache_ttl', 600);
         if (\Cache::has($cacheKey)) {
-            return (array) \Cache::get($cacheKey);
+            $cached = (array) \Cache::get($cacheKey);
+            if (config('shipping.cache_log_hits', false)) {
+                \Log::debug('SHIPPING CACHE HIT', [
+                    'key' => $cacheKey,
+                    'count' => count($cached),
+                ]);
+            }
+            return $cached;
         }
 
-        // Aggregate packages into single optimized package (volumetric weight)
-        $aggregated = $this->aggregatePackages($packages);
-        $packagesForProviders = [$aggregated];
+        $strategy = config('shipping.aggregate_strategy', 'single');
+        if ($strategy === 'multi') {
+            // Sanitiza cada pacote individualmente (aplica defaults + mínimo de peso)
+            $packagesForProviders = array_map(fn($p) => $this->sanitizePackage($p), $packages);
+        } else {
+            // Aggregate packages into single optimized package (volumetric weight)
+            $aggregated = $this->aggregatePackages($packages);
+            $packagesForProviders = [$aggregated];
+        }
         $all = [];
         foreach ($this->providers as $provider) {
             $quotes = $provider->quote($origin, $destination, $packagesForProviders);
@@ -51,6 +64,19 @@ class ShippingAggregatorService
         foreach ($all as $q) { if (empty($q['error'])) { $hasSuccess = true; break; } }
         if ($hasSuccess) {
             \Cache::put($cacheKey, $all, $ttl);
+            if (config('shipping.cache_log_hits', false)) {
+                \Log::debug('SHIPPING CACHE STORE', [
+                    'key' => $cacheKey,
+                    'ttl' => $ttl,
+                    'count' => count($all),
+                    'strategy' => $strategy,
+                ]);
+            }
+        } else if (config('shipping.cache_log_hits', false)) {
+            \Log::debug('SHIPPING CACHE SKIP_ALL_ERRORS', [
+                'key' => $cacheKey,
+                'strategy' => $strategy,
+            ]);
         }
         return $all;
     }
@@ -70,11 +96,18 @@ class ShippingAggregatorService
                 'me_services'=> (string) setting('melhor_envio_service_ids', ''),
                 // Token hashed to not expose
                 'me_token'   => substr(md5((string) setting('melhor_envio_token', '')),0,8),
+                // Defaults e TTL influenciam peso/dimensões e duração lógica
+                'min_w' => (float) config('shipping.defaults.min_weight'),
+                'fb_w'  => (float) config('shipping.defaults.fallback_weight'),
+                'dims'  => implode('x',[config('shipping.defaults.length'),config('shipping.defaults.height'),config('shipping.defaults.width')]),
+                'ttl'   => (int) config('shipping.cache_ttl'),
+                'agg'   => (string) config('shipping.aggregate_strategy','single'),
             ]));
         } catch (\Throwable $e) {
             $settingsSig = 'na';
         }
-        return "shipping_quotes:$originCep:$dest:$providersNames:$signature:$settingsSig";
+        $prefix = config('shipping.cache_prefix','shipping_quotes');
+        return "$prefix:$originCep:$dest:$providersNames:$signature:$settingsSig";
     }
 
     protected function aggregatePackages(array $packages): array
@@ -106,6 +139,26 @@ class ShippingAggregatorService
             'height' => $maxHeight ?: $defH,
             'width'  => $maxWidth  ?: $defW,
             'value'  => $totalValue,
+        ];
+    }
+
+    protected function sanitizePackage(array $p): array
+    {
+        $minWeight = (float) config('shipping.defaults.min_weight', 0.3);
+        $fallbackWeight = (float) config('shipping.defaults.fallback_weight', 1.0);
+        $defL = (int) config('shipping.defaults.length', 20);
+        $defH = (int) config('shipping.defaults.height', 20);
+        $defW = (int) config('shipping.defaults.width', 20);
+
+        $weight = (float)($p['weight'] ?? 0);
+        if ($weight <= 0) { $weight = $fallbackWeight; }
+        $weight = max($weight, $minWeight);
+        return [
+            'weight' => round($weight,3),
+            'length' => (int)($p['length'] ?? $defL) ?: $defL,
+            'height' => (int)($p['height'] ?? $defH) ?: $defH,
+            'width'  => (int)($p['width']  ?? $defW) ?: $defW,
+            'value'  => (float)($p['value'] ?? 0),
         ];
     }
 }

@@ -83,6 +83,20 @@ class MelhorEnvioProvider implements ShippingProviderInterface
                     'Content-Type' => 'application/json',
                     'User-Agent' => 'FeiraDasFabricas Shipping/1.0'
                 ]);
+            // Optional DNS override via CURLOPT_RESOLVE (host:port:ip) to bypass DNS issues
+            $resolve = [];
+            try {
+                $ipApi  = trim((string) setting('melhor_envio_resolve_api', ''));
+                $ipWww  = trim((string) setting('melhor_envio_resolve_www', ''));
+                $ipRoot = trim((string) setting('melhor_envio_resolve_root', ''));
+                if ($ipApi !== '')  { $resolve[] = "api.melhorenvio.com.br:443:$ipApi"; }
+                if ($ipWww !== '')  { $resolve[] = "www.melhorenvio.com.br:443:$ipWww"; }
+                if ($ipRoot !== '') { $resolve[] = "melhorenvio.com.br:443:$ipRoot"; }
+            } catch (\Throwable $e) { $resolve = []; }
+            if (!empty($resolve)) {
+                $http = $http->withOptions(['curl' => [CURLOPT_RESOLVE => $resolve]]);
+                Log::info('MelhorEnvio usando DNS override (CURLOPT_RESOLVE)', ['resolve' => $resolve]);
+            }
 
             // Prefer bearer token if provided; else basic auth
             $http = $hasToken

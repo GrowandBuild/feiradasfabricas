@@ -270,6 +270,8 @@ function renderQuickTestSummary(data){
         const body = (p.body_snippet||'').toString().slice(0,120).replace(/</g,'&lt;');
         const dnsCount = Array.isArray(p.dns_records) ? p.dns_records.length : 0;
         const err = (p.error||'').replace(/</g,'&lt;');
+        const meBadge = (p.me_post_status==null) ? '<span class="badge bg-secondary">n/a</span>' : ((p.me_post_status>=200&&p.me_post_status<300) ? '<span class="badge bg-success">'+p.me_post_status+'</span>' : '<span class="badge bg-danger">'+p.me_post_status+'</span>');
+        const meBody = (p.me_body_snippet||'').toString().slice(0,80).replace(/</g,'&lt;');
         return `<tr>
             <td><code>${host}</code></td>
             <td>${ip || '-'}</td>
@@ -277,6 +279,11 @@ function renderQuickTestSummary(data){
             <td><small>${ctype||'-'}</small></td>
             <td><small>${body|| (err?('Erro: '+err):'-')}</small></td>
             <td><small>${dnsCount>0? dnsCount+' DNS' : '-'}</small></td>
+        </tr>
+        <tr class="table-light">
+            <td colspan="2" class="text-end"><small>POST /api/v2/me/shipment/calculate</small></td>
+            <td>${meBadge}</td>
+            <td colspan="3"><small>${meBody || (p.me_error?('Erro: '+(p.me_error||'')):'-')}</small></td>
         </tr>`;
     }).join('');
     if (!rows) rows = '<tr><td colspan="6" class="text-muted">Sem dados de probe</td></tr>';

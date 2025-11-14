@@ -178,7 +178,7 @@ class ShippingProviderController extends Controller
             try { if (function_exists('dns_get_record')) { $dnsRecords = @dns_get_record($h, DNS_A + DNS_AAAA); } } catch (\Throwable $e) { $dnsRecords = null; }
             try {
                 $url = rtrim($host,'/').'/api/v2/shipment/calculate';
-                $resp = Http::timeout(8)->get($url, [
+                $resp = Http::timeout(8)->withHeaders(['Accept'=>'application/json'])->get($url, [
                     'from_postal_code' => $originCep,
                     'to_postal_code' => $destCep,
                     'width' => $width,
@@ -203,6 +203,32 @@ class ShippingProviderController extends Controller
                 'body_snippet' => $body,
                 'error' => $err,
             ];
+
+            // Segundo teste: POST em /api/v2/me/shipment/calculate com JSON e token se houver
+            $meStatus = null; $meBody = null; $meCtype = null; $meErr = null;
+            try {
+                $meUrl = rtrim($host,'/').'/api/v2/me/shipment/calculate';
+                $http = Http::timeout(8)->withHeaders(['Accept'=>'application/json','Content-Type'=>'application/json']);
+                $token = (string) (Setting::get('melhor_envio_token') ?? '');
+                if ($token !== '') { $http = $http->withToken($token); }
+                $meResp = $http->post($meUrl, [
+                    'from' => ['postal_code'=>$originCep],
+                    'to'   => ['postal_code'=>$destCep],
+                    'products' => [[
+                        'id'=>'qt-1','width'=>$width,'height'=>$height,'length'=>$length,'weight'=>$weight,'insurance_value'=>$insurance,'quantity'=>1
+                    ]],
+                    'services' => $services,
+                ]);
+                $meStatus = $meResp->status();
+                $meCtype = $meResp->header('content-type');
+                $meBody = substr($meResp->body(), 0, 200);
+            } catch (\Throwable $e) {
+                $meErr = $e->getMessage();
+            }
+            $probe[count($probe)-1]['me_post_status'] = $meStatus;
+            $probe[count($probe)-1]['me_content_type'] = $meCtype;
+            $probe[count($probe)-1]['me_body_snippet'] = $meBody;
+            $probe[count($probe)-1]['me_error'] = $meErr;
         }
 
         // Chama provider real para tentar cotar

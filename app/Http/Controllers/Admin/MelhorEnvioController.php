@@ -34,6 +34,10 @@ class MelhorEnvioController extends Controller
             'default_length' => (int) setting('shipping_default_length', 20),
             'default_height' => (int) setting('shipping_default_height', 20),
             'default_width'  => (int) setting('shipping_default_width', 20),
+            // DNS override avançado
+            'resolve_api' => (string) setting('melhor_envio_resolve_api', ''),
+            'resolve_www' => (string) setting('melhor_envio_resolve_www', ''),
+            'resolve_root'=> (string) setting('melhor_envio_resolve_root', ''),
         ];
         return view('admin.melhor-envio.index', $data);
     }
@@ -186,6 +190,10 @@ class MelhorEnvioController extends Controller
             'shipping_default_length' => 'nullable|integer|min:1',
             'shipping_default_height' => 'nullable|integer|min:1',
             'shipping_default_width'  => 'nullable|integer|min:1',
+            // DNS override (IP v4/v6)
+            'melhor_envio_resolve_api' => 'nullable|ip',
+            'melhor_envio_resolve_www' => 'nullable|ip',
+            'melhor_envio_resolve_root'=> 'nullable|ip',
         ]);
 
         // Persist settings
@@ -226,6 +234,16 @@ class MelhorEnvioController extends Controller
         }
         if (array_key_exists('shipping_default_width', $validated)) {
             Setting::set('shipping_default_width', (int) $validated['shipping_default_width'], 'number');
+        }
+        // DNS overrides
+        if (array_key_exists('melhor_envio_resolve_api', $validated)) {
+            Setting::set('melhor_envio_resolve_api', trim((string)$validated['melhor_envio_resolve_api']));
+        }
+        if (array_key_exists('melhor_envio_resolve_www', $validated)) {
+            Setting::set('melhor_envio_resolve_www', trim((string)$validated['melhor_envio_resolve_www']));
+        }
+        if (array_key_exists('melhor_envio_resolve_root', $validated)) {
+            Setting::set('melhor_envio_resolve_root', trim((string)$validated['melhor_envio_resolve_root']));
         }
 
         if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {

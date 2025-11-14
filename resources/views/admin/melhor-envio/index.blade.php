@@ -118,6 +118,29 @@ Configuração simples do frete via Melhor Envio. Informe um Token (recomendado)
             </div>
           </details>
 
+          <details class="mb-3">
+            <summary class="mb-2"><strong>Avançado (opcional) – DNS Override</strong></summary>
+            <div class="alert alert-warning small">
+              <strong>Use apenas se o servidor não resolve DNS para os hosts do Melhor Envio.</strong><br>
+              Informe um IP para forçar a resolução (CURLOPT_RESOLVE) mantendo HTTPS/SNI. Deixe em branco para comportamento padrão.
+            </div>
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label class="form-label">api.melhorenvio.com.br</label>
+                <input type="text" class="form-control" name="melhor_envio_resolve_api" value="{{ $resolve_api }}" placeholder="IP v4/v6">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">www.melhorenvio.com.br</label>
+                <input type="text" class="form-control" name="melhor_envio_resolve_www" value="{{ $resolve_www }}" placeholder="IP v4/v6">
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">melhorenvio.com.br</label>
+                <input type="text" class="form-control" name="melhor_envio_resolve_root" value="{{ $resolve_root }}" placeholder="IP v4/v6">
+              </div>
+            </div>
+            <div class="form-text mt-2">Dica: você pode descobrir o IP com <code>nslookup api.melhorenvio.com.br</code> em sua máquina local ou via suporte da hospedagem.</div>
+          </details>
+
           <div class="d-flex gap-2">
             <button type="button" class="btn btn-primary" id="btnSave">
               <i class="bi bi-save"></i> Salvar
