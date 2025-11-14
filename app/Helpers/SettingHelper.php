@@ -98,7 +98,9 @@ class SettingHelper
                 'client_id' => self::get('melhor_envio_client_id'),
                 'client_secret' => self::get('melhor_envio_client_secret'),
                 'token' => self::get('melhor_envio_token'),
-                'sandbox' => self::isEnabled('melhor_envio_sandbox', true)
+                'sandbox' => self::isEnabled('melhor_envio_sandbox', true),
+                'service_ids' => self::get('melhor_envio_service_ids'),
+                'cep_origem' => self::get('melhor_envio_cep_origem') ?? self::get('correios_cep_origem')
             ]
         ];
 
@@ -255,7 +257,8 @@ class SettingHelper
                 'correios' => ['codigo_empresa', 'senha', 'cep_origem'],
                 'total_express' => ['api_key'],
                 'jadlog' => ['cnpj', 'api_key'],
-                'loggi' => ['api_key']
+                'loggi' => ['api_key'],
+                'melhor_envio' => ['client_id', 'client_secret']
             ]
         ];
 
@@ -283,6 +286,8 @@ class SettingHelper
 
         // Status dos providers de entrega
         $deliveryProviders = ['correios', 'total_express', 'jadlog', 'loggi'];
+        // Include Melhor Envio status
+        $deliveryProviders[] = 'melhor_envio';
         foreach ($deliveryProviders as $provider) {
             $status['delivery'][$provider] = [
                 'enabled' => self::isEnabled($provider . '_enabled'),

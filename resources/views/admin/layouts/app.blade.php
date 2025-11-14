@@ -1052,6 +1052,10 @@
                             <i class="bi bi-gear"></i> 
                             <span>Configurações</span>
                         </a>
+                        <a class="nav-link {{ request()->routeIs('admin.melhor-envio.*') ? 'active' : '' }}" href="{{ route('admin.melhor-envio.index') }}">
+                            <i class="bi bi-truck"></i>
+                            <span>Melhor Envio</span>
+                        </a>
                     </nav>
                     
                     <!-- Frases Motivacionais e Dicas de Negócio -->

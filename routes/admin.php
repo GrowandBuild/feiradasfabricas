@@ -11,6 +11,7 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentBadgeController;
+use App\Http\Controllers\Admin\MelhorEnvioController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -90,6 +91,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
         Route::post('settings/test-connection', [SettingController::class, 'testConnection'])->name('settings.test-connection');
         Route::delete('settings/{setting}', [SettingController::class, 'destroy'])->name('settings.destroy');
+
+    // Configuração específica: Melhor Envio
+    Route::get('settings/melhor-envio', [MelhorEnvioController::class, 'index'])->name('melhor-envio.index');
+    Route::post('settings/melhor-envio', [MelhorEnvioController::class, 'save'])->name('melhor-envio.save');
+    Route::post('settings/melhor-envio/test', [MelhorEnvioController::class, 'test'])->name('melhor-envio.test');
 
         // Gerenciamento de Usuários Admin (apenas para usuários com permissão)
         Route::middleware('permission:users.manage')->group(function () {
