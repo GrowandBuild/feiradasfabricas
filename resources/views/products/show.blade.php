@@ -247,7 +247,33 @@
                     </div>
 
                 <!-- Shipping Calculator Widget -->
-                {{-- Frete removido --}}
+                <div class="card border-0 shadow-sm mb-4" id="shipping-calculator" style="display: block;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0"><i class="bi bi-truck me-2"></i> Calcule o frete</h6>
+                            <small class="text-muted">via Melhor Envio</small>
+                        </div>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-8">
+                                <label for="cep-destino" class="form-label">CEP de destino</label>
+                                <input type="text" class="form-control" id="cep-destino" placeholder="00000-000" inputmode="numeric" maxlength="9">
+                                <div class="form-text">Apenas números (ex.: 74673-030)</div>
+                            </div>
+                            <div class="col-4">
+                                <label for="qty-shipping" class="form-label">Qtd</label>
+                                <input type="number" class="form-control" id="qty-shipping" min="1" value="1">
+                            </div>
+                        </div>
+                        <div class="d-grid mt-3">
+                            <button class="btn btn-outline-primary" id="btn-calc-frete">
+                                <span class="label-default"><i class="bi bi-calculator me-2"></i>Calcular frete</span>
+                                <span class="label-loading d-none"><i class="fas fa-spinner fa-spin me-2"></i>Calculando...</span>
+                            </button>
+                        </div>
+
+                        <div class="mt-3" id="frete-resultado" style="display:none;"></div>
+                    </div>
+                </div>
 
                 <button class="btn btn-outline-secondary w-100" style="border-color:#ff9900; color:#ff9900;">
                     <i class="far fa-heart me-2"></i>
@@ -1368,8 +1394,116 @@
             }
         }
 
-        // Frete removido: sem atualização de envio
+        // Sincronizar quantidade do widget de frete com o input principal (se existir)
+        const qtyInput = document.getElementById('quantity-{{ $product->id }}');
+        const qtyShipping = document.getElementById('qty-shipping');
+        if (qtyInput && qtyShipping) {
+            qtyShipping.value = qtyInput.value || '1';
+            qtyInput.addEventListener('change', () => {
+                qtyShipping.value = qtyInput.value || '1';
+            });
+        }
+        // Máscara simples para CEP
+        const cepInput = document.getElementById('cep-destino');
+        if (cepInput) {
+            cepInput.addEventListener('input', (e) => {
+                let v = (e.target.value || '').replace(/\D/g, '').slice(0,8);
+                if (v.length > 5) v = v.slice(0,5) + '-' + v.slice(5);
+                e.target.value = v;
+            });
+        }
+        // Acionador do cálculo
+        const btnCalc = document.getElementById('btn-calc-frete');
+        const resultBox = document.getElementById('frete-resultado');
+        if (btnCalc && resultBox) {
+            btnCalc.addEventListener('click', async () => {
+                const cep = (cepInput?.value || '').replace(/\D/g, '');
+                const qty = parseInt(qtyShipping?.value || '1', 10) || 1;
+                if (cep.length !== 8) {
+                    showFreteMessage('Informe um CEP válido com 8 dígitos.', 'warning');
+                    return;
+                }
+                await calcularFrete(cep, qty);
+            });
+        }
     });
+
+    async function calcularFrete(cep, qty) {
+        const btn = document.getElementById('btn-calc-frete');
+        const resultBox = document.getElementById('frete-resultado');
+        if (!btn || !resultBox) return;
+
+        // UI loading
+        btn.disabled = true;
+        btn.querySelector('.label-default')?.classList.add('d-none');
+        btn.querySelector('.label-loading')?.classList.remove('d-none');
+        resultBox.style.display = 'none';
+        resultBox.innerHTML = '';
+
+        try {
+            const resp = await fetch('{{ route("shipping.quote") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    product_id: {{ $product->id }},
+                    cep: cep,
+                    quantity: qty
+                })
+            });
+            const data = await resp.json();
+            if (!resp.ok || !data.success) {
+                const msg = data.message || `Erro ao calcular frete (HTTP ${resp.status})`;
+                showFreteMessage(msg, 'danger');
+                return;
+            }
+            renderQuotes(data.quotes || []);
+        } catch (err) {
+            showFreteMessage('Falha na conexão. Tente novamente.', 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.querySelector('.label-default')?.classList.remove('d-none');
+            btn.querySelector('.label-loading')?.classList.add('d-none');
+        }
+    }
+
+    function renderQuotes(quotes) {
+        const resultBox = document.getElementById('frete-resultado');
+        if (!resultBox) return;
+        if (!Array.isArray(quotes) || quotes.length === 0) {
+            showFreteMessage('Nenhuma opção de frete disponível para o CEP informado.', 'warning');
+            return;
+        }
+        const itens = quotes.map((q, idx) => {
+            const preco = typeof q.price === 'number' ? q.price : null;
+            const precoFmt = preco !== null ? `R$ ${preco.toFixed(2).replace('.', ',')}` : '—';
+            const prazo = (q.delivery_days != null) ? `${q.delivery_days} dia(s) úteis` : '';
+            const service = q.service || 'Serviço';
+            const company = q.company ? ` • ${q.company}` : '';
+            return `
+                <label class="list-group-item d-flex justify-content-between align-items-center">
+                    <div>
+                        <input type="radio" name="shipping_service" class="form-check-input me-2" ${idx===0?'checked':''}>
+                        <span class="fw-semibold">${service}</span><small class="text-muted">${company}</small><br>
+                        <small class="text-muted">${prazo}</small>
+                    </div>
+                    <div class="fw-bold">${precoFmt}</div>
+                </label>`;
+        }).join('');
+
+        resultBox.innerHTML = `<div class="list-group list-group-flush border rounded">${itens}</div>`;
+        resultBox.style.display = 'block';
+    }
+
+    function showFreteMessage(message, type) {
+        const resultBox = document.getElementById('frete-resultado');
+        if (!resultBox) return;
+        resultBox.innerHTML = `<div class="alert alert-${type}"><i class="bi bi-info-circle me-2"></i>${message}</div>`;
+        resultBox.style.display = 'block';
+    }
 
     // Sistema de variações de produtos
     @if($product->hasVariations())

@@ -6,6 +6,7 @@ use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DangerController;
+use App\Http\Controllers\ShippingController;
 
 /*
 |--------------------------------------------------------------------------
@@ -178,3 +179,6 @@ Route::prefix('auth')->name('auth.')->group(function () {
 
 // Ação perigosa TEMPORÁRIA: apagar dados de frete
 Route::post('/danger/drop-shipping', [DangerController::class, 'dropShippingData'])->name('danger.drop-shipping');
+
+// Frete: cálculo de cotação por produto (Melhor Envio)
+Route::post('/shipping/quote', [ShippingController::class, 'quote'])->name('shipping.quote');
