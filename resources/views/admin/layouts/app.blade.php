@@ -1052,18 +1052,7 @@
                             <i class="bi bi-gear"></i> 
                             <span>Configurações</span>
                         </a>
-                        <a class="nav-link ps-5 {{ request()->routeIs('admin.shipping-providers.index') ? 'active' : '' }}" href="{{ route('admin.shipping-providers.index') }}">
-                            <i class="bi bi-toggle-on"></i>
-                            <span>Status Providers</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.melhor-envio.index') ? 'active' : '' }}" href="{{ route('admin.melhor-envio.index') }}">
-                            <i class="bi bi-truck"></i>
-                            <span>Melhor Envio</span>
-                        </a>
-                        <a class="nav-link ps-5 {{ request()->routeIs('admin.melhor-envio.services') ? 'active' : '' }}" href="{{ route('admin.melhor-envio.services') }}">
-                            <i class="bi bi-list-ul"></i>
-                            <span>Serviços</span>
-                        </a>
+                        {{-- Links de frete removidos --}}
                     </nav>
                     
                     <!-- Frases Motivacionais e Dicas de Negócio -->
@@ -1112,16 +1101,7 @@
                             </div>
                         </div>
                         
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(239,68,68,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-lightning-charge-fill" style="color: #ef4444; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #ef4444;">Rapidez no envio:</strong> Entrega rápida é diferencial competitivo. Organize sua logística!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
+                        
                         
                         <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(236,72,153,0.8);">
                             <div class="d-flex align-items-start gap-2">

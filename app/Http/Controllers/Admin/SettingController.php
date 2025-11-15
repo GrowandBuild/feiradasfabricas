@@ -25,6 +25,66 @@ class SettingController extends Controller
     {
         return $this->updateWithTests($request);
     }
+    
+    public function updateWithTests(Request $request)
+    {
+        try {
+            // Ações de teste rápidas
+            if ($request->has('test_connection')) {
+                $provider = $request->input('provider');
+                $result = $this->testProviderConnection($provider);
+                return response()->json($result);
+            }
+
+            if ($request->has('test_smtp')) {
+                $emailService = new EmailService();
+                $result = $emailService->testarSMTP();
+                return response()->json($result);
+            }
+
+            if ($request->has('test_email')) {
+                $email = $request->input('email', setting('contact_email', 'contato@feiradasfabricas.com'));
+                $emailService = new EmailService();
+                $emailService->enviarEmailTeste($email);
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Email de teste enviado para ' . $email,
+                ]);
+            }
+
+            // Atualização normal de configurações
+            $settings = $request->except(['_token', '_method', 'action', 'provider', 'test_connection', 'test_smtp', 'test_email', 'email']);
+
+            if (empty($settings)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Nenhuma configuração fornecida',
+                ], 400);
+            }
+
+            foreach ($settings as $key => $value) {
+                // Converter valores booleanos em boolean
+                if (in_array($value, ['true', 'false', '1', '0'], true)) {
+                    $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
+                }
+                Setting::set($key, $value);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Configurações atualizadas com sucesso!',
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Erro ao atualizar configurações: ' . $e->getMessage());
+            Log::error('Stack trace: ' . $e->getTraceAsString());
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar configurações: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
 
     public function testConnection(Request $request)
     {
@@ -409,7 +469,8 @@ class SettingController extends Controller
         $clientId = setting('melhor_envio_client_id');
         $clientSecret = setting('melhor_envio_client_secret');
         $token = setting('melhor_envio_token');
-        
+        $refreshToken = setting('melhor_envio_refresh_token');
+
         if (empty($clientId) || empty($clientSecret)) {
             return [
                 'success' => false,
@@ -418,104 +479,189 @@ class SettingController extends Controller
         }
 
         $sandbox = setting('melhor_envio_sandbox', true);
-        $baseUrl = $sandbox 
-            ? 'https://sandbox.melhorenvio.com.br/api/v2/me'
-            : 'https://www.melhorenvio.com.br/api/v2/me';
+        $env = $sandbox ? \MelhorEnvio\Enums\Environment::SANDBOX : \MelhorEnvio\Enums\Environment::PRODUCTION;
+        $cepOrigem = setting('melhor_envio_cep_origem') ?: '01010010';
+        $cepDestino = '20271130';
 
         try {
-            $response = null;
-            $lastError = null;
-            
-            // Método 1: Tentar com Bearer Token (se tiver token configurado)
-            if (!empty($token)) {
-                Log::info('Testando conexão Melhor Envio com Bearer Token');
-                $response = Http::withHeaders([
-                    'Authorization' => 'Bearer ' . $token,
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                    'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
-                ])->get($baseUrl);
-                
-                if ($response->successful()) {
-                    $data = $response->json();
-                    return [
-                        'success' => true,
-                        'message' => 'Conexão com Melhor Envio estabelecida com sucesso' . 
-                            (isset($data['name']) ? ' - Usuário: ' . $data['name'] : '')
-                    ];
-                }
-                
-                $lastError = $response->body();
-                Log::warning('Bearer Token falhou', ['status' => $response->status(), 'body' => $lastError]);
-            }
-            
-            // Método 2: Tentar com Basic Auth (Client ID e Secret)
-            Log::info('Testando conexão Melhor Envio com Basic Auth');
-            $response = Http::withBasicAuth($clientId, $clientSecret)
-                ->withHeaders([
-                    'Accept' => 'application/json',
-                    'Content-Type' => 'application/json',
-                    'User-Agent' => 'Feira das Fábricas (contato@feiradasfabricas.com.br)'
-                ])->get($baseUrl);
-            
-            if ($response->successful()) {
-                $data = $response->json();
+            if (empty($token)) {
                 return [
-                    'success' => true,
-                    'message' => 'Conexão com Melhor Envio estabelecida com sucesso usando Basic Auth' . 
-                        (isset($data['name']) ? ' - Usuário: ' . $data['name'] : '')
+                    'success' => false,
+                    'message' => 'Sem token de acesso. Autorize o Melhor Envio no botão Conectar (OAuth).'
                 ];
             }
-            
-            // Se ambos falharam, analisar o erro
-            $errorData = $response->json();
-            $errorMessage = isset($errorData['message']) 
-                ? $errorData['message'] 
-                : ($response->body() ?: 'Erro desconhecido');
-            
-            Log::error('Falha na conexão Melhor Envio', [
-                'status' => $response->status(),
-                'error' => $errorMessage,
-                'has_token' => !empty($token),
-                'has_credentials' => !empty($clientId) && !empty($clientSecret)
-            ]);
-            
-            // Mensagens específicas baseadas no erro
-            if ($response->status() === 401) {
-                if (empty($token)) {
-                    return [
-                        'success' => false,
-                        'message' => 'Autenticação falhou. O Melhor Envio requer autorização OAuth. ' .
-                            'Você precisa autorizar o aplicativo primeiro. ' .
-                            'Acesse o painel do Melhor Envio e autorize o aplicativo, ou configure um token de acesso válido.'
-                    ];
-                } else {
-                    return [
-                        'success' => false,
-                        'message' => 'Token inválido ou expirado. Verifique se o token está correto. ' .
-                            'Se necessário, gere um novo token através da autorização OAuth no painel do Melhor Envio.'
-                    ];
+
+            // Tentar calcular uma cotação simples usando o SDK oficial
+            $shipment = new \MelhorEnvio\Shipment($token, $env);
+            $calculator = $shipment->calculator();
+            $calculator->postalCode($cepOrigem, $cepDestino);
+            $calculator->addProducts(
+                new \MelhorEnvio\Resources\Shipment\Product(uniqid(), 1, 1, 1, 0.1, 10.0, 1)
+            );
+            // Serviços opcionais: se houver IDs configurados
+            $services = setting('melhor_envio_service_ids');
+            if (is_string($services) && trim($services) !== '') {
+                $ids = array_filter(array_map('trim', explode(',', $services)));
+                if (!empty($ids)) { $calculator->addServices(...array_map('intval', $ids)); }
+            } elseif (is_array($services) && !empty($services)) {
+                $calculator->addServices(...array_map('intval', $services));
+            }
+            $quotes = $calculator->calculate();
+            // Se chegou aqui, conexão ok
+            return [
+                'success' => true,
+                'message' => 'Conexão com Melhor Envio OK. Cotações retornadas: ' . (is_array($quotes) ? count($quotes) : 0)
+            ];
+        } catch (\MelhorEnvio\Exceptions\CalculatorException $e) {
+            // 401/expirado: tentar refresh
+            Log::warning('Falha no cálculo (provável token expirado): ' . $e->getMessage());
+            if (!empty($refreshToken)) {
+                try {
+                    $provider = new \MelhorEnvio\Auth\OAuth2($clientId, $clientSecret);
+                    $provider->setEnvironment($sandbox ? 'sandbox' : 'production');
+                    $new = $provider->refreshToken($refreshToken);
+                    if (!empty($new['access_token'])) {
+                        Setting::set('melhor_envio_token', $new['access_token'], 'string', 'delivery');
+                        if (!empty($new['refresh_token'])) {
+                            Setting::set('melhor_envio_refresh_token', $new['refresh_token'], 'string', 'delivery');
+                        }
+                        if (!empty($new['expires_in'])) {
+                            Setting::set('melhor_envio_token_expires_at', now()->addSeconds((int)$new['expires_in'])->toIso8601String(), 'string', 'delivery');
+                        }
+                        // Tentar de novo
+                        $shipment = new \MelhorEnvio\Shipment($new['access_token'], $env);
+                        $calculator = $shipment->calculator();
+                        $calculator->postalCode($cepOrigem, $cepDestino);
+                        $calculator->addProducts(
+                            new \MelhorEnvio\Resources\Shipment\Product(uniqid(), 1, 1, 1, 0.1, 10.0, 1)
+                        );
+                        $quotes = $calculator->calculate();
+                        return [
+                            'success' => true,
+                            'message' => 'Token atualizado e conexão OK. Cotações: ' . (is_array($quotes) ? count($quotes) : 0)
+                        ];
+                    }
+                } catch (\Throwable $ex) {
+                    Log::error('Erro ao atualizar token do Melhor Envio: ' . $ex->getMessage());
                 }
             }
-            
             return [
                 'success' => false,
-                'message' => 'Falha na conexão com Melhor Envio: ' . $errorMessage . 
-                    ' (Status: ' . $response->status() . ')'
+                'message' => 'Falha na conexão (SDK). Verifique token/credenciais. Detalhes: ' . $e->getMessage()
             ];
-        } catch (\Exception $e) {
-            Log::error('Exceção ao testar conexão Melhor Envio', [
-                'exception' => $e->getMessage(),
-                'trace' => $e->getTraceAsString()
-            ]);
-            
+        } catch (\Throwable $e) {
+            Log::error('Exceção ao testar conexão Melhor Envio (SDK): ' . $e->getMessage());
             return [
                 'success' => false,
-                'message' => 'Erro ao conectar com Melhor Envio: ' . $e->getMessage()
+                'message' => 'Erro ao conectar com Melhor Envio (SDK): ' . $e->getMessage()
             ];
         }
     }
 
+    /**
+     * Inicia o fluxo OAuth do Melhor Envio (redirect para página de autorização)
+     */
+    public function melhorEnvioAuthorize(Request $request)
+    {
+        $clientId = setting('melhor_envio_client_id');
+        $clientSecret = setting('melhor_envio_client_secret');
+        $sandbox = setting('melhor_envio_sandbox', true);
+
+        if (empty($clientId) || empty($clientSecret)) {
+            return redirect()->route('admin.settings.index')
+                ->with('error', 'Defina o Client ID e o Client Secret do Melhor Envio antes de autorizar.');
+        }
+        // Construir provedor via SDK oficial
+        $redirectUri = route('admin.settings.melhor-envio.callback');
+        try {
+            // O SDK utiliza $_SESSION internamente para controlar o state
+            // A middleware de sessão do Laravel já inicia a sessão PHP no grupo web
+            $provider = new \MelhorEnvio\Auth\OAuth2($clientId, $clientSecret, $redirectUri);
+            $provider->setEnvironment($sandbox ? 'sandbox' : 'production');
+            // escopo mínimo para cálculo; ajuste conforme necessidade
+            $provider->setScopes('shipping-calculate');
+
+            session(['active_tab' => 'logistica']);
+            return redirect()->away($provider->getAuthorizationUrl());
+        } catch (\Throwable $e) {
+            Log::error('Erro ao iniciar autorização Melhor Envio (SDK): ' . $e->getMessage());
+            return redirect()->route('admin.settings.index')
+                ->with('error', 'Erro ao iniciar autorização do Melhor Envio: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Callback OAuth do Melhor Envio (troca code por token e salva settings)
+     */
+    public function melhorEnvioCallback(Request $request)
+    {
+        $state = $request->input('state');
+        $code = $request->input('code');
+        $error = $request->input('error');
+
+        // garantir que a aba de logística abrirá
+        session(['active_tab' => 'logistica']);
+
+        if ($error) {
+            return redirect()->route('admin.settings.index')
+                ->with('error', 'Autorização com Melhor Envio cancelada: ' . $error);
+        }
+
+        if (!$code) {
+            return redirect()->route('admin.settings.index')
+                ->with('error', 'Código de autorização não recebido do Melhor Envio.');
+        }
+
+        $clientId = setting('melhor_envio_client_id');
+        $clientSecret = setting('melhor_envio_client_secret');
+        $sandbox = setting('melhor_envio_sandbox', true);
+
+        try {
+            $redirectUri = route('admin.settings.melhor-envio.callback');
+            $provider = new \MelhorEnvio\Auth\OAuth2($clientId, $clientSecret, $redirectUri);
+            $provider->setEnvironment($sandbox ? 'sandbox' : 'production');
+            // O SDK valida state internamente via $_SESSION
+            $data = $provider->getAccessToken($code, $state);
+            // Salvar tokens e expiração
+            Setting::set('melhor_envio_token', $data['access_token'] ?? '', 'string', 'delivery');
+            if (!empty($data['refresh_token'])) {
+                Setting::set('melhor_envio_refresh_token', $data['refresh_token'], 'string', 'delivery');
+            }
+            if (!empty($data['expires_in'])) {
+                $expiresAt = now()->addSeconds((int) $data['expires_in'])->toIso8601String();
+                Setting::set('melhor_envio_token_expires_at', $expiresAt, 'string', 'delivery');
+            }
+
+            return redirect()->route('admin.settings.index')
+                ->with('success', 'Melhor Envio autorizado com sucesso!');
+        } catch (\Exception $e) {
+            Log::error('Erro no callback OAuth Melhor Envio (SDK): ' . $e->getMessage());
+            return redirect()->route('admin.settings.index')
+                ->with('error', 'Erro ao processar autorização do Melhor Envio: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Revogar tokens salvos (limpar do settings)
+     */
+    public function melhorEnvioRevoke(Request $request)
+    {
+        try {
+            Setting::set('melhor_envio_token', '', 'string', 'delivery');
+            Setting::set('melhor_envio_refresh_token', '', 'string', 'delivery');
+            Setting::set('melhor_envio_token_expires_at', '', 'string', 'delivery');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tokens do Melhor Envio removidos.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao revogar tokens: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 
     public function store(Request $request)
     {
@@ -523,156 +669,11 @@ class SettingController extends Controller
             'key' => 'required|string|unique:settings,key',
             'value' => 'required',
             'type' => 'required|in:string,number,boolean,json',
-            'group' => 'required|string',
-            'description' => 'nullable|string',
-            'is_public' => 'boolean',
         ]);
 
         Setting::create($request->all());
 
         return redirect()->back()
                         ->with('success', 'Configuração criada com sucesso!');
-    }
-
-    public function destroy(Setting $setting)
-    {
-        $setting->delete();
-
-        return redirect()->back()
-                        ->with('success', 'Configuração excluída com sucesso!');
-    }
-
-    /**
-     * Testar conexão SEFAZ
-     */
-    public function testFiscalConnection()
-    {
-        try {
-            $fiscalService = new FiscalService();
-            $result = $fiscalService->testarConexao();
-            
-            return response()->json($result);
-        } catch (\Exception $e) {
-            Log::error('Erro ao testar conexão SEFAZ: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao testar conexão SEFAZ: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Testar conexão SMTP
-     */
-    public function testSMTPConnection()
-    {
-        try {
-            $emailService = new EmailService();
-            $result = $emailService->testarSMTP();
-            
-            return response()->json($result);
-        } catch (\Exception $e) {
-            Log::error('Erro ao testar conexão SMTP: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao testar conexão SMTP: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Enviar email de teste
-     */
-    public function sendTestEmail()
-    {
-        try {
-            $adminEmail = Auth::guard('admin')->user()->email;
-            
-            if (!$adminEmail) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Email do administrador não encontrado'
-                ], 400);
-            }
-
-            $emailService = new EmailService();
-            $emailService->enviarEmailTeste($adminEmail);
-            
-            return response()->json([
-                'success' => true,
-                'message' => 'Email de teste enviado com sucesso!'
-            ]);
-        } catch (\Exception $e) {
-            Log::error('Erro ao enviar email de teste: ' . $e->getMessage());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao enviar email de teste: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Atualizar configurações com suporte a testes
-     */
-    public function updateWithTests(Request $request)
-    {
-        try {
-            // Verificar se é uma requisição AJAX
-            if (!$request->ajax()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Requisição deve ser AJAX'
-                ], 400);
-            }
-
-            // Verificar se é um teste de conexão
-            if ($request->has('test_connection')) {
-                return $this->testFiscalConnection();
-            }
-
-            if ($request->has('test_smtp')) {
-                return $this->testSMTPConnection();
-            }
-
-            if ($request->has('test_email')) {
-                return $this->sendTestEmail();
-            }
-
-            // Atualização normal de configurações
-            $settings = $request->except(['_token', '_method', 'action', 'provider', 'test_connection', 'test_smtp', 'test_email']);
-
-            if (empty($settings)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Nenhuma configuração fornecida'
-                ], 400);
-            }
-
-            foreach ($settings as $key => $value) {
-                // Converter valores booleanos
-                if (in_array($value, ['true', 'false', '1', '0'])) {
-                    $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
-                }
-                
-                Setting::set($key, $value);
-            }
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Configurações atualizadas com sucesso!'
-            ]);
-
-        } catch (\Exception $e) {
-            Log::error('Erro ao atualizar configurações: ' . $e->getMessage());
-            Log::error('Stack trace: ' . $e->getTraceAsString());
-            
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao atualizar configurações: ' . $e->getMessage()
-            ], 500);
-        }
     }
 }

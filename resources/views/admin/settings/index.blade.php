@@ -24,10 +24,11 @@
                         </button>
                     </li>
                     <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="delivery-tab" data-bs-toggle="tab" data-bs-target="#delivery" type="button" role="tab">
-                            <i class="bi bi-truck me-2"></i>Entregas
+                        <button class="nav-link" id="logistica-tab" data-bs-toggle="tab" data-bs-target="#logistica" type="button" role="tab">
+                            <i class="bi bi-truck me-2"></i>Logística
                         </button>
                     </li>
+                    
                     <li class="nav-item" role="presentation">
                         <button class="nav-link" id="general-tab" data-bs-toggle="tab" data-bs-target="#general" type="button" role="tab">
                             <i class="bi bi-gear me-2"></i>Gerais
@@ -249,204 +250,97 @@
                         </div>
                     </div>
 
-                    <!-- Tab Entregas -->
-                    <div class="tab-pane fade" id="delivery" role="tabpanel">
+                    <!-- Tab Logística (apenas configurações; frete segue desativado no front) -->
+                    <div class="tab-pane fade" id="logistica" role="tabpanel">
                         <div class="row">
-                            <!-- Correios -->
+                            <!-- Melhor Envio -->
                             <div class="col-lg-6 mb-4">
                                 <div class="card h-100 border-0 shadow-sm">
                                     <div class="card-body">
                                         <div class="d-flex align-items-center mb-3">
-                                            <div class="bg-primary bg-opacity-10 rounded-circle p-3 me-3">
-                                                <i class="bi bi-truck text-primary fs-4"></i>
+                                            <div class="bg-secondary bg-opacity-10 rounded-circle p-3 me-3">
+                                                <i class="bi bi-box2-heart text-secondary fs-4"></i>
                                             </div>
                                             <div>
-                                                <h6 class="mb-0">Correios</h6>
-                                                <small class="text-muted">Transportadora oficial brasileira</small>
+                                                <h6 class="mb-0">Melhor Envio</h6>
+                                                <small class="text-muted">Credenciais e autorização OAuth (somente painel)</small>
                                             </div>
                                         </div>
                                         <div class="mb-3">
                                             <label class="form-label">Status</label>
                                             <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="correios_enabled" 
-                                                       {{ setting('correios_enabled', false) ? 'checked' : '' }}
-                                                       onchange="updateStatusText('correios_enabled')">
-                                                <label class="form-check-label" for="correios_enabled" id="correios_enabled_label">
-                                                    {{ setting('correios_enabled', false) ? 'Ativo' : 'Inativo' }}
+                                                <input class="form-check-input" type="checkbox" id="melhor_envio_enabled" 
+                                                       {{ setting('melhor_envio_enabled', false) ? 'checked' : '' }}
+                                                       onchange="updateStatusText('melhor_envio_enabled')">
+                                                <label class="form-check-label" for="melhor_envio_enabled" id="melhor_envio_enabled_label">
+                                                    {{ setting('melhor_envio_enabled', false) ? 'Ativo' : 'Inativo' }}
                                                 </label>
                                             </div>
                                         </div>
                                         <div class="mb-3">
-                                            <label for="correios_codigo_empresa" class="form-label">Código da Empresa</label>
-                                            <input type="text" class="form-control" id="correios_codigo_empresa" 
-                                                   value="{{ setting('correios_codigo_empresa', '') }}" placeholder="Código da empresa nos Correios">
+                                            <label for="melhor_envio_client_id" class="form-label">Client ID</label>
+                                            <input type="text" class="form-control" id="melhor_envio_client_id" 
+                                                   value="{{ setting('melhor_envio_client_id', '') }}" placeholder="Client ID do Melhor Envio">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="correios_senha" class="form-label">Senha</label>
-                                            <input type="password" class="form-control" id="correios_senha" 
-                                                   value="{{ setting('correios_senha', '') }}" placeholder="Senha dos Correios">
+                                            <label for="melhor_envio_client_secret" class="form-label">Client Secret</label>
+                                            <input type="password" class="form-control" id="melhor_envio_client_secret" 
+                                                   value="{{ setting('melhor_envio_client_secret', '') }}" placeholder="Client Secret do Melhor Envio">
                                         </div>
                                         <div class="mb-3">
-                                            <label for="correios_cep_origem" class="form-label">CEP de Origem</label>
-                                            <input type="text" class="form-control" id="correios_cep_origem" 
-                                                   value="{{ setting('correios_cep_origem', '') }}" placeholder="00000-000" maxlength="9">
-                                        </div>
-                                        <button class="btn btn-primary btn-sm" onclick="saveDeliveryConfig('correios')">
-                                            <i class="bi bi-check-lg me-1"></i>Salvar
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="testDeliveryConnection('correios')">
-                                            <i class="bi bi-wifi me-1"></i>Testar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Total Express -->
-                            <div class="col-lg-6 mb-4">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="bg-success bg-opacity-10 rounded-circle p-3 me-3">
-                                                <i class="bi bi-lightning text-success fs-4"></i>
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0">Total Express</h6>
-                                                <small class="text-muted">Transportadora expressa</small>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Status</label>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="total_express_enabled" 
-                                                       {{ setting('total_express_enabled', false) ? 'checked' : '' }}
-                                                       onchange="updateStatusText('total_express_enabled')">
-                                                <label class="form-check-label" for="total_express_enabled" id="total_express_enabled_label">
-                                                    {{ setting('total_express_enabled', false) ? 'Ativo' : 'Inativo' }}
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="total_express_api_key" class="form-label">API Key</label>
-                                            <input type="password" class="form-control" id="total_express_api_key" 
-                                                   value="{{ setting('total_express_api_key', '') }}" placeholder="API Key do Total Express">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="total_express_sandbox" class="form-label">Ambiente</label>
-                                            <select class="form-select" id="total_express_sandbox">
-                                                <option value="1" {{ setting('total_express_sandbox', true) ? 'selected' : '' }}>Sandbox (Teste)</option>
-                                                <option value="0" {{ !setting('total_express_sandbox', true) ? 'selected' : '' }}>Produção</option>
+                                            <label for="melhor_envio_sandbox" class="form-label">Ambiente</label>
+                                            <select class="form-select" id="melhor_envio_sandbox">
+                                                <option value="1" {{ setting('melhor_envio_sandbox', true) ? 'selected' : '' }}>Sandbox (Teste)</option>
+                                                <option value="0" {{ !setting('melhor_envio_sandbox', true) ? 'selected' : '' }}>Produção</option>
                                             </select>
                                         </div>
-                                        <button class="btn btn-success btn-sm" onclick="saveDeliveryConfig('total_express')">
-                                            <i class="bi bi-check-lg me-1"></i>Salvar
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="testDeliveryConnection('total_express')">
-                                            <i class="bi bi-wifi me-1"></i>Testar
-                                        </button>
+                                        <div class="mb-3">
+                                            <label for="melhor_envio_cep_origem" class="form-label">CEP de Origem (opcional)</label>
+                                            <input type="text" class="form-control" id="melhor_envio_cep_origem" 
+                                                   value="{{ setting('melhor_envio_cep_origem', '') }}" placeholder="00000-000">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="melhor_envio_service_ids" class="form-label">Serviços (IDs separados por vírgula, opcional)</label>
+                                            <input type="text" class="form-control" id="melhor_envio_service_ids" 
+                                                   value="{{ is_array(setting('melhor_envio_service_ids')) ? implode(',', setting('melhor_envio_service_ids')) : (setting('melhor_envio_service_ids','')) }}" placeholder="1,2,3">
+                                        </div>
+                                        <div class="mb-3">
+                                            @php($hasToken = !empty(setting('melhor_envio_token', '')))
+                                            @if($hasToken)
+                                                <div class="alert alert-success py-2">
+                                                    <i class="bi bi-check-circle me-1"></i>
+                                                    Conectado via OAuth. <small>Token salvo com segurança.</small>
+                                                </div>
+                                            @else
+                                                <div class="alert alert-warning py-2">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                                    Não conectado. Autorize para obter o token de acesso.
+                                                </div>
+                                            @endif
+                                        </div>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <button class="btn btn-secondary btn-sm" onclick="saveDeliveryConfig('melhor_envio')">
+                                                <i class="bi bi-check-lg me-1"></i>Salvar
+                                            </button>
+                                            <button class="btn btn-outline-secondary btn-sm" onclick="testDeliveryConnection('melhor_envio')">
+                                                <i class="bi bi-wifi me-1"></i>Testar
+                                            </button>
+                                            <a class="btn btn-outline-primary btn-sm" href="{{ route('admin.settings.melhor-envio.authorize') }}">
+                                                <i class="bi bi-shield-lock me-1"></i>Conectar (OAuth)
+                                            </a>
+                                            @if($hasToken)
+                                                <button class="btn btn-outline-danger btn-sm" onclick="revokeMelhorEnvioTokens()">
+                                                    <i class="bi bi-x-circle me-1"></i>Desconectar
+                                                </button>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- Jadlog -->
-                            <div class="col-lg-6 mb-4">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="bg-info bg-opacity-10 rounded-circle p-3 me-3">
-                                                <i class="bi bi-truck text-info fs-4"></i>
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0">Jadlog</h6>
-                                                <small class="text-muted">Transportadora nacional</small>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Status</label>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="jadlog_enabled" 
-                                                       {{ setting('jadlog_enabled', false) ? 'checked' : '' }}
-                                                       onchange="updateStatusText('jadlog_enabled')">
-                                                <label class="form-check-label" for="jadlog_enabled" id="jadlog_enabled_label">
-                                                    {{ setting('jadlog_enabled', false) ? 'Ativo' : 'Inativo' }}
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="jadlog_cnpj" class="form-label">CNPJ</label>
-                                            <input type="text" class="form-control" id="jadlog_cnpj" 
-                                                   value="{{ setting('jadlog_cnpj', '') }}" placeholder="00.000.000/0000-00">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="jadlog_api_key" class="form-label">API Key</label>
-                                            <input type="password" class="form-control" id="jadlog_api_key" 
-                                                   value="{{ setting('jadlog_api_key', '') }}" placeholder="API Key do Jadlog">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="jadlog_sandbox" class="form-label">Ambiente</label>
-                                            <select class="form-select" id="jadlog_sandbox">
-                                                <option value="1" {{ setting('jadlog_sandbox', true) ? 'selected' : '' }}>Sandbox (Teste)</option>
-                                                <option value="0" {{ !setting('jadlog_sandbox', true) ? 'selected' : '' }}>Produção</option>
-                                            </select>
-                                        </div>
-                                        <button class="btn btn-info btn-sm" onclick="saveDeliveryConfig('jadlog')">
-                                            <i class="bi bi-check-lg me-1"></i>Salvar
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="testDeliveryConnection('jadlog')">
-                                            <i class="bi bi-wifi me-1"></i>Testar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Loggi -->
-                            <div class="col-lg-6 mb-4">
-                                <div class="card h-100 border-0 shadow-sm">
-                                    <div class="card-body">
-                                        <div class="d-flex align-items-center mb-3">
-                                            <div class="bg-warning bg-opacity-10 rounded-circle p-3 me-3">
-                                                <i class="bi bi-bicycle text-warning fs-4"></i>
-                                            </div>
-                                            <div>
-                                                <h6 class="mb-0">Loggi</h6>
-                                                <small class="text-muted">Entregas rápidas urbanas</small>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label class="form-label">Status</label>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="loggi_enabled" 
-                                                       {{ setting('loggi_enabled', false) ? 'checked' : '' }}
-                                                       onchange="updateStatusText('loggi_enabled')">
-                                                <label class="form-check-label" for="loggi_enabled" id="loggi_enabled_label">
-                                                    {{ setting('loggi_enabled', false) ? 'Ativo' : 'Inativo' }}
-                                                </label>
-                                            </div>
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="loggi_api_key" class="form-label">API Key</label>
-                                            <input type="password" class="form-control" id="loggi_api_key" 
-                                                   value="{{ setting('loggi_api_key', '') }}" placeholder="API Key do Loggi">
-                                        </div>
-                                        <div class="mb-3">
-                                            <label for="loggi_sandbox" class="form-label">Ambiente</label>
-                                            <select class="form-select" id="loggi_sandbox">
-                                                <option value="1" {{ setting('loggi_sandbox', true) ? 'selected' : '' }}>Sandbox (Teste)</option>
-                                                <option value="0" {{ !setting('loggi_sandbox', true) ? 'selected' : '' }}>Produção</option>
-                                            </select>
-                                        </div>
-                                        <button class="btn btn-warning btn-sm" onclick="saveDeliveryConfig('loggi')">
-                                            <i class="bi bi-check-lg me-1"></i>Salvar
-                                        </button>
-                                        <button class="btn btn-outline-secondary btn-sm ms-2" onclick="testDeliveryConnection('loggi')">
-                                            <i class="bi bi-wifi me-1"></i>Testar
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {{-- Bloco Melhor Envio removido: usar página dedicada em admin/melhor-envio para evitar duplicação e sobrescrita de ambiente/token. --}}
                         </div>
                     </div>
+
+                    
 
                     <!-- Tab Configurações Gerais -->
                     <div class="tab-pane fade" id="general" role="tabpanel">
@@ -811,16 +705,7 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="email_template_shipping_notification" class="form-label">Template: Notificação de Envio</label>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="email_template_shipping_notification" 
-                                                       {{ setting('email_template_shipping_notification', true) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="email_template_shipping_notification">
-                                                    Enviar notificação
-                                                </label>
-                                            </div>
-                                        </div>
+                                        
                                         <div class="mb-3">
                                             <label for="email_template_invoice_attachment" class="form-label">Template: Nota Fiscal em Anexo</label>
                                             <div class="form-check form-switch">
@@ -831,16 +716,7 @@
                                                 </label>
                                             </div>
                                         </div>
-                                        <div class="mb-3">
-                                            <label for="email_template_delivery_confirmation" class="form-label">Template: Confirmação de Entrega</label>
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input" type="checkbox" id="email_template_delivery_confirmation" 
-                                                       {{ setting('email_template_delivery_confirmation', true) ? 'checked' : '' }}>
-                                                <label class="form-check-label" for="email_template_delivery_confirmation">
-                                                    Enviar confirmação
-                                                </label>
-                                            </div>
-                                        </div>
+                                        
                                         <button class="btn btn-success btn-sm" onclick="testEmailTemplate()">
                                             <i class="bi bi-send me-1"></i>Testar Email
                                         </button>
@@ -972,47 +848,6 @@ function savePaymentConfig(provider) {
     });
 }
 
-// Função para salvar configurações de entrega
-function saveDeliveryConfig(provider) {
-    const formData = new FormData();
-    formData.append('_token', '{{ csrf_token() }}');
-    formData.append('_method', 'PUT');
-    
-    // Adicionar campos específicos do provider
-    const fields = getDeliveryFields(provider);
-    fields.forEach(field => {
-        const element = document.getElementById(field);
-        if (element) {
-            formData.append(field, element.type === 'checkbox' ? element.checked : element.value);
-        }
-    });
-
-    fetch('{{ route("admin.settings.update") }}', {
-        method: 'POST',
-        body: formData,
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-            'Accept': 'application/json'
-        }
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-        }
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            showAlert('Configurações salvas com sucesso!', 'success');
-        } else {
-            showAlert('Erro ao salvar configurações: ' + data.message, 'danger');
-        }
-    })
-    .catch(error => {
-        console.error('Erro detalhado:', error);
-        showAlert('Erro ao salvar configurações: ' + error.message, 'danger');
-    });
-}
 
 // Função para salvar configurações gerais
 function saveGeneralConfig() {
@@ -1225,6 +1060,21 @@ function testDeliveryConnection(provider) {
 }
 
 // Função para autorizar Melhor Envio via OAuth
+function revokeMelhorEnvioTokens() {
+    if (!confirm('Deseja remover os tokens salvos do Melhor Envio?')) return;
+    fetch('{{ route("admin.settings.melhor-envio.revoke") }}', {
+        method: 'DELETE',
+        headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+    })
+    .then(r => r.json())
+    .then(data => {
+        showAlert(data.message || 'Operação concluída.', data.success ? 'success' : 'danger');
+        if (data.success) {
+            setTimeout(() => window.location.reload(), 1000);
+        }
+    })
+    .catch(err => showAlert('Erro ao desconectar: ' + err.message, 'danger'));
+}
 
 // Função para mostrar modal de conexão
 function showConnectionModal(data) {
@@ -1282,13 +1132,36 @@ function getPaymentFields(provider) {
     return fields[provider] || [];
 }
 
+// Funções de entrega (apenas config no painel)
+function saveDeliveryConfig(provider) {
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('_method', 'PUT');
+
+    const fields = getDeliveryFields(provider);
+    fields.forEach(field => {
+        const el = document.getElementById(field);
+        if (el) {
+            formData.append(field, el.type === 'checkbox' ? el.checked : el.value);
+        }
+    });
+
+    fetch('{{ route("admin.settings.update") }}', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+    })
+    .then(r => {
+        if (!r.ok) throw new Error('HTTP '+r.status);
+        return r.json();
+    })
+    .then(data => showAlert(data.message || 'Configurações salvas!', data.success ? 'success' : 'danger'))
+    .catch(err => showAlert('Erro ao salvar: ' + err.message, 'danger'));
+}
+
 function getDeliveryFields(provider) {
     const fields = {
-        'correios': ['correios_enabled', 'correios_codigo_empresa', 'correios_senha', 'correios_cep_origem'],
-        'total_express': ['total_express_enabled', 'total_express_api_key', 'total_express_sandbox'],
-        'jadlog': ['jadlog_enabled', 'jadlog_cnpj', 'jadlog_api_key', 'jadlog_sandbox'],
-        'loggi': ['loggi_enabled', 'loggi_api_key', 'loggi_sandbox'],
-    // 'melhor_envio' removido (configuração agora exclusiva na página dedicada)
+        'melhor_envio': ['melhor_envio_enabled','melhor_envio_client_id','melhor_envio_client_secret','melhor_envio_sandbox','melhor_envio_cep_origem','melhor_envio_service_ids']
     };
     return fields[provider] || [];
 }
@@ -1524,16 +1397,6 @@ function showAlert(message, type) {
 
 // Máscaras para campos
 document.addEventListener('DOMContentLoaded', function() {
-    // Máscara para CEP
-    const cepInput = document.getElementById('correios_cep_origem');
-    if (cepInput) {
-        cepInput.addEventListener('input', function(e) {
-            let value = e.target.value.replace(/\D/g, '');
-            value = value.replace(/(\d{5})(\d)/, '$1-$2');
-            e.target.value = value;
-        });
-    }
-    
     // Máscara para CNPJ
     const cnpjInput = document.getElementById('jadlog_cnpj');
     if (cnpjInput) {

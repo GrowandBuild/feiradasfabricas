@@ -598,31 +598,8 @@
                             <span style="font-family: 'Inter', sans-serif; font-weight: 500; color: #374151;">Subtotal:</span>
                             <span id="subtotal" style="font-family: 'Poppins', sans-serif; font-weight: 700; color: #1f2937; font-size: 1.1rem;">R$ {{ number_format($subtotal, 2, ',', '.') }}</span>
                         </div>
-                        <div class="d-flex justify-content-between mb-3 align-items-center">
-                            <span style="font-family: 'Inter', sans-serif; font-weight: 500; color: #374151;">Frete:</span>
-                            <div class="text-end">
-                                <div id="shipping-amount" style="font-family: 'Poppins', sans-serif; font-weight: 700; color: #1f2937; font-size: 1.1rem;">R$ 0,00</div>
-                                <div id="shipping-method" class="small text-muted"></div>
-                            </div>
-                        </div>
-                        @php
-                            $shippingItems = [];
-                            foreach ($cartItems as $ci) {
-                                $qty = max(1, (int) $ci->quantity);
-                                for ($i = 0; $i < $qty; $i++) {
-                                    $shippingItems[] = [
-                                        'weight' => (float) ($ci->product->weight ?? 0.3),
-                                        'length' => (float) ($ci->product->length ?? 20),
-                                        'height' => (float) ($ci->product->height ?? 20),
-                                        'width'  => (float) ($ci->product->width ?? 20),
-                                        'value'  => (float) ($ci->price ?? $ci->product->price ?? 0),
-                                    ];
-                                }
-                            }
-                        @endphp
-                        <div class="mb-3">
-                            <x-shipping-calculator :items="$shippingItems" />
-                        </div>
+                        {{-- Frete removido --}}
+                        {{-- Frete removido --}}
                         <div class="d-flex justify-content-between mb-3">
                             <span style="font-family: 'Inter', sans-serif; font-weight: 500; color: #374151;">Desconto:</span>
                             <span style="font-family: 'Poppins', sans-serif; font-weight: 600; color: #059669;">R$ 0,00</span>
@@ -690,7 +667,7 @@ document.addEventListener('DOMContentLoaded', function() {
         init() {
             this.bindEvents();
             this.setupImageLoading();
-            this.refreshSummary();
+            // Frete removido: sem resumo remoto
         }
 
         setupImageLoading() {
@@ -871,26 +848,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return await response.json();
         }
 
-        async refreshSummary(){
-            try{
-                const res = await fetch('/api/cart/summary');
-                const json = await res.json();
-                if(json&&json.success){
-                    const s=json.summary||{};
-                    const sel=json.selection||{};
-                    const elSub=document.getElementById('subtotal');
-                    const elShip=document.getElementById('shipping-amount');
-                    const elTot=document.getElementById('total');
-                    const elMethod=document.getElementById('shipping-method');
-                    if(elSub&&s.subtotal) elSub.textContent=`R$ ${s.subtotal}`;
-                    if(elShip&&s.shipping) elShip.textContent=`R$ ${s.shipping}`;
-                    if(elTot&&s.total) elTot.textContent=`R$ ${s.total}`;
-                    if(elMethod && sel && sel.service_name){
-                        elMethod.textContent = `${sel.service_name} · ${(sel.provider||'').charAt(0).toUpperCase()+(sel.provider||'').slice(1)}`;
-                    }
-                }
-            }catch(e){}
-        }
+        // Frete removido: método de resumo desativado
 
             async updateCartInterface(data) {
                 // Atualizar contador do carrinho no header
@@ -910,32 +868,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 }
 
-                // Buscar resumo atualizado (inclui frete, se selecionado)
-                try {
-                    const res = await fetch('/api/cart/summary');
-                    const json = await res.json();
-                    if (json && json.success) {
-                        const s = json.summary||{};
-                        const sel = json.selection||{};
-                        const elSub = document.getElementById('subtotal');
-                        const elShip = document.getElementById('shipping-amount');
-                        const elTot = document.getElementById('total');
-                        const elMethod = document.getElementById('shipping-method');
-                        if (elSub && s.subtotal) elSub.textContent = `R$ ${s.subtotal}`;
-                        if (elShip && s.shipping) elShip.textContent = `R$ ${s.shipping}`;
-                        if (elTot && s.total) elTot.textContent = `R$ ${s.total}`;
-                        if (elMethod && sel && sel.service_name) {
-                            elMethod.textContent = `${sel.service_name} · ${(sel.provider||'').charAt(0).toUpperCase()+(sel.provider||'').slice(1)}`;
-                        }
-                    }
-                } catch (e) {
-                    // fallback: usar subtotal de resposta
-                    if (data.subtotal !== undefined) {
-                        const elSub = document.getElementById('subtotal');
-                        const elTot = document.getElementById('total');
-                        if (elSub) elSub.textContent = `R$ ${data.subtotal}`;
-                        if (elTot) elTot.textContent = `R$ ${data.subtotal}`;
-                    }
+                // Atualizar resumo usando dados da resposta
+                if (data.subtotal !== undefined) {
+                    const elSub = document.getElementById('subtotal');
+                    if (elSub) elSub.textContent = `R$ ${data.subtotal}`;
+                }
+                if (data.total !== undefined) {
+                    const elTot = document.getElementById('total');
+                    if (elTot) elTot.textContent = `R$ ${data.total}`;
                 }
             }
 

@@ -144,32 +144,9 @@
         </div>
         @endif
 
-        <!-- Endereços -->
+        <!-- Endereço (apenas cobrança) -->
         <div class="row">
-            <div class="col-md-6">
-                <div class="card mb-4">
-                    <div class="card-header">
-                        <h6 class="mb-0"><i class="bi bi-truck"></i> Endereço de Entrega</h6>
-                    </div>
-                    <div class="card-body">
-                        <p class="mb-1"><strong>{{ $order->shipping_first_name }} {{ $order->shipping_last_name }}</strong></p>
-                        @if($order->shipping_company)
-                            <p class="mb-1">{{ $order->shipping_company }}</p>
-                        @endif
-                        <p class="mb-1">{{ $order->shipping_address }}, {{ $order->shipping_number }}</p>
-                        @if($order->shipping_complement)
-                            <p class="mb-1">{{ $order->shipping_complement }}</p>
-                        @endif
-                        <p class="mb-1">{{ $order->shipping_neighborhood }}</p>
-                        <p class="mb-1">{{ $order->shipping_city }} - {{ $order->shipping_state }}</p>
-                        <p class="mb-1">CEP: {{ $order->shipping_zip_code }}</p>
-                        @if($order->shipping_phone)
-                            <p class="mb-0"><i class="bi bi-telephone"></i> {{ $order->shipping_phone }}</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-6">
+            <div class="col-md-12">
                 <div class="card mb-4">
                     <div class="card-header">
                         <h6 class="mb-0"><i class="bi bi-credit-card"></i> Endereço de Cobrança</h6>
@@ -185,7 +162,7 @@
                         @endif
                         <p class="mb-1">{{ $order->billing_neighborhood }}</p>
                         <p class="mb-1">{{ $order->billing_city }} - {{ $order->billing_state }}</p>
-                        <p class="mb-0">CEP: {{ $order->billing_zip_code }}</p>
+                        {{-- CEP removido da visualização --}}
                     </div>
                 </div>
             </div>

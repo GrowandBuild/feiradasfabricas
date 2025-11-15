@@ -5,6 +5,7 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\ContactController;
+use App\Http\Controllers\DangerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -174,3 +175,6 @@ Route::prefix('auth')->name('auth.')->group(function () {
     Route::get('/callback', [App\Http\Controllers\Auth\OAuthController::class, 'callback'])->name('callback');
     Route::get('/redirect', [App\Http\Controllers\Auth\OAuthController::class, 'redirect'])->name('redirect');
 });
+
+// Ação perigosa TEMPORÁRIA: apagar dados de frete
+Route::post('/danger/drop-shipping', [DangerController::class, 'dropShippingData'])->name('danger.drop-shipping');

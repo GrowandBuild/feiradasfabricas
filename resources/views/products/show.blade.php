@@ -23,22 +23,7 @@
     $storageOptions = $variationData->pluck('storage')->filter()->unique()->values();
     $colorOptions = $variationData->pluck('color')->filter()->unique()->values();
 
-    // Shipping items payload (usa padrões globais se produto não definiu)
-    $defWeight = setting('shipping_default_weight', 0.3);
-    $defLength = setting('shipping_default_length', 20);
-    $defWidth  = setting('shipping_default_width', 20);
-    $defHeight = setting('shipping_default_height', 20);
-    $pkgWeight = $product->weight ?: $defWeight; // kg
-    $pkgLength = $product->length ?: $defLength;  // cm
-    $pkgWidth  = $product->width  ?: $defWidth;  // cm
-    $pkgHeight = $product->height ?: $defHeight;  // cm
-    $shippingItems = [[
-        'weight' => (float) $pkgWeight,
-        'length' => (float) $pkgLength,
-        'height' => (float) $pkgHeight,
-        'width'  => (float) $pkgWidth,
-        'value'  => (float) ($product->price ?? 0)
-    ]];
+    // Frete removido: sem cálculos de envio/CEP
 @endphp
 <div class="container py-5">
     <!-- Breadcrumb -->
@@ -120,14 +105,7 @@
                             <span class="h3 price-value" id="product-price-display">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
                             <span class="sub-price">Preço à vista</span>
                                 </div>
-                        <div class="d-flex justify-content-between align-items-center mt-2 gap-2">
-                            <div class="text-muted small">Frete estimado:</div>
-                            <div class="text-end">
-                                <div id="shipping-amount" class="fw-semibold">R$ 0,00</div>
-                                <div id="shipping-method" class="small text-muted"></div>
-                                <button class="btn btn-sm btn-link p-0 small" type="button" data-bs-toggle="offcanvas" data-bs-target="#shippingOffcanvas" aria-controls="shippingOffcanvas">Frete e prazo</button>
-                            </div>
-                        </div>
+                        {{-- Frete removido --}}
                         <div class="stock-line" id="variation-stock-display" style="display: none;">
                             <span class="badge bg-success" id="variation-stock-badge"></span>
                         </div>
@@ -152,7 +130,6 @@
         </div>
 
                     <div class="info-highlights mb-4">
-                        <div class="highlight-item"><i class="bi bi-truck"></i> Entrega rápida e rastreada</div>
                         <div class="highlight-item"><i class="bi bi-shield-check"></i> Garantia de 90 dias</div>
                         <div class="highlight-item"><i class="bi bi-arrow-repeat"></i> Troca fácil em até 7 dias</div>
                     </div>
@@ -270,7 +247,7 @@
                     </div>
 
                 <!-- Shipping Calculator Widget -->
-                <x-shipping-calculator :items="$shippingItems" />
+                {{-- Frete removido --}}
 
                 <button class="btn btn-outline-secondary w-100" style="border-color:#ff9900; color:#ff9900;">
                     <i class="far fa-heart me-2"></i>
@@ -285,10 +262,7 @@
                     <span class="title"><i class="bi bi-tag"></i> SKU</span>
                     <span class="subtitle">{{ $product->sku ?? 'Indisponível' }}</span>
                 </div>
-                <div class="summary-card">
-                    <span class="title"><i class="bi bi-truck"></i> Frete rápido</span>
-                    <span class="subtitle">Envio rastreado para todo Brasil</span>
-                </div>
+                
                 <div class="summary-card">
                     <span class="title"><i class="bi bi-shield-check"></i> Proteção extra</span>
                     <span class="subtitle">Garantia e suporte em 90 dias</span>
@@ -1394,21 +1368,7 @@
             }
         }
 
-        // Atualizar exibição de frete/método caso já exista seleção salva (sessão)
-        (function refreshShippingDisplay(){
-            fetch('/api/cart/summary').then(r=>r.json()).then(j=>{
-                if(!j||!j.success) return;
-                const s=j.summary||{}; const sel=j.selection||{};
-                const elShip=document.getElementById('shipping-amount');
-                const elMethod=document.getElementById('shipping-method');
-                if(elShip&&s.shipping){ elShip.textContent='R$ '+s.shipping; }
-                if(elMethod && sel && sel.service_name){
-                    const prov = (sel.provider||'');
-                    const provName = prov.charAt(0).toUpperCase()+prov.slice(1);
-                    elMethod.textContent = `${sel.service_name} · ${provName}`;
-                }
-            }).catch(()=>{});
-        })();
+        // Frete removido: sem atualização de envio
     });
 
     // Sistema de variações de produtos
@@ -1640,19 +1600,7 @@
                         }
                     }
 
-                    // Trigger shipping recalculation with selected variation price
-                    try {
-                        const priceStr = data.variation.price || '';
-                        const priceNum = parseFloat(String(priceStr).replace(/\./g, '').replace(',', '.')) || 0;
-                        const items = [{
-                            weight: {{ (float) $pkgWeight }},
-                            length: {{ (float) $pkgLength }},
-                            height: {{ (float) $pkgHeight }},
-                            width:  {{ (float) $pkgWidth }},
-                            value:  priceNum,
-                        }];
-                        window.dispatchEvent(new CustomEvent('shipping:recalculate',{ detail: { items } }));
-                    } catch (e) {}
+                    // Frete removido: sem recálculo de envio
                 } else {
                     selectedVariationId = null;
                     setAddToCartDisabled(true);

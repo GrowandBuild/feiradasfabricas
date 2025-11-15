@@ -42,10 +42,12 @@ class CheckoutController extends Controller
             'customer_email' => 'required|email|max:255',
             'customer_phone' => 'nullable|string|max:20',
             'customer_cpf' => 'nullable|string|max:14',
-            'shipping_address' => 'required|string|max:500',
-            'shipping_city' => 'required|string|max:100',
-            'shipping_state' => 'required|string|max:2',
-            'shipping_zip' => 'required|string|max:10',
+            // Endereço de entrega agora opcional (sem impacto em pagamento)
+            'shipping_address' => 'nullable|string|max:500',
+            'shipping_city' => 'nullable|string|max:100',
+            'shipping_state' => 'nullable|string|max:2',
+            // CEP removido: tornar opcional
+            'shipping_zip' => 'nullable|string|max:10',
             'payment_method' => 'required|in:credit_card,pix,boleto'
         ]);
 
@@ -83,7 +85,7 @@ class CheckoutController extends Controller
                     'street' => $request->shipping_address,
                     'city' => $request->shipping_city,
                     'state' => $request->shipping_state,
-                    'postal_code' => $request->shipping_zip,
+                    // CEP removido do payload (opcional)
                 ]
             ];
 

@@ -11,7 +11,7 @@ use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentBadgeController;
-use App\Http\Controllers\Admin\MelhorEnvioController;
+// use App\Http\Controllers\Admin\MelhorEnvioController; // removido (frete)
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -90,24 +90,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
         Route::post('settings/test-connection', [SettingController::class, 'testConnection'])->name('settings.test-connection');
+    // Melhor Envio OAuth
+    Route::get('settings/melhor-envio/authorize', [SettingController::class, 'melhorEnvioAuthorize'])->name('settings.melhor-envio.authorize');
+    Route::get('settings/melhor-envio/callback', [SettingController::class, 'melhorEnvioCallback'])->name('settings.melhor-envio.callback');
+    Route::delete('settings/melhor-envio/token', [SettingController::class, 'melhorEnvioRevoke'])->name('settings.melhor-envio.revoke');
         Route::delete('settings/{setting}', [SettingController::class, 'destroy'])->name('settings.destroy');
 
-    // Configuração específica: Melhor Envio
-    Route::get('settings/melhor-envio', [MelhorEnvioController::class, 'index'])->name('melhor-envio.index');
-    Route::post('settings/melhor-envio', [MelhorEnvioController::class, 'save'])->name('melhor-envio.save');
-    Route::post('settings/melhor-envio/test', [MelhorEnvioController::class, 'test'])->name('melhor-envio.test');
-    Route::get('settings/melhor-envio/authorize', [MelhorEnvioController::class, 'authorizeStart'])->name('melhor-envio.authorize');
-    Route::get('settings/melhor-envio/callback', [MelhorEnvioController::class, 'oauthCallback'])->name('melhor-envio.callback');
-    Route::get('settings/melhor-envio/services', [MelhorEnvioController::class, 'services'])->name('melhor-envio.services');
-    Route::post('settings/melhor-envio/services', [MelhorEnvioController::class, 'servicesSave'])->name('melhor-envio.services.save');
-
-    // Painel de Status dos Providers de Frete (ativar/desativar)
-    Route::get('settings/shipping/providers', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'index'])->name('shipping-providers.index');
-    Route::post('settings/shipping/providers', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'save'])->name('shipping-providers.save');
-    Route::post('settings/shipping/providers/clear-cache', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'clearCache'])->name('shipping-providers.clear-cache');
-    Route::post('settings/shipping/providers/opcache-reset', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'opcacheReset'])->name('shipping-providers.opcache-reset');
-    Route::post('settings/shipping/providers/test-me', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'testMelhorEnvio'])->name('shipping-providers.test-me');
-    Route::get('shipping/diagnose', [\App\Http\Controllers\Admin\ShippingProviderController::class, 'diagnose'])->name('shipping-providers.diagnose');
+    // Rotas de frete removidas (Melhor Envio / Providers)
 
         // Gerenciamento de Usuários Admin (apenas para usuários com permissão)
         Route::middleware('permission:users.manage')->group(function () {

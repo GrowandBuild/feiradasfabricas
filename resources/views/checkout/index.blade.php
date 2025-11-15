@@ -331,52 +331,40 @@
                                 </div>
                             </div>
 
-                            <!-- Endereço de Entrega -->
-                            <h5 class="mb-3 mt-4">Endereço de Entrega</h5>
+                            <!-- Endereço (opcional) -->
+                            <h5 class="mb-3 mt-4">Endereço (opcional)</h5>
                             <div class="mb-3">
-                                <label class="form-label">Endereço Completo *</label>
+                                <label class="form-label">Endereço Completo</label>
                                 <textarea class="form-control @error('shipping_address') is-invalid @enderror" 
                                           name="shipping_address" 
                                           rows="3" 
-                                          required>{{ old('shipping_address') }}</textarea>
+                                          >{{ old('shipping_address') }}</textarea>
                                 @error('shipping_address')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                             <div class="row">
                                 <div class="col-md-6 mb-3">
-                                    <label class="form-label">Cidade *</label>
+                                    <label class="form-label">Cidade</label>
                                     <input type="text" 
                                            class="form-control @error('shipping_city') is-invalid @enderror" 
                                            name="shipping_city" 
-                                           value="{{ old('shipping_city') }}" 
-                                           required>
+                                           value="{{ old('shipping_city') }}" >
                                     @error('shipping_city')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
                                 <div class="col-md-3 mb-3">
-                                    <label class="form-label">Estado *</label>
+                                    <label class="form-label">Estado</label>
                                     <input type="text" 
                                            class="form-control @error('shipping_state') is-invalid @enderror" 
                                            name="shipping_state" 
-                                           value="{{ old('shipping_state') }}" 
-                                           required>
+                                           value="{{ old('shipping_state') }}" >
                                     @error('shipping_state')
                                         <div class="invalid-feedback">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-3 mb-3">
-                                    <label class="form-label">CEP *</label>
-                                    <input type="text" 
-                                           class="form-control @error('shipping_zip') is-invalid @enderror" 
-                                           name="shipping_zip" 
-                                           value="{{ old('shipping_zip') }}" 
-                                           required>
-                                    @error('shipping_zip')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                                
                             </div>
 
                             <!-- Método de Pagamento -->
@@ -431,31 +419,7 @@
                                 <span>Subtotal:</span>
                                 <span>R$ {{ number_format($subtotal, 2, ',', '.') }}</span>
                             </div>
-                            <div class="summary-item">
-                                <span>Frete:</span>
-                                <span class="text-end">
-                                    <div id="shipping-amount">R$ 0,00</div>
-                                    <div id="shipping-method" class="small text-muted"></div>
-                                </span>
-                            </div>
-                            @php
-                                $shippingItems = [];
-                                foreach ($cartItems as $ci) {
-                                    $qty = max(1, (int) $ci->quantity);
-                                    for ($i = 0; $i < $qty; $i++) {
-                                        $shippingItems[] = [
-                                            'weight' => (float) ($ci->product->weight ?? 0.3),
-                                            'length' => (float) ($ci->product->length ?? 20),
-                                            'height' => (float) ($ci->product->height ?? 20),
-                                            'width'  => (float) ($ci->product->width ?? 20),
-                                            'value'  => (float) ($ci->price ?? $ci->product->price ?? 0),
-                                        ];
-                                    }
-                                }
-                            @endphp
-                            <div class="mb-2">
-                                <x-shipping-calculator :items="$shippingItems" />
-                            </div>
+                            {{-- Frete removido --}}
                             <div class="summary-total d-flex justify-content-between">
                                 <span>Total:</span>
                                 <span id="total">R$ {{ number_format($subtotal, 2, ',', '.') }}</span>
@@ -484,27 +448,6 @@ function selectPayment(method) {
     document.getElementById(method).closest('.payment-method').classList.add('selected');
     document.getElementById(method).checked = true;
 }
-// Update monetary summary when shipping is selected or on load
-document.addEventListener('DOMContentLoaded', function(){
-    function refreshSummary(){
-        fetch('/api/cart/summary').then(r=>r.json()).then(j=>{
-            if(!j||!j.success) return;
-            const s=j.summary||{};
-            const sel=j.selection||{};
-            const elShip=document.getElementById('shipping-amount');
-            const elTot=document.getElementById('total');
-            const elMethod=document.getElementById('shipping-method');
-            if(elShip&&s.shipping){ elShip.textContent='R$ '+s.shipping; }
-            if(elTot&&s.total){ elTot.textContent='R$ '+s.total; }
-            if(elMethod && sel && sel.service_name){
-                const prov = (sel.provider||'');
-                const provName = prov.charAt(0).toUpperCase()+prov.slice(1);
-                elMethod.textContent = `${sel.service_name} · ${provName}`;
-            }
-        }).catch(()=>{});
-    }
-    refreshSummary();
-    window.addEventListener('shipping:selected', refreshSummary);
-});
+// Frete removido: sem resumo dinâmico de envio
 </script>
 @endsection

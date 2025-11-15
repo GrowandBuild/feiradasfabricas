@@ -111,25 +111,9 @@
             </div>
         </div>
 
-        <!-- Endereços -->
+        <!-- Endereço de Cobrança -->
         <div class="row mb-4">
-            <div class="col-6">
-                <div class="invoice-box">
-                    <h6 class="mb-3"><strong>ENDEREÇO DE ENTREGA</strong></h6>
-                    <p class="mb-1">{{ $order->shipping_first_name }} {{ $order->shipping_last_name }}</p>
-                    @if($order->shipping_company)
-                        <p class="mb-1">{{ $order->shipping_company }}</p>
-                    @endif
-                    <p class="mb-1">{{ $order->shipping_address }}, {{ $order->shipping_number }}</p>
-                    @if($order->shipping_complement)
-                        <p class="mb-1">{{ $order->shipping_complement }}</p>
-                    @endif
-                    <p class="mb-1">{{ $order->shipping_neighborhood }}</p>
-                    <p class="mb-1">{{ $order->shipping_city }} - {{ $order->shipping_state }}</p>
-                    <p class="mb-0">CEP: {{ $order->shipping_zip_code }}</p>
-                </div>
-            </div>
-            <div class="col-6">
+            <div class="col-12">
                 <div class="invoice-box">
                     <h6 class="mb-3"><strong>ENDEREÇO DE COBRANÇA</strong></h6>
                     <p class="mb-1">{{ $order->billing_first_name }} {{ $order->billing_last_name }}</p>
@@ -142,7 +126,7 @@
                     @endif
                     <p class="mb-1">{{ $order->billing_neighborhood }}</p>
                     <p class="mb-1">{{ $order->billing_city }} - {{ $order->billing_state }}</p>
-                    <p class="mb-0">CEP: {{ $order->billing_zip_code }}</p>
+                    {{-- CEP removido da impressão --}}
                 </div>
             </div>
         </div>

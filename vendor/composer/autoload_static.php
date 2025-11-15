@@ -17,16 +17,17 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'b6b991a57620e2fb6b2f66f03fe9ddc2' => __DIR__ . '/..' . '/symfony/string/Resources/functions.php',
         'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
+        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '3bd81c9b8fcc150b69d8b63b4d2ccf23' => __DIR__ . '/..' . '/spatie/flare-client-php/src/helpers.php',
         '23c18046f52bef3eea034657bafda50f' => __DIR__ . '/..' . '/symfony/polyfill-php81/bootstrap.php',
         '09f6b20656683369174dd6fa83b7e5fb' => __DIR__ . '/..' . '/symfony/polyfill-uuid/bootstrap.php',
         'a1105708a18b76903365ca1c4aa61b02' => __DIR__ . '/..' . '/symfony/translation/Resources/functions.php',
-        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         '6124b4c8570aa390c21fafd04a26c69f' => __DIR__ . '/..' . '/myclabs/deep-copy/src/DeepCopy/deep_copy.php',
         '35a6ad97d21e794e7e22a17d806652e4' => __DIR__ . '/..' . '/nunomaduro/termwind/src/Functions.php',
         '3109cb1a231dcd04bee1f9f620d46975' => __DIR__ . '/..' . '/paragonie/sodium_compat/autoload.php',
         '801c31d8ed748cfa537fa45402288c95' => __DIR__ . '/..' . '/psy/psysh/src/functions.php',
         'e39a8b23c42d4e1452234d762b03835a' => __DIR__ . '/..' . '/ramsey/uuid/src/functions.php',
+        'b686b8e46447868025a15ce5d0cb2634' => __DIR__ . '/..' . '/symfony/polyfill-php74/bootstrap.php',
         '265b4faa2b3a9766332744949e83bf97' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Collections/helpers.php',
         'c7a3c339e7e14b60e06a2d7fcce9476b' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Events/functions.php',
         'f0906e6318348a765ffb6eb24e0d0938' => __DIR__ . '/..' . '/laravel/framework/src/Illuminate/Foundation/helpers.php',
@@ -59,6 +60,7 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
             'Symfony\\Polyfill\\Uuid\\' => 22,
             'Symfony\\Polyfill\\Php81\\' => 23,
             'Symfony\\Polyfill\\Php80\\' => 23,
+            'Symfony\\Polyfill\\Php74\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
             'Symfony\\Polyfill\\Intl\\Idn\\' => 26,
@@ -116,6 +118,8 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         array (
             'Monolog\\' => 8,
             'Mockery\\' => 8,
+            'MelhorEnvio\\Auth\\' => 17,
+            'MelhorEnvio\\' => 12,
         ),
         'L' => 
         array (
@@ -215,6 +219,10 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'Symfony\\Polyfill\\Php80\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
+        ),
+        'Symfony\\Polyfill\\Php74\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php74',
         ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
@@ -397,6 +405,14 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         array (
             0 => __DIR__ . '/..' . '/mockery/mockery/library/Mockery',
         ),
+        'MelhorEnvio\\Auth\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/melhorenvio/auth-sdk-php/src',
+        ),
+        'MelhorEnvio\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src',
+        ),
         'League\\MimeTypeDetection\\' => 
         array (
             0 => __DIR__ . '/..' . '/league/mime-type-detection/src',
@@ -537,6 +553,7 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
     );
 
     public static $classMap = array (
+        'App\\Console\\Commands\\BackfillVariationSlugs' => __DIR__ . '/../..' . '/app/Console/Commands/BackfillVariationSlugs.php',
         'App\\Console\\Commands\\CheckProductImages' => __DIR__ . '/../..' . '/app/Console/Commands/CheckProductImages.php',
         'App\\Console\\Commands\\CreateStorageLink' => __DIR__ . '/../..' . '/app/Console/Commands/CreateStorageLink.php',
         'App\\Console\\Commands\\ProcessEmailQueue' => __DIR__ . '/../..' . '/app/Console/Commands/ProcessEmailQueue.php',
@@ -573,15 +590,18 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'App\\Http\\Controllers\\Admin\\StockAlertController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/StockAlertController.php',
         'App\\Http\\Controllers\\Admin\\UserManagementController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/UserManagementController.php',
         'App\\Http\\Controllers\\Auth\\CustomerAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/CustomerAuthController.php',
+        'App\\Http\\Controllers\\Auth\\OAuthController' => __DIR__ . '/../..' . '/app/Http/Controllers/Auth/OAuthController.php',
         'App\\Http\\Controllers\\CartController' => __DIR__ . '/../..' . '/app/Http/Controllers/CartController.php',
         'App\\Http\\Controllers\\CheckoutController' => __DIR__ . '/../..' . '/app/Http/Controllers/CheckoutController.php',
         'App\\Http\\Controllers\\ContactController' => __DIR__ . '/../..' . '/app/Http/Controllers/ContactController.php',
         'App\\Http\\Controllers\\Controller' => __DIR__ . '/../..' . '/app/Http/Controllers/Controller.php',
+        'App\\Http\\Controllers\\DangerController' => __DIR__ . '/../..' . '/app/Http/Controllers/DangerController.php',
         'App\\Http\\Controllers\\DepartmentController' => __DIR__ . '/../..' . '/app/Http/Controllers/DepartmentController.php',
         'App\\Http\\Controllers\\HomeController' => __DIR__ . '/../..' . '/app/Http/Controllers/HomeController.php',
         'App\\Http\\Controllers\\OrderController' => __DIR__ . '/../..' . '/app/Http/Controllers/OrderController.php',
         'App\\Http\\Controllers\\PaymentController' => __DIR__ . '/../..' . '/app/Http/Controllers/PaymentController.php',
         'App\\Http\\Controllers\\SearchController' => __DIR__ . '/../..' . '/app/Http/Controllers/SearchController.php',
+        'App\\Http\\Controllers\\SitemapController' => __DIR__ . '/../..' . '/app/Http/Controllers/SitemapController.php',
         'App\\Http\\Controllers\\WebhookController' => __DIR__ . '/../..' . '/app/Http/Controllers/WebhookController.php',
         'App\\Http\\Kernel' => __DIR__ . '/../..' . '/app/Http/Kernel.php',
         'App\\Http\\Middleware\\Authenticate' => __DIR__ . '/../..' . '/app/Http/Middleware/Authenticate.php',
@@ -622,6 +642,7 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'App\\Services\\EmailService' => __DIR__ . '/../..' . '/app/Services/EmailService.php',
         'App\\Services\\FiscalService' => __DIR__ . '/../..' . '/app/Services/FiscalService.php',
         'App\\Services\\PaymentService' => __DIR__ . '/../..' . '/app/Services/PaymentService.php',
+        'App\\Services\\Shipping\\AddressService' => __DIR__ . '/../..' . '/app/Services/Shipping/AddressService.php',
         'Attribute' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
         'Brick\\Math\\BigDecimal' => __DIR__ . '/..' . '/brick/math/src/BigDecimal.php',
         'Brick\\Math\\BigInteger' => __DIR__ . '/..' . '/brick/math/src/BigInteger.php',
@@ -3208,6 +3229,30 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'League\\MimeTypeDetection\\GeneratedExtensionToMimeTypeMap' => __DIR__ . '/..' . '/league/mime-type-detection/src/GeneratedExtensionToMimeTypeMap.php',
         'League\\MimeTypeDetection\\MimeTypeDetector' => __DIR__ . '/..' . '/league/mime-type-detection/src/MimeTypeDetector.php',
         'League\\MimeTypeDetection\\OverridingExtensionToMimeTypeMap' => __DIR__ . '/..' . '/league/mime-type-detection/src/OverridingExtensionToMimeTypeMap.php',
+        'MelhorEnvio\\Auth\\Exceptions\\ClientException' => __DIR__ . '/..' . '/melhorenvio/auth-sdk-php/src/Exceptions/ClientException.php',
+        'MelhorEnvio\\Auth\\Exceptions\\RefreshTokenException' => __DIR__ . '/..' . '/melhorenvio/auth-sdk-php/src/Exceptions/RefreshTokenException.php',
+        'MelhorEnvio\\Auth\\Exceptions\\Token\\AccessTokenException' => __DIR__ . '/..' . '/melhorenvio/auth-sdk-php/src/Exceptions/Token/AccessTokenException.php',
+        'MelhorEnvio\\Auth\\Exceptions\\Token\\InvalidStateException' => __DIR__ . '/..' . '/melhorenvio/auth-sdk-php/src/Exceptions/Token/InvalidStateException.php',
+        'MelhorEnvio\\Auth\\OAuth2' => __DIR__ . '/..' . '/melhorenvio/auth-sdk-php/src/OAuth2.php',
+        'MelhorEnvio\\Concerns\\Arrayable' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Concerns/Arrayable.php',
+        'MelhorEnvio\\Enums\\Endpoint' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Enums/Endpoint.php',
+        'MelhorEnvio\\Enums\\Environment' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Enums/Environment.php',
+        'MelhorEnvio\\Enums\\Service' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Enums/Service.php',
+        'MelhorEnvio\\Exceptions\\CalculatorException' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Exceptions/CalculatorException.php',
+        'MelhorEnvio\\Exceptions\\ClientException' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Exceptions/ClientException.php',
+        'MelhorEnvio\\Exceptions\\InvalidCalculatorPayloadException' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Exceptions/InvalidCalculatorPayloadException.php',
+        'MelhorEnvio\\Exceptions\\InvalidEnvironmentException' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Exceptions/InvalidEnvironmentException.php',
+        'MelhorEnvio\\Exceptions\\InvalidResourceException' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Exceptions/InvalidResourceException.php',
+        'MelhorEnvio\\Exceptions\\InvalidVolumeException' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Exceptions/InvalidVolumeException.php',
+        'MelhorEnvio\\Resources\\Base' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Resources/Base.php',
+        'MelhorEnvio\\Resources\\Resource' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Resources/Resource.php',
+        'MelhorEnvio\\Resources\\Shipment\\Calculator' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Resources/Shipment/Calculator.php',
+        'MelhorEnvio\\Resources\\Shipment\\Package' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Resources/Shipment/Package.php',
+        'MelhorEnvio\\Resources\\Shipment\\Product' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Resources/Shipment/Product.php',
+        'MelhorEnvio\\Resources\\Shipment\\Volume' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Resources/Shipment/Volume.php',
+        'MelhorEnvio\\Shipment' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Shipment.php',
+        'MelhorEnvio\\Validations\\Location' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Validations/Location.php',
+        'MelhorEnvio\\Validations\\Number' => __DIR__ . '/..' . '/melhorenvio/shipment-sdk-php/src/Validations/Number.php',
         'Mockery\\Adapter\\Phpunit\\MockeryPHPUnitIntegration' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryPHPUnitIntegration.php',
         'Mockery\\Adapter\\Phpunit\\MockeryPHPUnitIntegrationAssertPostConditions' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryPHPUnitIntegrationAssertPostConditions.php',
         'Mockery\\Adapter\\Phpunit\\MockeryTestCase' => __DIR__ . '/..' . '/mockery/mockery/library/Mockery/Adapter/Phpunit/MockeryTestCase.php',
@@ -5824,6 +5869,7 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'Symfony\\Polyfill\\Intl\\Idn\\Resources\\unidata\\Regex' => __DIR__ . '/..' . '/symfony/polyfill-intl-idn/Resources/unidata/Regex.php',
         'Symfony\\Polyfill\\Intl\\Normalizer\\Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Normalizer.php',
         'Symfony\\Polyfill\\Mbstring\\Mbstring' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/Mbstring.php',
+        'Symfony\\Polyfill\\Php74\\Php74' => __DIR__ . '/..' . '/symfony/polyfill-php74/Php74.php',
         'Symfony\\Polyfill\\Php80\\Php80' => __DIR__ . '/..' . '/symfony/polyfill-php80/Php80.php',
         'Symfony\\Polyfill\\Php80\\PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/PhpToken.php',
         'Symfony\\Polyfill\\Php81\\Php81' => __DIR__ . '/..' . '/symfony/polyfill-php81/Php81.php',
@@ -5867,6 +5913,10 @@ class ComposerStaticInitfe33f98a750b8c5a51b30c78bd3fab21
         'Tests\\Feature\\ExampleTest' => __DIR__ . '/../..' . '/tests/Feature/ExampleTest.php',
         'Tests\\TestCase' => __DIR__ . '/../..' . '/tests/TestCase.php',
         'Tests\\Unit\\ExampleTest' => __DIR__ . '/../..' . '/tests/Unit/ExampleTest.php',
+        'Tests\\Unit\\MelhorEnvioProviderTest' => __DIR__ . '/../..' . '/tests/Unit/MelhorEnvioProviderTest.php',
+        'Tests\\Unit\\ShippingAggregatorTest' => __DIR__ . '/../..' . '/tests/Unit/ShippingAggregatorTest.php',
+        'Tests\\Unit\\ShippingCacheTest' => __DIR__ . '/../..' . '/tests/Unit/ShippingCacheTest.php',
+        'Tests\\Unit\\VolumetricAggregationTest' => __DIR__ . '/../..' . '/tests/Unit/VolumetricAggregationTest.php',
         'TheSeer\\Tokenizer\\Exception' => __DIR__ . '/..' . '/theseer/tokenizer/src/Exception.php',
         'TheSeer\\Tokenizer\\NamespaceUri' => __DIR__ . '/..' . '/theseer/tokenizer/src/NamespaceUri.php',
         'TheSeer\\Tokenizer\\NamespaceUriException' => __DIR__ . '/..' . '/theseer/tokenizer/src/NamespaceUriException.php',

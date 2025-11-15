@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c9f370ab541338853e3f1b11c93af2ae",
+    "content-hash": "5f3e96838ef76a2bca9e52a58bcb5ce6",
     "packages": [
         {
             "name": "brick/math",
@@ -1864,6 +1864,111 @@
                 }
             ],
             "time": "2024-09-21T08:32:55+00:00"
+        },
+        {
+            "name": "melhorenvio/auth-sdk-php",
+            "version": "1.1.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/melhorenvio/auth-sdk-php.git",
+                "reference": "a6f763d6ceb6ebb66096c270b0e6b314ed115646"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/melhorenvio/auth-sdk-php/zipball/a6f763d6ceb6ebb66096c270b0e6b314ed115646",
+                "reference": "a6f763d6ceb6ebb66096c270b0e6b314ed115646",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "guzzlehttp/guzzle": "^7.0",
+                "php": "^7.4|^8.0|^8.1"
+            },
+            "require-dev": {
+                "phpunit/phpunit": "^9.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MelhorEnvio\\Auth\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Melhor Envio",
+                    "email": "tecnologia@melhorenvio.com",
+                    "role": "Developer"
+                }
+            ],
+            "homepage": "https://github.com/melhorenvio/sdk-php-auth",
+            "keywords": [
+                "auth",
+                "auth-sdk-php",
+                "melhorenvio",
+                "php"
+            ],
+            "support": {
+                "issues": "https://github.com/melhorenvio/auth-sdk-php/issues",
+                "source": "https://github.com/melhorenvio/auth-sdk-php/tree/1.1.0"
+            },
+            "time": "2022-10-26T21:18:28+00:00"
+        },
+        {
+            "name": "melhorenvio/shipment-sdk-php",
+            "version": "3.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/melhorenvio/shipment-sdk-php.git",
+                "reference": "c1a34730c0a1812e85d8c4ec87d64b672316c599"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/melhorenvio/shipment-sdk-php/zipball/c1a34730c0a1812e85d8c4ec87d64b672316c599",
+                "reference": "c1a34730c0a1812e85d8c4ec87d64b672316c599",
+                "shasum": ""
+            },
+            "require": {
+                "ext-json": "*",
+                "guzzlehttp/guzzle": "^7.0",
+                "php": "^7.4|^8.0|^8.1",
+                "symfony/polyfill-php74": "^1.23"
+            },
+            "require-dev": {
+                "mockery/mockery": "^1.3.6",
+                "phpunit/phpunit": "^9.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "MelhorEnvio\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Melhor Envio",
+                    "email": "tecnologia@melhorenvio.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "Este pacote é responsável por realizar o cálculo de cotações.",
+            "homepage": "https://github.com/melhorenvio/shipment-sdk-php",
+            "keywords": [
+                "melhorenvio",
+                "shipment-sdk-php"
+            ],
+            "support": {
+                "issues": "https://github.com/melhorenvio/shipment-sdk-php/issues",
+                "source": "https://github.com/melhorenvio/shipment-sdk-php/tree/3.0.0"
+            },
+            "time": "2022-10-28T19:12:21+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -4625,6 +4730,87 @@
                 }
             ],
             "time": "2024-12-23T08:48:59+00:00"
+        },
+        {
+            "name": "symfony/polyfill-php74",
+            "version": "v1.33.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/symfony/polyfill-php74.git",
+                "reference": "9589537d05325fb5d88a20d8926823e5b827a43e"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/symfony/polyfill-php74/zipball/9589537d05325fb5d88a20d8926823e5b827a43e",
+                "reference": "9589537d05325fb5d88a20d8926823e5b827a43e",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=7.2"
+            },
+            "type": "library",
+            "extra": {
+                "thanks": {
+                    "url": "https://github.com/symfony/polyfill",
+                    "name": "symfony/polyfill"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ],
+                "psr-4": {
+                    "Symfony\\Polyfill\\Php74\\": ""
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Ion Bazan",
+                    "email": "ion.bazan@gmail.com"
+                },
+                {
+                    "name": "Nicolas Grekas",
+                    "email": "p@tchwork.com"
+                },
+                {
+                    "name": "Symfony Community",
+                    "homepage": "https://symfony.com/contributors"
+                }
+            ],
+            "description": "Symfony polyfill backporting some PHP 7.4+ features to lower PHP versions",
+            "homepage": "https://symfony.com",
+            "keywords": [
+                "compatibility",
+                "polyfill",
+                "portable",
+                "shim"
+            ],
+            "support": {
+                "source": "https://github.com/symfony/polyfill-php74/tree/v1.33.0"
+            },
+            "funding": [
+                {
+                    "url": "https://symfony.com/sponsor",
+                    "type": "custom"
+                },
+                {
+                    "url": "https://github.com/fabpot",
+                    "type": "github"
+                },
+                {
+                    "url": "https://github.com/nicolas-grekas",
+                    "type": "github"
+                },
+                {
+                    "url": "https://tidelift.com/funding/github/packagist/symfony/symfony",
+                    "type": "tidelift"
+                }
+            ],
+            "time": "2024-09-09T11:45:10+00:00"
         },
         {
             "name": "symfony/polyfill-php80",

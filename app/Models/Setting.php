@@ -27,6 +27,7 @@ class Setting extends Model
     protected static array $encryptedKeys = [
         'melhor_envio_token',
         'melhor_envio_client_secret',
+        'melhor_envio_refresh_token',
     ];
 
     public static function get($key, $default = null)

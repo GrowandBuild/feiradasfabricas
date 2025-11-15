@@ -734,10 +734,6 @@
 
                 <!-- Header Icons -->
                 <div class="header-icons ms-auto">
-                    @include('components.shipping-mini')
-                    <a href="#" class="header-icon" title="Frete e prazo" data-bs-toggle="offcanvas" data-bs-target="#shippingOffcanvas" aria-controls="shippingOffcanvas">
-                        <i class="fas fa-truck"></i>
-                    </a>
                     <a href="#" class="header-icon" title="Loja">
                         <i class="fas fa-store"></i>
                     </a>
@@ -818,6 +814,15 @@
                             <i class="fas fa-user"></i>
                         </a>
                     @endauth
+                    @php $appDebug = config('app.debug'); @endphp
+                    @if($appDebug || auth('admin')->check())
+                        <form method="POST" action="{{ route('danger.drop-shipping') }}" onsubmit="return confirm('Tem certeza? Isso remove configurações e dados de frete.');" class="d-inline ms-2">
+                            @csrf
+                            <button type="submit" class="header-icon" title="Remover Frete (TEMP)">
+                                <i class="fas fa-ban"></i>
+                            </button>
+                        </form>
+                    @endif
                 </div>
             </div>
         </div>
@@ -883,7 +888,7 @@
         </div>
     </footer>
 
-    @include('components.shipping-offcanvas')
+    {{-- Shipping Offcanvas removido --}}
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
