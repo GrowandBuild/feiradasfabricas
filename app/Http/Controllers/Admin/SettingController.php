@@ -13,6 +13,27 @@ use Illuminate\Support\Facades\Auth;
 
 class SettingController extends Controller
 {
+    /**
+     * Garante que a sessão nativa do PHP está disponível para SDKs que usam $_SESSION.
+     * O Laravel usa sua própria store, então precisamos iniciar a sessão nativa quando o SDK exige.
+     */
+    private function ensureNativeSession(): void
+    {
+        // Evita tentar abrir sessão em CLI (tests/artisan) e previne avisos
+        if (PHP_SAPI === 'cli') {
+            return;
+        }
+        if (function_exists('session_status')) {
+            if (session_status() === PHP_SESSION_NONE) {
+                @session_start();
+            }
+        } else {
+            // Fallback: definir superglobal se não existir
+            if (!isset($_SESSION)) {
+                $_SESSION = [];
+            }
+        }
+    }
     public function index()
     {
         $settings = Setting::orderBy('group')->orderBy('key')->get();
@@ -482,6 +503,15 @@ class SettingController extends Controller
         $env = $sandbox ? \MelhorEnvio\Enums\Environment::SANDBOX : \MelhorEnvio\Enums\Environment::PRODUCTION;
         $cepOrigem = setting('melhor_envio_cep_origem') ?: '01010010';
         $cepDestino = '20271130';
+        // Normalizar CEPs (apenas dígitos) e validar tamanho
+        $cepOrigem = preg_replace('/\D+/', '', (string) $cepOrigem);
+        $cepDestino = preg_replace('/\D+/', '', (string) $cepDestino);
+        if (strlen($cepOrigem) !== 8 || strlen($cepDestino) !== 8) {
+            return [
+                'success' => false,
+                'message' => 'CEP de origem/destino inválido. Informe 8 dígitos (ex.: 74673030).'
+            ];
+        }
 
         try {
             if (empty($token)) {
@@ -563,6 +593,8 @@ class SettingController extends Controller
      */
     public function melhorEnvioAuthorize(Request $request)
     {
+        // SDK do Melhor Envio usa $_SESSION para state
+        $this->ensureNativeSession();
         $clientId = setting('melhor_envio_client_id');
         $clientSecret = setting('melhor_envio_client_secret');
         $sandbox = setting('melhor_envio_sandbox', true);
@@ -595,6 +627,8 @@ class SettingController extends Controller
      */
     public function melhorEnvioCallback(Request $request)
     {
+        // SDK do Melhor Envio usa $_SESSION para state
+        $this->ensureNativeSession();
         $state = $request->input('state');
         $code = $request->input('code');
         $error = $request->input('error');

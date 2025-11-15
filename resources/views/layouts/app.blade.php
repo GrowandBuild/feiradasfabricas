@@ -814,15 +814,7 @@
                             <i class="fas fa-user"></i>
                         </a>
                     @endauth
-                    @php $appDebug = config('app.debug'); @endphp
-                    @if($appDebug || auth('admin')->check())
-                        <form method="POST" action="{{ route('danger.drop-shipping') }}" onsubmit="return confirm('Tem certeza? Isso remove configurações e dados de frete.');" class="d-inline ms-2">
-                            @csrf
-                            <button type="submit" class="header-icon" title="Remover Frete (TEMP)">
-                                <i class="fas fa-ban"></i>
-                            </button>
-                        </form>
-                    @endif
+                    {{-- Botão temporário de "Remover Frete" removido após limpeza geral de frete/CEP e integração admin com Melhor Envio --}}
                 </div>
             </div>
         </div>
