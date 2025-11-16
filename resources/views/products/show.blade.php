@@ -37,6 +37,37 @@
     $storageOptions = $storageAxis;
     $ramOptions = $ramAxis;
     $colorOptions = $colorAxis;
+    // Pré-cálculos de menor preço por eixo (evita @php internos nos loops Blade)
+    $lowestByStorage = $variationData
+        ->filter(fn($v)=>!is_null($v['storage']))
+        ->groupBy('storage')
+        ->map(function($group){
+            return $group->pluck('price')
+                ->map(function($price){
+                    return (float) str_replace(['.', ','], ['', '.'], $price);
+                })
+                ->min();
+        });
+    $lowestByColor = $variationData
+        ->filter(fn($v)=>!is_null($v['color']))
+        ->groupBy('color')
+        ->map(function($group){
+            return $group->pluck('price')
+                ->map(function($price){
+                    return (float) str_replace(['.', ','], ['', '.'], $price);
+                })
+                ->min();
+        });
+    $lowestByRam = $variationData
+        ->filter(fn($v)=>!is_null($v['ram']))
+        ->groupBy('ram')
+        ->map(function($group){
+            return $group->pluck('price')
+                ->map(function($price){
+                    return (float) str_replace(['.', ','], ['', '.'], $price);
+                })
+                ->min();
+        });
 @endphp
 
 <div class="pdp-container container-fluid py-5">
@@ -153,20 +184,12 @@
                                     <h6 class="variation-label">Armazenamento:</h6>
                                     <div class="variation-options" id="storage-options">
                                         @foreach($storageOptions as $storage)
-                                            @php
-                                                $lowestPrice = $variationData->where('storage', $storage)
-                                                    ->pluck('price')
-                                                    ->map(function($price) {
-                                                        return (float) str_replace(['.', ','], ['', '.'], $price);
-                                                    })
-                                                    ->min();
-                        @endphp
                                             <label class="variation-option" data-variation-type="storage" data-value="{{ $storage }}">
                                                 <input type="radio" name="storage" value="{{ $storage }}" {{ $loop->first ? 'checked' : '' }}>
                                                 <span class="variation-option-content">
                                                     <span class="variation-option-title">{{ $storage }}</span>
-                                                    @if(!is_null($lowestPrice))
-                                                        <span class="variation-option-price">R$ {{ number_format($lowestPrice, 2, ',', '.') }}</span>
+                                                    @if(isset($lowestByStorage[$storage]))
+                                                        <span class="variation-option-price">R$ {{ number_format($lowestByStorage[$storage], 2, ',', '.') }}</span>
                                                     @endif
                                                 </span>
                                             </label>
@@ -180,15 +203,7 @@
                                     <h6 class="variation-label">Cor:</h6>
                                     <div class="variation-options" id="color-options">
                                         @foreach($colorOptions as $color)
-                                            @php
-                                                $lowestPrice = $variationData->where('color', $color)
-                                                    ->pluck('price')
-                                                    ->map(function($price) {
-                                                        return (float) str_replace(['.', ','], ['', '.'], $price);
-                                                    })
-                                                    ->min();
-                                                $colorHex = optional($variationData->firstWhere('color', $color))['color_hex'];
-                                            @endphp
+                                            @php($colorHex = optional($variationData->firstWhere('color', $color))['color_hex'])
                                             <label class="variation-option" data-variation-type="color" data-value="{{ $color }}">
                                                 <input type="radio" name="color" value="{{ $color }}" {{ $loop->first ? 'checked' : '' }}>
                                                 <span class="variation-option-content">
@@ -196,8 +211,8 @@
                                                         <span class="swatch" style="background: {{ $colorHex ?? '#f1f5f9' }};"></span>
                                                         <span>{{ $color }}</span>
                                                     </span>
-                                                    @if(!is_null($lowestPrice))
-                                                        <span class="variation-option-price">R$ {{ number_format($lowestPrice, 2, ',', '.') }}</span>
+                                                    @if(isset($lowestByColor[$color]))
+                                                        <span class="variation-option-price">R$ {{ number_format($lowestByColor[$color], 2, ',', '.') }}</span>
                                                     @endif
                                                 </span>
                                             </label>
@@ -211,20 +226,12 @@
                                     <h6 class="variation-label">RAM:</h6>
                                     <div class="variation-options" id="ram-options">
                                         @foreach($ramOptions as $ram)
-                                            @php
-                                                $lowestPrice = $variationData->where('ram', $ram)
-                                                    ->pluck('price')
-                                                    ->map(function($price) {
-                                                        return (float) str_replace(['.', ','], ['', '.'], $price);
-                                                    })
-                                                    ->min();
-                                            @endphp
                                             <label class="variation-option" data-variation-type="ram" data-value="{{ $ram }}">
                                                 <input type="radio" name="ram" value="{{ $ram }}" {{ $loop->first ? 'checked' : '' }}>
                                                 <span class="variation-option-content">
                                                     <span class="variation-option-title">{{ $ram }}</span>
-                                                    @if(!is_null($lowestPrice))
-                                                        <span class="variation-option-price">R$ {{ number_format($lowestPrice, 2, ',', '.') }}</span>
+                                                    @if(isset($lowestByRam[$ram]))
+                                                        <span class="variation-option-price">R$ {{ number_format($lowestByRam[$ram], 2, ',', '.') }}</span>
                                                     @endif
                                                 </span>
                                             </label>
