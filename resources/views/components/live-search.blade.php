@@ -143,7 +143,7 @@
     padding: 12px;
     backdrop-filter: blur(10px);
     /* Evita bloquear cliques na página quando o dropdown estiver visível */
-    pointer-events: none;
+    pointer-events: none !important;
 }
 
 .live-search-loading {
@@ -167,7 +167,7 @@
 .live-search-content {
     padding: 0.5rem;
     /* Reabilita interação apenas no conteúdo */
-    pointer-events: auto;
+    pointer-events: auto !important;
 }
 
 .live-search-item {
@@ -303,7 +303,7 @@
     background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
     border-radius: 0 0 16px 16px;
     margin: 0 -8px -8px -8px;
-    pointer-events: auto;
+    pointer-events: auto !important;
 }
 
 .live-search-footer a {

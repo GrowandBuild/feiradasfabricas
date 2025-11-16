@@ -2002,4 +2002,62 @@
     initVariationSelectors();
     @endif
 </script>
+@php $uiDebug = request()->boolean('debug'); @endphp
+@if($uiDebug)
+<script>
+    // UI Diagnostics - only when ?debug=1
+    (function(){
+        const dbgBtn = document.createElement('button');
+        dbgBtn.textContent = 'UI Debug ON';
+        dbgBtn.style.cssText = 'position:fixed;bottom:16px;right:16px;z-index:2147483647;padding:8px 12px;border-radius:8px;background:#111;color:#fff;border:none;box-shadow:0 6px 20px rgba(0,0,0,.25);pointer-events:auto;';
+        document.body.appendChild(dbgBtn);
+        let enabled = false;
+        let handler = null;
+        function format(el){
+            if(!el) return 'null';
+            const cs = window.getComputedStyle(el);
+            return `${el.tagName.toLowerCase()}${el.id?('#'+el.id):''}${el.className?('.'+el.className.toString().replace(/\s+/g,'.')):''} | z:${cs.zIndex} | pe:${cs.pointerEvents} | pos:${cs.position}`;
+        }
+        function probe(e){
+            const x = e.clientX, y = e.clientY;
+            const top = document.elementFromPoint(x,y);
+            console.groupCollapsed('UI click probe @', x, y);
+            console.log('elementFromPoint:', top, format(top));
+            console.log('target:', e.target, format(e.target));
+            const path = e.composedPath ? e.composedPath() : [];
+            if(path.length){
+                console.log('path:');
+                path.slice(0,8).forEach((n,i)=>console.log(i, format(n)));
+            }
+            const lsr = document.querySelector('.live-search-results');
+            if(lsr){
+                const cs = getComputedStyle(lsr);
+                console.log('live-search-results:', format(lsr), 'display:', cs.display, 'visibility:', cs.visibility);
+                console.log('live-search-content pe:', getComputedStyle(document.querySelector('.live-search-content')||lsr).pointerEvents);
+            }
+            console.groupEnd();
+            // Visual pin
+            const pin = document.createElement('div');
+            pin.style.cssText = 'position:fixed;width:10px;height:10px;border-radius:50%;background:#ff3b30;box-shadow:0 0 0 4px rgba(255,59,48,.3);transform:translate(-50%,-50%);z-index:2147483647;pointer-events:none;';
+            pin.style.left = x+'px'; pin.style.top = y+'px';
+            document.body.appendChild(pin);
+            setTimeout(()=>pin.remove(), 800);
+        }
+        dbgBtn.addEventListener('click', ()=>{
+            enabled = !enabled;
+            dbgBtn.textContent = enabled ? 'UI Debug: Capturando (clique em qualquer lugar)' : 'UI Debug ON';
+            if(enabled){
+                handler = probe; document.addEventListener('click', handler, true);
+            } else if(handler){
+                document.removeEventListener('click', handler, true); handler = null;
+            }
+        });
+        // Utilitário: força esconder o dropdown de busca
+        window.forceCloseLiveSearch = function(){
+            const el = document.getElementById('liveSearchResults'); if(el){ el.style.display='none'; console.log('Live Search fechado'); }
+        }
+        console.info('UI Debug habilitado. Use window.forceCloseLiveSearch() para fechar o dropdown de busca.');
+    })();
+</script>
+@endif
 @endsection
