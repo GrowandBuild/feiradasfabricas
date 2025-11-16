@@ -21,6 +21,25 @@
     $storageAxis = $variationMatrix->pluck('storage')->filter()->unique()->values();
     $colorAxis = $variationMatrix->pluck('color')->filter()->unique()->values();
     $images = collect($product->all_images)->filter()->values();
+    // Compat: variáveis legadas ainda referenciadas em trechos antigos abaixo
+    // Mapeia $variationMatrix para o formato antigo usado em JS legado
+    $variationData = $variationMatrix->map(function($v){
+        return [
+            'id' => $v['id'] ?? null,
+            'ram' => $v['ram'] ?? null,
+            'storage' => $v['storage'] ?? null,
+            'color' => $v['color'] ?? null,
+            'color_hex' => $v['hex'] ?? null,
+            'price' => $v['price_display'] ?? number_format($v['price_raw'] ?? 0, 2, ',', '.'),
+            'in_stock' => $v['in_stock'] ?? false,
+            'stock_quantity' => $v['stock'] ?? 0,
+            'sku' => $v['sku'] ?? null,
+        ];
+    })->values();
+    // Opções legadas
+    $storageOptions = $storageAxis;
+    $ramOptions = $ramAxis;
+    $colorOptions = $colorAxis;
 @endphp
 
 <div class="container py-5" id="pdp-root">
@@ -266,8 +285,7 @@
         resolve(); update(0);
     })();
     </script>
-    @endsection
-                            <button class="btn btn-outline-primary" id="btn-calc-frete">
+@endsection
                                 <span class="label-default"><i class="bi bi-calculator me-2"></i>Calcular frete</span>
                                 <span class="label-loading d-none"><i class="fas fa-spinner fa-spin me-2"></i>Calculando...</span>
                             </button>
