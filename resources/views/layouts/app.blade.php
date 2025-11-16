@@ -649,6 +649,7 @@
     </style>
     
     @yield('styles')
+    @stack('head')
 </head>
 <body>
 @php

@@ -307,47 +307,30 @@ class BannerController extends Controller
             }
         }
 
-        // Processar imagem desktop
+        // Processar imagem desktop (reverter para remover antiga antes de salvar nova)
         if ($request->hasFile('image')) {
-            // Upload tem prioridade - remover imagem anterior
             if ($banner->image) {
                 Storage::disk('public')->delete($banner->image);
             }
             $data['image'] = $request->file('image')->store('banners', 'public');
         } elseif ($request->has('remove_image') && $request->remove_image == '1') {
-            // Remover imagem desktop se solicitado (apenas se não houver upload)
             if ($banner->image) {
                 Storage::disk('public')->delete($banner->image);
             }
             $data['image'] = null;
-            // Garantir que o campo seja realmente atualizado
-            unset($data['remove_image']);
-        } else {
-            // Se não há upload nem remoção, manter o valor atual (não incluir no update)
-            unset($data['image']);
         }
-        
-        // Remover campos que não devem ser atualizados diretamente
-        unset($data['remove_image'], $data['remove_mobile_image']);
 
-        // Processar imagem mobile
+        // Processar imagem mobile (reverter para remover antiga antes de salvar nova)
         if ($request->hasFile('mobile_image')) {
-            // Upload tem prioridade - remover imagem anterior
             if ($banner->mobile_image) {
                 Storage::disk('public')->delete($banner->mobile_image);
             }
             $data['mobile_image'] = $request->file('mobile_image')->store('banners', 'public');
         } elseif ($request->has('remove_mobile_image') && $request->remove_mobile_image == '1') {
-            // Remover imagem mobile se solicitado (apenas se não houver upload)
             if ($banner->mobile_image) {
                 Storage::disk('public')->delete($banner->mobile_image);
             }
             $data['mobile_image'] = null;
-            // Garantir que o campo seja realmente atualizado
-            unset($data['remove_mobile_image']);
-        } else {
-            // Se não há upload nem remoção, manter o valor atual (não incluir no update)
-            unset($data['mobile_image']);
         }
 
         // Remover campos que não devem ser atualizados diretamente

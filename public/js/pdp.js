@@ -57,8 +57,8 @@
 
     if (mainImage) {
       mainImage.src = imageSrc;
-      mainImage.style.opacity = '0.7';
-      setTimeout(() => { mainImage.style.opacity = '1'; }, 150);
+      // Remove artificial fade to make updates instantaneous
+      // If you want a subtle effect, use CSS transition only (no JS timeout)
     }
 
     currentImageIndex = Math.max(0, Math.min(productImages.length - 1, imageNumber - 1));

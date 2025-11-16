@@ -1202,6 +1202,9 @@
 
 @section('scripts')
 @stack('scripts')
+@push('head')
+<link rel="preload" href="{{ asset('js/pdp.js') }}" as="script" fetchpriority="high">
+@endpush
 <script id="pdp-config" type="application/json">
 {!! json_encode([
     'product' => [
@@ -1223,7 +1226,7 @@
     'imageFallback' => asset('images/no-image.svg'),
 ], JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES) !!}
 </script>
-<script src="{{ asset('js/pdp.js') }}" defer></script>
+<script src="{{ asset('js/pdp.js') }}" defer fetchpriority="high"></script>
 @if(request()->has('debug') && filter_var(request('debug'), FILTER_VALIDATE_BOOLEAN))
 <script>
     // UI Diagnostics - only when ?debug=1
