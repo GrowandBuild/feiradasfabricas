@@ -278,8 +278,21 @@
         const state = {storage:null,ram:null,color:null};
         function resolve(){
             let match = variations.filter(v => (!state.storage||v.storage===state.storage) && (!state.ram||v.ram===state.ram) && (!state.color||v.color===state.color) && v.in_stock);
-                                <div class="form-text">Apenas números (ex.: 74673-030)</div>
-            else { varIdInput.value=''; addBtn.disabled=match.length===0; extra.style.display= match.length>1? 'block':'none'; if(match.length>1){ extra.textContent= match.length+' variações possíveis'; } priceEl.textContent='R$ {{ number_format($product->price,2,',','.') }}'; }
+            if (match.length === 1) {
+                const v = match[0];
+                if (priceEl) priceEl.textContent = 'R$ ' + v.price_display;
+                if (varIdInput) varIdInput.value = v.id;
+                if (addBtn) addBtn.disabled = false;
+                if (extra) { extra.style.display = 'block'; extra.textContent = 'SKU: ' + (v.sku||'-') + ' • Estoque: ' + v.stock; }
+            } else {
+                if (varIdInput) varIdInput.value = '';
+                if (addBtn) addBtn.disabled = (match.length === 0);
+                if (extra) {
+                    extra.style.display = match.length > 1 ? 'block' : 'none';
+                    if (match.length > 1) { extra.textContent = match.length + ' variações possíveis'; }
+                }
+                if (priceEl) priceEl.textContent = 'R$ {{ number_format($product->price, 2, ',', '.') }}';
+            }
         }
         btns.forEach(b=>{ b.addEventListener('click', ()=>{ const t=b.dataset.type; const v=b.dataset.value; if(state[t]===v){ state[t]=null; b.classList.remove('active'); } else { state[t]=v; document.querySelectorAll('.variation-btn[data-type="'+t+'"]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); } resolve(); }); });
         resolve(); update(0);
