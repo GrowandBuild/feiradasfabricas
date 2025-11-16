@@ -142,6 +142,8 @@
     margin-top: 0;
     padding: 12px;
     backdrop-filter: blur(10px);
+    /* Evita bloquear cliques na página quando o dropdown estiver visível */
+    pointer-events: none;
 }
 
 .live-search-loading {
@@ -164,6 +166,8 @@
 
 .live-search-content {
     padding: 0.5rem;
+    /* Reabilita interação apenas no conteúdo */
+    pointer-events: auto;
 }
 
 .live-search-item {
@@ -299,6 +303,7 @@
     background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
     border-radius: 0 0 16px 16px;
     margin: 0 -8px -8px -8px;
+    pointer-events: auto;
 }
 
 .live-search-footer a {
@@ -632,6 +637,22 @@ document.addEventListener('DOMContentLoaded', function() {
             searchResults.style.display = 'none';
         }
     });
+
+    // Se clicar no "vazio" do dropdown (fora dos itens/links), fecha também
+    searchResults.addEventListener('click', function(e) {
+        const clickedItem = e.target.closest('.live-search-item');
+        const clickedFooter = e.target.closest('.live-search-footer');
+        if (!clickedItem && !clickedFooter) {
+            searchResults.style.display = 'none';
+        }
+    });
+
+    // Ao rolar a página, fecha o dropdown para evitar sobrepor o conteúdo
+    window.addEventListener('scroll', function() {
+        if (searchResults.style.display !== 'none') {
+            searchResults.style.display = 'none';
+        }
+    }, { passive: true });
     
     // Fechar dropdown ao pressionar Escape
     searchInput.addEventListener('keydown', function(e) {
