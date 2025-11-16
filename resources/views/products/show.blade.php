@@ -4,7 +4,6 @@
 
 @section('content')
 @php
-    // ==== Dados Base (nova implementação limpa) ====
     $rawVariations = $product->activeVariations ?? collect();
     $variationMatrix = $rawVariations->map(fn($v) => [
         'id' => $v->id,
@@ -12,8 +11,8 @@
         'storage' => $v->storage,
         'color' => $v->color,
         'hex' => $v->color_hex,
+        'price' => (float) $v->price,
         'price_display' => number_format($v->price, 2, ',', '.'),
-        'price_raw' => (float) $v->price,
         'in_stock' => (bool) $v->in_stock,
         'stock' => (int) $v->stock_quantity,
         'sku' => $v->sku,
@@ -21,104 +20,126 @@
     $ramAxis = $variationMatrix->pluck('ram')->filter()->unique()->values();
     $storageAxis = $variationMatrix->pluck('storage')->filter()->unique()->values();
     $colorAxis = $variationMatrix->pluck('color')->filter()->unique()->values();
+    $images = collect($product->all_images)->filter()->values();
 @endphp
 
-<div class="pdp-container container-fluid py-5">
-    <!-- Breadcrumb -->
-                         alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
-                         class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
-                         onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
-                         onmouseenter="setMainImage('{{ $image }}', {{ $index + 1 }})"
-                         onmouseover="this.style.transform='scale(1.05)'"
-                         onmouseout="this.style.transform='scale(1)'"
-                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
+<div class="container py-5" id="pdp-root">
+    <div class="row g-4">
+        <div class="col-md-5">
+            <div class="border rounded p-3 bg-white h-100 d-flex flex-column">
+                <div class="position-relative mb-3">
+                    <img id="pdp-main-image" src="{{ $images->first() ?? asset('images/no-image.svg') }}" alt="{{ $product->name }}" class="img-fluid rounded w-100" style="max-height:480px;object-fit:contain;background:#f8f9fa;cursor:pointer" onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                    <div class="position-absolute top-0 end-0 m-2 small bg-dark bg-opacity-75 text-white px-2 py-1 rounded" id="pdp-counter">1/{{ max($images->count(),1) }}</div>
+                    <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y" id="pdp-prev" style="display:{{ $images->count()>1?'block':'none' }}"><i class="fas fa-chevron-left"></i></button>
+                    <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y" id="pdp-next" style="display:{{ $images->count()>1?'block':'none' }}"><i class="fas fa-chevron-right"></i></button>
                 </div>
-            @endforeach
-        </div>
-
-        <div class="product-column image-area">
-            <div class="main-image-container">
-                    <div class="main-image-wrapper position-relative" style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
-                        @if($product->is_unavailable)
-                            <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
-                             style="background: rgba(0,0,0,0.3); z-index: 10; border-radius: 12px;">
-                                <span class="badge bg-warning text-dark fs-5 px-4 py-3">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    Indisponível no momento
-                                </span>
-                            </div>
-                        @endif
-
-                        <img id="main-product-image" 
-                             src="{{ $product->first_image }}" 
-                             alt="{{ $product->name }}" 
-                             class="img-fluid rounded shadow-sm main-image"
-                         style="max-height: 520px; object-fit: contain; width: 100%; cursor: pointer; background-color: #f8f9fa;"
-                             onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                        
-                    <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
-                                <span class="badge bg-dark bg-opacity-75">
-                                    <i class="fas fa-images me-1"></i>
-                            <span id="current-image">1</span>/<span id="total-images">{{ max($product->getImageCount(), 1) }}</span>
-                                </span>
-                            </div>
-
-                    <button type="button" class="btn btn-light btn-sm position-absolute top-50 start-0 translate-middle-y ms-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
-                                    id="prev-image" onclick="changeImage(-1)">
-                                <i class="fas fa-chevron-left"></i>
-                            </button>
-                    <button type="button" class="btn btn-light btn-sm position-absolute top-50 end-0 translate-middle-y me-2 gallery-nav {{ $product->hasMultipleImages() ? '' : 'd-none' }}" 
-                                    id="next-image" onclick="changeImage(1)">
-                                <i class="fas fa-chevron-right"></i>
-                            </button>
-                    </div>
-                    </div>
+                <div class="d-flex gap-2 flex-wrap" id="pdp-thumbs">
+                    @foreach($images as $i => $img)
+                        <button type="button" class="p-0 border rounded bg-white" style="width:70px;height:70px;overflow:hidden" data-index="{{ $i }}">
+                            <img src="{{ $img }}" alt="{{ $product->name }} - Imagem {{ $i+1 }}" class="w-100 h-100" style="object-fit:contain" onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                        </button>
+                    @endforeach
                 </div>
-
-        <div class="product-column summary-area">
-            <div class="product-details">
-                <div class="purchase-summary mb-4">
-                    <div class="price-card mb-3">
-                        <div class="price-section">
-                            <span class="h3 price-value" id="product-price-display">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
-                            <span class="sub-price">Preço à vista</span>
-                                </div>
-                        {{-- Frete removido --}}
-                        <div class="stock-line" id="variation-stock-display" style="display: none;">
-                            <span class="badge bg-success" id="variation-stock-badge"></span>
-                        </div>
-                        @unless($product->hasVariations())
-                            <div class="stock-line">
-                                @if($product->stock_quantity > 0)
-                                    <span class="badge bg-success">
-                                        <i class="fas fa-check-circle me-1"></i>
-                                        Em estoque ({{ $product->stock_quantity }} unidades)
-                                    </span>
-                @else
-                                    <span class="badge bg-danger">
-                                        <i class="fas fa-times-circle me-1"></i>
-                                        Fora de estoque
-                                    </span>
-                @endif
-                            </div>
-                        @endunless
-                        <div id="variation-sku-display" class="sku-line" style="display: none;">
-                            <i class="bi bi-upc-scan"></i> <span id="selected-variation-sku"></span>
             </div>
         </div>
-
-                    <div class="info-highlights mb-4">
-                        <div class="highlight-item"><i class="bi bi-shield-check"></i> Garantia de 90 dias</div>
-                        <div class="highlight-item"><i class="bi bi-arrow-repeat"></i> Troca fácil em até 7 dias</div>
-                    </div>
+        <div class="col-md-7">
+            <div class="h-100 d-flex flex-column">
+                <h1 class="h3 mb-3">{{ $product->name }}</h1>
+                <div class="mb-3">
+                    <span id="pdp-price" class="h4">R$ {{ number_format($product->price,2,',','.') }}</span>
+                    <span class="text-muted small ms-2">à vista</span>
                 </div>
-
+                @if(!$product->hasVariations())
+                    <div class="mb-3">
+                        @if($product->stock_quantity>0)
+                            <span class="badge bg-success">Em estoque ({{ $product->stock_quantity }})</span>
+                        @else
+                            <span class="badge bg-danger">Fora de estoque</span>
+                        @endif
+                    </div>
+                @endif
                 @if($product->hasVariations())
-                    <div class="product-variations mb-4">
-                        <div class="variation-selector-group">
-                            @if($storageOptions->count() > 0)
-                                <div class="variation-selector mb-3">
-                                    <h6 class="variation-label">Armazenamento:</h6>
+                <div id="pdp-variations" class="mb-4">
+                    <div class="mb-3" data-axis="storage" style="display:{{ $storageAxis->count()? 'block':'none' }}">
+                        <h6 class="text-uppercase small fw-bold">Armazenamento</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach($storageAxis as $val)
+                                <button type="button" class="btn btn-outline-secondary btn-sm variation-btn" data-type="storage" data-value="{{ $val }}">{{ $val }}</button>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="mb-3" data-axis="ram" style="display:{{ $ramAxis->count()? 'block':'none' }}">
+                        <h6 class="text-uppercase small fw-bold">RAM</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach($ramAxis as $val)
+                                <button type="button" class="btn btn-outline-secondary btn-sm variation-btn" data-type="ram" data-value="{{ $val }}">{{ $val }}</button>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div class="mb-3" data-axis="color" style="display:{{ $colorAxis->count()? 'block':'none' }}">
+                        <h6 class="text-uppercase small fw-bold">Cor</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            @foreach($colorAxis as $val)
+                                <button type="button" class="btn btn-outline-secondary btn-sm variation-btn" data-type="color" data-value="{{ $val }}">{{ $val }}</button>
+                            @endforeach
+                        </div>
+                    </div>
+                    <div id="pdp-variation-extra" class="small text-muted" style="display:none"></div>
+                </div>
+                @endif
+                <div class="mt-auto">
+                    <form action="{{ route('cart.add', $product) }}" method="POST" class="d-flex align-items-center gap-2">
+                        @csrf
+                        <input type="number" name="quantity" value="1" min="1" class="form-control" style="width:100px">
+                        <input type="hidden" name="variation_id" id="pdp-variation-id">
+                        <button type="submit" class="btn btn-primary" id="pdp-add-btn" {{ $product->is_unavailable ? 'disabled' : '' }}>Adicionar ao carrinho</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="mt-5">
+        <h2 class="h5 mb-3">Descrição</h2>
+        <div class="bg-white border rounded p-3">
+            {!! nl2br(e($product->description ?? 'Sem descrição.')) !!}
+        </div>
+    </div>
+</div>
+
+<script>
+(()=>{
+    const images = @json($images);
+    let current = 0;
+    const main = document.getElementById('pdp-main-image');
+    const counter = document.getElementById('pdp-counter');
+    const prev = document.getElementById('pdp-prev');
+    const next = document.getElementById('pdp-next');
+    const thumbs = document.getElementById('pdp-thumbs');
+    function update(i){
+        if(!images.length) return; current = (i+images.length)%images.length; main.src = images[current]; counter.textContent = (current+1)+'/'+images.length; highlight(); }
+    function highlight(){ [...thumbs.querySelectorAll('button')].forEach(b=>{ b.classList.toggle('border-primary', parseInt(b.dataset.index)==current); }); }
+    prev?.addEventListener('click', ()=>update(current-1));
+    next?.addEventListener('click', ()=>update(current+1));
+    thumbs?.addEventListener('click', e=>{ const btn=e.target.closest('button[data-index]'); if(btn) update(parseInt(btn.dataset.index)); });
+    main?.addEventListener('dblclick', ()=>{ main.style.transform = main.style.transform==='scale(2)'?'scale(1)':'scale(2)'; main.style.cursor = main.style.transform==='scale(2)'?'zoom-out':'pointer'; });
+    document.addEventListener('keydown', e=>{ if(e.key==='ArrowLeft') update(current-1); else if(e.key==='ArrowRight') update(current+1); });
+    // Variations
+    const variations = @json($variationMatrix);
+    const btns = document.querySelectorAll('.variation-btn');
+    const extra = document.getElementById('pdp-variation-extra');
+    const priceEl = document.getElementById('pdp-price');
+    const varIdInput = document.getElementById('pdp-variation-id');
+    const addBtn = document.getElementById('pdp-add-btn');
+    const state = {storage:null,ram:null,color:null};
+    function resolve(){
+        let match = variations.filter(v => (!state.storage||v.storage===state.storage) && (!state.ram||v.ram===state.ram) && (!state.color||v.color===state.color) && v.in_stock);\n+        if(match.length===1){ const v=match[0]; priceEl.textContent='R$ '+v.price_display; varIdInput.value=v.id; addBtn.disabled=false; extra.style.display='block'; extra.textContent='SKU: '+v.sku+' • Estoque: '+v.stock; }
+        else { varIdInput.value=''; addBtn.disabled=match.length===0; extra.style.display= match.length>1? 'block':'none'; if(match.length>1){ extra.textContent= match.length+' variações possíveis'; } priceEl.textContent='R$ {{ number_format($product->price,2,',','.') }}'; }
+    }
+    btns.forEach(b=>{ b.addEventListener('click', ()=>{ const t=b.dataset.type; const v=b.dataset.value; if(state[t]===v){ state[t]=null; b.classList.remove('active'); } else { state[t]=v; document.querySelectorAll('.variation-btn[data-type="'+t+'"]').forEach(x=>x.classList.remove('active')); b.classList.add('active'); } resolve(); }); });
+    resolve(); update(0);
+})();
+</script>
+@endsection
                                     <div class="variation-options" id="storage-options">
                                         @foreach($storageOptions as $storage)
                                             @php
