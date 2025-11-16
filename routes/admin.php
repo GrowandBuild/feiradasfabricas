@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\BannerController;
+use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentBadgeController;
@@ -80,6 +81,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Banners
         Route::resource('banners', BannerController::class);
         Route::patch('banners/{banner}/toggle-active', [BannerController::class, 'toggleActive'])->name('banners.toggle-active');
+
+    // Galerias
+    Route::resource('galleries', AdminGalleryController::class);
+    Route::patch('galleries/{gallery}/toggle-publish', [AdminGalleryController::class, 'togglePublish'])->name('galleries.toggle-publish');
+    Route::post('galleries/{gallery}/images', [AdminGalleryController::class, 'uploadImages'])->name('galleries.images.upload');
+    Route::delete('galleries/{gallery}/images/{image}', [AdminGalleryController::class, 'destroyImage'])->name('galleries.images.destroy');
+    Route::post('galleries/{gallery}/images/reorder', [AdminGalleryController::class, 'reorderImages'])->name('galleries.images.reorder');
 
         // Selos de Marcas (Department Badges)
         Route::resource('department-badges', DepartmentBadgeController::class);

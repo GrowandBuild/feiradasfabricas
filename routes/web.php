@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DepartmentController;
+use App\Http\Controllers\GalleryController as PublicGalleryController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DangerController;
@@ -32,6 +33,10 @@ Route::get('/produto/{slug}/variacao', [HomeController::class, 'getProductVariat
 Route::get('/sitemap.xml', [App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
 Route::get('/contato', [ContactController::class, 'index'])->name('contact');
 Route::post('/contato', [ContactController::class, 'send'])->name('contact.send');
+
+// Galeria pública
+Route::get('/galeria', [PublicGalleryController::class, 'index'])->name('gallery.index');
+Route::get('/galeria/{slug}', [PublicGalleryController::class, 'show'])->name('gallery.show');
 
 // Rotas de departamentos
 Route::prefix('departamento')->name('department.')->group(function () {

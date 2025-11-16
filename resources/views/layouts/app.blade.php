@@ -848,6 +848,7 @@
                         <li><a href="#" class="text-light">Sobre Nós</a></li>
                         <li><a href="{{ route('contact') }}" class="text-light">Contato</a></li>
                         <li><a href="#" class="text-light">Trabalhe Conosco</a></li>
+                        <li><a href="{{ route('gallery.index') }}" class="text-light">Galeria</a></li>
                     </ul>
                 </div>
                 <div class="col-md-2">

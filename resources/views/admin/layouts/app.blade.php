@@ -1040,6 +1040,10 @@
                             <i class="bi bi-image"></i>
                             <span>Banners</span>
                         </a>
+                        <a class="nav-link {{ request()->routeIs('admin.galleries.*') ? 'active' : '' }}" href="{{ route('admin.galleries.index') }}">
+                            <i class="bi bi-images"></i>
+                            <span>Galerias</span>
+                        </a>
                         <a class="nav-link {{ request()->routeIs('admin.department-badges.*') ? 'active' : '' }}" href="{{ route('admin.department-badges.index') }}">
                             <i class="bi bi-award"></i>
                             <span>Selos de Marcas</span>
@@ -1359,6 +1363,10 @@
                 <a class="nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}" href="{{ route('admin.banners.index') }}">
                     <i class="bi bi-image"></i>
                     <span>Banners</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.galleries.*') ? 'active' : '' }}" href="{{ route('admin.galleries.index') }}">
+                    <i class="bi bi-images"></i>
+                    <span>Galerias</span>
                 </a>
                 <a class="nav-link {{ request()->routeIs('admin.department-badges.*') ? 'active' : '' }}" href="{{ route('admin.department-badges.index') }}">
                     <i class="bi bi-award"></i>
