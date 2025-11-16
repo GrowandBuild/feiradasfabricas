@@ -26,6 +26,15 @@
     // Frete removido: sem cálculos de envio/CEP
 @endphp
 <div class="container py-5">
+<style>
+    /* Garante que o conteúdo do produto fique acima de quaisquer overlays modestos */
+    .container.py-5 { position: relative; z-index: 2; }
+    .product-layout, .image-area, .info-area, .product-variations, .thumbnails-area, .main-image-container {
+        position: relative; z-index: 2; pointer-events: auto;
+    }
+    /* Botões de navegação e miniaturas permanecem interativos */
+    .gallery-nav, .thumbnail-img, .variation-option { pointer-events: auto; }
+</style>
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
