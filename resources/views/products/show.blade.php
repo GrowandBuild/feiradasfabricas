@@ -1276,6 +1276,8 @@
 
         updateImageCounter(imageNumber, totalImages);
     }
+    // Expõe globalmente para evitar ReferenceError em handlers injetados
+    window.setMainImage = setMainImage;
 
     function changeImage(direction) {
         if (totalImages <= 1) {
@@ -1351,23 +1353,33 @@
         totalImages = productImages.length;
             currentImageIndex = 0;
 
+        const safeProductName = @json($product->name);
         wrapper.innerHTML = productImages.map((image, index) => {
             const safeImage = image.replace(/'/g, "\\'");
+            const altTxt = `${safeProductName} - Imagem ${index + 1}`;
             return `
                 <div class="thumbnail-item">
                     <img src="${image}" 
-                         alt="{{ $product->name }} - Imagem ${index + 1 }}"
+                         alt="${altTxt}"
                          class="thumbnail-img rounded border ${index === 0 ? 'active' : ''}"
-                         onclick="setMainImage('${safeImage}', ${index + 1})"
-                         onmouseenter="setMainImage('${safeImage}', ${index + 1})"
-                         onmouseover="this.style.transform='scale(1.05)'"
-                         onmouseout="this.style.transform='scale(1)'"
+                         data-index="${index}"
                          onerror="this.src='${fallbackImage}'">
                 </div>
             `;
         }).join('');
 
         setMainImage(productImages[0], 1);
+        // Adiciona listeners após injeção (removemos handlers inline para evitar falha caso função não esteja global ainda)
+        wrapper.querySelectorAll('.thumbnail-img').forEach(img => {
+            img.addEventListener('mouseenter', () => {
+                const idx = parseInt(img.getAttribute('data-index'), 10) || 0;
+                window.setMainImage(productImages[idx], idx + 1);
+            });
+            img.addEventListener('click', () => {
+                const idx = parseInt(img.getAttribute('data-index'), 10) || 0;
+                window.setMainImage(productImages[idx], idx + 1);
+            });
+        });
     }
 
     function applyColorImages(color) {
