@@ -560,14 +560,14 @@ async function calcularFreteCarrinho(cep) {
 function renderCartQuotes(quotes, cep) {
     const box = document.getElementById('cart-frete-resultado');
     if (!box) return;
-    if (!Array.isArray(quotes) || quotes.length === 0) {
+    const withPrice = Array.isArray(quotes) ? quotes.filter(q => typeof q.price === 'number') : [];
+    if (withPrice.length === 0) {
         box.innerHTML = `<div class="alert alert-warning">Nenhuma opção disponível para o CEP informado.</div>`;
         box.style.display = 'block';
         return;
     }
-    const withPrice = quotes.filter(q => typeof q.price === 'number');
     const cheapest = withPrice.reduce((acc, q) => acc && acc.price <= q.price ? acc : q, withPrice[0]);
-    const items = quotes.map((q, idx) => {
+    const items = withPrice.map((q, idx) => {
         const preco = typeof q.price === 'number' ? q.price : null;
         const precoFmt = preco !== null ? `R$ ${preco.toFixed(2).replace('.', ',')}` : '—';
         let service = q.service || 'Serviço';

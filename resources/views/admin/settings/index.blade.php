@@ -307,17 +307,18 @@
                                         <div class="row mb-3">
                                             <div class="col-md-6">
                                                 <label for="melhor_envio_declared_mode" class="form-label">Modo Valor Declarado</label>
-                                                @php($declaredMode = setting('melhor_envio_declared_mode','cost'))
+                                                @php($declaredMode = setting('melhor_envio_declared_mode','none'))
                                                 <select id="melhor_envio_declared_mode" class="form-select">
+                                                    <option value="none" {{ $declaredMode==='none' ? 'selected' : '' }}>Sem seguro (mínimo)</option>
                                                     <option value="cost" {{ $declaredMode==='cost' ? 'selected' : '' }}>Custo</option>
                                                     <option value="cap" {{ $declaredMode==='cap' ? 'selected' : '' }}>Teto</option>
                                                     <option value="full" {{ $declaredMode==='full' ? 'selected' : '' }}>Preço cheio</option>
                                                 </select>
-                                                <div class="form-text">Reduz seguro para baixar tarifa</div>
+                                                <div class="form-text">Dica: use "Sem seguro" ou "Teto" baixo para fretes mais baratos. "Preço cheio" encarece bastante.</div>
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="melhor_envio_declared_cap" class="form-label">Teto Valor Declarado (R$)</label>
-                                                <input type="number" step="0.01" min="0" class="form-control" id="melhor_envio_declared_cap" value="{{ setting('melhor_envio_declared_cap',300) }}">
+                                                <input type="number" step="0.01" min="0" class="form-control" id="melhor_envio_declared_cap" value="{{ setting('melhor_envio_declared_cap',80) }}">
                                                 <div class="form-text">Usado quando modo = Teto</div>
                                             </div>
                                         </div>

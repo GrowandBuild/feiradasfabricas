@@ -93,13 +93,17 @@ class ShippingController extends Controller
             $usedWeight = max($weight, $volumetricWeight);
 
             // Valor declarado dinâmico conforme modo configurado
-            $declaredMode = setting('melhor_envio_declared_mode','cost');
-            $declaredCap = (float) setting('melhor_envio_declared_cap', 300);
+            // Valor declarado: padrão = none (mínimo simbólico) para baratear o frete
+            $declaredMode = setting('melhor_envio_declared_mode','none');
+            $declaredCap = (float) setting('melhor_envio_declared_cap', 80);
             $costPrice = (float) ($product->cost_price ?: ($product->price * 0.4));
             $priceFull = (float) ($product->price ?: 0);
             switch ($declaredMode) {
                 case 'cap':
                     $insuranceValue = min(max($costPrice, 0), $declaredCap);
+                    break;
+                case 'none': // modo opcional: desabilitar seguro (usa mínimo simbólico)
+                    $insuranceValue = 1.0;
                     break;
                 case 'full':
                     $insuranceValue = $priceFull;
@@ -222,6 +226,11 @@ class ShippingController extends Controller
                     ];
                 }
             }
+
+            // Remover opções sem preço (SDK pode retornar serviços sem cotação para o cenário atual)
+            $normalized = array_values(array_filter($normalized, function($n){
+                return isset($n['price']) && is_numeric($n['price']);
+            }));
 
             // Se não há serviços explicitamente configurados, filtrar para opções consideradas econômicas
             $hasCustomServices = !empty($serviceIds);
@@ -484,11 +493,15 @@ class ShippingController extends Controller
             $usedWeight = max($weight, $volumetricWeight);
 
             // Valor declarado conforme modo
-            $declaredMode = setting('melhor_envio_declared_mode','cost');
-            $declaredCap = (float) setting('melhor_envio_declared_cap', 300);
+            // Valor declarado: padrão = none (mínimo simbólico)
+            $declaredMode = setting('melhor_envio_declared_mode','none');
+            $declaredCap = (float) setting('melhor_envio_declared_cap', 80);
             switch ($declaredMode) {
                 case 'cap':
                     $insuranceValue = min(max($sumCost, 0), $declaredCap);
+                    break;
+                case 'none':
+                    $insuranceValue = 1.0;
                     break;
                 case 'full':
                     $insuranceValue = $sumPrice;
@@ -588,6 +601,11 @@ class ShippingController extends Controller
                     ];
                 }
             }
+
+            // Remover opções sem preço (podem ser serviços indisponíveis/sem cotação)
+            $normalized = array_values(array_filter($normalized, function($n){
+                return isset($n['price']) && is_numeric($n['price']);
+            }));
 
             $hasCustomServices = !empty($serviceIds);
             if (!$hasCustomServices) {

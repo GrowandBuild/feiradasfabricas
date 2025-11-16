@@ -1504,14 +1504,14 @@
     function renderQuotes(quotes) {
         const resultBox = document.getElementById('frete-resultado');
         if (!resultBox) return;
-        if (!Array.isArray(quotes) || quotes.length === 0) {
+        const withPrice = Array.isArray(quotes) ? quotes.filter(q => typeof q.price === 'number') : [];
+        if (withPrice.length === 0) {
             showFreteMessage('Nenhuma opção de frete disponível para o CEP informado.', 'warning');
             return;
         }
-        // Determinar cheapest & fastest
-        const withPrice = quotes.filter(q => typeof q.price === 'number');
+        // Determinar cheapest & fastest entre as que possuem preço
         const cheapest = withPrice.reduce((acc, q) => acc && acc.price <= q.price ? acc : q, withPrice[0]);
-        const withDays = quotes.filter(q => typeof q.delivery_days === 'number');
+        const withDays = withPrice.filter(q => typeof q.delivery_days === 'number');
         const fastest = withDays.reduce((acc, q) => acc && acc.delivery_days <= q.delivery_days ? acc : q, withDays[0]);
         const maxPrice = withPrice.reduce((acc, q) => q.price > acc ? q.price : acc, 0);
         const economyHint = maxPrice && cheapest ? `Economize até R$ ${(maxPrice - cheapest.price).toFixed(2).replace('.',',')}` : '';
@@ -1519,7 +1519,7 @@
         if (econEl) econEl.textContent = economyHint;
         document.getElementById('frete-actions')?.style.display = 'flex';
 
-            const itens = quotes.map((q, idx) => {
+            const itens = withPrice.map((q, idx) => {
             const preco = typeof q.price === 'number' ? q.price : null;
             const precoFmt = preco !== null ? `R$ ${preco.toFixed(2).replace('.', ',')}` : '—';
             const prazo = (q.delivery_days != null) ? `${q.delivery_days} dia(s) úteis` : '';
@@ -1847,11 +1847,28 @@
     }
 
     function initVariationSelectors() {
+        // Dispara atualização quando o input muda (via clique ou programaticamente)
         document.querySelectorAll('.variation-option input').forEach(input => {
             input.addEventListener('change', () => {
                 syncVariationOptionAvailability();
                 applyColorImages(getSelectedValue('color'));
                 updateVariation();
+            });
+        });
+
+        // Permite clicar no "card" inteiro da opção para selecionar
+        document.querySelectorAll('label.variation-option').forEach(label => {
+            label.addEventListener('click', (e) => {
+                const input = label.querySelector('input');
+                if (!input || input.disabled) {
+                    return;
+                }
+                if (!input.checked) {
+                    input.checked = true;
+                    // Garante que os listeners de change sejam disparados
+                    const ev = new Event('change', { bubbles: true });
+                    input.dispatchEvent(ev);
+                }
             });
         });
 
@@ -1951,6 +1968,18 @@
                     }
 
                     // Frete removido: sem recálculo de envio
+                    // Recalcular frete automaticamente se o CEP já foi informado
+                    try {
+                        const cepInput = document.getElementById('cep-destino');
+                        const qtyShipping = document.getElementById('qty-shipping');
+                        const cep = (cepInput?.value || '').replace(/\D/g, '').slice(0,8);
+                        const qty = parseInt(qtyShipping?.value || '1', 10) || 1;
+                        if (cep && cep.length === 8 && typeof calcularFrete === 'function') {
+                            calcularFrete(cep, qty);
+                        }
+                    } catch (e) {
+                        console.warn('Não foi possível recalcular o frete após mudar a variação.', e);
+                    }
                 } else {
                     selectedVariationId = null;
                     setAddToCartDisabled(true);
