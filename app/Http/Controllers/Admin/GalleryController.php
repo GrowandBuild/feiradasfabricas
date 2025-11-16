@@ -50,7 +50,15 @@ class GalleryController extends Controller
         $data['is_published'] = $request->boolean('is_published', true);
 
         if ($request->hasFile('cover_image')) {
-            $data['cover_image'] = $request->file('cover_image')->store('galleries/covers', 'public');
+            $dir = 'galleries/covers';
+            if (!Storage::disk('public')->exists($dir)) {
+                Storage::disk('public')->makeDirectory($dir);
+            }
+            $stored = $request->file('cover_image')->store($dir, 'public');
+            if (!$stored || !Storage::disk('public')->exists($stored)) {
+                return redirect()->back()->with('error', 'Falha ao salvar a capa. Verifique permissões do diretório storage.');
+            }
+            $data['cover_image'] = $stored;
         }
 
         $gallery = Gallery::create($data);
@@ -89,7 +97,15 @@ class GalleryController extends Controller
             if ($gallery->cover_image) {
                 Storage::disk('public')->delete($gallery->cover_image);
             }
-            $data['cover_image'] = $request->file('cover_image')->store('galleries/covers', 'public');
+            $dir = 'galleries/covers';
+            if (!Storage::disk('public')->exists($dir)) {
+                Storage::disk('public')->makeDirectory($dir);
+            }
+            $stored = $request->file('cover_image')->store($dir, 'public');
+            if (!$stored || !Storage::disk('public')->exists($stored)) {
+                return redirect()->back()->with('error', 'Falha ao salvar a capa. Verifique permissões do diretório storage.');
+            }
+            $data['cover_image'] = $stored;
         }
 
         $gallery->update($data);
@@ -123,22 +139,60 @@ class GalleryController extends Controller
 
     public function uploadImages(Request $request, Gallery $gallery)
     {
-        $request->validate([
-            'images.*' => ['required', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
+        $validated = $request->validate([
+            'images' => ['required', 'array'],
+            'images.*' => ['image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
+        ], [
+            'images.required' => 'Selecione pelo menos uma imagem.',
         ]);
 
-        $maxOrder = (int) ($gallery->images()->max('sort_order') ?? 0);
-
-        foreach ($request->file('images', []) as $file) {
-            $path = $file->store('galleries/' . $gallery->id, 'public');
-            $gallery->images()->create([
-                'image_path' => $path,
-                'sort_order' => ++$maxOrder,
-                'is_active' => true,
-            ]);
+        if (!$request->hasFile('images')) {
+            return redirect()->back()->with('error', 'Nenhuma imagem recebida. Verifique o tamanho (máx. 10MB cada) e o formato.');
         }
 
-        return redirect()->back()->with('success', 'Imagens enviadas com sucesso!');
+        $files = $request->file('images', []);
+        if (empty($files)) {
+            return redirect()->back()->with('error', 'Nenhuma imagem recebida.');
+        }
+
+        $maxOrder = (int) ($gallery->images()->max('sort_order') ?? 0);
+        $success = 0;
+        $failed = 0;
+
+        foreach ($files as $file) {
+            try {
+                $dir = 'galleries/' . $gallery->id;
+                if (!Storage::disk('public')->exists($dir)) {
+                    Storage::disk('public')->makeDirectory($dir);
+                }
+                $path = $file->store($dir, 'public');
+                if (!$path || !Storage::disk('public')->exists($path)) {
+                    throw new \RuntimeException('Falha ao gravar arquivo no disco público');
+                }
+                $gallery->images()->create([
+                    'image_path' => $path,
+                    'sort_order' => ++$maxOrder,
+                    'is_active' => true,
+                ]);
+                $success++;
+            } catch (\Throwable $e) {
+                \Log::error('Falha ao salvar imagem da galeria', [
+                    'gallery_id' => $gallery->id,
+                    'error' => $e->getMessage(),
+                ]);
+                $failed++;
+            }
+        }
+
+        if ($success === 0) {
+            return redirect()->back()->with('error', 'Não foi possível enviar as imagens.');
+        }
+
+        $msg = "$success imagem(ns) enviada(s) com sucesso.";
+        if ($failed > 0) {
+            $msg .= " $failed falhou(aram).";
+        }
+        return redirect()->back()->with('success', $msg);
     }
 
     public function destroyImage(Gallery $gallery, GalleryImage $image)
