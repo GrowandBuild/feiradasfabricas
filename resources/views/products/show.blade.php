@@ -21,19 +21,51 @@
     $ramAxis = $variationMatrix->pluck('ram')->filter()->unique()->values();
     $storageAxis = $variationMatrix->pluck('storage')->filter()->unique()->values();
     $colorAxis = $variationMatrix->pluck('color')->filter()->unique()->values();
+    // Compat vars para layout anterior (mantém blocos existentes funcionando)
+    $variationData = $variationMatrix->map(function($v){
+        return [
+            'ram' => $v['ram'] ?? null,
+            'storage' => $v['storage'] ?? null,
+            'color' => $v['color'] ?? null,
+            'color_hex' => $v['hex'] ?? null,
+            'price' => number_format($v['price_raw'] ?? 0, 2, ',', '.'),
+            'in_stock' => (bool) ($v['in_stock'] ?? false),
+            'stock_quantity' => (int) ($v['stock'] ?? 0),
+            'sku' => $v['sku'] ?? null,
+        ];
+    })->values();
+    $storageOptions = $storageAxis;
+    $ramOptions = $ramAxis;
+    $colorOptions = $colorAxis;
 @endphp
 
 <div class="pdp-container container-fluid py-5">
     <!-- Breadcrumb -->
-                         alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
-                         class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
-                         onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
-                         onmouseenter="setMainImage('{{ $image }}', {{ $index + 1 }})"
-                         onmouseover="this.style.transform='scale(1.05)'"
-                         onmouseout="this.style.transform='scale(1)'"
-                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
+    <div class="product-layout">
+        <div class="product-column thumbnails-area">
+            <div class="thumbnails-container">
+                <div id="thumbnailsWrapper" class="thumbnails-wrapper d-flex flex-column">
+                    @php($images = $product->all_images ?? [])
+                    @forelse($images as $index => $image)
+                        <div class="thumbnail-item">
+                            <img src="{{ $image }}"
+                                 alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
+                                 class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
+                                 onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
+                                 onmouseenter="setMainImage('{{ $image }}', {{ $index + 1 }})"
+                                 onmouseover="this.style.transform='scale(1.05)'"
+                                 onmouseout="this.style.transform='scale(1)'"
+                                 onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                        </div>
+                    @empty
+                        <div class="thumbnail-item">
+                            <img src="{{ asset('images/no-image.svg') }}"
+                                 alt="{{ $product->name }} - Imagem 1"
+                                 class="thumbnail-img rounded border active">
+                        </div>
+                    @endforelse
                 </div>
-            @endforeach
+            </div>
         </div>
 
         <div class="product-column image-area">
