@@ -108,7 +108,8 @@ class CartController extends Controller
 
         $cartCount = $this->getCartCount();
         $subtotal = $this->calculateSubtotal($this->getCartItems());
-
+        // Ao alterar o carrinho, invalidar seleção de frete (pode ficar desatualizada)
+        Session::forget('shipping_selection');
 
         return response()->json([
             'success' => true,
@@ -155,7 +156,8 @@ class CartController extends Controller
 
         $cartCount = $this->getCartCount();
         $subtotal = $this->calculateSubtotal($this->getCartItems());
-
+        // Quantidade mudou, invalida seleção de frete
+        Session::forget('shipping_selection');
 
         return response()->json([
             'success' => true,
@@ -184,7 +186,8 @@ class CartController extends Controller
 
         $cartCount = $this->getCartCount();
         $subtotal = $this->calculateSubtotal($this->getCartItems());
-
+        // Item removido, invalida seleção de frete
+        Session::forget('shipping_selection');
 
         return response()->json([
             'success' => true,
@@ -209,6 +212,9 @@ class CartController extends Controller
                 $query->where('session_id', $sessionId);
             }
         })->delete();
+
+        // Carrinho limpo, limpar seleção de frete
+        Session::forget('shipping_selection');
 
         // Broadcast da atualização do carrinho
         $this->broadcastCartUpdate(0, 0);

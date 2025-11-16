@@ -304,6 +304,23 @@
                                             <input type="text" class="form-control" id="melhor_envio_service_ids" 
                                                    value="{{ is_array(setting('melhor_envio_service_ids')) ? implode(',', setting('melhor_envio_service_ids')) : (setting('melhor_envio_service_ids','')) }}" placeholder="1,2,3">
                                         </div>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="melhor_envio_declared_mode" class="form-label">Modo Valor Declarado</label>
+                                                @php($declaredMode = setting('melhor_envio_declared_mode','cost'))
+                                                <select id="melhor_envio_declared_mode" class="form-select">
+                                                    <option value="cost" {{ $declaredMode==='cost' ? 'selected' : '' }}>Custo</option>
+                                                    <option value="cap" {{ $declaredMode==='cap' ? 'selected' : '' }}>Teto</option>
+                                                    <option value="full" {{ $declaredMode==='full' ? 'selected' : '' }}>Preço cheio</option>
+                                                </select>
+                                                <div class="form-text">Reduz seguro para baixar tarifa</div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="melhor_envio_declared_cap" class="form-label">Teto Valor Declarado (R$)</label>
+                                                <input type="number" step="0.01" min="0" class="form-control" id="melhor_envio_declared_cap" value="{{ setting('melhor_envio_declared_cap',300) }}">
+                                                <div class="form-text">Usado quando modo = Teto</div>
+                                            </div>
+                                        </div>
                                         <div class="mb-3">
                                             @php($hasToken = !empty(setting('melhor_envio_token', '')))
                                             @if($hasToken)
@@ -1161,7 +1178,7 @@ function saveDeliveryConfig(provider) {
 
 function getDeliveryFields(provider) {
     const fields = {
-        'melhor_envio': ['melhor_envio_enabled','melhor_envio_client_id','melhor_envio_client_secret','melhor_envio_sandbox','melhor_envio_cep_origem','melhor_envio_service_ids']
+        'melhor_envio': ['melhor_envio_enabled','melhor_envio_client_id','melhor_envio_client_secret','melhor_envio_sandbox','melhor_envio_cep_origem','melhor_envio_service_ids','melhor_envio_declared_mode','melhor_envio_declared_cap']
     };
     return fields[provider] || [];
 }

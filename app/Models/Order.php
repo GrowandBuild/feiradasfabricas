@@ -20,6 +20,12 @@ class Order extends Model
         'shipping_amount',
         'discount_amount',
         'total_amount',
+        // Dados de entrega selecionada
+        'shipping_service',
+        'shipping_service_id',
+        'shipping_company',
+        'shipping_delivery_days',
+        'shipping_zip_code',
         'shipping_first_name',
         'shipping_last_name',
         'shipping_company',
@@ -53,6 +59,7 @@ class Order extends Model
         'shipping_amount' => 'decimal:2',
         'discount_amount' => 'decimal:2',
         'total_amount' => 'decimal:2',
+        'shipping_delivery_days' => 'integer',
     ];
 
     /**

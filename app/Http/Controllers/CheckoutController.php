@@ -28,8 +28,9 @@ class CheckoutController extends Controller
         $subtotal = $this->calculateSubtotal();
         $shipping = $this->calculateShipping();
         $total = $subtotal + $shipping;
+        $shippingSelection = session('shipping_selection');
 
-        return view('checkout.index', compact('cartItems', 'subtotal', 'shipping', 'total'));
+        return view('checkout.index', compact('cartItems', 'subtotal', 'shipping', 'total', 'shippingSelection'));
     }
 
     /**
@@ -133,6 +134,7 @@ class CheckoutController extends Controller
 
             if ($paymentResult['success']) {
                 // Armazenar dados temporariamente na sessão (SEM criar pedido)
+                $shippingSelection = session('shipping_selection');
                 session([
                     'temp_order_data' => [
                         'customer_name' => $request->customer_name,
@@ -146,6 +148,7 @@ class CheckoutController extends Controller
                         'payment_method' => $request->payment_method,
                         'subtotal' => $subtotal,
                         'shipping_cost' => $shipping,
+                        'shipping_selection' => $shippingSelection,
                         'total_amount' => $total,
                         'cart_items' => $cartItemsArray
                     ],
@@ -303,6 +306,7 @@ class CheckoutController extends Controller
         try {
             DB::beginTransaction();
 
+            $shipSel = $tempOrderData['shipping_selection'] ?? session('shipping_selection');
             $order = Order::create([
                 'order_number' => 'ORD-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
                 'customer_name' => $tempOrderData['customer_name'],
@@ -312,10 +316,11 @@ class CheckoutController extends Controller
                 'shipping_address' => $tempOrderData['shipping_address'],
                 'shipping_city' => $tempOrderData['shipping_city'],
                 'shipping_state' => $tempOrderData['shipping_state'],
-                'shipping_zip' => $tempOrderData['shipping_zip'],
+                // CEP preferencialmente vem da seleção de frete; se não, usa do temp
+                'shipping_zip_code' => isset($shipSel['cep']) ? (substr($shipSel['cep'],0,5).'-'.substr($shipSel['cep'],5)) : ($tempOrderData['shipping_zip'] ?? null),
                 'payment_method' => $tempOrderData['payment_method'],
                 'subtotal' => $tempOrderData['subtotal'],
-                'shipping_cost' => $tempOrderData['shipping_cost'],
+                'shipping_amount' => $tempOrderData['shipping_cost'] ?? 0,
                 'total_amount' => $tempOrderData['total_amount'],
                 'status' => 'paid',
                 'payment_status' => $status,
@@ -323,7 +328,12 @@ class CheckoutController extends Controller
                     'payment_id' => $checkoutData['payment_id'] ?? null,
                     'status' => $status,
                     'provider' => 'mercadopago'
-                ])
+                ]),
+                // Persistir seleção de frete
+                'shipping_service' => $shipSel['service'] ?? null,
+                'shipping_service_id' => $shipSel['service_id'] ?? null,
+                'shipping_company' => $shipSel['company'] ?? null,
+                'shipping_delivery_days' => $shipSel['delivery_days'] ?? null,
             ]);
 
             // Criar itens do pedido
@@ -402,6 +412,7 @@ class CheckoutController extends Controller
 
             // SÓ criar o pedido se o pagamento for aprovado
             if ($paymentResult['status'] === 'approved' || $paymentResult['status'] === 'paid') {
+                $shipSel = $tempOrderData['shipping_selection'] ?? session('shipping_selection');
                 $order = Order::create([
                     'order_number' => 'ORD-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
                     'customer_name' => $tempOrderData['customer_name'],
@@ -411,10 +422,10 @@ class CheckoutController extends Controller
                     'shipping_address' => $tempOrderData['shipping_address'],
                     'shipping_city' => $tempOrderData['shipping_city'],
                     'shipping_state' => $tempOrderData['shipping_state'],
-                    'shipping_zip' => $tempOrderData['shipping_zip'],
+                    'shipping_zip_code' => isset($shipSel['cep']) ? (substr($shipSel['cep'],0,5).'-'.substr($shipSel['cep'],5)) : ($tempOrderData['shipping_zip'] ?? null),
                     'payment_method' => $tempOrderData['payment_method'],
                     'subtotal' => $tempOrderData['subtotal'],
-                    'shipping_cost' => $tempOrderData['shipping_cost'],
+                    'shipping_amount' => $tempOrderData['shipping_cost'] ?? 0,
                     'total_amount' => $tempOrderData['total_amount'],
                     'status' => 'paid', // Pedido pago
                     'payment_status' => $paymentResult['status'],
@@ -422,7 +433,12 @@ class CheckoutController extends Controller
                         'payment_id' => $paymentResult['payment_id'],
                         'status' => $paymentResult['status'],
                         'provider' => 'mercadopago'
-                    ])
+                    ]),
+                    // Persistir seleção de frete
+                    'shipping_service' => $shipSel['service'] ?? null,
+                    'shipping_service_id' => $shipSel['service_id'] ?? null,
+                    'shipping_company' => $shipSel['company'] ?? null,
+                    'shipping_delivery_days' => $shipSel['delivery_days'] ?? null,
                 ]);
 
                 // Criar itens do pedido
@@ -506,8 +522,11 @@ class CheckoutController extends Controller
      */
     private function calculateShipping()
     {
-        // Implementar lógica de frete
-        return 0;
+        $selection = session('shipping_selection');
+        if (is_array($selection) && isset($selection['price'])) {
+            return (float) $selection['price'];
+        }
+        return 0.0;
     }
 
     /**

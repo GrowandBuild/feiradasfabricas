@@ -113,6 +113,49 @@
             </div>
         </div>
 
+        <!-- Informações de Frete Selecionado -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-truck"></i> Frete Selecionado</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Serviço:</strong></p>
+                        <p class="text-muted">{{ $order->shipping_service ?? '—' }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Transportadora:</strong></p>
+                        <p class="text-muted">{{ $order->shipping_company ?? '—' }}</p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Prazo:</strong></p>
+                        <p class="text-muted">
+                            @if($order->shipping_delivery_days)
+                                {{ $order->shipping_delivery_days }} dia(s) úteis
+                            @else
+                                —
+                            @endif
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>Valor do Frete:</strong></p>
+                        <p class="text-muted">R$ {{ number_format($order->shipping_amount ?? 0, 2, ',', '.') }}</p>
+                    </div>
+                </div>
+                @if($order->shipping_zip_code)
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1"><strong>CEP de Destino:</strong></p>
+                        <p class="text-muted">{{ $order->shipping_zip_code }}</p>
+                    </div>
+                </div>
+                @endif
+            </div>
+        </div>
+
         <!-- Cupons Aplicados -->
         @if($order->couponUsages && $order->couponUsages->count() > 0)
         <div class="card mb-4">

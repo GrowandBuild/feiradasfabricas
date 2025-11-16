@@ -182,3 +182,8 @@ Route::post('/danger/drop-shipping', [DangerController::class, 'dropShippingData
 
 // Frete: cálculo de cotação por produto (Melhor Envio)
 Route::post('/shipping/quote', [ShippingController::class, 'quote'])->name('shipping.quote');
+Route::post('/shipping/quote-cart', [ShippingController::class, 'quoteCart'])->name('shipping.quote.cart');
+// Frete: persistência da opção selecionada na sessão
+Route::post('/shipping/select', [ShippingController::class, 'select'])->name('shipping.select');
+Route::get('/shipping/current', [ShippingController::class, 'current'])->name('shipping.current');
+Route::delete('/shipping/selection', [ShippingController::class, 'clear'])->name('shipping.clear');

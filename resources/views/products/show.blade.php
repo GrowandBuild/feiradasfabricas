@@ -247,12 +247,16 @@
                     </div>
 
                 <!-- Shipping Calculator Widget -->
-                <div class="card border-0 shadow-sm mb-4" id="shipping-calculator" style="display: block;">
+                <div class="card border-0 shadow-sm mb-4 shipping-widget" id="shipping-calculator" style="display: block;">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
                             <h6 class="mb-0"><i class="bi bi-truck me-2"></i> Calcule o frete</h6>
                             <small class="text-muted">via Melhor Envio</small>
                         </div>
+                        @php($sandbox = setting('melhor_envio_sandbox', true))
+                        @if($sandbox)
+                            <div class="alert alert-warning py-1 mb-2"><small><i class="bi bi-exclamation-triangle me-1"></i>Ambiente de teste (sandbox) — valores podem estar acima do real.</small></div>
+                        @endif
                         <div class="row g-2 align-items-end">
                             <div class="col-8">
                                 <label for="cep-destino" class="form-label">CEP de destino</label>
@@ -270,8 +274,17 @@
                                 <span class="label-loading d-none"><i class="fas fa-spinner fa-spin me-2"></i>Calculando...</span>
                             </button>
                         </div>
-
+                        <button class="btn btn-sm btn-link text-decoration-none mt-2" id="toggle-frete-debug" type="button">Detalhes técnicos</button>
+                        <div class="small text-muted" id="frete-debug-panel" style="display:none;"></div>
+                        <div class="mt-2 d-flex justify-content-between align-items-center gap-2" id="frete-actions" style="display:none;">
+                            <div class="btn-group btn-group-sm" role="group" aria-label="Ordenar fretes">
+                                <button type="button" class="btn btn-outline-secondary active" id="sort-price" aria-pressed="true">Mais barato</button>
+                                <button type="button" class="btn btn-outline-secondary" id="sort-speed" aria-pressed="false">Mais rápido</button>
+                            </div>
+                            <small class="text-muted" id="economy-hint"></small>
+                        </div>
                         <div class="mt-3" id="frete-resultado" style="display:none;"></div>
+                        <div class="mt-3" id="frete-selecionado" style="display:none;"></div>
                     </div>
                 </div>
 
@@ -1150,6 +1163,23 @@
         font-size: 0.88rem;
     }
 
+    /* Shipping widget enhancements */
+    .shipping-widget {background: #ffffff; border: 1px solid rgba(148,163,184,0.25); border-radius: 14px;}
+    .shipping-widget .list-group-item {cursor: pointer; transition: background .15s, box-shadow .15s, border-color .15s;}
+    .shipping-widget .list-group-item:hover {background: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.06);}
+    .shipping-widget .list-group-item[aria-checked="true"], .shipping-widget .list-group-item:has(input[type=radio]:checked) {background: #eef6ff; border-left: 4px solid #0d6efd;}
+    .shipping-widget .price-display {font-size: 0.95rem;}
+    .shipping-widget .option-cheapest .price-display {color: #0d6efd;}
+    .shipping-widget .option-fastest .service-name::after {content: '⚡'; margin-left: 4px; font-size: .9rem;}
+    #frete-actions .btn-group .btn.active {background:#0d6efd; color:#fff;}
+    #frete-selecionado .alert {border-radius: 10px;}
+    .shipping-widget .badge {font-size: .65rem; font-weight:600; letter-spacing:.5px;}
+    @media (max-width: 576px){
+        .shipping-widget .list-group-item {padding: .75rem .85rem;}
+        #frete-actions {flex-direction: column; align-items: flex-start;}
+        #frete-actions small{margin-top:.25rem;}
+    }
+
     .product-variations {
         border: 1px solid rgba(148, 163, 184, 0.18);
         border-radius: 16px;
@@ -1461,6 +1491,7 @@
                 return;
             }
             renderQuotes(data.quotes || []);
+            if (data.debug) renderDebug(data.debug);
         } catch (err) {
             showFreteMessage('Falha na conexão. Tente novamente.', 'danger');
         } finally {
@@ -1477,32 +1508,217 @@
             showFreteMessage('Nenhuma opção de frete disponível para o CEP informado.', 'warning');
             return;
         }
-        const itens = quotes.map((q, idx) => {
+        // Determinar cheapest & fastest
+        const withPrice = quotes.filter(q => typeof q.price === 'number');
+        const cheapest = withPrice.reduce((acc, q) => acc && acc.price <= q.price ? acc : q, withPrice[0]);
+        const withDays = quotes.filter(q => typeof q.delivery_days === 'number');
+        const fastest = withDays.reduce((acc, q) => acc && acc.delivery_days <= q.delivery_days ? acc : q, withDays[0]);
+        const maxPrice = withPrice.reduce((acc, q) => q.price > acc ? q.price : acc, 0);
+        const economyHint = maxPrice && cheapest ? `Economize até R$ ${(maxPrice - cheapest.price).toFixed(2).replace('.',',')}` : '';
+        const econEl = document.getElementById('economy-hint');
+        if (econEl) econEl.textContent = economyHint;
+        document.getElementById('frete-actions')?.style.display = 'flex';
+
+            const itens = quotes.map((q, idx) => {
             const preco = typeof q.price === 'number' ? q.price : null;
             const precoFmt = preco !== null ? `R$ ${preco.toFixed(2).replace('.', ',')}` : '—';
             const prazo = (q.delivery_days != null) ? `${q.delivery_days} dia(s) úteis` : '';
-            const service = q.service || 'Serviço';
+            let service = q.service || 'Serviço';
+            if (service.startsWith('.')) service = 'Jadlog ' + service;
             const company = q.company ? ` • ${q.company}` : '';
+            const isCheapest = cheapest && q === cheapest;
+            const isFastest = fastest && q === fastest;
+            const arrivalDate = (q.delivery_days != null) ? formatArrival(q.delivery_days) : '';
+            const badges = `
+                ${isCheapest ? '<span class="badge bg-success me-1">Mais barato</span>' : ''}
+                ${isFastest ? '<span class="badge bg-info text-dark me-1">Mais rápido</span>' : ''}
+            `;
             return `
-                <label class="list-group-item d-flex justify-content-between align-items-center">
-                    <div>
-                        <input type="radio" name="shipping_service" class="form-check-input me-2" ${idx===0?'checked':''}>
-                        <span class="fw-semibold">${service}</span><small class="text-muted">${company}</small><br>
-                        <small class="text-muted">${prazo}</small>
+                <div class="shipping-option list-group-item ${isCheapest ? 'option-cheapest' : ''} ${isFastest ? 'option-fastest' : ''}" role="radio" aria-checked="${idx===0?'true':'false'}" tabindex="0" data-index="${idx}">
+                    <div class="d-flex justify-content-between align-items-start w-100">
+                        <div class="flex-grow-1 me-2">
+                            <div class="d-flex align-items-center mb-1">
+                                <input type="radio" name="shipping_service" class="form-check-input me-2" ${idx===0?'checked':''} value="${service}" data-price="${preco ?? ''}" data-days="${q.delivery_days ?? ''}" data-service-id="${q.service_id ?? ''}" data-company="${q.company ?? ''}">
+                                <span class="fw-semibold service-name">${service}</span>
+                            </div>
+                            <div class="small text-muted">
+                                ${prazo} ${arrivalDate ? ' • Chegada estimada ' + arrivalDate : ''}
+                            </div>
+                            <div class="mt-1">${badges}</div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold price-display">${precoFmt}</div>
+                        </div>
                     </div>
-                    <div class="fw-bold">${precoFmt}</div>
-                </label>`;
+                </div>`;
         }).join('');
 
         resultBox.innerHTML = `<div class="list-group list-group-flush border rounded">${itens}</div>`;
         resultBox.style.display = 'block';
+        attachShippingOptionEvents();
+        updateSelectedSummary();
     }
+
+    function renderDebug(d) {
+        const panel = document.getElementById('frete-debug-panel');
+        if (!panel) return;
+        panel.innerHTML = `
+            <div class="border rounded p-2 bg-light">
+                <div><strong>Modo declarado:</strong> ${d.declared_mode}</div>
+                <div><strong>Valor declarado:</strong> R$ ${Number(d.declared_value).toFixed(2).replace('.',',')} ${d.declared_mode==='cap' ? `(teto R$ ${Number(d.declared_cap).toFixed(2).replace('.',',')})` : ''}</div>
+                <div><strong>Peso real total:</strong> ${d.weight_real_kg_total} kg</div>
+                <div><strong>Peso volumétrico:</strong> ${d.weight_volumetric_kg_total} kg</div>
+                <div><strong>Peso usado:</strong> ${d.weight_used_kg} kg</div>
+                <div><strong>Dimensões (cm):</strong> ${d.dimensions_cm.length} × ${d.dimensions_cm.width} × ${d.dimensions_cm.height}</div>
+                <div><strong>Camadas empilhadas:</strong> ${d.stack_layers}</div>
+                <div><strong>Quantidade:</strong> ${d.quantity}</div>
+                <div><strong>Ambiente:</strong> ${d.environment}</div>
+            </div>`;
+    }
+
+    document.getElementById('toggle-frete-debug')?.addEventListener('click', () => {
+        const panel = document.getElementById('frete-debug-panel');
+        if (!panel) return;
+        panel.style.display = panel.style.display === 'none' ? 'block' : 'none';
+    });
 
     function showFreteMessage(message, type) {
         const resultBox = document.getElementById('frete-resultado');
         if (!resultBox) return;
         resultBox.innerHTML = `<div class="alert alert-${type}"><i class="bi bi-info-circle me-2"></i>${message}</div>`;
         resultBox.style.display = 'block';
+    }
+
+    function formatArrival(days) {
+        if (!Number.isFinite(days)) return '';
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
+    }
+
+    function attachShippingOptionEvents() {
+        document.querySelectorAll('.shipping-option').forEach(opt => {
+            opt.addEventListener('click', () => selectShippingOption(opt));
+            opt.addEventListener('keydown', e => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault(); selectShippingOption(opt);
+                }
+            });
+        });
+        document.getElementById('sort-price')?.addEventListener('click', () => sortShipping('price'));
+        document.getElementById('sort-speed')?.addEventListener('click', () => sortShipping('speed'));
+    }
+
+    async function selectShippingOption(opt) {
+        const radio = opt.querySelector('input[type="radio"]');
+        if (!radio) return;
+        radio.checked = true;
+        document.querySelectorAll('.shipping-option').forEach(o => o.setAttribute('aria-checked','false'));
+        opt.setAttribute('aria-checked','true');
+        updateSelectedSummary();
+        // Persistir seleção no backend
+        const cep = (document.getElementById('cep-destino')?.value || '').replace(/\D/g, '');
+        const qty = parseInt(document.getElementById('qty-shipping')?.value || '1', 10) || 1;
+        try {
+            await fetch('{{ route("shipping.select") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    service: radio.value,
+                    price: parseFloat(radio.getAttribute('data-price') || '0') || 0,
+                    delivery_days: parseInt(radio.getAttribute('data-days') || '0', 10) || null,
+                    service_id: parseInt(radio.getAttribute('data-service-id') || '0', 10) || null,
+                    company: radio.getAttribute('data-company') || null,
+                    cep: cep,
+                    product_id: {{ $product->id }},
+                    quantity: qty
+                })
+            });
+        } catch (e) {
+            console.warn('Falha ao salvar seleção de frete.', e);
+        }
+    }
+
+    async function updateSelectedSummary() {
+        const selectedRadio = document.querySelector('input[name="shipping_service"]:checked');
+        const summaryBox = document.getElementById('frete-selecionado');
+        if (!selectedRadio || !summaryBox) return;
+        const service = selectedRadio.value;
+        const price = selectedRadio.getAttribute('data-price');
+        const days = selectedRadio.getAttribute('data-days');
+        if (!service) { summaryBox.style.display='none'; return; }
+        summaryBox.innerHTML = `
+            <div class="alert alert-primary d-flex align-items-center justify-content-between py-2 px-3">
+                <div>
+                    <strong>${service}</strong> — ${price?('R$ '+Number(price).toFixed(2).replace('.',',')):'Preço indisponível'}
+                    ${days?`<small class="ms-2 text-muted">${days} dia(s)</small>`:''}
+                </div>
+                <button type="button" class="btn btn-sm btn-outline-primary" id="btn-alterar-frete">Alterar</button>
+            </div>`;
+        summaryBox.style.display = 'block';
+        document.getElementById('btn-alterar-frete')?.addEventListener('click', () => {
+            document.getElementById('frete-resultado')?.scrollIntoView({behavior:'smooth'});
+        });
+
+        // Persistir seleção atual (inclui caso seja a primeira opção após cálculo)
+        const cep = (document.getElementById('cep-destino')?.value || '').replace(/\D/g, '');
+        const qty = parseInt(document.getElementById('qty-shipping')?.value || '1', 10) || 1;
+        try {
+            await fetch('{{ route("shipping.select") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    service: service,
+                    price: parseFloat(price || '0') || 0,
+                    delivery_days: parseInt(days || '0', 10) || null,
+                    service_id: parseInt(selectedRadio.getAttribute('data-service-id') || '0', 10) || null,
+                    company: selectedRadio.getAttribute('data-company') || null,
+                    cep: cep,
+                    product_id: {{ $product->id }},
+                    quantity: qty
+                })
+            });
+        } catch (e) {
+            console.warn('Falha ao salvar seleção de frete.', e);
+        }
+    }
+
+    function sortShipping(mode) {
+        const resultBox = document.getElementById('frete-resultado');
+        if (!resultBox) return;
+        const options = Array.from(resultBox.querySelectorAll('.shipping-option'));
+        options.sort((a,b) => {
+            const ra = a.querySelector('input');
+            const rb = b.querySelector('input');
+            if (!ra || !rb) return 0;
+            if (mode==='price') {
+                return (parseFloat(ra.getAttribute('data-price')||'99999') - parseFloat(rb.getAttribute('data-price')||'99999'));
+            } else {
+                return (parseInt(ra.getAttribute('data-days')||'999') - parseInt(rb.getAttribute('data-days')||'999'));
+            }
+        });
+        const container = resultBox.querySelector('.list-group');
+        if (container) {
+            options.forEach(o => container.appendChild(o));
+        }
+        // Toggle active states
+        const btnPrice = document.getElementById('sort-price');
+        const btnSpeed = document.getElementById('sort-speed');
+        if (mode==='price') {
+            btnPrice.classList.add('active'); btnSpeed.classList.remove('active');
+            btnPrice.setAttribute('aria-pressed','true'); btnSpeed.setAttribute('aria-pressed','false');
+        } else {
+            btnSpeed.classList.add('active'); btnPrice.classList.remove('active');
+            btnSpeed.setAttribute('aria-pressed','true'); btnPrice.setAttribute('aria-pressed','false');
+        }
     }
 
     // Sistema de variações de produtos

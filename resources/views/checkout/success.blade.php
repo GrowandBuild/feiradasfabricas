@@ -294,8 +294,22 @@
                     </div>
                     <div class="total-row">
                         <span>Frete:</span>
-                        <span>Grátis</span>
+                        <span>R$ {{ number_format($order->shipping_amount ?? 0, 2, ',', '.') }}</span>
                     </div>
+                    @if(!empty($order->shipping_service) || !empty($order->shipping_company) || !empty($order->shipping_delivery_days))
+                    <div class="total-row">
+                        <span>Serviço de Entrega:</span>
+                        <span>
+                            {{ $order->shipping_service ?? '—' }}
+                            @if($order->shipping_company)
+                                <small class="text-muted"> • {{ $order->shipping_company }}</small>
+                            @endif
+                            @if($order->shipping_delivery_days)
+                                <small class="text-muted"> • {{ $order->shipping_delivery_days }} dia(s) úteis</small>
+                            @endif
+                        </span>
+                    </div>
+                    @endif
                     <div class="total-row final-total">
                         <span>Total:</span>
                         <span>R$ {{ number_format($order->total_amount, 2, ',', '.') }}</span>
