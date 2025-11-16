@@ -4,37 +4,398 @@
 
 @section('content')
 @php
-    $variations = $product->activeVariations;
-    $variationData = $variations->map(function ($variation) {
-        return [
-            'id' => $variation->id,
-            'ram' => $variation->ram,
-            'storage' => $variation->storage,
-            'color' => $variation->color,
-            'in_stock' => (bool) $variation->in_stock,
-            'stock_quantity' => (int) $variation->stock_quantity,
-            'price' => number_format($variation->price, 2, ',', '.'),
-            'b2b_price' => $variation->b2b_price ? number_format($variation->b2b_price, 2, ',', '.') : null,
-            'color_hex' => $variation->color_hex,
-        ];
-    })->values();
-
-    $ramOptions = $variationData->pluck('ram')->filter()->unique()->values();
-    $storageOptions = $variationData->pluck('storage')->filter()->unique()->values();
-    $colorOptions = $variationData->pluck('color')->filter()->unique()->values();
-
-    // Frete removido: sem cálculos de envio/CEP
+    // ==== Dados Base (nova implementação limpa) ====
+    $rawVariations = $product->activeVariations ?? collect();
+    $variationMatrix = $rawVariations->map(fn($v) => [
+        'id' => $v->id,
+        'ram' => $v->ram,
+        'storage' => $v->storage,
+        'color' => $v->color,
+        'hex' => $v->color_hex,
+        'price_display' => number_format($v->price, 2, ',', '.'),
+        'price_raw' => (float) $v->price,
+        'in_stock' => (bool) $v->in_stock,
+        'stock' => (int) $v->stock_quantity,
+        'sku' => $v->sku,
+    ])->values();
+    $ramAxis = $variationMatrix->pluck('ram')->filter()->unique()->values();
+    $storageAxis = $variationMatrix->pluck('storage')->filter()->unique()->values();
+    $colorAxis = $variationMatrix->pluck('color')->filter()->unique()->values();
 @endphp
-<div class="container py-5">
+
+<div class="pdp-container container-fluid py-5">
+    <!-- Breadcrumb -->
+    <nav class="pdp-breadcrumb" aria-label="breadcrumb">
+        <ol class="breadcrumb mb-4">
+            <li class="breadcrumb-item"><a href="{{ route('home') }}">Início</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('products') }}">Produtos</a></li>
+            @if($product->categories->count())
+                <li class="breadcrumb-item"><a href="{{ route('products', ['category' => $product->categories->first()->slug]) }}">{{ $product->categories->first()->name }}</a></li>
+            @endif
+            <li class="breadcrumb-item active" aria-current="page">{{ $product->name }}</li>
+        </ol>
+    </nav>
+
+    <!-- GRID PRINCIPAL -->
+    <div class="pdp-grid">
+        <!-- Galeria -->
+        <section class="pdp-gallery" id="pdpGallery" aria-label="Galeria de imagens do produto">
+            <div class="pdp-main-image-wrapper">
+                <img id="pdpMainImage" src="{{ $product->first_image ?: asset('images/no-image.svg') }}" alt="Imagem principal - {{ $product->name }}" class="pdp-main-image" onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                <div class="pdp-image-tools">
+                    <button type="button" class="pdp-nav-btn" data-dir="prev" aria-label="Imagem anterior">‹</button>
+                    <button type="button" class="pdp-nav-btn" data-dir="next" aria-label="Próxima imagem">›</button>
+                </div>
+                <div class="pdp-counter" id="pdpImageCounter">1 / {{ max($product->getImageCount(), 1) }}</div>
+            </div>
+            <div class="pdp-thumbs" id="pdpThumbs" role="list">
+                @forelse($product->all_images as $i => $img)
+                    <button type="button" class="pdp-thumb {{ $i===0 ? 'is-active' : '' }}" role="listitem" data-index="{{ $i }}" aria-label="Miniatura {{ $i+1 }}">
+                        <img src="{{ $img }}" alt="{{ $product->name }} - {{ $i+1 }}" onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                    </button>
+                @empty
+                    <div class="pdp-thumb-empty"><i class="bi bi-image"></i></div>
+                @endforelse
+            </div>
+        </section>
+
+        <!-- Bloco Central: Título & Destaques -->
+        <section class="pdp-overview">
+            <header class="pdp-header mb-3">
+                <h1 class="pdp-title h2">{{ $product->name }}</h1>
+                @if($product->brand)
+                    <p class="pdp-brand text-muted mb-1">Marca: <strong>{{ $product->brand }}</strong></p>
+                @endif
+                <p class="text-muted small mb-0">SKU Base: {{ $product->sku ?? '—' }}</p>
+            </header>
+            <div class="pdp-price-card" id="pdpPriceCard">
+                <div class="pdp-price-line">
+                    <span id="pdpPrimaryPrice" class="pdp-price">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
+                    @if($product->sale_price && $product->sale_price < $product->price)
+                        <span class="pdp-price-original text-muted">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
+                    @endif
+                </div>
+                <small class="text-muted d-block">Preço à vista pode ter desconto adicional no Pix.</small>
+            </div>
+            <ul class="pdp-highlights list-unstyled mt-4 mb-4">
+                <li><i class="bi bi-shield-check"></i> Garantia de 90 dias</li>
+                <li><i class="bi bi-arrow-repeat"></i> Troca facilitada em até 7 dias</li>
+                <li><i class="bi bi-box-seam"></i> Envio seguro e embalagem protegida</li>
+                <li><i class="bi bi-lock"></i> Checkout criptografado</li>
+            </ul>
+            @if($product->description)
+                <article class="pdp-description">
+                    <h5 class="mb-2">Descrição</h5>
+                    <p class="text-muted mb-0">{{ $product->description }}</p>
+                </article>
+            @endif
+            @if($product->categories->count())
+                <div class="pdp-categories mt-4">
+                    @foreach($product->categories as $cat)
+                        <span class="badge rounded-pill bg-secondary me-1 mb-1">{{ $cat->name }}</span>
+                    @endforeach
+                </div>
+            @endif
+        </section>
+
+        <!-- Lateral Direita: Variações & Compra -->
+        <aside class="pdp-purchase" aria-label="Opções de compra">
+            @if($product->hasVariations())
+                <div class="pdp-variations" id="pdpVariations">
+                    <h6 class="mb-3">Escolha a configuração</h6>
+                    @if($storageAxis->count())
+                        <div class="pdp-variation-group" data-axis="storage">
+                            <span class="pdp-axis-label">Armazenamento</span>
+                            <div class="pdp-axis-options">
+                                @foreach($storageAxis as $val)
+                                    <button type="button" class="pdp-axis-btn" data-axis="storage" data-value="{{ $val }}">{{ $val }}</button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                    @if($colorAxis->count())
+                        <div class="pdp-variation-group" data-axis="color">
+                            <span class="pdp-axis-label">Cor</span>
+                            <div class="pdp-axis-options">
+                                @foreach($colorAxis as $val)
+                                    @php $hex = optional($variationMatrix->firstWhere('color',$val))['hex'] ?? '#e5e7eb'; @endphp
+                                    <button type="button" class="pdp-axis-btn" data-axis="color" data-value="{{ $val }}">
+                                        <span class="pdp-color-dot" style="background: {{ $hex }}"></span>{{ $val }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                    @if($ramAxis->count())
+                        <div class="pdp-variation-group" data-axis="ram">
+                            <span class="pdp-axis-label">RAM</span>
+                            <div class="pdp-axis-options">
+                                @foreach($ramAxis as $val)
+                                    <button type="button" class="pdp-axis-btn" data-axis="ram" data-value="{{ $val }}">{{ $val }}</button>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+                    <div id="pdpVariationNotice" class="alert alert-warning py-2 px-3 mt-3 d-none">
+                        Combinação indisponível. Ajuste as opções.
+                    </div>
+                    <div id="pdpSkuLine" class="mt-2 small text-muted d-none">
+                        SKU Selecionado: <strong id="pdpSkuValue"></strong>
+                    </div>
+                    <div id="pdpStockLine" class="mt-2 d-none">
+                        <span class="badge rounded-pill bg-success" id="pdpStockBadge"></span>
+                    </div>
+                </div>
+            @else
+                <div class="pdp-simple-stock mb-3">
+                    @if($product->stock_quantity > 0)
+                        <span class="badge bg-success">Em estoque ({{ $product->stock_quantity }})</span>
+                    @else
+                        <span class="badge bg-danger">Fora de estoque</span>
+                    @endif
+                </div>
+            @endif
+
+            <div class="pdp-cart-block mt-4">
+                @if(!$product->is_unavailable)
+                    <x-add-to-cart :product="$product" :showQuantity="true" buttonText="Adicionar ao Carrinho" buttonClass="btn btn-primary w-100 btn-lg" />
+                @else
+                    <button class="btn btn-secondary w-100 btn-lg" disabled>Indisponível</button>
+                @endif
+                <button class="btn btn-outline-dark w-100 mt-2" type="button"><i class="bi bi-heart me-2"></i>Favoritar</button>
+            </div>
+
+            <!-- Placeholder futuro: Widget de Frete (temporariamente removido) -->
+            {{-- FUTURO: inserir novo componente de cálculo de frete aqui --}}
+        </aside>
+    </div>
+
+    <!-- Relacionados -->
+    @if($relatedProducts->count())
+        <section class="pdp-related mt-5" aria-label="Produtos relacionados">
+            <h3 class="mb-4">Produtos Relacionados</h3>
+            <div class="row gx-3 gy-4">
+                @foreach($relatedProducts as $rel)
+                    <div class="col-6 col-md-4 col-lg-3">
+                        <div class="pdp-related-card h-100">
+                            <a class="pdp-related-media" href="{{ route('product', $rel->slug) }}">
+                                @if($rel->first_image)
+                                    <img src="{{ $rel->first_image }}" alt="{{ $rel->name }}" onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                @else
+                                    <div class="pdp-related-fallback"><i class="bi bi-image"></i></div>
+                                @endif
+                            </a>
+                            <div class="pdp-related-body">
+                                <h6 class="pdp-related-title mb-1">{{ Str::limit($rel->name, 58) }}</h6>
+                                <small class="text-muted">{{ $rel->brand }}</small>
+                                <div class="pdp-related-price mt-2">
+                                    @if($rel->sale_price && $rel->sale_price < $rel->price)
+                                        <span class="pdp-price">R$ {{ number_format($rel->sale_price,2,',','.') }}</span>
+                                        <span class="pdp-price-original">R$ {{ number_format($rel->price,2,',','.') }}</span>
+                                    @else
+                                        <span class="pdp-price">R$ {{ number_format($rel->price,2,',','.') }}</span>
+                                    @endif
+                                </div>
+                                <a href="{{ route('product', $rel->slug) }}" class="btn btn-outline-primary btn-sm w-100 mt-2">Ver detalhes</a>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        </section>
+    @endif
+</div>
+@endsection
+
+@section('styles')
 <style>
-    /* Garante que o conteúdo do produto fique acima de quaisquer overlays modestos */
-    .container.py-5 { position: relative; z-index: 2; }
-    .product-layout, .image-area, .info-area, .product-variations, .thumbnails-area, .main-image-container {
-        position: relative; z-index: 2; pointer-events: auto;
+    :root {
+        --pdp-bg: #f8fafc;
+        --pdp-card: #ffffff;
+        --pdp-border: #e2e8f0;
+        --pdp-radius: 18px;
+        --pdp-shadow: 0 8px 24px -4px rgba(15,23,42,.12);
+        --pdp-accent: #2563eb;
+        --pdp-accent-soft: rgba(37,99,235,.08);
+        --pdp-danger: #dc2626;
+        --pdp-success: #059669;
     }
-    /* Botões de navegação e miniaturas permanecem interativos */
-    .gallery-nav, .thumbnail-img, .variation-option { pointer-events: auto; }
+    .pdp-container { background: var(--pdp-bg); }
+    .pdp-breadcrumb .breadcrumb { background: transparent; }
+    .pdp-grid { display:grid; gap:2rem; grid-template-columns: minmax(260px,380px) minmax(320px,1fr) minmax(300px,360px); align-items:start; }
+    @media (max-width:1200px){ .pdp-grid{ grid-template-columns: minmax(260px,1fr) minmax(320px,1fr); grid-template-areas:"gallery overview" "purchase purchase"; }
+        .pdp-gallery{ order:0; } .pdp-overview{ order:1; } .pdp-purchase{ order:2; }
+    }
+    @media (max-width:992px){ .pdp-grid{ grid-template-columns:1fr; } }
+
+    /* Galeria */
+    .pdp-gallery { display:flex; flex-direction:column; gap:1rem; }
+    .pdp-main-image-wrapper { position:relative; background:var(--pdp-card); border:1px solid var(--pdp-border); border-radius:var(--pdp-radius); padding:1.25rem; box-shadow:var(--pdp-shadow); }
+    .pdp-main-image { width:100%; max-height:520px; object-fit:contain; transition:transform .35s, opacity .35s; cursor:zoom-in; }
+    .pdp-main-image-wrapper:hover .pdp-main-image { transform:scale(1.02); }
+    .pdp-image-tools { position:absolute; inset:0; display:flex; justify-content:space-between; align-items:center; pointer-events:none; }
+    .pdp-nav-btn { pointer-events:auto; background:#fff; border:1px solid var(--pdp-border); width:42px; height:42px; display:flex; align-items:center; justify-content:center; border-radius:50%; font-size:1.25rem; line-height:1; box-shadow:0 4px 16px rgba(0,0,0,.08); color:#334155; transition:all .25s; }
+    .pdp-nav-btn:hover { background:var(--pdp-accent); color:#fff; }
+    .pdp-counter { position:absolute; bottom:10px; right:14px; background:#334155; color:#fff; font-size:.75rem; padding:4px 10px; border-radius:999px; letter-spacing:.5px; box-shadow:0 4px 14px rgba(0,0,0,.15); }
+    .pdp-thumbs { display:grid; grid-template-columns:repeat(auto-fill,minmax(70px,1fr)); gap:.65rem; }
+    .pdp-thumb { position:relative; border:none; background:var(--pdp-card); padding:.35rem; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; box-shadow:0 4px 14px rgba(15,23,42,.08); transition:all .25s; }
+    .pdp-thumb img { width:100%; height:64px; object-fit:contain; }
+    .pdp-thumb.is-active { outline:2px solid var(--pdp-accent); box-shadow:0 0 0 4px var(--pdp-accent-soft); }
+    .pdp-thumb:hover { transform:translateY(-4px); }
+    .pdp-thumb-empty { background:#e2e8f0; border-radius:12px; height:72px; display:flex; align-items:center; justify-content:center; color:#64748b; }
+
+    /* Overview */
+    .pdp-overview { background:var(--pdp-card); border:1px solid var(--pdp-border); border-radius:var(--pdp-radius); padding:1.75rem 1.5rem; box-shadow:var(--pdp-shadow); }
+    .pdp-title { font-weight:700; letter-spacing:.5px; }
+    .pdp-price-card { background:linear-gradient(135deg,#fff,#f1f5f9); border:1px solid var(--pdp-border); border-radius:16px; padding:1rem 1.1rem; box-shadow:0 6px 20px rgba(0,0,0,.06); }
+    .pdp-price-line { display:flex; align-items:center; gap:.65rem; }
+    .pdp-price { font-size:2rem; font-weight:700; color:#ff9900; }
+    .pdp-price-original { text-decoration:line-through; font-size:.9rem; color:#94a3b8; }
+    .pdp-highlights li { display:flex; align-items:center; gap:.55rem; background:var(--pdp-card); border:1px solid var(--pdp-border); padding:.55rem .75rem; border-radius:12px; font-size:.85rem; box-shadow:0 4px 12px rgba(0,0,0,.04); margin-bottom:.5rem; }
+    .pdp-highlights i { color:#ff9900; }
+    .pdp-description { background:#fff; border:1px solid var(--pdp-border); padding:1rem 1.1rem; border-radius:14px; font-size:.92rem; line-height:1.45; box-shadow:0 4px 16px rgba(0,0,0,.05); }
+    .pdp-categories .badge { font-size:.65rem; letter-spacing:.5px; }
+
+    /* Purchase */
+    .pdp-purchase { background:var(--pdp-card); border:1px solid var(--pdp-border); border-radius:var(--pdp-radius); padding:1.5rem 1.4rem; box-shadow:var(--pdp-shadow); position:relative; }
+    .pdp-variations { display:flex; flex-direction:column; gap:1.1rem; }
+    .pdp-variation-group { display:flex; flex-direction:column; gap:.45rem; }
+    .pdp-axis-label { font-size:.75rem; text-transform:uppercase; font-weight:700; letter-spacing:.8px; color:#475569; }
+    .pdp-axis-options { display:flex; flex-wrap:wrap; gap:.5rem; }
+    .pdp-axis-btn { position:relative; border:1px solid var(--pdp-border); background:#fff; padding:.6rem .85rem; border-radius:11px; font-size:.8rem; font-weight:600; letter-spacing:.3px; cursor:pointer; transition:all .25s; box-shadow:0 4px 14px rgba(0,0,0,.04); }
+    .pdp-axis-btn:hover { border-color:var(--pdp-accent); box-shadow:0 6px 18px rgba(37,99,235,.18); }
+    .pdp-axis-btn.is-selected { background:var(--pdp-accent); color:#fff; box-shadow:0 0 0 3px var(--pdp-accent-soft); }
+    .pdp-axis-btn.is-disabled { opacity:.45; cursor:not-allowed; text-decoration:line-through; }
+    .pdp-color-dot { width:16px; height:16px; border-radius:50%; display:inline-block; margin-right:6px; box-shadow:inset 0 0 0 1px rgba(0,0,0,.15); }
+    #pdpVariationNotice { font-size:.75rem; }
+    #pdpStockBadge { font-size:.7rem; letter-spacing:.5px; }
+    .pdp-cart-block .btn-lg { font-weight:700; letter-spacing:.5px; }
+
+    /* Related */
+    .pdp-related-card { background:var(--pdp-card); border:1px solid var(--pdp-border); border-radius:16px; padding:.75rem; display:flex; flex-direction:column; box-shadow:var(--pdp-shadow); transition:transform .3s, box-shadow .3s; }
+    .pdp-related-card:hover { transform:translateY(-6px); box-shadow:0 14px 40px -6px rgba(15,23,42,.18); }
+    .pdp-related-media { display:block; border-radius:12px; overflow:hidden; background:#f1f5f9; aspect-ratio:1/1; position:relative; }
+    .pdp-related-media img { width:100%; height:100%; object-fit:cover; }
+    .pdp-related-fallback { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2rem; color:#94a3b8; }
+    .pdp-related-body { padding:.6rem .25rem .25rem; display:flex; flex-direction:column; flex:1; }
+    .pdp-related-title { font-weight:600; font-size:.82rem; line-height:1.2; }
+    .pdp-related-price { display:flex; align-items:center; gap:.5rem; }
+    .pdp-related-price .pdp-price { font-size:1rem; }
+    .pdp-related-price .pdp-price-original { font-size:.7rem; }
+    @media (max-width:768px){ .pdp-grid{ gap:1.25rem; } .pdp-main-image{ max-height:380px; } }
 </style>
+@endsection
+
+@section('scripts')
+<script>
+// ===== Nova Lógica PDP (sem reaproveitar código anterior) =====
+window.PDP = (function(){
+    const state = {
+        images: @json($product->all_images ?: []),
+        current: 0,
+        variationMatrix: @json($variationMatrix),
+        selection: { storage:null, color:null, ram:null },
+        activeVariation: null,
+    };
+
+    // --- Galeria ---
+    function updateMainImage(idx){
+        if(!state.images.length){ return; }
+        state.current = (idx + state.images.length) % state.images.length;
+        const el = document.getElementById('pdpMainImage');
+        const counter = document.getElementById('pdpImageCounter');
+        if(el){ el.style.opacity='0.6'; el.src = state.images[state.current]; setTimeout(()=>{ el.style.opacity='1'; },140); }
+        if(counter){ counter.textContent = (state.current+1) + ' / ' + state.images.length; }
+        document.querySelectorAll('.pdp-thumb').forEach(btn=>{
+            btn.classList.toggle('is-active', parseInt(btn.getAttribute('data-index'),10) === state.current);
+        });
+    }
+    function nextImage(){ updateMainImage(state.current+1); }
+    function prevImage(){ updateMainImage(state.current-1); }
+    function bindGallery(){
+        document.querySelectorAll('.pdp-thumb').forEach(btn=>{
+            btn.addEventListener('click',()=> updateMainImage(parseInt(btn.dataset.index,10)));
+            btn.addEventListener('mouseenter',()=> updateMainImage(parseInt(btn.dataset.index,10)));
+        });
+        document.querySelectorAll('.pdp-nav-btn').forEach(b=>{
+            b.addEventListener('click',()=> b.dataset.dir==='next'?nextImage():prevImage());
+        });
+        document.addEventListener('keydown', e=>{
+            if(e.key==='ArrowRight') nextImage(); else if(e.key==='ArrowLeft') prevImage();
+        });
+        const main = document.getElementById('pdpMainImage');
+        if(main){ main.addEventListener('dblclick',()=>{ if(main.style.transform==='scale(2)'){ main.style.transform='scale(1)'; main.style.cursor='zoom-in'; } else { main.style.transform='scale(2)'; main.style.cursor='zoom-out'; } }); }
+    }
+
+    // --- Variações ---
+    function allAxesSelected(){
+        const needed = ['storage','color','ram'].filter(ax=> state.variationMatrix.some(v=> v[ax] !== null));
+        return needed.every(ax=> !needed.includes(ax) || state.selection[ax] || !state.variationMatrix.some(v=> v[ax]));
+    }
+    function resolveVariation(){
+        if(!allAxesSelected()) return null;
+        return state.variationMatrix.find(v=>
+            (!v.storage || v.storage === state.selection.storage || state.selection.storage===null) &&
+            (!v.color || v.color === state.selection.color || state.selection.color===null) &&
+            (!v.ram || v.ram === state.selection.ram || state.selection.ram===null)
+        ) || null;
+    }
+    function refreshVariationUI(){
+        const notice = document.getElementById('pdpVariationNotice');
+        const skuLine = document.getElementById('pdpSkuLine');
+        const skuVal = document.getElementById('pdpSkuValue');
+        const stockLine = document.getElementById('pdpStockLine');
+        const stockBadge = document.getElementById('pdpStockBadge');
+        const priceEl = document.getElementById('pdpPrimaryPrice');
+        const cartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
+        const variation = resolveVariation();
+        state.activeVariation = variation;
+        if(!variation){
+            notice?.classList.remove('d-none');
+            skuLine?.classList.add('d-none');
+            stockLine?.classList.add('d-none');
+            if(cartBtn){ cartBtn.disabled = true; cartBtn.setAttribute('aria-disabled','true'); }
+            priceEl && (priceEl.textContent = 'R$ {{ number_format($product->price,2,',','.') }}');
+            return;
+        }
+        notice?.classList.add('d-none');
+        if(skuLine && skuVal){ skuVal.textContent = variation.sku || '—'; skuLine.classList.remove('d-none'); }
+        if(stockLine && stockBadge){
+            stockLine.classList.remove('d-none');
+            if(variation.in_stock && variation.stock > 0){
+                stockBadge.className='badge rounded-pill bg-success';
+                stockBadge.textContent = 'EM ESTOQUE ('+variation.stock+'u)';
+                cartBtn && (cartBtn.disabled=false, cartBtn.setAttribute('aria-disabled','false'), cartBtn.setAttribute('data-variation-id', variation.id));
+            } else {
+                stockBadge.className='badge rounded-pill bg-danger';
+                stockBadge.textContent = 'FORA DE ESTOQUE';
+                cartBtn && (cartBtn.disabled=true, cartBtn.setAttribute('aria-disabled','true'));
+            }
+        }
+        if(priceEl){ priceEl.textContent = 'R$ ' + variation.price_display; }
+        if(cartBtn){ const comp = document.querySelector('.add-to-cart-component'); comp?.setAttribute('data-variation-id', variation.id); }
+    }
+    function bindVariation(){
+        document.querySelectorAll('.pdp-axis-btn').forEach(btn=>{
+            btn.addEventListener('click',()=>{
+                if(btn.classList.contains('is-disabled')) return;
+                const axis = btn.dataset.axis; const val = btn.dataset.value;
+                state.selection[axis] = val;
+                document.querySelectorAll('.pdp-axis-btn[data-axis="'+axis+'"]').forEach(b=> b.classList.toggle('is-selected', b===btn));
+                // Ajuste de disponibilidade (ex: combinações sem estoque)
+                document.querySelectorAll('.pdp-axis-btn').forEach(b=> b.classList.remove('is-disabled'));
+                // Poderíamos adicionar lógica avançada aqui para desabilitar combinações impossíveis.
+                refreshVariationUI();
+            });
+        });
+    }
+
+    function init(){ bindGallery(); bindVariation(); refreshVariationUI(); }
+    document.addEventListener('DOMContentLoaded', init);
+    return { state, refreshVariationUI };
+})();
+</script>
+@endsection
     <!-- Breadcrumb -->
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
@@ -1234,6 +1595,9 @@
 @section('scripts')
 @stack('scripts')
 <script>
+    // ==== PDP Boot Diagnostics ====
+    try { console.log('[PDP] script boot start'); } catch(e){}
+    window.__PDP_BOOT = {started:true, galleryInit:false, variationInit:false, errors:[]};
     // Variáveis globais para a galeria
     let currentImageIndex = 0;
     const baseProductImages = @json($product->all_images);
@@ -1354,32 +1718,32 @@
             currentImageIndex = 0;
 
         const safeProductName = @json($product->name);
-        wrapper.innerHTML = productImages.map((image, index) => {
-            const safeImage = image.replace(/'/g, "\\'");
-            const altTxt = `${safeProductName} - Imagem ${index + 1}`;
-            return `
-                <div class="thumbnail-item">
-                    <img src="${image}" 
-                         alt="${altTxt}"
-                         class="thumbnail-img rounded border ${index === 0 ? 'active' : ''}"
-                         data-index="${index}"
-                         onerror="this.src='${fallbackImage}'">
-                </div>
-            `;
-        }).join('');
+        let html = '';
+        for (let i=0;i<productImages.length;i++) {
+            const img = productImages[i];
+            const altTxt = safeProductName + ' - Imagem ' + (i+1);
+            html += '<div class="thumbnail-item">'
+                + '<img src="' + img + '" alt="' + altTxt.replace(/"/g,'&quot;') + '"'
+                + ' class="thumbnail-img rounded border ' + (i===0? 'active':'') + '"'
+                + ' data-index="' + i + '"'
+                + '>'
+                + '</div>';
+        }
+        wrapper.innerHTML = html;
 
         setMainImage(productImages[0], 1);
-        // Adiciona listeners após injeção (removemos handlers inline para evitar falha caso função não esteja global ainda)
-        wrapper.querySelectorAll('.thumbnail-img').forEach(img => {
-            img.addEventListener('mouseenter', () => {
-                const idx = parseInt(img.getAttribute('data-index'), 10) || 0;
-                window.setMainImage(productImages[idx], idx + 1);
-            });
-            img.addEventListener('click', () => {
-                const idx = parseInt(img.getAttribute('data-index'), 10) || 0;
-                window.setMainImage(productImages[idx], idx + 1);
-            });
-        });
+        // Delegação de eventos para robustez
+        const delegate = function(e){
+            const target = e.target.closest('.thumbnail-img');
+            if(!target) return;
+            const idx = parseInt(target.getAttribute('data-index'),10) || 0;
+            if(window.setMainImage){ window.setMainImage(productImages[idx], idx+1); }
+        };
+        wrapper.removeEventListener('click', delegate);
+        wrapper.removeEventListener('mouseenter', delegate, true);
+        wrapper.addEventListener('click', delegate);
+        wrapper.addEventListener('mouseenter', delegate, true);
+        window.__PDP_BOOT.galleryInit = true;
     }
 
     function applyColorImages(color) {
@@ -1419,7 +1783,7 @@
     }
 
     document.addEventListener('DOMContentLoaded', function() {
-        renderThumbnails(productImages);
+        try { renderThumbnails(productImages); } catch(err){ window.__PDP_BOOT.errors.push('gallery:'+err.message); console.error('[PDP] gallery init error', err); }
 
         // Pré-seleção por querystring (?color=...&storage=...&ram=...)
         const params = new URLSearchParams(window.location.search);
@@ -1428,7 +1792,7 @@
         const qsRam = params.get('ram');
 
         if (typeof initVariationSelectors === 'function') {
-            initVariationSelectors();
+            try { initVariationSelectors(); window.__PDP_BOOT.variationInit = true; } catch(err){ window.__PDP_BOOT.errors.push('variation:'+err.message); console.error('[PDP] variation init error', err); }
             // Aplicar valores da query após inicializar os seletores
             if (qsStorage) setOptionSelected('storage', qsStorage);
             if (qsColor) setOptionSelected('color', qsColor);
@@ -2068,6 +2432,7 @@
             const el = document.getElementById('liveSearchResults'); if(el){ el.style.display='none'; console.log('Live Search fechado'); }
         }
         console.info('UI Debug habilitado. Use window.forceCloseLiveSearch() para fechar o dropdown de busca.');
+        console.info('Boot flags:', window.__PDP_BOOT);
     })();
 </script>
 @endif
