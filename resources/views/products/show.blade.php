@@ -2002,8 +2002,7 @@
     initVariationSelectors();
     @endif
 </script>
-@php $uiDebug = request()->boolean('debug'); @endphp
-@if($uiDebug)
+@if(request()->has('debug') && filter_var(request('debug'), FILTER_VALIDATE_BOOLEAN))
 <script>
     // UI Diagnostics - only when ?debug=1
     (function(){
