@@ -1245,6 +1245,7 @@
     // ==== PDP Boot Diagnostics ====
     try { console.log('[PDP] script boot start'); } catch(e){}
     window.__PDP_BOOT = {started:true, galleryInit:false, variationInit:false, errors:[]};
+    try { console.info('[PDP] template loaded at: {{ now()->format('Y-m-d H:i:s') }}'); } catch(e){}
     // Variáveis globais para a galeria
     let currentImageIndex = 0;
     const baseProductImages = @json($product->all_images);
@@ -1429,7 +1430,7 @@
     });
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
+    function __initPDP() {
         try { renderThumbnails(productImages); } catch(err){ window.__PDP_BOOT.errors.push('gallery:'+err.message); console.error('[PDP] gallery init error', err); }
 
         // Pré-seleção por querystring (?color=...&storage=...&ram=...)
@@ -1488,7 +1489,14 @@
                 await calcularFrete(cep, qty);
             });
         }
-    });
+    }
+
+    // Garante inicialização mesmo se o script carregar após o DOMContentLoaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', __initPDP);
+    } else {
+        try { __initPDP(); } catch(err){ window.__PDP_BOOT.errors.push('boot:'+err.message); console.error('[PDP] boot error', err); }
+    }
 
     async function calcularFrete(cep, qty) {
         const btn = document.getElementById('btn-calc-frete');
