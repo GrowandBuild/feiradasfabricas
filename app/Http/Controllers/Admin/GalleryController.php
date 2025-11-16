@@ -7,6 +7,7 @@ use App\Models\Gallery;
 use App\Models\GalleryImage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Validation\Rule;
 
 class GalleryController extends Controller
@@ -39,7 +40,7 @@ class GalleryController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'cover_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
             'is_published' => ['nullable', 'boolean'],
@@ -67,7 +68,7 @@ class GalleryController extends Controller
     public function update(Request $request, Gallery $gallery)
     {
         $validated = $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['nullable', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'cover_image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,webp', 'max:10240'],
             'remove_cover' => ['nullable', Rule::in(['1'])],
@@ -167,5 +168,55 @@ class GalleryController extends Controller
         }
 
         return redirect()->back()->with('success', 'Ordem das imagens atualizada!');
+    }
+
+    public function uploadImageFromUrl(Request $request, Gallery $gallery)
+    {
+        $data = $request->validate([
+            'image_url' => ['required', 'url']
+        ]);
+
+        try {
+            $response = Http::timeout(15)->get($data['image_url']);
+            if (!$response->ok()) {
+                return redirect()->back()->with('error', 'Não foi possível baixar a imagem do link informado.');
+            }
+
+            $contentType = $response->header('Content-Type', '');
+            $allowed = ['image/jpeg','image/png','image/gif','image/webp','image/jpg'];
+            if (!collect($allowed)->contains(fn($t) => str_contains($contentType, $t))) {
+                return redirect()->back()->with('error', 'Tipo de arquivo não suportado.');
+            }
+
+            $body = $response->body();
+            // Limite de 10MB
+            if (strlen($body) > 10 * 1024 * 1024) {
+                return redirect()->back()->with('error', 'A imagem por link excede 10MB.');
+            }
+
+            // Extensão pela content-type
+            $ext = match (true) {
+                str_contains($contentType, 'image/jpeg') => 'jpg',
+                str_contains($contentType, 'image/png') => 'png',
+                str_contains($contentType, 'image/gif') => 'gif',
+                str_contains($contentType, 'image/webp') => 'webp',
+                default => 'jpg',
+            };
+
+            $filename = 'galleries/'.$gallery->id.'/url_'.uniqid().'.'.$ext;
+            Storage::disk('public')->put($filename, $body);
+
+            $maxOrder = (int) ($gallery->images()->max('sort_order') ?? 0);
+            $gallery->images()->create([
+                'image_path' => $filename,
+                'sort_order' => $maxOrder + 1,
+                'is_active' => true,
+            ]);
+
+            return redirect()->back()->with('success', 'Imagem adicionada por link com sucesso!');
+        } catch (\Throwable $e) {
+            \Log::error('Upload por URL falhou', ['error' => $e->getMessage()]);
+            return redirect()->back()->with('error', 'Falha ao processar a imagem por link.');
+        }
     }
 }

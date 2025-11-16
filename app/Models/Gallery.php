@@ -29,13 +29,15 @@ class Gallery extends Model
 
         static::creating(function ($model) {
             if (empty($model->slug)) {
-                $model->slug = Str::slug($model->title);
+                $base = $model->title ? Str::slug($model->title) : '';
+                $model->slug = $base ?: Str::lower(Str::random(8));
             }
         });
 
         static::updating(function ($model) {
             if ($model->isDirty('title') && empty($model->slug)) {
-                $model->slug = Str::slug($model->title);
+                $base = $model->title ? Str::slug($model->title) : '';
+                $model->slug = $base ?: Str::lower(Str::random(8));
             }
         });
     }

@@ -62,7 +62,7 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <div class="fw-semibold">{{ $gallery->title }}</div>
+                                    <div class="fw-semibold">{{ $gallery->title ?: '(Sem título)' }}</div>
                                     <small class="text-muted">/galeria/{{ $gallery->slug }}</small>
                                 </td>
                                 <td>

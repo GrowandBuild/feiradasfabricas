@@ -86,6 +86,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('galleries', AdminGalleryController::class);
     Route::patch('galleries/{gallery}/toggle-publish', [AdminGalleryController::class, 'togglePublish'])->name('galleries.toggle-publish');
     Route::post('galleries/{gallery}/images', [AdminGalleryController::class, 'uploadImages'])->name('galleries.images.upload');
+    Route::post('galleries/{gallery}/images/url', [AdminGalleryController::class, 'uploadImageFromUrl'])->name('galleries.images.add-url');
     Route::delete('galleries/{gallery}/images/{image}', [AdminGalleryController::class, 'destroyImage'])->name('galleries.images.destroy');
     Route::post('galleries/{gallery}/images/reorder', [AdminGalleryController::class, 'reorderImages'])->name('galleries.images.reorder');
 

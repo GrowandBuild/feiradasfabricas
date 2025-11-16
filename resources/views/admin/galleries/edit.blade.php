@@ -26,7 +26,7 @@
                     @method('PUT')
                     <div class="mb-3">
                         <label class="form-label">Título</label>
-                        <input type="text" name="title" class="form-control" value="{{ old('title', $gallery->title) }}" required>
+                        <input type="text" name="title" class="form-control" value="{{ old('title', $gallery->title) }}">
                         @error('title')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
                     </div>
                     <div class="mb-3">
@@ -86,6 +86,19 @@
                     <button class="btn btn-outline-primary" type="submit">
                         <i class="bi bi-upload me-1"></i>Enviar
                     </button>
+                </form>
+                <hr class="my-4">
+                <form action="{{ route('admin.galleries.images.add-url', $gallery) }}" method="post">
+                    @csrf
+                    <label class="form-label">Adicionar por link (URL)</label>
+                    <div class="input-group">
+                        <input type="url" name="image_url" class="form-control" placeholder="https://exemplo.com/imagem.jpg" required>
+                        <button class="btn btn-outline-secondary" type="submit">
+                            <i class="bi bi-link-45deg me-1"></i>Adicionar
+                        </button>
+                    </div>
+                    @error('image_url')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
+                    <small class="text-muted">Aceita JPEG, PNG, GIF, WEBP até 10MB.</small>
                 </form>
             </div>
         </div>

@@ -28,7 +28,7 @@
                                     <img src="{{ $gallery->cover_url ?? asset('images/no-image.svg') }}" alt="{{ $gallery->title }}" class="w-100 h-100" style="object-fit:cover;">
                                 </div>
                                 <div class="card-body">
-                                    <h5 class="card-title mb-1" style="color:#0f172a; font-weight:700;">{{ $gallery->title }}</h5>
+                                    <h5 class="card-title mb-1" style="color:#0f172a; font-weight:700;">{{ $gallery->title ?: 'Galeria' }}</h5>
                                     <p class="text-muted small mb-2">{{ $gallery->images_count }} {{ Str::plural('foto', $gallery->images_count) }}</p>
                                     @if($gallery->description)
                                         <p class="text-muted" style="font-size: 0.95rem;">{{ Str::limit(strip_tags($gallery->description), 100) }}</p>

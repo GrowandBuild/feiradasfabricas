@@ -7,7 +7,7 @@
     <div class="container">
         <div class="d-flex align-items-center justify-content-between mb-4">
             <div>
-                <h1 class="mb-1" style="font-weight:800">{{ $gallery->title }}</h1>
+                <h1 class="mb-1" style="font-weight:800">{{ $gallery->title ?: 'Galeria' }}</h1>
                 @if($gallery->description)
                     <p class="text-muted mb-0">{!! nl2br(e($gallery->description)) !!}</p>
                 @endif
