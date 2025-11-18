@@ -8,10 +8,10 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\BannerController;
-use App\Http\Controllers\Admin\GalleryController as AdminGalleryController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentBadgeController;
+use App\Http\Controllers\Admin\AlbumController as AdminAlbumController;
 // use App\Http\Controllers\Admin\MelhorEnvioController; // removido (frete)
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +50,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/{product}/variations/color-hex', [ProductController::class, 'updateColorHex'])->name('products.variations.color-hex');
         Route::post('products/variations/{variation}/update-price', [ProductController::class, 'updateVariationPrice'])->name('products.variations.update-price');
         Route::post('products/{product}/update-description', [ProductController::class, 'updateDescription'])->name('products.update-description');
+    Route::post('products/{product}/update-name', [ProductController::class, 'updateName'])->name('products.update-name');
         Route::get('products/{product}/images', [ProductController::class, 'getImages'])->name('products.images');
         Route::post('products/{product}/update-images', [ProductController::class, 'updateImages'])->name('products.update-images');
         Route::post('products/{product}/remove-image', [ProductController::class, 'removeImage'])->name('products.remove-image');
@@ -82,17 +83,22 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('banners', BannerController::class);
         Route::patch('banners/{banner}/toggle-active', [BannerController::class, 'toggleActive'])->name('banners.toggle-active');
 
-    // Galerias
-    Route::resource('galleries', AdminGalleryController::class);
-    Route::patch('galleries/{gallery}/toggle-publish', [AdminGalleryController::class, 'togglePublish'])->name('galleries.toggle-publish');
-    Route::post('galleries/{gallery}/images', [AdminGalleryController::class, 'uploadImages'])->name('galleries.images.upload');
-    Route::post('galleries/{gallery}/images/url', [AdminGalleryController::class, 'uploadImageFromUrl'])->name('galleries.images.add-url');
-    Route::delete('galleries/{gallery}/images/{image}', [AdminGalleryController::class, 'destroyImage'])->name('galleries.images.destroy');
-    Route::post('galleries/{gallery}/images/reorder', [AdminGalleryController::class, 'reorderImages'])->name('galleries.images.reorder');
+        // Álbuns (novo sistema simples)
+        Route::resource('albums', AdminAlbumController::class);
+        Route::delete('albums/{album}/images/{image}', [AdminAlbumController::class, 'destroyImage'])->name('albums.images.destroy');
+
+        // Redireção legada: qualquer /admin/galleries* vai para /admin/albums
+        Route::get('galleries/{any?}', function () {
+            return redirect()->route('admin.albums.index');
+        })->where('any', '.*')->name('galleries.legacy');
 
         // Selos de Marcas (Department Badges)
         Route::resource('department-badges', DepartmentBadgeController::class);
         Route::patch('department-badges/{departmentBadge}/toggle-active', [DepartmentBadgeController::class, 'toggleActive'])->name('department-badges.toggle-active');
+    // Atalhos rápidos (JSON) para selos
+    Route::post('department-badges/{departmentBadge}/update-title', [DepartmentBadgeController::class, 'updateTitle'])->name('department-badges.update-title');
+    Route::post('department-badges/{departmentBadge}/update-image', [DepartmentBadgeController::class, 'updateImage'])->name('department-badges.update-image');
+    Route::post('department-badges/{departmentBadge}/remove-image', [DepartmentBadgeController::class, 'removeImage'])->name('department-badges.remove-image');
 
         // Configurações
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');

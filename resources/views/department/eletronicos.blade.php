@@ -1495,7 +1495,7 @@
 @if($departmentBadges && $departmentBadges->count() > 0)
 <section class="section-elegant" style="padding: 30px 0; background: var(--elegant-white);">
     <div class="container">
-        <div class="badges-wrapper" data-badge-loop>
+    <div class="badges-wrapper">
             <div class="badges-container">
                 @foreach($departmentBadges as $badge)
                     <div class="badge-item text-center" data-badge-item>
@@ -1507,9 +1507,17 @@
                                 <div class="badge-circle">
                                     <img src="{{ $badge->image_url }}" 
                                          alt="{{ $badge->title }}" 
-                                         class="badge-image">
+                                         class="badge-image @auth('admin') js-change-badge-image @endauth"
+                                         @auth('admin') data-badge-id="{{ $badge->id }}" @endauth
+                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                 </div>
-                                <p class="badge-title">{{ $badge->title }}</p>
+                                <p class="badge-title">
+                                    @auth('admin')
+                                        <span class="js-rename-badge" data-badge-id="{{ $badge->id }}" data-current-title="{{ $badge->title }}" style="cursor: pointer;">{{ $badge->title }}</span>
+                                    @else
+                                        {{ $badge->title }}
+                                    @endauth
+                                </p>
                             @if($badge->link)
                                 </a>
                             @else
@@ -1522,6 +1530,72 @@
     </div>
 </section>
 @endif
+
+@auth('admin')
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Delegated click: rename badge title
+    document.addEventListener('click', function(e){
+        const target = e.target.closest('.js-rename-badge');
+        if (!target) return;
+        e.preventDefault();
+        const id = target.getAttribute('data-badge-id');
+        const current = target.getAttribute('data-current-title') || target.textContent.trim();
+        const title = prompt('Novo título do selo:', current);
+        if (!title || title.trim().length === 0) return;
+        fetch(`/admin/department-badges/${id}/update-title`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+            body: JSON.stringify({ title: title.trim() })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.message || 'Erro ao renomear selo');
+            target.textContent = data.badge.title;
+            target.setAttribute('data-current-title', data.badge.title);
+        })
+        .catch(err => alert(err.message));
+    });
+
+    // Delegated click: change badge image
+    document.addEventListener('click', function(e){
+        const img = e.target.closest('.js-change-badge-image');
+        if (!img) return;
+        e.preventDefault();
+        const id = img.getAttribute('data-badge-id');
+        // Create file input on the fly to keep DOM light
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = 'image/*';
+        fileInput.style.display = 'none';
+        document.body.appendChild(fileInput);
+        fileInput.addEventListener('change', function(){
+            const file = fileInput.files && fileInput.files[0];
+            if (!file) { document.body.removeChild(fileInput); return; }
+            const fd = new FormData();
+            fd.append('image', file);
+            fetch(`/admin/department-badges/${id}/update-image`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                body: fd
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (!data.success) throw new Error(data.message || 'Erro ao atualizar imagem do selo');
+                img.src = data.badge.image_url;
+            })
+            .catch(err => alert(err.message))
+            .finally(() => { document.body.removeChild(fileInput); });
+        });
+        fileInput.click();
+    });
+});
+</script>
+@endpush
+@endauth
 
 <!-- Categorias -->
 @if($categories && $categories->count() > 0)

@@ -3,11 +3,11 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DepartmentController;
-use App\Http\Controllers\GalleryController as PublicGalleryController;
 use App\Http\Controllers\Auth\CustomerAuthController;
 use App\Http\Controllers\ContactController;
 use App\Http\Controllers\DangerController;
 use App\Http\Controllers\ShippingController;
+use App\Http\Controllers\AlbumPublicController;
 
 /*
 |--------------------------------------------------------------------------
@@ -34,9 +34,17 @@ Route::get('/sitemap.xml', [App\Http\Controllers\SitemapController::class, 'inde
 Route::get('/contato', [ContactController::class, 'index'])->name('contact');
 Route::post('/contato', [ContactController::class, 'send'])->name('contact.send');
 
-// Galeria pública
-Route::get('/galeria', [PublicGalleryController::class, 'index'])->name('gallery.index');
-Route::get('/galeria/{slug}', [PublicGalleryController::class, 'show'])->name('gallery.show');
+// Álbuns públicos (novo)
+Route::get('/albuns', [AlbumPublicController::class, 'index'])->name('albums.index');
+Route::get('/albuns/{slug}', [AlbumPublicController::class, 'show'])->name('albums.show');
+
+// Redireções legadas: "/galeria" e "/galerias" -> "/albuns"
+Route::get('/galeria/{any?}', function () {
+    return redirect()->route('albums.index');
+})->where('any', '.*');
+Route::get('/galerias/{any?}', function () {
+    return redirect()->route('albums.index');
+})->where('any', '.*');
 
 // Rotas de departamentos
 Route::prefix('departamento')->name('department.')->group(function () {

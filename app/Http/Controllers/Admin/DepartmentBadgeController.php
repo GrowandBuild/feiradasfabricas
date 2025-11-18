@@ -193,4 +193,97 @@ class DepartmentBadgeController extends Controller
                             ->withErrors(['error' => 'Erro ao alterar status do selo.']);
         }
     }
+
+    /**
+     * Atualização rápida do título (JSON) para atalhos inline
+     */
+    public function updateTitle(Request $request, DepartmentBadge $departmentBadge)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+        ]);
+
+        try {
+            $departmentBadge->update(['title' => $request->title]);
+            return response()->json([
+                'success' => true,
+                'badge' => [
+                    'id' => $departmentBadge->id,
+                    'title' => $departmentBadge->title,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar título do selo: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar título do selo.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Atualização rápida da imagem (JSON) para atalhos inline
+     */
+    public function updateImage(Request $request, DepartmentBadge $departmentBadge)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
+        ], [
+            'image.required' => 'Escolha uma imagem válida.',
+            'image.image' => 'O arquivo deve ser uma imagem.',
+            'image.mimes' => 'Formatos permitidos: jpeg, png, jpg, gif, webp, avif.',
+            'image.max' => 'Tamanho máximo: 10MB.',
+        ]);
+
+        try {
+            // Deleta a imagem antiga se existir
+            if ($departmentBadge->image && Storage::disk('public')->exists($departmentBadge->image)) {
+                Storage::disk('public')->delete($departmentBadge->image);
+            }
+
+            $path = $request->file('image')->store('department-badges', 'public');
+            $departmentBadge->update(['image' => $path]);
+
+            return response()->json([
+                'success' => true,
+                'badge' => [
+                    'id' => $departmentBadge->id,
+                    'image_url' => $departmentBadge->image_url,
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar imagem do selo: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar imagem do selo.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Remoção rápida da imagem (JSON) para atalhos inline
+     */
+    public function removeImage(Request $request, DepartmentBadge $departmentBadge)
+    {
+        try {
+            if ($departmentBadge->image && Storage::disk('public')->exists($departmentBadge->image)) {
+                Storage::disk('public')->delete($departmentBadge->image);
+            }
+            $departmentBadge->update(['image' => null]);
+
+            return response()->json([
+                'success' => true,
+                'badge' => [
+                    'id' => $departmentBadge->id,
+                    'image_url' => asset('images/no-image.svg'),
+                ],
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao remover imagem do selo: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao remover imagem do selo.'
+            ], 500);
+        }
+    }
 }

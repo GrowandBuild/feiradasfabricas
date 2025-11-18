@@ -16,7 +16,8 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Product::with(['categories', 'variations']);
+        // Carregar apenas o essencial para a listagem: contar variações e evitar N+1
+        $query = Product::query()->withCount('variations');
 
         // Se for requisição AJAX (Smart Search), buscar TODOS os produtos (incluindo inativos)
         $isSmartSearch = $request->ajax() || $request->wantsJson();
@@ -65,13 +66,38 @@ class ProductController extends Controller
             }
         }
 
-        $products = $query->paginate(20);
-        $categories = Category::all();
-        
-        // Se for requisição AJAX (Smart Search), retornar JSON
+        // Se for requisição AJAX (Smart Search), retornar JSON rapidamente e evitar carregar dados de view
         if ($isSmartSearch) {
-            return response()->json([
-                'products' => $products->map(function($product) {
+            // Relevância: privilegiar correspondência forte do termo, mesmo se o produto estiver desabilitado
+            if ($request->filled('search')) {
+                $s = trim($request->search);
+                $startsWith = $s . '%';
+                $contains = '%' . $s . '%';
+
+                // Score de match: exato > começa com > contém
+                $query->orderByRaw(
+                    "(CASE 
+                        WHEN LOWER(name) = LOWER(?) THEN 6
+                        WHEN LOWER(sku) = LOWER(?) THEN 6
+                        WHEN LOWER(name) LIKE LOWER(?) THEN 5
+                        WHEN LOWER(sku) LIKE LOWER(?) THEN 5
+                        WHEN LOWER(name) LIKE LOWER(?) THEN 4
+                        WHEN LOWER(sku) LIKE LOWER(?) THEN 4
+                        ELSE 0 
+                    END) DESC",
+                    [$s, $s, $startsWith, $startsWith, $contains, $contains]
+                );
+            }
+
+            $results = $query
+                // Tiebreakers: status depois da relevância textual
+                ->orderByDesc('is_active')
+                ->orderBy('is_unavailable') // false (0) primeiro
+                ->orderByDesc('in_stock')
+                ->orderBy('name')
+                ->limit(25)
+                ->get()
+                ->map(function ($product) {
                     return [
                         'id' => $product->id,
                         'name' => $product->name,
@@ -80,11 +106,29 @@ class ProductController extends Controller
                         'first_image' => $product->first_image,
                         'sku' => $product->sku,
                         'is_active' => $product->is_active,
-                        'is_unavailable' => $product->is_unavailable
+                        'is_unavailable' => $product->is_unavailable,
+                        'in_stock' => $product->in_stock,
                     ];
-                })
+                });
+
+            return response()->json([
+                'products' => $results,
             ]);
         }
+
+        $products = $query->paginate(20);
+        $categories = Category::all();
+        // Opções de filtro (evitar consultas dentro da view)
+        $brands = Product::query()
+            ->whereNotNull('brand')
+            ->distinct()
+            ->orderBy('brand')
+            ->pluck('brand');
+        $suppliers = Product::query()
+            ->whereNotNull('supplier')
+            ->distinct()
+            ->orderBy('supplier')
+            ->pluck('supplier');
         
         // Buscar todas as cores cadastradas no banco com seus hexadecimais
         $colorsFromDB = ProductVariation::whereNotNull('color')
@@ -100,7 +144,7 @@ class ProductController extends Controller
         
         // Não criar valores padrão aqui - deixar a view usar os defaults apenas para exibição
 
-        return view('admin.products.index', compact('products', 'categories', 'colorsFromDB'));
+        return view('admin.products.index', compact('products', 'categories', 'colorsFromDB', 'brands', 'suppliers'));
     }
 
     public function create()
@@ -1560,6 +1604,52 @@ class ProductController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Erro ao atualizar descrição: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Atualiza rapidamente o nome (título) do produto
+     */
+    public function updateName(Request $request, Product $product)
+    {
+        try {
+            $request->validate([
+                'name' => 'required|string|min:2|max:255',
+            ]);
+
+            $newName = trim($request->name);
+
+            // Atualiza nome e slug
+            $product->update([
+                'name' => $newName,
+                'slug' => Str::slug($newName),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Nome atualizado com sucesso!',
+                'product' => [
+                    'id' => $product->id,
+                    'name' => $product->name,
+                    'slug' => $product->slug,
+                ]
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dados inválidos',
+                'errors' => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar nome do produto: ' . $e->getMessage(), [
+                'product_id' => $product->id,
+                'exception' => $e
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar nome: ' . $e->getMessage()
             ], 500);
         }
     }

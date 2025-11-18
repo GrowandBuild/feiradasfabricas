@@ -16,6 +16,8 @@
 
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons (para a lupa da Busca Inteligente) -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Font Awesome -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <!-- Google Fonts -->
@@ -704,6 +706,9 @@
                         <a href="{{ route('home') }}" class="quick-action" title="Início">
                             <i class="fas fa-store"></i>
                         </a>
+                        <a href="{{ route('albums.index') }}" class="quick-action" title="Álbuns de Imagens">
+                            <i class="fas fa-image"></i>
+                        </a>
                         <a href="#" class="quick-action" title="Notificações">
                             <i class="fas fa-bell"></i>
                         </a>
@@ -737,6 +742,9 @@
                 <div class="header-icons ms-auto">
                     <a href="#" class="header-icon" title="Loja">
                         <i class="fas fa-store"></i>
+                    </a>
+                    <a href="{{ route('albums.index') }}" class="header-icon" title="Álbuns de Imagens">
+                        <i class="fas fa-image"></i>
                     </a>
                     <a href="#" class="header-icon" title="Favoritos">
                         <i class="fas fa-heart"></i>
@@ -848,7 +856,6 @@
                         <li><a href="#" class="text-light">Sobre Nós</a></li>
                         <li><a href="{{ route('contact') }}" class="text-light">Contato</a></li>
                         <li><a href="#" class="text-light">Trabalhe Conosco</a></li>
-                        <li><a href="{{ route('gallery.index') }}" class="text-light">Galeria</a></li>
                     </ul>
                 </div>
                 <div class="col-md-2">
@@ -905,5 +912,8 @@
     
     @yield('scripts')
     @stack('scripts')
+    
+    {{-- Busca Inteligente Flutuante para Admin (global) --}}
+    @include('partials.smart-search')
 </body>
 </html>

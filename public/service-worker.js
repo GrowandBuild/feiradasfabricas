@@ -1,5 +1,6 @@
 const CACHE_PREFIX = 'feira-fabricas-cache';
-const CACHE_VERSION = 'v1';
+// Bump version to invalidate old caches
+const CACHE_VERSION = 'v2';
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -29,38 +30,53 @@ self.addEventListener('activate', event => {
       )
     )
   );
+  self.clients.claim();
 });
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') {
     return;
   }
+  const url = new URL(event.request.url);
+  const acceptHeader = event.request.headers.get('accept') || '';
 
+  // Never cache admin or API routes
+  const isAdmin = url.pathname.startsWith('/admin');
+  const isApi = url.pathname.startsWith('/api') || url.pathname.startsWith('/webhooks');
+
+  // For HTML navigation requests, prefer network-first to avoid stale pages
+  const isHtmlRequest = acceptHeader.includes('text/html');
+
+  if (isAdmin || isApi) {
+    event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
+    return;
+  }
+
+  if (isHtmlRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then(resp => {
+          const clone = resp.clone();
+          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          return resp;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Default: cache-first for static assets
   event.respondWith(
     caches.match(event.request).then(cachedResponse => {
-      if (cachedResponse) {
-        return cachedResponse;
-      }
-
-      return fetch(event.request)
-        .then(networkResponse => {
-          if (
-            !networkResponse ||
-            networkResponse.status !== 200 ||
-            networkResponse.type !== 'basic'
-          ) {
-            return networkResponse;
-          }
-
-          const responseToCache = networkResponse.clone();
-
-          caches.open(CACHE_NAME).then(cache => {
-            cache.put(event.request, responseToCache);
-          });
-
+      if (cachedResponse) return cachedResponse;
+      return fetch(event.request).then(networkResponse => {
+        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
           return networkResponse;
-        })
-        .catch(() => cachedResponse);
+        }
+        const responseToCache = networkResponse.clone();
+        caches.open(CACHE_NAME).then(cache => cache.put(event.request, responseToCache));
+        return networkResponse;
+      });
     })
   );
 });

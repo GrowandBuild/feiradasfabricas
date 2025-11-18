@@ -740,6 +740,12 @@ class SearchController extends Controller
         $query = trim((string) $request->get('q', ''));
         $limit = (int) $request->get('limit', 12);
 
+        // Cache rápido para aliviar carga em repetições (TTL 90s)
+        $cacheKey = 'live_search:' . md5(json_encode([$query, $limit]));
+        if ($cached = cache()->get($cacheKey)) {
+            return response()->json($cached);
+        }
+
         // Aceitar consultas de 1 caractere; se vazio, retornar lista vazia
         if ($query === '' || mb_strlen($query) < 1) {
             return response()->json([
@@ -749,15 +755,118 @@ class SearchController extends Controller
             ]);
         }
 
-        $lowerq = mb_strtolower($query);
-        $tokens = preg_split('/\s+/', $lowerq) ?: [];
+    $lowerq = mb_strtolower($query);
+    $tokens = preg_split('/\s+/', $lowerq) ?: [];
 
         $attrs = $this->parseQueryAttributes($query);
 
+        // 1) Tentar um caminho "rápido": buscas por prefixo (podem usar índice)
+        // Observação: não usamos o caminho rápido para consultas de 1 caractere (ex.: "x"),
+        // pois queremos priorizar correspondência por palavra (ex.: "iPhone X").
+        $fastItems = collect();
+        if (mb_strlen($query) >= 2) {
+            $fast = Product::query()
+                ->where('products.is_active', true)
+                ->where(function($q) use ($query) {
+                    $prefix = $query . '%';
+                    $q->where('products.name', 'like', $prefix)
+                      ->orWhere('products.brand', 'like', $prefix)
+                      ->orWhere('products.model', 'like', $prefix)
+                      ->orWhere('products.sku', 'like', $prefix)
+                      ->orWhere('products.slug', 'like', $prefix);
+                })
+                ->with('variations')
+                ->orderBy('products.is_unavailable', 'asc')
+                ->orderBy('products.in_stock', 'desc')
+                ->orderBy('products.name', 'asc')
+                ->limit($limit + 2);
+
+            $fastItems = $fast->get();
+        }
+
+        // Se o caminho rápido já retornou resultados suficientes, use-o e evite o "scan" amplo
+        if ($fastItems->count() >= min($limit, 5)) {
+            $items = $fastItems->take($limit);
+            $attrs = $this->parseQueryAttributes($query); // ainda escolheremos melhor imagem/variação
+
+            $mapped = $items->map(function(Product $p) use ($attrs) {
+                // Escolher variação mais compatível (se houver)
+                $bestVar = null; $bestScore = -1;
+                foreach ($p->variations as $v) {
+                    $score = 0;
+                    if (!empty($attrs['color_terms'])) {
+                        foreach ($attrs['color_terms'] as $term) {
+                            if ($v->color && mb_stripos($v->color, $term) !== false) { $score += 2; break; }
+                        }
+                    } elseif (!empty($attrs['colors'])) {
+                        foreach ($attrs['colors'] as $term) {
+                            if ($v->color && mb_stripos($v->color, $term) !== false) { $score += 2; break; }
+                        }
+                    }
+                    if (!empty($attrs['storage'])) {
+                        foreach ($attrs['storage'] as $s) {
+                            $comp = mb_strtolower(str_replace(' ', '', $s));
+                            if ($v->storage && mb_strtolower(str_replace(' ', '', $v->storage)) === $comp) { $score += 2; break; }
+                        }
+                    }
+                    if (!empty($attrs['ram'])) {
+                        foreach ($attrs['ram'] as $r) {
+                            $comp = mb_strtolower(str_replace(' ', '', $r));
+                            if ($v->ram && mb_strtolower(str_replace(' ', '', $v->ram)) === $comp) { $score += 1; break; }
+                        }
+                    }
+                    if ($score > $bestScore) { $bestScore = $score; $bestVar = $v; }
+                }
+
+                $images = $this->chooseImagesForProduct($p, $attrs);
+                $displayName = $p->name; $variantUrl = null;
+                if ($bestVar) {
+                    $parts = [];
+                    if ($bestVar->storage) $parts[] = $bestVar->storage;
+                    if ($bestVar->ram) $parts[] = $bestVar->ram;
+                    if ($bestVar->color) $parts[] = $bestVar->color;
+                    if (!empty($parts)) { $displayName .= ' — ' . implode(' / ', $parts); }
+                    $params = [];
+                    if ($bestVar->color) { $params['color'] = $bestVar->color; }
+                    if ($bestVar->storage) { $params['storage'] = $bestVar->storage; }
+                    if ($bestVar->ram) { $params['ram'] = $bestVar->ram; }
+                    $qs = http_build_query($params);
+                    $variantUrl = url('/produto/' . $p->slug . ($qs ? ('?' . $qs) : ''));
+                }
+
+                return [
+                    'id' => $p->id,
+                    'name' => $p->name,
+                    'brand' => $p->brand,
+                    'price' => $p->price,
+                    'in_stock' => (bool) $p->in_stock,
+                    'is_unavailable' => (bool) $p->is_unavailable,
+                    'slug' => $p->slug,
+                    'image' => $images[0] ?? null,
+                    'images' => $images,
+                    'cover_image' => $images[0] ?? null,
+                    'short_description' => $p->short_description,
+                    'description' => $p->description,
+                    'display_name' => $displayName,
+                    'variant_url' => $variantUrl,
+                    'product_url' => url('/produto/' . $p->slug),
+                ];
+            });
+
+            $payload = [
+                'count' => $mapped->count(),
+                'products' => $mapped,
+                'query' => $query,
+            ];
+            cache()->put($cacheKey, $payload, 90);
+            return response()->json($payload);
+        }
+
+        // 2) Caminho "completo": filtro textual amplo + boosts e (se necessário) JOIN de variações
         $qb = Product::query()
             ->where('products.is_active', true);
 
-        // Filtro textual amplo
+        // Filtro textual amplo (minimizado para pegar termos no meio)
         $qb->where(function($q) use ($lowerq) {
             $q->whereRaw('LOWER(products.name) LIKE ?', ["%{$lowerq}%"]) 
               ->orWhereRaw('LOWER(products.brand) LIKE ?', ["%{$lowerq}%"]) 
@@ -813,6 +922,39 @@ class SearchController extends Controller
         $scorePieces[] = 'CASE WHEN LOWER(products.brand) LIKE ? THEN 10 ELSE 0 END';
         $bindings[] = "%{$lowerq}%";
 
+        // Boost por token (palavra) – dá prioridade a correspondências por palavra/início de palavra
+        foreach ($tokens as $tok) {
+            $tok = trim($tok);
+            if ($tok === '') { continue; }
+            $t = mb_strtolower($tok);
+
+            // Aproximação de "limite de palavra": rodeia o name com espaços e busca " t "
+            $scorePieces[] = 'CASE WHEN CONCAT(" ", LOWER(products.name), " ") LIKE ? THEN 35 ELSE 0 END';
+            $bindings[] = "% {$t} %";
+
+            // Início de palavra (após espaço ou início do campo)
+            $scorePieces[] = 'CASE WHEN LOWER(products.name) LIKE ? THEN 30 ELSE 0 END';
+            $bindings[] = "{$t} %"; // começo do campo
+            $scorePieces[] = 'CASE WHEN LOWER(products.name) LIKE ? THEN 25 ELSE 0 END';
+            $bindings[] = "% {$t}%"; // após espaço
+
+            // Hífen como separador de palavra (ex.: iphone-12, pro-max)
+            $scorePieces[] = 'CASE WHEN LOWER(products.name) LIKE ? THEN 15 ELSE 0 END';
+            $bindings[] = "%-{$t}%";
+
+            // Marca (peso menor)
+            $scorePieces[] = 'CASE WHEN CONCAT(" ", LOWER(products.brand), " ") LIKE ? THEN 12 ELSE 0 END';
+            $bindings[] = "% {$t} %";
+            $scorePieces[] = 'CASE WHEN LOWER(products.brand) LIKE ? THEN 10 ELSE 0 END';
+            $bindings[] = "{$t}%";
+
+            // Números: ex. "17" deve priorizar modelos com o número como palavra
+            if (ctype_digit($t)) {
+                $scorePieces[] = 'CASE WHEN CONCAT(" ", LOWER(products.name), " ") LIKE ? THEN 28 ELSE 0 END';
+                $bindings[] = "% {$t} %";
+            }
+        }
+
         // Boosts contextuais
         if (str_contains($lowerq, 'pro') && str_contains($lowerq, 'max')) {
             $scorePieces[] = "CASE WHEN LOWER(products.name) LIKE '%pro max%' THEN 25 ELSE 0 END";
@@ -827,11 +969,15 @@ class SearchController extends Controller
             $scorePieces[] = "CASE WHEN LOWER(products.name) LIKE '%pro max%' THEN 30 ELSE 0 END";
         }
 
-    $scoreSql = implode(' + ', $scorePieces) . ' as relevance_score';
+        $scoreSql = implode(' + ', $scorePieces) . ' as relevance_score';
     $qb->selectRaw($scoreSql, $bindings)->addSelect('products.*');
 
+    // Penalidade por distância de tamanho para favorecer títulos mais curtos quando a consulta é curta
+    $qb->selectRaw('ABS(CHAR_LENGTH(LOWER(products.name)) - ?) as length_penalty', [mb_strlen($lowerq)]);
+
         // Ordenação: relevância, depois disponibilidade, depois estoque
-        $qb->orderByDesc('relevance_score')
+          $qb->orderByDesc('relevance_score')
+              ->orderBy('length_penalty', 'asc')
            ->orderBy('products.is_unavailable', 'asc')
            ->orderBy('products.in_stock', 'desc')
            ->orderBy('products.name', 'asc');
@@ -839,10 +985,10 @@ class SearchController extends Controller
         // Trazer variações para montar display_name/variant_url
         $qb->with('variations');
 
-    $items = $qb->limit($limit)->get();
+        $items = $qb->limit($limit)->get();
 
         // Mapear para payload enxuto da live search
-    $mapped = $items->map(function(Product $p) use ($attrs) {
+        $mapped = $items->map(function(Product $p) use ($attrs) {
             // Escolher variação mais compatível (se houver)
             $bestVar = null;
             $bestScore = -1;
@@ -912,10 +1058,12 @@ class SearchController extends Controller
             ];
         });
 
-        return response()->json([
+        $payload = [
             'count' => $mapped->count(),
             'products' => $mapped,
             'query' => $query,
-        ]);
+        ];
+        cache()->put($cacheKey, $payload, 90);
+        return response()->json($payload);
     }
 }

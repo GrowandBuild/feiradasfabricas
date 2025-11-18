@@ -133,10 +133,7 @@
                 </label>
                 <select name="brand" class="form-select filter-select">
                     <option value="">Todas</option>
-                    @php
-                        $brands = \App\Models\Product::distinct()->pluck('brand')->filter()->sort();
-                    @endphp
-                    @foreach($brands as $brand)
+                    @foreach(($brands ?? collect()) as $brand)
                         <option value="{{ $brand }}" {{ request('brand') == $brand ? 'selected' : '' }}>
                             {{ $brand }}
                         </option>
@@ -192,10 +189,7 @@
                 </label>
                 <select name="supplier" class="form-select filter-select">
                     <option value="">Todos</option>
-                    @php
-                        $suppliers = \App\Models\Product::distinct()->whereNotNull('supplier')->pluck('supplier')->filter()->sort();
-                    @endphp
-                    @foreach($suppliers as $supplier)
+                    @foreach(($suppliers ?? collect()) as $supplier)
                         <option value="{{ $supplier }}" {{ request('supplier') == $supplier ? 'selected' : '' }}>
                             {{ $supplier }}
                         </option>
@@ -308,6 +302,7 @@
                                                      onmouseover="this.style.transform='scale(1.1)'"
                                                      onmouseout="this.style.transform='scale(1)'"
                                                      onerror="this.onerror=null; this.src='{{ asset('images/no-image.svg') }}';"
+                                                     loading="lazy" decoding="async"
                                                      title="Clique para editar imagens">
                                             @else
                                                 <div class="d-flex align-items-center justify-content-center product-thumbnail rounded" 
@@ -380,236 +375,43 @@
                                 </td>
                                 <td style="padding: 10px 8px;" onclick="event.stopPropagation();">
                                     @php
-                                        $hasVariations = $product->variations->count() > 0;
+                                        $hasVariations = ($product->variations_count ?? 0) > 0;
                                     @endphp
-                                    
                                     @if($hasVariations)
-                                        <!-- PRODUTO COM VARIAÇÕES - Layout Compacto e Elegante -->
-                                        <div class="variations-price-list" style="min-width: 260px; max-width: 280px;">
-                                            <!-- Header com contador -->
-                                            <div class="mb-2 px-3 py-2 d-flex align-items-center justify-content-between" 
-                                                 style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); 
-                                                        border-left: 3px solid #f97316; 
-                                                        border-radius: 4px;">
+                                        <!-- PRODUTO COM VARIAÇÕES - Resumo + edição inline sob demanda -->
+                                        <div class="d-flex flex-column gap-2" style="min-width: 220px; max-width: 260px;">
+                                            <div class="px-3 py-2 d-flex align-items-center justify-content-between"
+                                                 style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); border-left: 3px solid #f97316; border-radius: 4px;">
                                                 <small style="font-size: 0.8rem; font-weight: 600; color: #f97316;">
-                                                    <i class="bi bi-list-ul me-1"></i>{{ $product->variations->count() }} Variações
+                                                    <i class="bi bi-list-ul me-1"></i>{{ $product->variations_count }} variações
                                                 </small>
                                             </div>
-                                            
-                                            @foreach($product->variations->sortBy(function($v) { return $v->color . $v->ram . $v->storage; }) as $variation)
-                                                <div class="variation-price-item mb-2 p-3" 
-                                                     style="background: linear-gradient(to right, #ffffff 0%, #fafafa 100%); 
-                                                            border-left: 2px solid #f97316; 
-                                                            border-radius: 4px; 
-                                                            box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
-                                                    
-                                                    <!-- Badges de Identificação - Uma linha horizontal -->
-                                                    <div class="d-flex align-items-center gap-1 mb-2 flex-wrap">
-                                                        @if($variation->color)
-                                                            @php
-                                                                // Normalizar nome e preparar bases
-                                                                $colorNameOriginal = $variation->color;
-                                                                $colorName = strtolower(trim($colorNameOriginal));
-                                                                // Normalizar array de cores do banco para comparação case-insensitive
-                                                                $colorsFromDBLower = array_change_key_case($colorsFromDB, CASE_LOWER);
-                                                                
-                                                                // Mapa exato
-                                                                $colorMap = [
-                                                                    'preto' => '#000000','black'=>'#000000',
-                                                                    'branco' => '#FFFFFF','white'=>'#FFFFFF',
-                                                                    'vermelho'=>'#DC143C','red'=>'#DC143C',
-                                                                    'azul'=>'#1E90FF','blue'=>'#1E90FF',
-                                                                    'verde'=>'#32CD32','green'=>'#32CD32',
-                                                                    'amarelo'=>'#FFD700','yellow'=>'#FFD700',
-                                                                    'laranja'=>'#FF8C00','orange'=>'#FF8C00',
-                                                                    'roxo'=>'#9370DB','purple'=>'#9370DB',
-                                                                    'rosa'=>'#FF69B4','pink'=>'#FF69B4',
-                                                                    'marrom'=>'#8B4513','brown'=>'#8B4513',
-                                                                    'cinza'=>'#808080','gray'=>'#808080','grey'=>'#808080',
-                                                                    // Metálicos
-                                                                    'dourado'=>'#FFD700','gold'=>'#FFD700',
-                                                                    'prateado'=>'#C0C0C0','silver'=>'#C0C0C0',
-                                                                    'rose gold'=>'#B76E79',
-                                                                    // Apple especiais
-                                                                    'space gray'=>'#52514D','space grey'=>'#52514D',
-                                                                    'midnight'=>'#191970','meia-noite'=>'#191970',
-                                                                    'starlight'=>'#F5F5DC','luz das estrelas'=>'#F5F5DC',
-                                                                    'pacific blue'=>'#4682B4',
-                                                                    'sierra blue'=>'#6CA6CD',
-                                                                    'graphite'=>'#4B4B4B','grafite'=>'#4B4B4B',
-                                                                    'alpine green'=>'#2F4F4F',
-                                                                    'deep purple'=>'#663399',
-                                                                    // Titanium series
-                                                                    'black titanium'=>'#3E3E3C',
-                                                                    'white titanium'=>'#E8E8E3',
-                                                                    'blue titanium'=>'#5C6A7A',
-                                                                    'natural titanium'=>'#B8B5AB',
-                                                                    'desert titanium'=>'#C4B5A0',
-                                                                    // Outras
-                                                                    'coral'=>'#FF7F50',
-                                                                    'lavanda'=>'#E6E6FA','lavender'=>'#E6E6FA',
-                                                                    'mint'=>'#98FF98','menta'=>'#98FF98',
-                                                                    'cream'=>'#FFFDD0','creme'=>'#FFFDD0',
-                                                                    'pearl'=>'#F0EAD6','pérola'=>'#F0EAD6',
-                                                                    'navy'=>'#000080','marinho'=>'#000080',
-                                                                    'burgundy'=>'#800020','bordô'=>'#800020',
-                                                                ];
-                                                                // Palavras-chave
-                                                                $keywordMap = [
-                                                                    'titanium'=>'#B8B5AB',
-                                                                    'titânio'=>'#B8B5AB',
-                                                                    'desert'=>'#C4B5A0',
-                                                                    'natural'=>'#B8B5AB',
-                                                                    'phantom'=>'#2C2C2C',
-                                                                    'graphite'=>'#4B4B4B',
-                                                                    'sierra'=>'#6CA6CD',
-                                                                    'midnight'=>'#191970',
-                                                                    'starlight'=>'#F5F5DC',
-                                                                    'alpine'=>'#2F4F4F',
-                                                                    'cloud'=>'#F0F8FF',
-                                                                    'sky'=>'#87CEEB',
-                                                                    'ocean'=>'#006994',
-                                                                    'forest'=>'#228B22',
-                                                                    'sand'=>'#F4A460',
-                                                                    'stone'=>'#8B8680',
-                                                                    'bronze'=>'#CD7F32',
-                                                                    'copper'=>'#B87333',
-                                                                    'champagne'=>'#F7E7CE',
-                                                                ];
-                                                                
-                                                                // Prioridade 1: hex cadastrado na variação
-                                                                $colorHex = $variation->color_hex ?: null;
-                                                                // Prioridade 2: banco de dados (case-insensitive)
-                                                                if (!$colorHex && isset($colorsFromDBLower[$colorName])) {
-                                                                    $colorHex = $colorsFromDBLower[$colorName];
-                                                                }
-                                                                // Prioridade 3: mapa exato
-                                                                if (!$colorHex && isset($colorMap[$colorName])) {
-                                                                    $colorHex = $colorMap[$colorName];
-                                                                }
-                                                                // Prioridade 4: palavras-chave
-                                                                if (!$colorHex) {
-                                                                    foreach ($keywordMap as $kw => $hex) {
-                                                                        if (strpos($colorName, $kw) !== false) { $colorHex = $hex; break; }
-                                                                    }
-                                                                }
-                                                                // Fallback final
-                                                                if (!$colorHex) { $colorHex = '#6c757d'; }
-                                                                // Garantir #
-                                                                if ($colorHex[0] !== '#') { $colorHex = '#' . $colorHex; }
-                                                                // Contraste
-                                                                if (preg_match('/^#([A-Fa-f0-9]{6})$/',$colorHex)) {
-                                                                    $r = hexdec(substr($colorHex,1,2));
-                                                                    $g = hexdec(substr($colorHex,3,2));
-                                                                    $b = hexdec(substr($colorHex,5,2));
-                                                                    $brightness = (($r*299)+($g*587)+($b*114))/1000;
-                                                                    $textColor = $brightness > 155 ? '#000' : '#fff';
-                                                                } else { $textColor = '#fff'; }
-                                                            @endphp
-                                                            <span class="badge" style="font-size:0.7rem;padding:3px 7px;background-color:{{ $colorHex }};color:{{ $textColor }};border-radius:3px;border:1px solid rgba(0,0,0,0.2);box-shadow:0 2px 4px rgba(0,0,0,0.15);" title="Cor: {{ $variation->color }} ({{ $colorHex }})">
-                                                                {{ Str::limit($variation->color, 8) }}
-                                                            </span>
-                                                        @endif
-                                                        @if($variation->ram)
-                                                            <span class="badge" style="font-size: 0.7rem; padding: 3px 7px; background-color: #0dcaf0; color: #000; border-radius: 3px; border: 1px solid rgba(0,0,0,0.1);">
-                                                                {{ $variation->ram }}
-                                                            </span>
-                                                        @endif
-                                                        @if($variation->storage)
-                                                            <span class="badge" style="font-size: 0.7rem; padding: 3px 7px; background-color: #6c757d; color: #fff; border-radius: 3px; border: 1px solid rgba(0,0,0,0.1);">
-                                                                {{ $variation->storage }}
-                                                            </span>
-                                                        @endif
-                                                    </div>
-                                                    
-                                                    <!-- Grid de Preços - 3 linhas compactas -->
-                                                    <div class="prices-grid">
-                                                        <!-- Custo -->
-                                                        <div class="d-flex align-items-center mb-2">
-                                                            <span style="font-size: 0.75rem; color: #6c757d; min-width: 40px; font-weight: 500;">Custo</span>
-                                                            <div class="input-group input-group-sm flex-grow-1">
-                                                                <span class="input-group-text" style="font-size: 0.75rem; padding: 4px 6px; background-color: #f8f9fa; border-color: #dee2e6;">R$</span>
-                                                                <input type="text" 
-                                                                       class="form-control form-control-sm variation-cost-field" 
-                                                                       data-variation-id="{{ $variation->id }}"
-                                                                       data-product-id="{{ $product->id }}"
-                                                                       value="{{ $variation->cost_price ? number_format($variation->cost_price, 2, ',', '.') : '0,00' }}" 
-                                                                       style="font-size: 0.8rem; padding: 4px 8px; border-color: #dee2e6;"
-                                                                       placeholder="0,00"
-                                                                       onblur="updateVariationPrice({{ $variation->id }}, 'cost_price', this.value)"
-                                                                       onclick="event.stopPropagation();">
-                                                                <button class="btn btn-sm" 
-                                                                        type="button" 
-                                                                        onclick="event.stopPropagation(); updateVariationPrice({{ $variation->id }}, 'cost_price', this.closest('.input-group').querySelector('.variation-cost-field').value)"
-                                                                        style="font-size: 0.75rem; padding: 4px 8px; background-color: #f97316; border-color: #f97316; color: white;"
-                                                                        title="Salvar">
-                                                                    <i class="bi bi-check-lg"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <!-- B2C -->
-                                                        <div class="d-flex align-items-center mb-2">
-                                                            <span style="font-size: 0.75rem; color: #198754; min-width: 40px; font-weight: 600;">B2C</span>
-                                                            <div class="input-group input-group-sm flex-grow-1">
-                                                                <span class="input-group-text" style="font-size: 0.75rem; padding: 4px 6px; background-color: #d1e7dd; border-color: #a3cfbb; color: #0a3622;">R$</span>
-                                                                <input type="text" 
-                                                                       class="form-control form-control-sm variation-b2c-field" 
-                                                                       data-variation-id="{{ $variation->id }}"
-                                                                       data-product-id="{{ $product->id }}"
-                                                                       value="{{ $variation->price ? number_format($variation->price, 2, ',', '.') : '0,00' }}" 
-                                                                       style="font-size: 0.8rem; padding: 4px 8px; border-color: #a3cfbb; font-weight: 600; color: #198754;"
-                                                                       placeholder="0,00"
-                                                                       onblur="updateVariationPrice({{ $variation->id }}, 'b2c_price', this.value)"
-                                                                       onclick="event.stopPropagation();">
-                                                                <button class="btn btn-sm" 
-                                                                        type="button" 
-                                                                        onclick="event.stopPropagation(); updateVariationPrice({{ $variation->id }}, 'b2c_price', this.closest('.input-group').querySelector('.variation-b2c-field').value)"
-                                                                        style="font-size: 0.75rem; padding: 4px 8px; background-color: #f97316; border-color: #f97316; color: white;"
-                                                                        title="Salvar">
-                                                                    <i class="bi bi-check-lg"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                        
-                                                        <!-- B2B -->
-                                                        <div class="d-flex align-items-center">
-                                                            <span style="font-size: 0.75rem; color: #0d6efd; min-width: 40px; font-weight: 600;">B2B</span>
-                                                            <div class="input-group input-group-sm flex-grow-1">
-                                                                <span class="input-group-text" style="font-size: 0.75rem; padding: 4px 6px; background-color: #cfe2ff; border-color: #9ec5fe; color: #052c65;">R$</span>
-                                                                <input type="text" 
-                                                                       class="form-control form-control-sm variation-b2b-field" 
-                                                                       data-variation-id="{{ $variation->id }}"
-                                                                       data-product-id="{{ $product->id }}"
-                                                                       value="{{ $variation->b2b_price ? number_format($variation->b2b_price, 2, ',', '.') : '0,00' }}" 
-                                                                       style="font-size: 0.8rem; padding: 4px 8px; border-color: #9ec5fe; font-weight: 600; color: #0d6efd;"
-                                                                       placeholder="0,00"
-                                                                       onblur="updateVariationPrice({{ $variation->id }}, 'b2b_price', this.value)"
-                                                                       onclick="event.stopPropagation();">
-                                                                <button class="btn btn-sm" 
-                                                                        type="button" 
-                                                                        onclick="event.stopPropagation(); updateVariationPrice({{ $variation->id }}, 'b2b_price', this.closest('.input-group').querySelector('.variation-b2b-field').value)"
-                                                                        style="font-size: 0.75rem; padding: 4px 8px; background-color: #f97316; border-color: #f97316; color: white;"
-                                                                        title="Salvar">
-                                                                    <i class="bi bi-check-lg"></i>
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            @endforeach
-                                            
-                                            <!-- Botão Gerenciar -->
-                                            <button type="button" 
-                                                    class="btn btn-sm w-100" 
-                                                    data-product-id="{{ $product->id }}"
-                                                    data-product-name="{{ $product->name }}"
-                                                    data-bs-toggle="modal" 
-                                                    data-bs-target="#variationsModal"
-                                                    style="font-size: 0.7rem; padding: 4px; background-color: #f97316; border-color: #f97316; color: white; font-weight: 500;"
-                                                    onclick="event.stopPropagation();">
-                                                <i class="bi bi-gear me-1"></i>Gerenciar Variações
-                                            </button>
+                                            <div class="d-flex gap-2">
+                                                <button type="button"
+                                                        class="btn btn-outline-secondary btn-sm toggle-inline-variations"
+                                                        data-product-id="{{ $product->id }}"
+                                                        data-product-name="{{ $product->name }}"
+                                                        style="font-size: 0.75rem; padding: 6px 8px; font-weight: 600;">
+                                                    <i class="bi bi-chevron-down me-1"></i> Editar aqui
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-outline-warning btn-sm open-quick-variations"
+                                                        data-product-id="{{ $product->id }}"
+                                                        data-product-name="{{ $product->name }}"
+                                                        style="font-size: 0.75rem; padding: 6px 8px; font-weight: 600;">
+                                                    <i class="bi bi-list-columns-reverse me-1"></i> Lista
+                                                </button>
+                                                <button type="button"
+                                                        class="btn btn-sm"
+                                                        data-product-id="{{ $product->id }}"
+                                                        data-product-name="{{ $product->name }}"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#variationsModal"
+                                                        style="font-size: 0.75rem; padding: 6px 8px; background-color: #f97316; border-color: #f97316; color: white; font-weight: 600;"
+                                                        onclick="event.stopPropagation();">
+                                                    <i class="bi bi-gear me-1"></i> Modal
+                                                </button>
+                                            </div>
                                         </div>
                                     @else
                                         <!-- PRODUTO SEM VARIAÇÕES - Mostrar campos editáveis do produto pai -->
@@ -706,19 +508,19 @@
                                          class="stock-trigger"
                                          data-product-id="{{ $product->id }}"
                                          data-product-name="{{ $product->name }}"
-                                         data-current-stock="{{ $product->current_stock }}"
+                                         data-current-stock="{{ $product->stock_quantity }}"
                                          data-bs-toggle="modal" 
                                          data-bs-target="#adjustStockModal"
                                          onclick="event.stopPropagation();"
                                          onmouseover="this.style.transform='scale(1.1)'"
                                          onmouseout="this.style.transform='scale(1)'"
                                          title="Clique para ajustar estoque">
-                                        <span class="fw-semibold" style="font-size: 0.875rem;">{{ $product->current_stock }}</span>
-                                        @if($product->isLowStock())
+                                        <span class="fw-semibold" style="font-size: 0.875rem;">{{ $product->stock_quantity }}</span>
+                                        @if($product->stock_quantity <= ($product->min_stock ?? 0))
                                             <span class="badge bg-danger d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
                                                 <i class="bi bi-exclamation-triangle" style="font-size: 0.7rem;"></i>
                                             </span>
-                                        @elseif($product->current_stock == 0)
+                                        @elseif($product->stock_quantity == 0)
                                             <span class="badge bg-secondary d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
                                                 <i class="bi bi-x-circle" style="font-size: 0.7rem;"></i>
                                             </span>
@@ -740,7 +542,7 @@
                                             title="Gerenciar Variações"
                                             onclick="event.stopPropagation();">
                                         <i class="bi bi-list-ul me-1"></i>
-                                        <span>{{ $product->variations()->count() }}</span>
+                                        <span>{{ $product->variations_count }}</span>
                                     </button>
                                 </td>
                                 <td class="text-center" style="padding: 12px 8px;">
@@ -774,6 +576,35 @@
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
+                                    </div>
+                                </td>
+                            </tr>
+                            <!-- Linha de edição inline das variações (sob demanda) -->
+                            <tr id="inline-variations-row-{{ $product->id }}" class="d-none">
+                                <td colspan="8" class="bg-light">
+                                    <div class="p-3 border-start" style="border-left: 4px solid #f97316 !important;">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-pencil-square text-warning"></i>
+                                                <strong>Edição de variações - {{ $product->name }}</strong>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-sm btn-outline-secondary toggle-inline-variations" data-product-id="{{ $product->id }}">
+                                                    <i class="bi bi-x-lg"></i> Fechar
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-primary" data-action="open-modal" data-product-id="{{ $product->id }}" data-product-name="{{ $product->name }}" data-bs-toggle="modal" data-bs-target="#variationsModal">
+                                                    <i class="bi bi-gear"></i> Abrir no modal
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div id="inline-variations-container-{{ $product->id }}" class="row g-2">
+                                            <div class="text-muted small">Carregando...</div>
+                                        </div>
+                                        <div class="d-flex justify-content-center mt-2">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary d-none" id="inline-variations-load-more-{{ $product->id }}">
+                                                Carregar mais
+                                            </button>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -945,6 +776,28 @@
         </div>
     </div>
 </div>
+<!-- Offcanvas: Lista Rápida de Variações (rolagem vertical com todos os itens) -->
+<div class="offcanvas offcanvas-end" tabindex="-1" id="quickVariationsOffcanvas" aria-labelledby="quickVariationsLabel">
+  <div class="offcanvas-header" style="border-bottom:1px solid #eee;">
+    <h5 class="offcanvas-title d-flex align-items-center gap-2" id="quickVariationsLabel">
+        <i class="bi bi-list-columns-reverse text-warning"></i>
+        <span>Variações</span>
+    </h5>
+    <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+  </div>
+  <div class="offcanvas-body">
+      <div id="quick-variations-filter" class="mb-2">
+          <div class="input-group input-group-sm">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input type="text" class="form-control" id="quick-variations-search" placeholder="Filtrar por cor/ram/armazenamento/sku">
+          </div>
+          <small class="text-muted">Dica: Enter para focar próximo campo, setas para rolar.</small>
+      </div>
+      <div id="quick-variations-list" class="variations-price-list">
+          <div class="text-muted small">Selecione um produto para carregar as variações…</div>
+      </div>
+  </div>
+</div>
 @endpush
 
 @section('styles')
@@ -1089,6 +942,12 @@
         font-weight: 500;
         letter-spacing: 0.3px;
     }
+
+    /* Offcanvas - Lista rolável de variações */
+    #quickVariationsOffcanvas .offcanvas-body { display: flex; flex-direction: column; padding-top: 0; }
+    #quick-variations-list { overflow-y: auto; max-height: calc(100vh - 180px); padding-right: 6px; }
+    #quick-variations-list .variation-price-item { border-left: 2px solid #f97316; background: #fff; }
+    #quick-variations-filter { position: sticky; top: 0; background: #fff; z-index: 2; padding-top: 1rem; padding-bottom: .75rem; border-bottom: 1px solid #eee; }
 </style>
 @endsection
 
@@ -1175,6 +1034,122 @@
             });
             
             updateBulkActionsBar();
+        });
+
+        // Quick Variations Offcanvas - carrega todas as variações em lista vertical
+        document.addEventListener('DOMContentLoaded', function(){
+            const offcanvasEl = document.getElementById('quickVariationsOffcanvas');
+            if (!offcanvasEl) return;
+            const offcanvas = new bootstrap.Offcanvas(offcanvasEl);
+            const listEl = document.getElementById('quick-variations-list');
+            const searchEl = document.getElementById('quick-variations-search');
+            let currentProductId = null;
+            let allItems = [];
+
+            // Abrir por botão
+            document.addEventListener('click', async function(e){
+                const btn = e.target.closest('.open-quick-variations');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const productId = btn.getAttribute('data-product-id');
+                const productName = btn.getAttribute('data-product-name') || 'Variações';
+                currentProductId = productId;
+                document.getElementById('quickVariationsLabel').querySelector('span').textContent = `Variações — ${productName}`;
+                listEl.innerHTML = '<div class="smart-search-loading text-center py-4"><i class="bi bi-arrow-repeat"></i> Carregando…</div>';
+                offcanvas.show();
+                try {
+                    const res = await fetch(`/admin/products/${productId}/variations`);
+                    const data = await res.json();
+                    if (!data.success) throw new Error(data.message || 'Erro ao carregar');
+                    // Renderizar todos como lista única (rolagem vertical)
+                    allItems = (data.variations || []).map(v => ({
+                        id: v.id,
+                        ram: v.ram || '',
+                        storage: v.storage || '',
+                        color: v.color || '',
+                        sku: v.sku || '',
+                        cost_price: v.cost_price || 0,
+                        b2b_price: v.b2b_price || 0,
+                        b2c_price: v.price || 0
+                    }));
+                    renderQuickList(allItems);
+                    // Foco na busca
+                    setTimeout(() => searchEl && searchEl.focus(), 100);
+                } catch (err) {
+                    listEl.innerHTML = `<div class="text-danger small">${err.message}</div>`;
+                }
+            }, true);
+
+            // Filtro simples
+            if (searchEl) {
+                let t;
+                searchEl.addEventListener('input', function(){
+                    clearTimeout(t);
+                    const q = this.value.toLowerCase().trim();
+                    t = setTimeout(() => {
+                        if (!q) return renderQuickList(allItems);
+                        const filtered = allItems.filter(v =>
+                            v.sku.toLowerCase().includes(q) ||
+                            v.color.toLowerCase().includes(q) ||
+                            v.ram.toLowerCase().includes(q) ||
+                            v.storage.toLowerCase().includes(q)
+                        );
+                        renderQuickList(filtered);
+                    }, 200);
+                });
+            }
+
+            function renderQuickList(items){
+                if (!items.length) {
+                    listEl.innerHTML = '<div class="text-muted small">Nenhuma variação encontrada</div>';
+                    return;
+                }
+                const frag = document.createDocumentFragment();
+                listEl.innerHTML = '';
+                items.forEach(v => {
+                    const div = document.createElement('div');
+                    div.className = 'variation-price-item mb-2 p-3 rounded';
+                    div.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                            <div class="d-flex align-items-center gap-1 flex-wrap">
+                                ${v.color ? `<span class='badge bg-secondary-subtle text-secondary'>${v.color}</span>` : ''}
+                                ${v.ram ? `<span class='badge bg-info-subtle text-info'>${v.ram}</span>` : ''}
+                                ${v.storage ? `<span class='badge bg-primary-subtle text-primary'>${v.storage}</span>` : ''}
+                            </div>
+                            <small class="text-muted">${v.sku}</small>
+                        </div>
+                        <div class="row g-2 align-items-center">
+                            <div class="col-12 col-sm-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="text" class="form-control variation-cost-field" data-variation-id="${v.id}" value="${(v.cost_price ?? 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}" placeholder="0,00" onblur="updateVariationPrice(${v.id}, 'cost_price', this.value)">
+                                    <button class="btn btn-sm btn-outline-success" type="button" title="Salvar" onclick="updateVariationPrice(${v.id}, 'cost_price', this.previousElementSibling.value)"><i class="bi bi-check-lg"></i></button>
+                                </div>
+                                <small class="text-muted">Custo</small>
+                            </div>
+                            <div class="col-6 col-sm-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="text" class="form-control variation-b2c-field" data-variation-id="${v.id}" value="${(v.b2c_price ?? 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}" placeholder="0,00" onblur="updateVariationPrice(${v.id}, 'b2c_price', this.value)">
+                                    <button class="btn btn-sm btn-outline-success" type="button" title="Salvar" onclick="updateVariationPrice(${v.id}, 'b2c_price', this.previousElementSibling.value)"><i class="bi bi-check-lg"></i></button>
+                                </div>
+                                <small class="text-muted">B2C</small>
+                            </div>
+                            <div class="col-6 col-sm-4">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="text" class="form-control variation-b2b-field" data-variation-id="${v.id}" value="${(v.b2b_price ?? 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}" placeholder="0,00" onblur="updateVariationPrice(${v.id}, 'b2b_price', this.value)">
+                                    <button class="btn btn-sm btn-outline-success" type="button" title="Salvar" onclick="updateVariationPrice(${v.id}, 'b2b_price', this.previousElementSibling.value)"><i class="bi bi-check-lg"></i></button>
+                                </div>
+                                <small class="text-muted">B2B</small>
+                            </div>
+                        </div>
+                    `;
+                    frag.appendChild(div);
+                });
+                listEl.appendChild(frag);
+            }
         });
 
         // Atualizar quando checkbox individual é clicado
@@ -2088,3 +2063,118 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 @endpush
 @endsection
+
+@push('scripts')
+<script>
+(function(){
+    'use strict';
+    // Cache simples por produto
+    window._inlineVarCache = window._inlineVarCache || {};
+
+    // Delegação: abre/fecha e faz lazy-load
+    document.addEventListener('click', async function(e) {
+        const btn = e.target.closest('.toggle-inline-variations');
+        if (!btn) return;
+        e.preventDefault();
+        e.stopPropagation();
+        const productId = btn.getAttribute('data-product-id');
+        if (!productId) return;
+
+        const row = document.getElementById(`inline-variations-row-${productId}`);
+        const container = document.getElementById(`inline-variations-container-${productId}`);
+        const loadMoreBtn = document.getElementById(`inline-variations-load-more-${productId}`);
+
+        // Fechar outras linhas abertas para manter o DOM leve
+        document.querySelectorAll('tr[id^="inline-variations-row-"]').forEach(r => {
+            if (r.id !== `inline-variations-row-${productId}`) r.classList.add('d-none');
+        });
+
+        const isHidden = row.classList.contains('d-none');
+        row.classList.toggle('d-none');
+        if (!isHidden) return; // estava aberto e foi fechado
+
+        // Buscar dados se necessário
+        if (!window._inlineVarCache[productId]) {
+            try {
+                container.innerHTML = '<div class="text-muted small">Carregando...</div>';
+                const res = await fetch(`/admin/products/${productId}/variations`);
+                const data = await res.json();
+                if (!data.success) throw new Error(data.message || 'Erro ao carregar');
+                window._inlineVarCache[productId] = {
+                    variations: Array.isArray(data.variations) ? data.variations : [],
+                    rendered: 0
+                };
+            } catch (err) {
+                container.innerHTML = `<div class="text-danger small">${err.message}</div>`;
+                return;
+            }
+        }
+
+        // Primeira renderização
+        renderInlineVariationsBatch(productId, 10);
+
+        if (loadMoreBtn) {
+            loadMoreBtn.onclick = () => renderInlineVariationsBatch(productId, 10);
+        }
+    }, true);
+
+    function renderInlineVariationsBatch(productId, batchSize){
+        const cache = window._inlineVarCache[productId];
+        const container = document.getElementById(`inline-variations-container-${productId}`);
+        const loadMoreBtn = document.getElementById(`inline-variations-load-more-${productId}`);
+        if (!cache || !container) return;
+
+        const start = cache.rendered;
+        const end = Math.min(cache.variations.length, start + batchSize);
+        if (start === 0) container.innerHTML = '';
+
+        for (let i = start; i < end; i++) {
+            const v = cache.variations[i];
+            const col = document.createElement('div');
+            col.className = 'col-12 col-md-6 col-lg-4';
+            col.innerHTML = `
+                <div class="variation-price-item mb-2 p-3" style="background:#fff;border-left:2px solid #f97316;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
+                    <div class="d-flex align-items-center gap-1 mb-2 flex-wrap">
+                        ${v.color ? `<span class='badge bg-secondary-subtle text-secondary'>${v.color}</span>` : ''}
+                        ${v.ram ? `<span class='badge bg-info-subtle text-info'>${v.ram}</span>` : ''}
+                        ${v.storage ? `<span class='badge bg-primary-subtle text-primary'>${v.storage}</span>` : ''}
+                    </div>
+                    <div class="prices-grid">
+                        <div class="d-flex align-items-center mb-2">
+                            <span style="font-size:0.75rem;color:#6c757d;min-width:40px;font-weight:500;">Custo</span>
+                            <div class="input-group input-group-sm flex-grow-1">
+                                <span class="input-group-text" style="font-size:0.75rem;padding:4px 6px;background-color:#f8f9fa;border-color:#dee2e6;">R$</span>
+                                <input type="text" class="form-control form-control-sm variation-cost-field" data-variation-id="${v.id}" data-product-id="${productId}" value="${(v.cost_price ?? 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}" style="font-size:0.8rem;padding:4px 8px;border-color:#dee2e6;" placeholder="0,00" onblur="updateVariationPrice(${v.id}, 'cost_price', this.value)">
+                                <button class="btn btn-sm" type="button" onclick="updateVariationPrice(${v.id}, 'cost_price', this.closest('.input-group').querySelector('.variation-cost-field').value)" style="font-size:0.75rem;padding:4px 8px;background-color:#f97316;border-color:#f97316;color:white;" title="Salvar"><i class="bi bi-check-lg"></i></button>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <span style="font-size:0.75rem;color:#198754;min-width:40px;font-weight:600;">B2C</span>
+                            <div class="input-group input-group-sm flex-grow-1">
+                                <span class="input-group-text" style="font-size:0.75rem;padding:4px 6px;background-color:#d1e7dd;border-color:#a3cfbb;color:#0a3622;">R$</span>
+                                <input type="text" class="form-control form-control-sm variation-b2c-field" data-variation-id="${v.id}" data-product-id="${productId}" value="${(v.price ?? 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}" style="font-size:0.8rem;padding:4px 8px;border-color:#a3cfbb;font-weight:600;color:#198754;" placeholder="0,00" onblur="updateVariationPrice(${v.id}, 'b2c_price', this.value)">
+                                <button class="btn btn-sm" type="button" onclick="updateVariationPrice(${v.id}, 'b2c_price', this.closest('.input-group').querySelector('.variation-b2c-field').value)" style="font-size:0.75rem;padding:4px 8px;background-color:#f97316;border-color:#f97316;color:white;" title="Salvar"><i class="bi bi-check-lg"></i></button>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <span style="font-size:0.75rem;color:#0d6efd;min-width:40px;font-weight:600;">B2B</span>
+                            <div class="input-group input-group-sm flex-grow-1">
+                                <span class="input-group-text" style="font-size:0.75rem;padding:4px 6px;background-color:#cfe2ff;border-color:#9ec5fe;color:#052c65;">R$</span>
+                                <input type="text" class="form-control form-control-sm variation-b2b-field" data-variation-id="${v.id}" data-product-id="${productId}" value="${(v.b2b_price ?? 0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2})}" style="font-size:0.8rem;padding:4px 8px;border-color:#9ec5fe;font-weight:600;color:#0d6efd;" placeholder="0,00" onblur="updateVariationPrice(${v.id}, 'b2b_price', this.value)">
+                                <button class="btn btn-sm" type="button" onclick="updateVariationPrice(${v.id}, 'b2b_price', this.closest('.input-group').querySelector('.variation-b2b-field').value)" style="font-size:0.75rem;padding:4px 8px;background-color:#f97316;border-color:#f97316;color:white;" title="Salvar"><i class="bi bi-check-lg"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(col);
+        }
+
+        cache.rendered = end;
+        if (loadMoreBtn) {
+            loadMoreBtn.classList.toggle('d-none', end >= cache.variations.length);
+        }
+    }
+})();
+</script>
+@endpush
