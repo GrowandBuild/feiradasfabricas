@@ -117,7 +117,12 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
-        return view('products.show', compact('product', 'relatedProducts'));
+        // If the product page was reached from a department, forward that slug so the layout
+        // can pick up department-specific theme settings on server render.
+        $currentDepartment = request()->get('department');
+
+        return view('products.show', compact('product', 'relatedProducts'))
+            ->with('currentDepartmentSlug', $currentDepartment);
     }
 
     /**
@@ -202,6 +207,8 @@ class HomeController extends Controller
             ->take(4)
             ->get();
 
+        $currentDepartment = request()->get('department');
+
         return view('products.variant', [
             'product' => $product,
             'variation' => $variation,
@@ -210,7 +217,7 @@ class HomeController extends Controller
             'metaDescription' => $metaDescription,
             'schemaProduct' => $schemaProduct,
             'relatedProducts' => $relatedProducts,
-        ]);
+        ])->with('currentDepartmentSlug', $currentDepartment);
     }
 
     /**

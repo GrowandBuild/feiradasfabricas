@@ -275,7 +275,7 @@
     }
 
     .b2b-btn {
-        background: var(--secondary);
+        background: var(--secondary-color);
         color: white;
         border: none;
         padding: 1rem 2rem;

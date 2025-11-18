@@ -386,6 +386,21 @@
 </style>
 @endsection
 
+@push('scripts')
+<script>
+// Informar o slug atual do departamento e carregar configuração de seções correspondente
+window.CurrentDepartmentSlug = 'vestuario-masculino';
+window.DepartmentSectionsConfig = (function(){
+    try {
+        const raw = @json(setting('dept_vestuario-masculino_sections'));
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'string' && raw.trim().length) { try { return JSON.parse(raw); } catch(e){} }
+    } catch(e) {}
+    return [];
+})();
+</script>
+@endpush
+
 @section('content')
 <!-- Hero Section -->
 <div class="hero-section">
@@ -463,7 +478,7 @@
                                                     <small class="text-muted d-block">B2B: R$ {{ number_format($product->b2b_price, 2, ',', '.') }}</small>
                                                 @endif
                                             </div>
-                                            <a href="{{ route('product', $product->slug) }}" class="product-btn">
+                                            <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn">
                                                 <i class="fas fa-shopping-cart me-2"></i>
                                                 Ver Detalhes
                                             </a>

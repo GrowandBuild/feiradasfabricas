@@ -81,7 +81,8 @@
                         <div class="thumbnail-item">
                             <img src="{{ $image }}"
                                  alt="{{ $product->name }} - Imagem {{ $index + 1 }}"
-                                 class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }}"
+                                 class="thumbnail-img rounded border {{ $index === 0 ? 'active' : '' }} @auth('admin') js-change-image @endauth"
+                                 @auth('admin') data-product-id="{{ $product->id }}" style="cursor: pointer;" @endauth
                                  onclick="setMainImage('{{ $image }}', {{ $index + 1 }})"
                                  onmouseenter="setMainImage('{{ $image }}', {{ $index + 1 }})"
                                  onmouseover="this.style.transform='scale(1.05)'"
@@ -115,8 +116,9 @@
                         <img id="main-product-image" 
                              src="{{ $product->first_image }}" 
                              alt="{{ $product->name }}" 
-                             class="img-fluid rounded shadow-sm main-image"
+                             class="img-fluid rounded shadow-sm main-image @auth('admin') js-change-image @endauth"
                          style="max-height: 520px; object-fit: contain; width: 100%; cursor: pointer; background-color: #f8f9fa;"
+                             @auth('admin') data-product-id="{{ $product->id }}" @endauth
                              onerror="this.src='{{ asset('images/no-image.svg') }}'">
                         
                     <div class="image-counter position-absolute top-0 end-0 m-2 {{ $product->hasMultipleImages() ? '' : 'd-none' }}" id="imageCounter">
@@ -248,6 +250,14 @@
                     </div>
                 @endif
 
+                {{-- buy-actions moved to info-area top (above shipping widget) --}}
+                
+            </div>
+        </div>
+
+        <div class="product-column info-area">
+            <div class="summary-grid">
+                <!-- Buy actions moved here (above shipping) -->
                 <div class="buy-actions mb-4">
                     @if(!$product->is_unavailable)
                         <x-add-to-cart 
@@ -263,18 +273,22 @@
                         @endif
                     </div>
 
-                <!-- Shipping Calculator Widget -->
-                @include('partials.shipping-calculator')
+                <!-- Shipping Calculator moved to top of summary-grid so SKU/Proteção appear below it -->
+                <div class="shipping-widget-wrapper">
+                    @include('partials.shipping-calculator')
+                </div>
+                <div class="shipping-favorite-wrapper">
+                    <button class="btn btn-outline-secondary w-100 btn-favorite" type="button">
+                        <i class="far fa-heart me-2"></i>
+                        Favoritar produto
+                    </button>
+                </div>
 
-                <button class="btn btn-outline-secondary w-100" style="border-color:#ff9900; color:#ff9900;">
-                    <i class="far fa-heart me-2"></i>
-                    Favoritar produto
-                </button>
-            </div>
-        </div>
+                <div class="summary-card">
+                    <span class="title"><i class="bi bi-arrow-repeat"></i> Política de troca</span>
+                    <span class="subtitle">Devolução facilitada em até 7 dias</span>
+                </div>
 
-        <div class="product-column info-area">
-            <div class="summary-grid">
                 <div class="summary-card">
                     <span class="title"><i class="bi bi-tag"></i> SKU</span>
                     <span class="subtitle">{{ $product->sku ?? 'Indisponível' }}</span>
@@ -283,10 +297,6 @@
                 <div class="summary-card">
                     <span class="title"><i class="bi bi-shield-check"></i> Proteção extra</span>
                     <span class="subtitle">Garantia e suporte em 90 dias</span>
-                </div>
-                <div class="summary-card">
-                    <span class="title"><i class="bi bi-arrow-repeat"></i> Política de troca</span>
-                    <span class="subtitle">Devolução facilitada em até 7 dias</span>
                 </div>
             </div>
 
@@ -333,6 +343,7 @@
             <div class="col-12">
                 <h3 class="mb-4">Produtos Relacionados</h3>
                 <div class="row">
+                    @php($linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null)
                     @foreach($relatedProducts as $relatedProduct)
                         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                             <div class="card h-100 product-card">
@@ -363,7 +374,7 @@
                                     </div>
                                 </div>
                                 <div class="card-footer bg-transparent">
-                                    <a href="{{ route('product', $relatedProduct->slug) }}" 
+                                    <a href="{{ route('product', $relatedProduct->slug) }}{{ $linkDept ? '?department='.$linkDept : '' }}" 
                                        class="btn btn-outline-primary w-100 btn-sm">Ver detalhes</a>
                                 </div>
                             </div>
@@ -545,9 +556,30 @@
         color: #1f2937;
     }
 
+    /* Modern highlight style using secondary color */
+    .highlight-item {
+        background: linear-gradient(90deg, color-mix(in srgb, var(--secondary-color), white 92%) 0%, #fff 100%);
+        border-radius: 14px;
+        padding: 0.9rem 1rem;
+    /* no shadow as requested */
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        font-weight: 600;
+        color: var(--text-dark);
+        border-left: 4px solid color-mix(in srgb, var(--secondary-color), black 6%);
+    }
+
     .highlight-item i {
-        color: #ff9900;
-        font-size: 1.1rem;
+        background: var(--secondary-color);
+        color: #fff;
+        padding: 6px 8px;
+        border-radius: 8px;
+        font-size: 1rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        /* no shadow */
     }
 
     @media (min-width: 992px) {
@@ -674,7 +706,10 @@
     }
 
     .price-value {
-        color: #ff9900;
+        color: var(--secondary-color);
+        font-weight: 800;
+        font-size: 2.25rem;
+        letter-spacing: -0.02em;
     }
     
     .variation-select option.variation-option-disabled {
@@ -696,12 +731,11 @@
     
     /* Estilos dos cards de produtos */
     .product-card {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        transition: transform 0.18s ease;
     }
-    
+
     .product-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+        transform: translateY(-4px);
     }
     
     .breadcrumb {
@@ -1076,8 +1110,8 @@
         background: #f8fafc;
         border-radius: 14px;
         padding: 1.25rem;
-        border: 1px solid rgba(148, 163, 184, 0.18);
-        box-shadow: 0 12px 32px rgba(15, 23, 42, 0.05);
+        border: 1px solid color-mix(in srgb, var(--secondary-color), white 92%);
+        box-shadow: none;
     }
 
     .secondary-info .info-section {
@@ -1113,6 +1147,56 @@
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
     }
 
+    /* Make buy-actions span full width of the summary-grid and look compact */
+    .summary-grid .buy-actions {
+        grid-column: span 2;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0; /* rely on inner button padding */
+        gap: 0.5rem;
+    }
+
+    .summary-grid .buy-actions .btn {
+        width: 100%;
+        padding: 0.65rem 1rem;
+        font-size: 1.05rem;
+        border-radius: 10px;
+        box-shadow: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Make the buy-actions button visually compact next to quantity/stock */
+    .summary-grid .buy-actions .btn .bi, .summary-grid .buy-actions .btn i {
+        margin-right: 0.6rem;
+    }
+
+    /* Reduce vertical space between shipping widget and cards */
+    .summary-grid .shipping-widget-wrapper,
+    .summary-grid .shipping-favorite-wrapper {
+        margin-top: 0.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Make the shipping widget span two columns on wide screens so it occupies the space of two summary cards */
+    .summary-grid .shipping-widget-wrapper {
+        grid-column: span 2;
+    }
+
+    /* Favorite button placed below shipping widget and spanning same width */
+    .summary-grid .shipping-favorite-wrapper {
+        grid-column: span 2;
+        display: flex;
+        align-items: center;
+    }
+
+    @media (max-width: 992px) {
+        .summary-grid .shipping-widget-wrapper { grid-column: auto; }
+        .summary-grid .shipping-favorite-wrapper { grid-column: auto; }
+    }
+
     .info-grid {
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     }
@@ -1128,7 +1212,13 @@
     }
 
     .summary-card i, .info-card i {
-        color: #ff9900;
+        color: #fff;
+        background: var(--secondary-color);
+        padding: 8px;
+        border-radius: 8px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .summary-card span.title, .info-card span.title {
@@ -1141,15 +1231,15 @@
         font-size: 0.88rem;
     }
 
-    /* Shipping widget enhancements */
-    .shipping-widget {background: #ffffff; border: 1px solid rgba(148,163,184,0.25); border-radius: 14px;}
-    .shipping-widget .list-group-item {cursor: pointer; transition: background .15s, box-shadow .15s, border-color .15s;}
-    .shipping-widget .list-group-item:hover {background: #f8fafc; box-shadow: 0 4px 12px rgba(0,0,0,0.06);}
-    .shipping-widget .list-group-item[aria-checked="true"], .shipping-widget .list-group-item:has(input[type=radio]:checked) {background: #eef6ff; border-left: 4px solid #0d6efd;}
+    /* Shipping widget enhancements (modern, secondary color accent) */
+    .shipping-widget {background: #ffffff; border: 1px solid color-mix(in srgb, var(--secondary-color), white 92%); border-radius: 14px;}
+    .shipping-widget .list-group-item {cursor: pointer; transition: background .12s, border-color .12s;}
+    .shipping-widget .list-group-item:hover {background: #f8fafc;}
+    .shipping-widget .list-group-item[aria-checked="true"], .shipping-widget .list-group-item:has(input[type=radio]:checked) {background: color-mix(in srgb, var(--secondary-color), white 94%); border-left: 4px solid var(--secondary-color);}
     .shipping-widget .price-display {font-size: 0.95rem;}
-    .shipping-widget .option-cheapest .price-display {color: #0d6efd;}
+    .shipping-widget .option-cheapest .price-display {color: var(--secondary-color);}
     .shipping-widget .option-fastest .service-name::after {content: '⚡'; margin-left: 4px; font-size: .9rem;}
-    #frete-actions .btn-group .btn.active {background:#0d6efd; color:#fff;}
+    #frete-actions .btn-group .btn.active {background:var(--secondary-color); color:#fff;}
     #frete-selecionado .alert {border-radius: 10px;}
     .shipping-widget .badge {font-size: .65rem; font-weight:600; letter-spacing:.5px;}
     @media (max-width: 576px){
@@ -1168,19 +1258,52 @@
     .price-section .h3 {
         font-size: 2.4rem;
         font-weight: 700;
-        color: #ff9900;
+        color: var(--secondary-color);
         display: flex;
         align-items: center;
         gap: 0.75rem;
+        text-transform: none;
+    }
+
+    /* Modern favorite button */
+    .btn-favorite {
+        --fav: var(--secondary-color);
+        color: var(--fav);
+        border: 1px solid color-mix(in srgb, var(--fav), black 8%);
+        background: transparent;
+        font-weight: 700;
+        padding: 0.9rem 1rem;
+        border-radius: 12px;
+        transition: all 0.18s ease;
+    }
+
+    .btn-favorite i { margin-right: 8px; }
+
+    .btn-favorite:hover {
+        background: var(--secondary-color);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    /* Ensure the main CTA (Adicionar ao Carrinho) in the buy-actions uses secondary color */
+    .buy-actions .btn-primary.btn-lg.w-100 {
+        background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 10%) 100%);
+        border: none;
+        color: #fff;
+        font-weight: 800;
+        padding: 0.95rem 1.25rem;
+        border-radius: 12px;
+        box-shadow: none;
     }
 
     .price-card {
         background: #ffffff;
         border-radius: 16px;
         padding: 1.5rem;
-        border: 1px solid rgba(148, 163, 184, 0.18);
+        border: 1px solid color-mix(in srgb, var(--secondary-color), white 88%);
         margin-bottom: 1.5rem;
-        box-shadow: 0 18px 45px rgba(148, 163, 184, 0.16);
+        /* modern minimal: no heavy shadow */
+        box-shadow: none;
     }
 
     .stock-line {

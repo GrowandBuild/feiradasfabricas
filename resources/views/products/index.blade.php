@@ -122,22 +122,23 @@
             @if($products->count() > 0)
                 <!-- Grid de Produtos -->
                 <div class="row">
+                    @php($linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null)
                     @foreach($products as $product)
                         <div class="col-lg-4 col-md-6 mb-4">
                             <div class="card h-100 product-card {{ $product->is_unavailable ? 'product-unavailable' : '' }}" 
                                  style="{{ $product->is_unavailable ? 'opacity: 0.6;' : '' }}">
                                 <div class="card-img-top-container position-relative" style="height: 250px; overflow: hidden;">
-                                    @if($product->first_image)
-                                        <img src="{{ $product->first_image }}" 
-                                             alt="{{ $product->name }}" 
-                                             class="card-img-top"
-                                             style="height: 100%; object-fit: cover;"
-                                             onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                             @if($product->first_image)
+                                <img src="{{ $product->first_image }}" 
+                                    alt="{{ $product->name }}" 
+                                    class="card-img-top @auth('admin') js-change-image @endauth"
+                                    @auth('admin') data-product-id="{{ $product->id }}" style="height: 100%; object-fit: cover; cursor: pointer;" @else style="height: 100%; object-fit: cover;" @endauth
+                                    onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                     @else
-                                        <img src="{{ asset('images/no-image.svg') }}" 
-                                             alt="{{ $product->name }}" 
-                                             class="card-img-top"
-                                             style="height: 100%; object-fit: cover;">
+                                <img src="{{ asset('images/no-image.svg') }}" 
+                                    alt="{{ $product->name }}" 
+                                    class="card-img-top @auth('admin') js-change-image @endauth"
+                                    @auth('admin') data-product-id="{{ $product->id }}" style="height: 100%; object-fit: cover; cursor: pointer;" @else style="height: 100%; object-fit: cover;" @endauth>
                                     @endif
                                     
                                     @if($product->is_unavailable)
@@ -198,8 +199,8 @@
                                 
                                 <div class="card-footer bg-transparent">
                                     <div class="d-grid gap-2">
-                                        <a href="{{ route('product', $product->slug) }}" 
-                                           class="btn btn-outline-primary btn-sm">
+                                                     <a href="{{ route('product', $product->slug) }}{{ $linkDept ? '?department='.$linkDept : '' }}" 
+                                                         class="btn btn-outline-primary btn-sm">
                                             Ver Detalhes
                                         </a>
                                         

@@ -153,6 +153,38 @@ class ProductController extends Controller
         return view('admin.products.create', compact('categories'));
     }
 
+    /**
+     * Retorna lista distinta de marcas (JSON), opcionalmente filtrada por departamento (slug)
+     */
+    public function brandsList(Request $request)
+    {
+        $departmentSlug = $request->query('department');
+
+        $query = Product::query()
+            ->whereNotNull('brand')
+            ->where('brand', '<>', '');
+
+        if ($departmentSlug) {
+            $query->whereHas('department', function ($q) use ($departmentSlug) {
+                $q->where('slug', $departmentSlug);
+            });
+        }
+
+        $brands = $query->select('brand')
+            ->distinct()
+            ->orderBy('brand')
+            ->pluck('brand')
+            ->filter(function ($b) {
+                return is_string($b) && trim($b) !== '';
+            })
+            ->values();
+
+        return response()->json([
+            'success' => true,
+            'brands' => $brands,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $request->validate([
@@ -1331,7 +1363,10 @@ class ProductController extends Controller
         try {
             $request->validate([
                 'featured_image' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
+                'featured_image_url' => 'nullable|url|starts_with:http,https',
                 'additional_images.*' => 'nullable|image|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
+                'additional_image_urls' => 'nullable|array',
+                'additional_image_urls.*' => 'nullable|url|starts_with:http,https',
                 'remove_featured_image' => 'nullable|boolean',
                 'existing_featured_image' => 'nullable|string',
                 'existing_additional_images' => 'nullable|array',
@@ -1351,6 +1386,11 @@ class ProductController extends Controller
                     $imagePaths[] = $path; // Adicionar como primeira imagem
                     \Log::info('Nova imagem de destaque adicionada', ['path' => $path]);
                 }
+            } elseif ($request->filled('featured_image_url') && !$removeFeatured) {
+                // Usar URL externa como imagem de destaque
+                $url = trim($request->featured_image_url);
+                $imagePaths[] = $url; // manter URL absoluta
+                \Log::info('Imagem de destaque via URL adicionada', ['url' => $url]);
             } elseif (!$removeFeatured) {
                 // Se não foi enviada nova imagem e não foi marcada para remover, manter a existente
                 if ($request->has('existing_featured_image') && !empty($request->existing_featured_image)) {
@@ -1413,6 +1453,18 @@ class ProductController extends Controller
                     }
                 }
             }
+            // 3.1 Adicionar novas imagens adicionais via URLs
+            if ($request->has('additional_image_urls') && is_array($request->additional_image_urls)) {
+                foreach ($request->additional_image_urls as $url) {
+                    $url = trim((string)$url);
+                    if ($url === '') { continue; }
+                    // Evitar duplicatas simples (comparando string exata)
+                    if (!in_array($url, $imagePaths, true)) {
+                        $imagePaths[] = $url;
+                        \Log::info('Nova imagem adicional via URL adicionada', ['url' => $url]);
+                    }
+                }
+            }
             
             \Log::info('Total de imagens após processamento', [
                 'total' => count($imagePaths),
@@ -1456,7 +1508,8 @@ class ProductController extends Controller
                 'image_path' => 'required|string'
             ]);
 
-            $imagePath = $this->extractImagePath($request->image_path);
+            $originalInput = (string)$request->image_path;
+            $imagePath = $this->extractImagePath($originalInput);
             
             if (!$imagePath) {
                 return response()->json([
@@ -1468,8 +1521,11 @@ class ProductController extends Controller
             $currentImages = $product->images ?? [];
             
             // Remover a imagem do array
-            $updatedImages = array_filter($currentImages, function($img) use ($imagePath) {
-                return $img !== $imagePath;
+            $updatedImages = array_filter($currentImages, function($img) use ($imagePath, $originalInput) {
+                // Remover se for exatamente igual ao armazenado, ou igual ao caminho normalizado
+                if ($img === $originalInput) return false;
+                if ($img === $imagePath) return false;
+                return true;
             });
             
             // Reindexar o array
@@ -1693,5 +1749,60 @@ class ProductController extends Controller
         
         // Já é um caminho relativo
         return $image;
+    }
+
+    /**
+     * (Admin) Ativa/Desativa produtos em massa por marca e (opcional) por departamento
+     * Parâmetros: brand (string), department (slug opcional), active (bool)
+     */
+    public function bulkToggleByBrand(Request $request)
+    {
+        try {
+            $request->validate([
+                'brand' => 'required|string',
+                'department' => 'nullable|string',
+                'active' => 'required|boolean',
+            ]);
+
+            $brand = trim($request->brand);
+            $deptSlug = $request->department ? trim($request->department) : null;
+            $active = (bool)$request->active;
+
+            $query = Product::query();
+            // Comparação case-insensitive
+            $query->whereRaw('LOWER(brand) = LOWER(?)', [$brand]);
+
+            if ($deptSlug) {
+                $query->whereHas('department', function($q) use ($deptSlug){
+                    $q->where('slug', $deptSlug);
+                });
+            }
+
+            $count = $query->update(['is_active' => $active]);
+
+            return response()->json([
+                'success' => true,
+                'updated' => $count,
+                'active' => $active,
+                'brand' => $brand,
+                'department' => $deptSlug,
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Dados inválidos',
+                'errors' => $e->errors(),
+            ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro no bulkToggleByBrand', [
+                'brand' => $request->brand,
+                'department' => $request->department,
+                'exception' => $e,
+            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar produtos: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

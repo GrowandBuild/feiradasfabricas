@@ -1,3 +1,14 @@
+@php
+    $deptSlug = isset($currentDepartmentSlug) ? $currentDepartmentSlug : null;
+    $dept_setting = function($key, $default = null) use ($deptSlug) {
+        if ($deptSlug) {
+            $deptKey = 'dept_' . $deptSlug . '_' . $key;
+            $val = setting($deptKey);
+            if ($val !== null && $val !== '') return $val;
+        }
+        return setting($key, $default);
+    };
+@endphp
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -6,14 +17,12 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', 'Feira das Fábricas')</title>
     
-    <meta name="theme-color" content="#ff9900">
+    <meta name="theme-color" content="{{ $dept_setting('theme_secondary', '#ff9900') }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
-    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
-
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons (para a lupa da Busca Inteligente) -->
@@ -24,19 +33,24 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+        
         :root {
-            --primary-color: #0f172a;
-            --secondary-color: #ff6b35;
-            --accent-color: #0f172a;
-            --dark-bg: #1e293b;
-            --text-light: #f8fafc;
-            --text-dark: #1e293b;
+            --primary-color: {{ $dept_setting('theme_primary', '#0f172a') }};
+            --secondary-color: {{ $dept_setting('theme_secondary', '#ff6b35') }};
+            --accent-color: {{ $dept_setting('theme_accent', '#0f172a') }};
+            --dark-bg: {{ $dept_setting('theme_dark_bg', '#1e293b') }};
+            --text-light: {{ $dept_setting('theme_text_light', '#f8fafc') }};
+            --text-dark: {{ $dept_setting('theme_text_dark', '#1e293b') }};
+            --header-height: 72px; /* adjust if your header height differs */
+            /* map elegant variables used in department templates to theme variables */
+            --elegant-accent: var(--secondary-color);
+            --elegant-dark: var(--text-dark);
             --text-muted: #64748b;
             --elegant-blue: #334155;
-            --success-color: #10b981;
-            --warning-color: #f59e0b;
-            --danger-color: #ef4444;
-            --border-color: #e2e8f0;
+            --success-color: {{ $dept_setting('theme_success', '#10b981') }};
+            --warning-color: {{ $dept_setting('theme_warning', '#f59e0b') }};
+            --danger-color: {{ $dept_setting('theme_danger', '#ef4444') }};
+            --border-color: {{ $dept_setting('theme_border', '#e2e8f0') }};
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -46,6 +60,87 @@
             --radius-lg: 0.75rem;
             --radius-xl: 1rem;
         }
+
+            /* Global compact scale overrides: reduce base font-size and shrink large paddings/sizes
+               to make the site appear less scaled (everything a bit smaller). Tweak as needed. */
+            html {
+                font-size: 14px; /* default 16px -> smaller overall scale */
+            }
+
+            /* Header / Navbar compact */
+            .navbar-custom {
+                padding: 0.35rem 0 !important;
+            }
+
+            .navbar-brand {
+                font-size: 1.4rem !important;
+            }
+
+            .logo-img {
+                height: 30px !important;
+            }
+
+            /* Search bar smaller */
+            .search-bar input {
+                padding: 12px 18px !important;
+                font-size: 14px !important;
+            }
+
+            .search-bar button {
+                padding: 12px 18px !important;
+            }
+
+            /* (banner behavior restored to the original rules further below) */
+
+            /* Reduce badge / brand logo sizes */
+            .brand-logo, .badge-circle {
+                width: 80px !important;
+                height: 80px !important;
+            }
+
+            /* Product card compact */
+            .product-image {
+                height: 140px !important; /* was 160px */
+            }
+
+            .product-title {
+                font-size: 0.85rem !important;
+            }
+
+            .product-price {
+                font-size: 1rem !important;
+            }
+
+            .product-btn {
+                padding: 8px 12px !important;
+                font-size: 0.75rem !important;
+                border-radius: 6px !important;
+            }
+
+            /* Compact quantity controls */
+            .quantity-btn {
+                padding: 4px 8px !important;
+                min-width: 30px !important;
+                height: 32px !important;
+            }
+
+            .quantity-input {
+                min-width: 44px !important;
+                width: 44px !important;
+                padding: 4px 8px !important;
+                font-size: 0.95rem !important;
+            }
+
+            /* Header icon size */
+            .header-icon {
+                font-size: 1.1rem !important;
+                padding: 6px !important;
+            }
+
+            /* Footer compact */
+            .footer {
+                padding: 2rem 0 0.75rem !important;
+            }
 
         * {
             box-sizing: border-box;
@@ -183,7 +278,7 @@
         }
 
         .search-bar button {
-            background: linear-gradient(135deg, var(--secondary-color) 0%, #ff8c42 100%);
+            background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%);
             color: white;
             border: none;
             padding: 16px 24px;
@@ -197,7 +292,7 @@
         }
 
         .search-bar button:hover {
-            background: linear-gradient(135deg, #ff8c42 0%, var(--secondary-color) 100%);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-color), white 10%) 0%, var(--secondary-color) 100%);
             transform: scale(1.02);
             box-shadow: var(--shadow-lg);
         }
@@ -340,7 +435,7 @@
         }
 
         .btn-primary-custom:hover {
-            background-color: #f59e0b;
+            background-color: color-mix(in srgb, var(--secondary-color), white 18%);
         }
 
         .b2b-section {
@@ -349,6 +444,8 @@
             padding: 2rem;
             border-radius: 15px;
             text-align: center;
+            /* remove noisy secondary-based shadow; use subtle primary-based glow */
+            box-shadow: 0 10px 30px color-mix(in srgb, var(--primary-color), transparent 80%);
         }
 
         .brands-section {
@@ -531,23 +628,23 @@
                 padding: 0;
             }
 
-            .py-5 {
-                padding-top: 2rem !important;
-                padding-bottom: 2rem !important;
+            .b2b-btn {
+                background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%);
+                color: white;
+                border: none;
+                padding: 12px 30px;
+                font-size: 1.0rem;
+                font-weight: 700;
+                border-radius: 999px;
+                transition: all 0.22s ease;
+                box-shadow: 0 8px 20px color-mix(in srgb, var(--secondary-color), transparent 72%);
             }
 
-            .mb-4 {
-                margin-bottom: 1.5rem !important;
-            }
-
-            .mb-5 {
-                margin-bottom: 2rem !important;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .logo-img {
-                height: 28px;
+            .b2b-btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 12px 30px color-mix(in srgb, var(--secondary-color), transparent 60%);
+                filter: brightness(0.95);
+                color: white;
             }
 
             .header-icon {
@@ -590,6 +687,9 @@
             overflow: hidden;
             box-shadow: var(--shadow-sm);
             transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
         }
 
         .quantity-controls:focus-within {
@@ -601,9 +701,14 @@
             background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
             border: none;
             color: var(--text-dark);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            font-weight: 600;
-            padding: 8px 12px;
+            transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 700;
+            padding: 6px 10px;
+            min-width: 36px;
+            height: 36px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
         }
 
         .quantity-btn:hover {
@@ -614,10 +719,14 @@
 
         .quantity-input {
             border: none;
-            font-weight: 600;
+            font-weight: 700;
             text-align: center;
             background: transparent;
-            padding: 8px 12px;
+            padding: 6px 10px;
+            min-width: 56px; /* give space to show the number clearly */
+            width: 56px;
+            font-size: 1rem;
+            line-height: 1;
         }
 
         .quantity-input:focus {
@@ -647,6 +756,149 @@
         .btn-primary-modern:hover {
             background: linear-gradient(135deg, #1e293b 0%, var(--accent-color) 100%);
             color: white;
+        }
+        /* Override common bootstrap and custom button styles to respect theme variables */
+        .btn-primary, .btn-primary-modern, .navbar-custom .btn, .btn-cta {
+            background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color), var(--dark-bg) 30%));
+            border-color: transparent;
+            color: #fff !important;
+        }
+        .btn-primary:focus, .btn-primary:active, .btn-primary:hover,
+        .btn-cta:hover {
+            filter: brightness(0.95);
+            transform: translateY(-1px);
+        }
+        /* Treat .btn-success as secondary CTA so it matches theme secondary color in front-end CTAs */
+        .btn-success {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), var(--dark-bg) 30%));
+            border-color: transparent;
+            color: #fff !important;
+        }
+        .btn-success:hover, .btn-success:focus {
+            filter: brightness(0.95);
+        }
+        /* Small utilities used in panels and theme tool */
+        .tp-btn-secondary, .ss-btn-secondary, .tp-btn-secondary, .tp-btn-danger, .ss-btn-danger {
+            background: transparent; /* let specific classes below override */
+        }
+        .tp-btn-secondary, .ss-btn-secondary { background: var(--border-color); color: var(--text-dark); }
+        .tp-btn-danger, .ss-btn-danger { background: var(--danger-color); color: #fff; }
+        .smart-search-item-brand { background: var(--primary-color); }
+        /* Ensure badges and small accents use secondary or accent colors */
+        .badge, .badge-pill { background: var(--secondary-color); color: #fff; }
+        /* Ensure hero buttons follow theme (override inline or other hero-specific vars) */
+        .hero-btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, color-mix(in srgb, var(--primary-color), var(--dark-bg) 30%)) !important;
+            box-shadow: 0 8px 25px color-mix(in srgb, var(--primary-color), transparent 70%) !important;
+            color: #fff !important;
+        }
+        .hero-btn-primary:hover {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--primary-color), white 10%) 0%, var(--primary-color) 100%) !important;
+            box-shadow: 0 12px 35px color-mix(in srgb, var(--primary-color), transparent 60%) !important;
+        }
+        .hero-btn-secondary {
+            background: transparent !important;
+            color: var(--text-light) !important;
+            border-color: color-mix(in srgb, var(--secondary-color), white 40%) !important;
+        }
+        .hero-btn-secondary:hover {
+            background: var(--secondary-color) !important;
+            color: #fff !important;
+        }
+        /* Ensure product listing cards use the department secondary color for primary CTAs
+           This overrides department-local styles like .product-btn and keeps changes centralized */
+        .product-card .product-btn,
+        .product-info .product-btn,
+        .product-card .product-info .product-btn {
+            background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), var(--dark-bg) 30%)) !important;
+            border: none !important;
+            color: #fff !important;
+            box-shadow: 0 6px 18px color-mix(in srgb, var(--secondary-color), transparent 70%) !important;
+        }
+        .product-card .product-btn:hover,
+        .product-info .product-btn:hover,
+        .product-card .product-info .product-btn:hover {
+            background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-color), white 10%) 0%, var(--secondary-color) 100%) !important;
+            transform: translateY(-2px) !important;
+            filter: brightness(0.98) !important;
+        }
+        /* Ensure admin modals / department panels don't grow beyond the viewport and are scrollable.
+           This prevents the panel from being obscured by the sticky header and improves UX on small screens. */
+        .modal-dialog {
+            margin: calc(var(--header-height) * 0.4) auto; /* modal starts below header proportionally */
+            max-width: 960px;
+            width: 100%;
+        }
+
+        .modal-content {
+            max-height: calc(100vh - var(--header-height) - 40px);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-body {
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            max-height: calc(100vh - var(--header-height) - 160px); /* leave room for header and modal footer */
+        }
+
+        /* Offcanvas panels (Bootstrap) similar behavior */
+        /* push offcanvas further below the sticky header so it opens lower on the page */
+        .offcanvas {
+            max-height: calc(100vh - var(--header-height) - 8px) !important;
+            top: calc(var(--header-height) + 8px) !important; /* open below sticky header */
+            overflow: hidden;
+        }
+
+        .offcanvas .offcanvas-body {
+            overflow-y: auto;
+            max-height: calc(100vh - 160px) !important;
+        }
+        /* Visual dropzone for file uploads */
+        .dropzone {
+            border: 2px dashed var(--border-color);
+            background: rgba(255,255,255,0.02);
+            padding: 0.5rem;
+            transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+        }
+        .dropzone input[type="file"] {
+            background: transparent;
+            border: none;
+            box-shadow: none;
+        }
+        .dropzone.dragover {
+            border-color: var(--secondary-color);
+            box-shadow: 0 8px 24px color-mix(in srgb, var(--secondary-color), transparent 72%);
+            transform: translateY(-2px);
+            background: color-mix(in srgb, var(--secondary-color), white 96%);
+        }
+    </style>
+    
+    <!-- Overrides dinâmicos de tema (carregados de settings, por departamento se disponível) -->
+    @php
+    $deptSlug = isset($currentDepartmentSlug) ? $currentDepartmentSlug : null;
+    $dept_setting = function($key, $default = null) use ($deptSlug) {
+            if ($deptSlug) {
+                $deptKey = 'dept_' . $deptSlug . '_' . $key;
+                $val = setting($deptKey);
+                if ($val !== null && $val !== '') return $val;
+            }
+            return setting($key, $default);
+        }
+    @endphp
+    <style>
+        :root {
+            --primary-color: {{ $dept_setting('theme_primary', '#0f172a') }};
+            --secondary-color: {{ $dept_setting('theme_secondary', '#ff6b35') }};
+            --accent-color: {{ $dept_setting('theme_accent', '#0f172a') }};
+            --dark-bg: {{ $dept_setting('theme_dark_bg', '#1e293b') }};
+            --text-light: {{ $dept_setting('theme_text_light', '#f8fafc') }};
+            --text-dark: {{ $dept_setting('theme_text_dark', '#1e293b') }};
+            --success-color: {{ $dept_setting('theme_success', '#10b981') }};
+            --warning-color: {{ $dept_setting('theme_warning', '#f59e0b') }};
+            --danger-color: {{ $dept_setting('theme_danger', '#ef4444') }};
+            --border-color: {{ $dept_setting('theme_border', '#e2e8f0') }};
         }
     </style>
     
@@ -913,7 +1165,274 @@
     @yield('scripts')
     @stack('scripts')
     
-    {{-- Busca Inteligente Flutuante para Admin (global) --}}
-    @include('partials.smart-search')
+        @auth('admin')
+        <!-- Modal Global: Trocar imagem do produto (upload ou URL) -->
+        <div class="modal fade" id="quickImageModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: var(--primary-color); color: #fff;">
+                        <h5 class="modal-title">Trocar imagem do produto</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                            <input type="hidden" id="qiProductId" />
+
+                            <div class="mb-3 d-flex align-items-start gap-3">
+                                <div style="width:120px; height:80px; flex:0 0 120px;">
+                                    <img id="qiPreview" src="{{ asset('images/no-image.svg') }}" alt="Preview" style="width:100%; height:100%; object-fit:cover; border-radius:6px; border:1px solid var(--border-color);" />
+                                </div>
+                                <div class="flex-grow-1">
+                                    <p class="mb-1 fw-semibold">Atualize a imagem do produto</p>
+                                    <p class="mb-2 text-muted small">Cole (Ctrl+V), arraste & solte ou use o botão abaixo para escolher um arquivo. Como alternativa, informe uma URL.</p>
+                                    <div class="mb-2">
+                                        <label class="form-label mb-1">Enviar arquivo <span class="text-muted small">(arraste/cole)</span></label>
+                                        <input type="file" id="qiFile" class="form-control" accept="image/*">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center text-muted my-2">ou</div>
+
+                            <div class="mb-3">
+                                    <label class="form-label">Usar link (URL)</label>
+                                    <input type="url" id="qiUrl" class="form-control" placeholder="https://exemplo.com/imagem.jpg">
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">Formatos: jpeg, png, jpg, gif, webp, avif. Máx 10MB.</small>
+                                <small class="text-muted">Dica: após colar, verifique o preview antes de salvar.</small>
+                            </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-danger" id="qiRemoveBtn">Remover</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="qiSaveBtn" style="background: var(--secondary-color); border-color: var(--secondary-color);">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            (function(){
+                const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                let qiModal, qiCurrentImgEl = null;
+                document.addEventListener('click', function(e){
+                    const img = e.target.closest('.js-change-image');
+                    if (!img) return;
+                    const pid = img.getAttribute('data-product-id');
+                    if (!pid) return;
+                    e.preventDefault();
+                    e.stopPropagation();
+                    qiCurrentImgEl = img;
+                    document.getElementById('qiProductId').value = pid;
+                    document.getElementById('qiFile').value = '';
+                    const urlInput = document.getElementById('qiUrl'); if (urlInput) urlInput.value = '';
+                    if (!qiModal) { qiModal = new bootstrap.Modal(document.getElementById('quickImageModal')); }
+                    qiModal.show();
+                }, true);
+
+                function updateTargetImage(newSrc){
+                    // Atualiza preview interno do modal
+                    const preview = document.getElementById('qiPreview');
+                    if (preview) preview.src = newSrc || `{{ asset('images/no-image.svg') }}`;
+                    // Atualiza a imagem alvo na lista (preview em tela) apenas se tivermos referência
+                    if (qiCurrentImgEl && newSrc) {
+                        qiCurrentImgEl.src = newSrc;
+                    }
+                }
+
+                function postUpdateImages(productId, body, isJson){
+                    return fetch(`/admin/products/${productId}/update-images`, {
+                        method: 'POST',
+                        headers: isJson ? { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' } : { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                        body
+                    }).then(r => r.json());
+                }
+
+                document.getElementById('qiSaveBtn').addEventListener('click', function(){
+                    const pid = document.getElementById('qiProductId').value;
+                    const file = document.getElementById('qiFile').files[0];
+                    const url = document.getElementById('qiUrl').value.trim();
+                    if (!pid) return;
+                    if (file) {
+                        const fd = new FormData();
+                        fd.append('featured_image', file);
+                        postUpdateImages(pid, fd, false)
+                            .then(data => {
+                                if (!data.success) throw new Error(data.message || 'Erro ao atualizar imagem');
+                                if (Array.isArray(data.images) && data.images.length) updateTargetImage(data.images[0]);
+                                qiModal && qiModal.hide();
+                            })
+                            .catch(err => alert(err.message));
+                    } else if (url) {
+                        postUpdateImages(pid, JSON.stringify({ featured_image_url: url }), true)
+                            .then(data => {
+                                if (!data.success) throw new Error(data.message || 'Erro ao atualizar imagem via URL');
+                                if (Array.isArray(data.images) && data.images.length) updateTargetImage(data.images[0]);
+                                qiModal && qiModal.hide();
+                            })
+                            .catch(err => alert(err.message));
+                    } else {
+                        alert('Envie um arquivo ou informe uma URL.');
+                    }
+                });
+
+                document.getElementById('qiRemoveBtn').addEventListener('click', function(){
+                    const pid = document.getElementById('qiProductId').value;
+                    if (!pid) return;
+                    const fd = new FormData();
+                    fd.append('remove_featured_image', '1');
+                    fd.append('all_images_removed', '0');
+                    postUpdateImages(pid, fd, false)
+                        .then(data => {
+                            if (!data.success) throw new Error(data.message || 'Erro ao remover imagem');
+                            if (qiCurrentImgEl) qiCurrentImgEl.src = `{{ asset('images/no-image.svg') }}`;
+                            qiModal && qiModal.hide();
+                        })
+                        .catch(err => alert(err.message));
+                });
+
+                // Allow paste (Ctrl+V) of image files or image URLs into the modal
+                const qiModalEl = document.getElementById('quickImageModal');
+                function qiPasteHandler(e){
+                    try {
+                        const clipboard = e.clipboardData || window.clipboardData;
+                        if (!clipboard) return;
+                        // First, prefer file items (images pasted from clipboard)
+                        const items = clipboard.items;
+                        if (items && items.length) {
+                            for (let i = 0; i < items.length; i++) {
+                                const it = items[i];
+                                if (it.kind === 'file' && it.type && it.type.indexOf('image/') === 0) {
+                                    const blob = it.getAsFile();
+                                    const ext = (blob.type || 'image/png').split('/').pop();
+                                    const file = new File([blob], `pasted-image.${ext}`, { type: blob.type });
+                                    const dt = new DataTransfer();
+                                    dt.items.add(file);
+                                    const fileInput = document.getElementById('qiFile');
+                                    if (fileInput) fileInput.files = dt.files;
+                                    const urlInput = document.getElementById('qiUrl'); if (urlInput) urlInput.value = '';
+                                    updateTargetImage(URL.createObjectURL(file));
+                                    return;
+                                }
+                            }
+                        }
+                        // Fallback: if clipboard contains a text URL to an image, use it
+                        const text = clipboard.getData ? (clipboard.getData('text') || clipboard.getData('Text')) : null;
+                        if (text && /\.(jpe?g|png|gif|webp|avif|svg)(\?|$)/i.test(text.trim())) {
+                            const urlInput = document.getElementById('qiUrl');
+                            if (urlInput) urlInput.value = text.trim();
+                            updateTargetImage(text.trim());
+                        }
+                    } catch(err) {
+                        console.error('paste handler error', err);
+                    }
+                }
+
+                if (qiModalEl) {
+                    qiModalEl.addEventListener('shown.bs.modal', function(){ 
+                        document.addEventListener('paste', qiPasteHandler);
+                        // set preview to current product image (if available)
+                        const preview = document.getElementById('qiPreview');
+                        try {
+                            if (preview) preview.src = (qiCurrentImgEl && qiCurrentImgEl.src) ? qiCurrentImgEl.src : `{{ asset('images/no-image.svg') }}`;
+                        } catch(e) {
+                            console.error('Erro ao setar preview do modal', e);
+                        }
+                    });
+                    qiModalEl.addEventListener('hidden.bs.modal', function(){ 
+                        document.removeEventListener('paste', qiPasteHandler);
+                        // reset preview to placeholder to reduce confusion
+                        const preview = document.getElementById('qiPreview');
+                        if (preview) preview.src = `{{ asset('images/no-image.svg') }}`;
+                    });
+                }
+            })();
+        </script>
+        @endauth
+    
+        {{-- Global image paste & drop support: attach paste/drag handlers to any file inputs that accept images --}}
+        <script>
+            (function(){
+                document.addEventListener('DOMContentLoaded', function(){
+                    function makePasteHandler(fileInput){
+                        return function(e){
+                            try {
+                                const clipboard = e.clipboardData || window.clipboardData;
+                                if (!clipboard) return;
+                                const items = clipboard.items;
+                                if (items && items.length) {
+                                    for (let i = 0; i < items.length; i++) {
+                                        const it = items[i];
+                                        if (it.kind === 'file' && it.type && it.type.indexOf('image/') === 0) {
+                                            const blob = it.getAsFile();
+                                            const ext = (blob.type || 'image/png').split('/').pop();
+                                            const file = new File([blob], `pasted-image.${ext}`, { type: blob.type });
+                                            const dt = new DataTransfer(); dt.items.add(file);
+                                            fileInput.files = dt.files;
+                                            // dispatch change so existing handlers (previews) run
+                                            try { fileInput.dispatchEvent(new Event('change', { bubbles: true })); } catch(e) { }
+                                            // update preview if present in the same container
+                                            const container = fileInput.closest('.modal, .image-upload, form') || document;
+                                            const preview = container.querySelector('img[data-upload-preview], img.preview');
+                                            if (preview) preview.src = URL.createObjectURL(file);
+                                            const urlInput = container.querySelector('input[type="url"]'); if (urlInput) urlInput.value = '';
+                                            return;
+                                        }
+                                    }
+                                }
+                                const text = clipboard.getData ? (clipboard.getData('text') || clipboard.getData('Text')) : null;
+                                if (text && /\.(jpe?g|png|gif|webp|avif|svg)(\?|$)/i.test(text.trim())) {
+                                    const url = text.trim();
+                                    const container = fileInput.closest('.modal, .image-upload, form') || document;
+                                    const urlInput = container.querySelector('input[type="url"]'); if (urlInput) urlInput.value = url;
+                                    const preview = container.querySelector('img[data-upload-preview], img.preview');
+                                    if (preview) preview.src = url;
+                                }
+                            } catch(err) {
+                                console.error('paste handler error', err);
+                            }
+                        };
+                    }
+
+                    const fileInputs = document.querySelectorAll('input[type="file"][accept*="image"]');
+                    fileInputs.forEach(function(fi){
+                        const modal = fi.closest('.modal');
+                        const handler = makePasteHandler(fi);
+                        if (modal) {
+                            modal.addEventListener('shown.bs.modal', function(){ document.addEventListener('paste', handler); });
+                            modal.addEventListener('hidden.bs.modal', function(){ document.removeEventListener('paste', handler); });
+                        } else {
+                            fi.addEventListener('focus', function(){ document.addEventListener('paste', handler); });
+                            fi.addEventListener('blur', function(){ document.removeEventListener('paste', handler); });
+                        }
+
+                        // basic drag & drop support on the input parent
+                        const dropZone = fi.closest('.dropzone') || fi.parentElement;
+                        if (dropZone) {
+                            dropZone.addEventListener('dragover', function(e){ e.preventDefault(); dropZone.classList.add('dragover'); });
+                            dropZone.addEventListener('dragleave', function(){ dropZone.classList.remove('dragover'); });
+                            dropZone.addEventListener('drop', function(e){
+                                e.preventDefault(); dropZone.classList.remove('dragover');
+                                const files = e.dataTransfer.files;
+                                if (files && files.length) {
+                                const f = files[0];
+                                if (f.type && f.type.indexOf('image/') === 0) {
+                                    const dt = new DataTransfer(); dt.items.add(f); fi.files = dt.files;
+                                    // trigger change so previews are created by page scripts
+                                    try { fi.dispatchEvent(new Event('change', { bubbles: true })); } catch(e) { }
+                                    const preview = dropZone.querySelector('img[data-upload-preview], img.preview');
+                                    if (preview) preview.src = URL.createObjectURL(f);
+                                    const urlInput = dropZone.querySelector('input[type="url"]'); if (urlInput) urlInput.value = '';
+                                }
+                            }
+                            });
+                        }
+                    });
+                });
+            })();
+        </script>
+
+        {{-- Busca Inteligente Flutuante para Admin (global) --}}
+        @include('partials.smart-search')
 </body>
 </html>

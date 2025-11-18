@@ -17,6 +17,10 @@ class DepartmentController extends Controller
     public function index(Request $request, $slug)
     {
         $department = Department::where('slug', $slug)->where('is_active', true)->firstOrFail();
+
+    // Compartilhar contexto para layouts (tema por departamento, etc.)
+    view()->share('currentDepartmentSlug', $department->slug);
+    view()->share('currentDepartmentName', $department->name);
         
         // Produtos em destaque do departamento - priorizar disponíveis
         $featuredProducts = $department->products()

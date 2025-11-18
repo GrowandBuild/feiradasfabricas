@@ -16,6 +16,16 @@
                 <i class="fas fa-search"></i>
             </button>
         </form>
+
+        <div class="live-search-helper" id="liveSearchHelper" aria-live="polite">
+            <span class="helper-label">Sugestões rápidas</span>
+            <div class="live-search-shortcuts" role="list">
+                <button type="button" class="shortcut-btn" data-term="promoções">Ofertas do dia</button>
+                <button type="button" class="shortcut-btn" data-term="frete grátis">Frete grátis</button>
+                <button type="button" class="shortcut-btn" data-term="lançamentos">Lançamentos</button>
+                <button type="button" class="shortcut-btn" data-term="mais vendidos">Mais vendidos</button>
+            </div>
+        </div>
         
         {{-- Dropdown de resultados --}}
         <div class="live-search-results" id="liveSearchResults" style="display: none;">
@@ -95,7 +105,7 @@
 }
 
 .live-search-submit {
-    background: #FF9900 !important;
+    background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%) !important;
     color: white;
     border: none !important;
     padding: 16px 28px;
@@ -106,24 +116,87 @@
     justify-content: center;
     font-weight: 600;
     border-radius: 0 50px 50px 0 !important;
-    box-shadow: none !important;
+    box-shadow: 0 12px 28px rgba(255, 107, 53, 0.28) !important;
     min-width: 60px;
 }
 
 .live-search-submit:hover {
-    background: #FFAA00 !important;
-    transform: none;
-    box-shadow: none !important;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-color), white 6%) 0%, var(--secondary-color) 100%) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 16px 34px rgba(255, 107, 53, 0.32) !important;
 }
 
 .live-search-submit:active {
-    background: #E68800 !important;
-    transform: scale(0.98);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-color), black 12%) 0%, var(--secondary-color) 100%) !important;
+    transform: scale(0.97);
 }
 
 .live-search-submit i {
     font-size: 18px;
     color: white;
+}
+
+
+.live-search-helper {
+    margin-top: 10px;
+    display: none;
+    align-items: center;
+    gap: 12px;
+    background: rgba(248, 250, 252, 0.9);
+    border-radius: 14px;
+    padding: 10px 14px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    color: var(--text-dark);
+}
+
+.live-search-helper.is-visible {
+    display: flex;
+}
+
+.helper-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent-color);
+}
+
+.live-search-shortcuts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.shortcut-btn {
+    appearance: none;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: var(--accent-color);
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.shortcut-btn:hover {
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
+    box-shadow: 0 8px 18px rgba(255, 107, 53, 0.18);
+    transform: translateY(-1px);
+}
+
+.shortcut-btn:focus {
+    outline: 2px solid color-mix(in srgb, var(--secondary-color), white 25%);
+    outline-offset: 2px;
+}
+
+.shortcut-btn.is-active {
+    background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 8%) 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 12px 26px rgba(255, 107, 53, 0.24);
 }
 
 /* Dropdown de resultados */
@@ -132,17 +205,16 @@
     top: calc(100% + 10px) !important;
     left: 0 !important;
     right: 0 !important;
-    background: white !important;
+    background: linear-gradient(135deg, rgba(248, 250, 252, 0.98) 0%, rgba(255, 255, 255, 0.92) 100%) !important;
     border-radius: 20px !important;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 22px 45px rgba(15, 23, 42, 0.16) !important;
     z-index: 9999 !important;
     max-height: 500px;
     overflow-y: auto;
-    border: none !important;
+    border: 1px solid rgba(148, 163, 184, 0.18) !important;
     margin-top: 0;
     padding: 12px;
     backdrop-filter: blur(10px);
-    /* Evita bloquear cliques na página quando o dropdown estiver visível */
     pointer-events: none !important;
 }
 
@@ -160,7 +232,7 @@
     width: 1.2rem;
     height: 1.2rem;
     border-width: 2px;
-    border-color: #FF9900;
+    border-color: var(--secondary-color);
     border-right-color: transparent;
 }
 
@@ -189,9 +261,9 @@
 }
 
 .live-search-item:hover {
-    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    background: linear-gradient(135deg, color-mix(in srgb, var(--accent-color), white 86%) 0%, color-mix(in srgb, var(--accent-color), white 96%) 100%) !important;
     transform: translateX(6px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 8px 16px rgba(15, 23, 42, 0.16);
 }
 
 .live-search-item-image {
@@ -267,7 +339,7 @@
 .live-search-item-price {
     font-weight: 700;
     font-size: 1.15rem;
-    color: #FF9900;
+    color: var(--secondary-color);
     letter-spacing: -0.02em;
 }
 
@@ -306,8 +378,8 @@
     pointer-events: auto !important;
 }
 
-.live-search-footer a {
-    color: #FF9900;
+    .live-search-footer a {
+    color: var(--secondary-color);
     font-weight: 600;
     font-size: 0.9rem;
     transition: all 0.2s ease;
@@ -317,7 +389,7 @@
 }
 
 .live-search-footer a:hover {
-    color: #FFAA00;
+    color: color-mix(in srgb, var(--secondary-color), white 12%);
     transform: translateX(2px);
 }
 
@@ -369,6 +441,21 @@
         font-size: 14px;
     }
     
+    .live-search-helper {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .live-search-shortcuts {
+        gap: 6px;
+    }
+
+    .shortcut-btn {
+        font-size: 0.75rem;
+        padding: 5px 12px;
+    }
+    
     .live-search-item-image {
         width: 60px;
         height: 60px;
@@ -393,6 +480,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchContent = document.getElementById('liveSearchContent');
     const searchLoading = document.getElementById('liveSearchLoading');
     const searchForm = document.getElementById('liveSearchForm');
+    const helperBox = document.getElementById('liveSearchHelper');
+    const shortcutButtons = helperBox ? helperBox.querySelectorAll('.shortcut-btn') : [];
     
     if (!searchInput || !searchResults || !searchContent) {
         console.error('❌ Elementos do Live Search não encontrados!');
@@ -404,6 +493,38 @@ document.addEventListener('DOMContentLoaded', function() {
         results: !!searchResults,
         content: !!searchContent
     });
+    
+    const updateShortcutStates = (value) => {
+        if (!shortcutButtons || !shortcutButtons.length) return;
+        const normalized = (value || '').toLowerCase();
+        shortcutButtons.forEach(btn => {
+            const candidate = (btn.dataset.term || btn.textContent || '').toLowerCase();
+            btn.classList.toggle('is-active', normalized && candidate === normalized);
+        });
+    };
+
+    const toggleHelper = (value = null) => {
+        if (!helperBox) return;
+        const current = value !== null ? value : searchInput.value;
+        const normalized = (current || '').trim();
+        const shouldShow = normalized.length === 0 && document.activeElement === searchInput;
+        helperBox.classList.toggle('is-visible', shouldShow);
+        updateShortcutStates(normalized);
+    };
+
+    toggleHelper();
+
+    if (shortcutButtons && shortcutButtons.length) {
+        shortcutButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const term = (btn.dataset.term || btn.textContent || '').trim();
+                if (!term) return;
+                searchInput.value = term;
+                searchInput.focus();
+                searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+        });
+    }
     
     let searchTimeout;
     let currentRequest = null;
@@ -610,6 +731,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log('⌨️ Input digitado:', query);
         
         clearTimeout(searchTimeout);
+        toggleHelper(query);
         
         searchTimeout = setTimeout(() => {
             console.log('⏱️ Executando busca após debounce...');
@@ -621,6 +743,7 @@ document.addEventListener('DOMContentLoaded', function() {
     searchInput.addEventListener('focus', function() {
         console.log('👁️ Input focado');
         const query = searchInput.value.trim();
+        toggleHelper(query);
         if (query.length >= 1) {
             searchResults.style.display = 'block';
             updateFooterLink(searchContent.querySelectorAll('.live-search-item').length);
@@ -659,15 +782,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.key === 'Escape') {
             searchResults.style.display = 'none';
             searchInput.blur();
+            toggleHelper('');
         }
     });
     
     // Manter dropdown aberto ao focar no input
     searchInput.addEventListener('focus', function() {
         const query = searchInput.value.trim();
+        toggleHelper(query);
         if (query.length >= 1) {
             searchResults.style.display = 'block';
         }
+    });
+
+    searchInput.addEventListener('blur', function() {
+        setTimeout(() => toggleHelper(searchInput.value.trim()), 0);
     });
 });
 </script>

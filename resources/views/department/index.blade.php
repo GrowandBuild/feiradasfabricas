@@ -175,21 +175,23 @@
         background: var(--elegant-white);
         border-radius: 10px;
         padding: 15px;
-        box-shadow: 0 4px 15px rgba(233, 30, 99, 0.06);
+        /* subtle shadow using primary color */
+        box-shadow: 0 4px 15px color-mix(in srgb, var(--primary-color, #e91e63), transparent 85%);
         transition: all 0.3s ease;
-        border: 1px solid rgba(233, 30, 99, 0.05);
+        border: 1px solid color-mix(in srgb, var(--primary-color, #e91e63), transparent 88%);
         height: 100%;
     }
 
     .elegant-card:hover {
         transform: translateY(-5px);
-        box-shadow: 0 15px 40px rgba(233, 30, 99, 0.15);
+        box-shadow: 0 15px 40px color-mix(in srgb, var(--primary-color, #e91e63), transparent 70%);
     }
 
     .card-icon {
         width: 50px;
         height: 50px;
-        background: linear-gradient(135deg, var(--elegant-accent) 0%, #ad1457 100%);
+        /* use solid primary color (from :root) to respect department theme */
+        background: var(--primary-color, var(--elegant-accent));
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -197,6 +199,7 @@
         margin: 0 auto 12px;
         color: white;
         font-size: 1.3rem;
+        box-shadow: 0 8px 22px color-mix(in srgb, var(--primary-color, var(--elegant-accent)), transparent 70%);
     }
 
     .card-title {
@@ -213,6 +216,25 @@
         margin-bottom: 12px;
         font-size: 0.85rem;
         line-height: 1.3;
+    }
+
+    /* Make category card button use primary color (filled) instead of bootstrap outline blue */
+    .elegant-card .btn-outline-primary {
+        padding: 10px 14px;
+        font-size: 0.95rem;
+        border-radius: 6px;
+        border: none;
+        background: var(--primary-color, var(--elegant-accent));
+        color: #fff;
+        font-weight: 600;
+        box-shadow: 0 6px 18px color-mix(in srgb, var(--primary-color, var(--elegant-accent)), transparent 70%);
+        transition: all 0.2s ease;
+    }
+
+    .elegant-card .btn-outline-primary:hover {
+        background: linear-gradient(135deg, var(--primary-color, var(--elegant-accent)) 0%, var(--secondary-color, #ad1457) 100%);
+        transform: translateY(-2px);
+        color: #fff;
     }
 
     /* Product Cards */
@@ -429,7 +451,7 @@
     }
 
     .b2b-btn {
-        background: var(--elegant-accent);
+        background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%);
         color: white;
         border: none;
         padding: 15px 35px;
@@ -437,13 +459,13 @@
         font-weight: 600;
         border-radius: 50px;
         transition: all 0.3s ease;
-        box-shadow: 0 8px 25px rgba(233, 30, 99, 0.3);
+        box-shadow: 0 8px 25px color-mix(in srgb, var(--secondary-color), transparent 70%);
     }
 
     .b2b-btn:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(233, 30, 99, 0.4);
-        background: #c2185b;
+        box-shadow: 0 12px 35px color-mix(in srgb, var(--secondary-color), transparent 60%);
+        background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-color), white 10%) 0%, var(--secondary-color) 100%);
         color: white;
     }
 
@@ -487,6 +509,21 @@
     }
 </style>
 @endsection
+
+@push('scripts')
+<script>
+// Informar o slug do departamento atual (dinâmico) e configuração de seções
+window.CurrentDepartmentSlug = @json($department->slug);
+window.DepartmentSectionsConfig = (function(){
+    try {
+        const raw = @json(setting("dept_{$department->slug}_sections"));
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'string' && raw.trim().length) { try { return JSON.parse(raw); } catch(e){} }
+    } catch(e) {}
+    return [];
+})();
+</script>
+@endpush
 
 @section('content')
 <!-- Hero Section -->
@@ -597,7 +634,7 @@
                                                     <small class="text-muted d-block">B2B: R$ {{ number_format($product->b2b_price, 2, ',', '.') }}</small>
                                                 @endif
                                             </div>
-                                            <a href="{{ route('product', $product->slug) }}" class="product-btn">
+                                            <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn">
                                                 <i class="fas fa-shopping-cart me-2"></i>
                                                 Ver Detalhes
                                             </a>

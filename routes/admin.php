@@ -38,6 +38,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Produtos
         Route::resource('products', ProductController::class);
+    // Lista de marcas (JSON)
+    Route::get('products/brands-list', [ProductController::class, 'brandsList'])->name('products.brands-list');
+        // Ativar/Desativar produtos em massa por marca
+        Route::post('products/bulk-toggle-by-brand', [ProductController::class, 'bulkToggleByBrand'])->name('products.bulk-toggle-by-brand');
         Route::post('products/{product}/adjust-stock', [ProductController::class, 'adjustStock'])->name('products.adjust-stock');
         Route::get('products/{product}/variations', [ProductController::class, 'getVariations'])->name('products.variations');
         Route::post('products/{product}/variations/toggle', [ProductController::class, 'toggleVariation'])->name('products.variations.toggle');
@@ -58,8 +62,12 @@ Route::prefix('admin')->name('admin.')->group(function () {
         // Categorias
         Route::resource('categories', CategoryController::class);
 
-        // Departamentos
-        Route::resource('departments', DepartmentController::class);
+    // Departamentos
+    Route::get('departments/inline-snapshot', [DepartmentController::class, 'inlineSnapshot'])->name('departments.inline-snapshot');
+    Route::put('departments/inline-sync', [DepartmentController::class, 'inlineSync'])->name('departments.inline-sync');
+    Route::post('departments/{department}/save-theme-colors', [DepartmentController::class, 'saveThemeColors'])->name('departments.saveThemeColors');
+    Route::get('departments/{department}/restore-theme-colors', [DepartmentController::class, 'restoreThemeColors'])->name('departments.restoreThemeColors');
+    Route::resource('departments', DepartmentController::class);
 
         // Pedidos
         Route::resource('orders', OrderController::class)->only(['index', 'show']);

@@ -4,7 +4,8 @@
 @section('meta_description', $metaDescription)
 
 @section('content')
-<div class="container py-5">
+    <div class="container py-5">
+        @php($linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null)
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Início</a></li>
@@ -16,7 +17,7 @@
                     </a>
                 </li>
             @endif
-            <li class="breadcrumb-item"><a href="{{ route('product', $product->slug) }}">{{ $product->name }}</a></li>
+            <li class="breadcrumb-item"><a href="{{ route('product', $product->slug) }}{{ $linkDept ? '?department='.$linkDept : '' }}">{{ $product->name }}</a></li>
             <li class="breadcrumb-item active" aria-current="page">{{ $variation->color }} {{ $variation->storage }} {{ $variation->ram }}</li>
         </ol>
     </nav>
@@ -58,7 +59,7 @@
             <x-add-to-cart :product="$product" :variationId="$variation->id" :showQuantity="true" buttonText="Adicionar ao Carrinho" buttonClass="btn btn-primary btn-lg w-100" />
 
             <div class="mt-4">
-                <a href="{{ route('product', $product->slug) }}" class="btn btn-outline-secondary w-100">Ver outras variações</a>
+                <a href="{{ route('product', $product->slug) }}{{ $linkDept ? '?department='.$linkDept : '' }}" class="btn btn-outline-secondary w-100">Ver outras variações</a>
             </div>
         </div>
     </div>
@@ -69,7 +70,7 @@
             <div class="row">
                 @foreach($relatedProducts as $rp)
                     <div class="col-md-3 mb-3">
-                        <a class="text-decoration-none" href="{{ route('product', $rp->slug) }}">
+                        <a class="text-decoration-none" href="{{ route('product', $rp->slug) }}{{ $linkDept ? '?department='.$linkDept : '' }}">
                             <div class="card h-100">
                                 <img src="{{ $rp->first_image }}" class="card-img-top" style="height:180px;object-fit:contain" alt="{{ $rp->name }}">
                                 <div class="card-body">

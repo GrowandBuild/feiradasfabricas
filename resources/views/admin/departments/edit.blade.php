@@ -91,6 +91,17 @@
                             </label>
                         </div>
                         <small class="form-text text-muted">Departamentos inativos não aparecerão no site</small>
+                                        <div class="mb-3">
+                                            <label for="theme_primary" class="form-label">Cor Primária</label>
+                                            <input type="color" id="theme_primary" name="theme_primary" value="{{ old('theme_primary', $department->color ?? '#0f172a') }}" class="form-control form-control-color">
+                                            <label for="theme_secondary" class="form-label mt-2">Cor Secundária</label>
+                                            <input type="color" id="theme_secondary" name="theme_secondary" value="#ff6b35" class="form-control form-control-color">
+                                            <div class="mt-3">
+                                                <button type="button" class="btn btn-success" id="saveThemeColors">Salvar como padrão</button>
+                                                <button type="button" class="btn btn-outline-secondary" id="restoreThemeColors">Restaurar padrão</button>
+                                            </div>
+                                            <div id="themeColorsMsg" class="mt-2"></div>
+                                        </div>
                     </div>
 
                     <div class="d-flex justify-content-between">
@@ -267,6 +278,37 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.getElementById('saveThemeColors').onclick = function() {
+    const primary = document.getElementById('theme_primary').value;
+    const secondary = document.getElementById('theme_secondary').value;
+    fetch("{{ route('admin.departments.saveThemeColors', $department) }}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ theme_primary: primary, theme_secondary: secondary })
+    })
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('themeColorsMsg').innerHTML = data.success ? 'Cores salvas com sucesso!' : 'Erro ao salvar.';
+    });
+};
+
+document.getElementById('restoreThemeColors').onclick = function() {
+    fetch("{{ route('admin.departments.restoreThemeColors', $department) }}")
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('theme_primary').value = data.theme_primary;
+        document.getElementById('theme_secondary').value = data.theme_secondary;
+        document.getElementById('themeColorsMsg').innerHTML = 'Cores restauradas!';
+    });
+};
+</script>
+@endpush
 
 @section('scripts')
 <script>

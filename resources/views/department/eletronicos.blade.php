@@ -13,7 +13,8 @@
         --elegant-gray: #f8fafc;
         --elegant-text: #1e293b;
         --elegant-text-light: #64748b;
-        --elegant-accent: #ff9900;
+        /* Acento deste template herda da cor secundária global */
+        --elegant-accent: var(--secondary-color);
     }
 
     body {
@@ -104,7 +105,7 @@
     }
 
     .hero-btn-primary {
-        background: var(--elegant-accent);
+        background: linear-gradient(135deg, var(--elegant-accent) 0%, color-mix(in srgb, var(--elegant-accent), white 12%) 100%);
         color: white;
         border: none;
         padding: 18px 40px;
@@ -112,7 +113,7 @@
         font-weight: 600;
         border-radius: 50px;
         transition: all 0.3s ease;
-        box-shadow: 0 8px 25px rgba(255, 153, 0, 0.3);
+        box-shadow: 0 8px 25px color-mix(in srgb, var(--elegant-accent), transparent 70%);
         text-decoration: none;
         display: inline-flex;
         align-items: center;
@@ -120,8 +121,8 @@
 
     .hero-btn-primary:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(255, 153, 0, 0.4);
-        background: #e88a00;
+        box-shadow: 0 12px 35px color-mix(in srgb, var(--elegant-accent), transparent 60%);
+        background: linear-gradient(135deg, color-mix(in srgb, var(--elegant-accent), white 10%) 0%, var(--elegant-accent) 100%);
         color: white;
     }
 
@@ -310,7 +311,7 @@
     }
 
     .elegant-btn {
-        background: var(--elegant-accent);
+        background: linear-gradient(135deg, var(--elegant-accent) 0%, color-mix(in srgb, var(--elegant-accent), white 12%) 100%);
         color: white;
         border: none;
         padding: 15px 35px;
@@ -318,13 +319,13 @@
         font-weight: 600;
         border-radius: 50px;
         transition: all 0.3s ease;
-        box-shadow: 0 8px 25px rgba(255, 153, 0, 0.3);
+        box-shadow: 0 8px 25px color-mix(in srgb, var(--elegant-accent), transparent 70%);
     }
 
     .elegant-btn:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(255, 153, 0, 0.4);
-        background: #e88a00;
+        box-shadow: 0 12px 35px color-mix(in srgb, var(--elegant-accent), transparent 60%);
+        background: linear-gradient(135deg, color-mix(in srgb, var(--elegant-accent), white 10%) 0%, var(--elegant-accent) 100%);
         color: white;
     }
 
@@ -444,21 +445,23 @@
         background: var(--elegant-white);
         border-radius: 8px;
         padding: 12px;
-        box-shadow: 0 3px 12px rgba(30, 58, 138, 0.06);
+        /* subtle shadow using primary color */
+        box-shadow: 0 3px 12px color-mix(in srgb, var(--primary-color, #1e293b), transparent 85%);
         transition: all 0.3s ease;
-        border: 1px solid rgba(30, 58, 138, 0.05);
+        border: 1px solid color-mix(in srgb, var(--primary-color, #1e293b), transparent 88%);
         height: 100%;
     }
 
     .elegant-card:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(30, 58, 138, 0.15);
+        box-shadow: 0 12px 35px color-mix(in srgb, var(--primary-color, #1e293b), transparent 70%);
     }
 
     .card-icon {
         width: 40px;
         height: 40px;
-        background: linear-gradient(135deg, var(--elegant-blue) 0%, var(--elegant-dark) 100%);
+        /* Solid primary color for clarity (no noisy gradient) */
+        background: var(--primary-color, var(--elegant-blue));
         border-radius: 50%;
         display: flex;
         align-items: center;
@@ -466,6 +469,7 @@
         margin: 0 auto 8px;
         color: white;
         font-size: 1.1rem;
+        box-shadow: 0 6px 18px color-mix(in srgb, var(--primary-color, var(--elegant-blue)), transparent 70%);
     }
 
     .card-title {
@@ -484,11 +488,23 @@
         line-height: 1.3;
     }
 
-    /* Botão compacto para cards de categoria */
+    /* Botão compacto para cards de categoria - agora preenchido com a cor primaria */
     .elegant-card .btn-outline-primary {
         padding: 8px 16px;
         font-size: 0.85rem;
         border-radius: 6px;
+        border: none;
+        background: var(--primary-color);
+        color: #fff;
+        font-weight: 600;
+        transition: all 0.22s ease;
+        box-shadow: 0 6px 18px color-mix(in srgb, var(--primary-color, #1e293b), transparent 70%);
+    }
+
+    .elegant-card .btn-outline-primary:hover {
+        background: linear-gradient(135deg, var(--primary-color, var(--elegant-blue)) 0%, var(--secondary-color, var(--elegant-dark)) 100%);
+        color: #fff;
+        transform: translateY(-3px);
     }
 
     /* Product Cards */
@@ -1157,7 +1173,7 @@
     }
 
     .b2b-btn {
-        background: var(--elegant-accent);
+        background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%);
         color: white;
         border: none;
         padding: 15px 35px;
@@ -1165,13 +1181,13 @@
         font-weight: 600;
         border-radius: 50px;
         transition: all 0.3s ease;
-        box-shadow: 0 8px 25px rgba(255, 153, 0, 0.3);
+        box-shadow: 0 8px 25px color-mix(in srgb, var(--secondary-color), transparent 70%);
     }
 
     .b2b-btn:hover {
         transform: translateY(-3px);
-        box-shadow: 0 12px 35px rgba(255, 153, 0, 0.4);
-        background: #e88a00;
+        box-shadow: 0 12px 35px color-mix(in srgb, var(--secondary-color), transparent 60%);
+        background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-color), white 10%) 0%, var(--secondary-color) 100%);
         color: white;
     }
 
@@ -1382,6 +1398,9 @@
                             }
                         }
 
+                        // department-specific primary color (fallback to global theme)
+                        $deptPrimaryColor = setting('dept_' . ($department->slug ?? '') . '_theme_primary', setting('theme_primary', '#0f172a'));
+
                         $secondaryButtonClasses = null;
                         if ($showSecondaryDesktop || $showSecondaryMobile) {
                             $secondaryButtonClasses = 'btn hero-btn-secondary align-items-center gap-2';
@@ -1418,7 +1437,7 @@
                                                     @if($hasAnyButton)
                                                         <div class="hero-banner-actions">
                                                             @if($primaryButtonClasses)
-                                                                <a href="{{ route('products') }}" class="{{ $primaryButtonClasses }}">
+                                                                <a href="{{ route('products') }}" class="{{ $primaryButtonClasses }}" style="background: {{ $deptPrimaryColor }}; color: #fff; border: none;">
                                                                     <i class="fas fa-shopping-bag me-2"></i>
                                                                     Ver Produtos
                                                                 </a>
@@ -1649,15 +1668,19 @@ document.addEventListener('DOMContentLoaded', function(){
                         <div class="row">
                             @foreach($chunk as $product)
                                 <div class="col-lg-3 col-md-6 col-6 mb-2">
-                                    <div class="product-card">
-                                        <div class="product-image">
+                                    <div class="product-card" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
+                                        <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                             @if($product->first_image)
                                                 <img src="{{ $product->first_image }}" 
                                                      alt="{{ $product->name }}"
+                                                     class="@auth('admin') js-change-image @endauth"
+                                                     @auth('admin') data-product-id="{{ $product->id }}" @endauth
                                                      onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                             @else
                                                 <img src="{{ asset('images/no-image.svg') }}" 
-                                                     alt="{{ $product->name }}">
+                                                     alt="{{ $product->name }}"
+                                                     class="@auth('admin') js-change-image @endauth"
+                                                     @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                             @endif
                                             @if($product->is_featured)
                                                 <div class="product-badge">Destaque</div>
@@ -1672,7 +1695,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                 @endif
                                             </div>
                                             <div class="d-flex gap-2">
-                                                <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                     <i class="fas fa-shopping-cart me-2"></i>
                                                     Ver Detalhes
                                                 </a>
@@ -1732,9 +1755,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- Seção Produtos Apple -->
 @if($appleProducts->count() > 0)
-<section class="section-elegant">
+<section class="section-elegant" data-brand-section="apple">
     <div class="container">
-        <h2 class="section-title">Produtos Apple</h2>
+        <h2 class="section-title js-section-title">Produtos Apple</h2>
         <p class="section-subtitle">
             A melhor tecnologia Apple para seu negócio
         </p>
@@ -1751,14 +1774,15 @@ document.addEventListener('DOMContentLoaded', function(){
                             @foreach($chunk as $product)
                                 <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card apple-card">
-                                        <div class="product-image">
+                                        <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                             @if($product->first_image)
                                                 <img src="{{ $product->first_image }}" 
                                                      alt="{{ $product->name }}"
+                                                     class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth
                                                      onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                             @else
                                                 <img src="{{ asset('images/no-image.svg') }}" 
-                                                     alt="{{ $product->name }}">
+                                                     alt="{{ $product->name }}" class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                             @endif
                                             <div class="product-badge apple-badge">Apple</div>
                                         </div>
@@ -1771,7 +1795,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                 @endif
                                             </div>
                                             <div class="d-flex gap-2">
-                                                <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                     <i class="fas fa-shopping-cart me-2"></i>
                                                     Ver Detalhes
                                                 </a>
@@ -1832,9 +1856,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- Seção Produtos Samsung -->
 @if($samsungProducts->count() > 0)
-<section class="section-elegant">
+<section class="section-elegant" data-brand-section="samsung">
     <div class="container">
-        <h2 class="section-title">Produtos Samsung</h2>
+        <h2 class="section-title js-section-title">Produtos Samsung</h2>
         <p class="section-subtitle">
             Tecnologia inovadora Samsung para seu negócio
         </p>
@@ -1851,14 +1875,14 @@ document.addEventListener('DOMContentLoaded', function(){
                             @foreach($chunk as $product)
                                 <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
-                                        <div class="product-image">
+                                        <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                             @if($product->first_image)
                                                 <img src="{{ $product->first_image }}" 
                                                      alt="{{ $product->name }}"
-                                                     onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                     class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                             @else
                                                 <img src="{{ asset('images/no-image.svg') }}" 
-                                                     alt="{{ $product->name }}">
+                                                     alt="{{ $product->name }}" class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                             @endif
                                             <div class="product-badge brand-badge">Samsung</div>
                                         </div>
@@ -1871,7 +1895,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                 @endif
                                             </div>
                                             <div class="d-flex gap-2">
-                                                <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                     <i class="fas fa-shopping-cart me-2"></i>
                                                     Ver Detalhes
                                                 </a>
@@ -1932,9 +1956,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- Seção Produtos Xiaomi -->
 @if($xiaomiProducts->count() > 0)
-<section class="section-elegant">
+<section class="section-elegant" data-brand-section="xiaomi">
     <div class="container">
-        <h2 class="section-title">Produtos Xiaomi</h2>
+        <h2 class="section-title js-section-title">Produtos Xiaomi</h2>
         <p class="section-subtitle">
             Inovação e qualidade Xiaomi para seu negócio
         </p>
@@ -1951,14 +1975,14 @@ document.addEventListener('DOMContentLoaded', function(){
                             @foreach($chunk as $product)
                                 <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
-                                        <div class="product-image">
+                                        <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                             @if($product->first_image)
                                                 <img src="{{ $product->first_image }}" 
                                                      alt="{{ $product->name }}"
-                                                     onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                     class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                             @else
                                                 <img src="{{ asset('images/no-image.svg') }}" 
-                                                     alt="{{ $product->name }}">
+                                                     alt="{{ $product->name }}" class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                             @endif
                                             <div class="product-badge brand-badge">Xiaomi</div>
                                         </div>
@@ -1971,7 +1995,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                 @endif
                                             </div>
                                             <div class="d-flex gap-2">
-                                                <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                     <i class="fas fa-shopping-cart me-2"></i>
                                                     Ver Detalhes
                                                 </a>
@@ -2032,9 +2056,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- Seção Produtos Motorola -->
 @if($motorolaProducts->count() > 0)
-<section class="section-elegant">
+<section class="section-elegant" data-brand-section="motorola">
     <div class="container">
-        <h2 class="section-title">Produtos Motorola</h2>
+        <h2 class="section-title js-section-title">Produtos Motorola</h2>
         <p class="section-subtitle">
             Tradição e inovação Motorola para seu negócio
         </p>
@@ -2051,14 +2075,14 @@ document.addEventListener('DOMContentLoaded', function(){
                             @foreach($chunk as $product)
                                 <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
-                                        <div class="product-image">
+                                        <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                             @if($product->first_image)
                                                 <img src="{{ $product->first_image }}" 
                                                      alt="{{ $product->name }}"
-                                                     onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                     class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                             @else
                                                 <img src="{{ asset('images/no-image.svg') }}" 
-                                                     alt="{{ $product->name }}">
+                                                     alt="{{ $product->name }}" class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                             @endif
                                             <div class="product-badge brand-badge">Motorola</div>
                                         </div>
@@ -2071,7 +2095,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                 @endif
                                             </div>
                                             <div class="d-flex gap-2">
-                                                <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                     <i class="fas fa-shopping-cart me-2"></i>
                                                     Ver Detalhes
                                                 </a>
@@ -2133,9 +2157,9 @@ document.addEventListener('DOMContentLoaded', function(){
 @endif
 
 <!-- Seção Produtos Infinix -->
-<section class="section-elegant">
+<section class="section-elegant" data-brand-section="infinix">
     <div class="container">
-        <h2 class="section-title">Produtos Infinix</h2>
+        <h2 class="section-title js-section-title">Produtos Infinix</h2>
         <p class="section-subtitle">
             Tecnologia Infinix para seu negócio
         </p>
@@ -2153,14 +2177,14 @@ document.addEventListener('DOMContentLoaded', function(){
                                 @foreach($chunk as $product)
                                     <div class="col-lg-3 col-md-6 col-6 mb-2">
                                         <div class="product-card brand-card">
-                                            <div class="product-image">
+                                            <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                                 @if($product->first_image)
                                                     <img src="{{ $product->first_image }}" 
                                                          alt="{{ $product->name }}"
-                                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                         class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                                 @else
                                                     <img src="{{ asset('images/no-image.svg') }}" 
-                                                         alt="{{ $product->name }}">
+                                                         alt="{{ $product->name }}" class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                                 @endif
                                                 <div class="product-badge brand-badge">Infinix</div>
                                             </div>
@@ -2173,7 +2197,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                     @endif
                                                 </div>
                                                 <div class="d-flex gap-2">
-                                                    <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                    <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                         <i class="fas fa-shopping-cart me-2"></i>
                                                         Ver Detalhes
                                                     </a>
@@ -2243,9 +2267,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- Seção Produtos JBL -->
 @if($jblProducts->count() > 0)
-<section class="section-elegant">
+<section class="section-elegant" data-brand-section="jbl">
     <div class="container">
-        <h2 class="section-title">Produtos JBL</h2>
+        <h2 class="section-title js-section-title">Produtos JBL</h2>
         <p class="section-subtitle">
             Som de qualidade JBL para seu negócio
         </p>
@@ -2262,14 +2286,14 @@ document.addEventListener('DOMContentLoaded', function(){
                             @foreach($chunk as $product)
                                 <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
-                                        <div class="product-image">
+                                        <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                             @if($product->first_image)
                                                 <img src="{{ $product->first_image }}" 
                                                      alt="{{ $product->name }}"
-                                                     onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                     class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                             @else
                                                 <img src="{{ asset('images/no-image.svg') }}" 
-                                                     alt="{{ $product->name }}">
+                                                     alt="{{ $product->name }}" class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                             @endif
                                             <div class="product-badge brand-badge">JBL</div>
                                         </div>
@@ -2282,7 +2306,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                 @endif
                                             </div>
                                             <div class="d-flex gap-2">
-                                                <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                     <i class="fas fa-shopping-cart me-2"></i>
                                                     Ver Detalhes
                                                 </a>
@@ -2342,9 +2366,9 @@ document.addEventListener('DOMContentLoaded', function(){
 @endif
 
 <!-- Seção Produtos Oppo -->
-<section class="section-elegant">
+<section class="section-elegant" data-brand-section="oppo">
     <div class="container">
-        <h2 class="section-title">Produtos Oppo</h2>
+        <h2 class="section-title js-section-title">Produtos Oppo</h2>
         <p class="section-subtitle">
             Inovação Oppo para seu negócio
         </p>
@@ -2362,14 +2386,14 @@ document.addEventListener('DOMContentLoaded', function(){
                                 @foreach($chunk as $product)
                                     <div class="col-lg-3 col-md-6 col-6 mb-2">
                                         <div class="product-card brand-card">
-                                            <div class="product-image">
+                                            <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                                 @if($product->first_image)
                                                     <img src="{{ $product->first_image }}" 
                                                          alt="{{ $product->name }}"
-                                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                         class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                                 @else
                                                     <img src="{{ asset('images/no-image.svg') }}" 
-                                                         alt="{{ $product->name }}">
+                                                         alt="{{ $product->name }}" class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                                 @endif
                                                 <div class="product-badge brand-badge">Oppo</div>
                                             </div>
@@ -2382,7 +2406,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                     @endif
                                                 </div>
                                                 <div class="d-flex gap-2">
-                                                    <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                    <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                         <i class="fas fa-shopping-cart me-2"></i>
                                                         Ver Detalhes
                                                     </a>
@@ -2451,9 +2475,9 @@ document.addEventListener('DOMContentLoaded', function(){
 </section>
 
 <!-- Seção Produtos Realme -->
-<section class="section-elegant">
+<section class="section-elegant" data-brand-section="realme">
     <div class="container">
-        <h2 class="section-title">Produtos Realme</h2>
+        <h2 class="section-title js-section-title">Produtos Realme</h2>
         <p class="section-subtitle">
             Performance Realme para seu negócio
         </p>
@@ -2471,14 +2495,14 @@ document.addEventListener('DOMContentLoaded', function(){
                                 @foreach($chunk as $product)
                                     <div class="col-lg-3 col-md-6 col-6 mb-2">
                                         <div class="product-card brand-card">
-                                            <div class="product-image">
+                                            <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                                 @if($product->first_image)
                                                     <img src="{{ $product->first_image }}" 
                                                          alt="{{ $product->name }}"
-                                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                         class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                                 @else
                                                     <img src="{{ asset('images/no-image.svg') }}" 
-                                                         alt="{{ $product->name }}">
+                                                         alt="{{ $product->name }}" class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                                 @endif
                                                 <div class="product-badge brand-badge">Realme</div>
                                             </div>
@@ -2491,7 +2515,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                     @endif
                                                 </div>
                                                 <div class="d-flex gap-2">
-                                                    <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                    <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                         <i class="fas fa-shopping-cart me-2"></i>
                                                         Ver Detalhes
                                                     </a>
@@ -2561,9 +2585,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- Seção Produtos Tecno -->
 @if($tecnoProducts->count() > 0)
-<section class="section-elegant">
+<section class="section-elegant" data-brand-section="tecno">
     <div class="container">
-        <h2 class="section-title">Produtos Tecno</h2>
+        <h2 class="section-title js-section-title">Produtos Tecno</h2>
         <p class="section-subtitle">
             Tecnologia Tecno para seu negócio
         </p>
@@ -2580,14 +2604,14 @@ document.addEventListener('DOMContentLoaded', function(){
                             @foreach($chunk as $product)
                                 <div class="col-lg-3 col-md-6 col-6 mb-2">
                                     <div class="product-card brand-card">
-                                        <div class="product-image">
+                                        <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
                                             @if($product->first_image)
                                                 <img src="{{ $product->first_image }}" 
                                                      alt="{{ $product->name }}"
-                                                     onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                     class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth onerror="this.src='{{ asset('images/no-image.svg') }}'">
                                             @else
                                                 <img src="{{ asset('images/no-image.svg') }}" 
-                                                     alt="{{ $product->name }}">
+                                                     alt="{{ $product->name }}" class="@auth('admin') js-change-image @endauth" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
                                             @endif
                                             <div class="product-badge brand-badge">Tecno</div>
                                         </div>
@@ -2600,7 +2624,7 @@ document.addEventListener('DOMContentLoaded', function(){
                                                 @endif
                                             </div>
                                             <div class="d-flex gap-2">
-                                                <a href="{{ route('product', $product->slug) }}" class="product-btn" style="flex: 1;">
+                                                <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
                                                     <i class="fas fa-shopping-cart me-2"></i>
                                                     Ver Detalhes
                                                 </a>
@@ -2678,6 +2702,34 @@ document.addEventListener('DOMContentLoaded', function(){
 
 @push('scripts')
 <script>
+// Expor configuração inicial de seções para o painel global (smart-search)
+window.DepartmentSectionsConfig = (function(){
+    try {
+        const raw = @json(setting('dept_eletronicos_sections'));
+        if (Array.isArray(raw)) return raw;
+        if (typeof raw === 'string' && raw && raw.trim().length) {
+            try { return JSON.parse(raw); } catch(e) { /* ignore */ }
+        }
+    } catch(e) {}
+    return [
+        { brand: 'Apple', title: 'Produtos Apple', enabled: true },
+        { brand: 'Samsung', title: 'Produtos Samsung', enabled: true },
+        { brand: 'Xiaomi', title: 'Produtos Xiaomi', enabled: true },
+        { brand: 'Motorola', title: 'Produtos Motorola', enabled: true },
+        { brand: 'Infinix', title: 'Produtos Infinix', enabled: true },
+        { brand: 'JBL', title: 'Produtos JBL', enabled: true },
+        { brand: 'Oppo', title: 'Produtos Oppo', enabled: true },
+        { brand: 'Realme', title: 'Produtos Realme', enabled: true },
+        { brand: 'Tecno', title: 'Produtos Tecno', enabled: true }
+    ];
+})();
+// Informar o slug atual do departamento (para filtragem de marcas)
+window.CurrentDepartmentSlug = 'eletronicos';
+</script>
+@endpush
+
+@push('scripts')
+<script>
     document.addEventListener('DOMContentLoaded', function () {
         const wrappers = document.querySelectorAll('[data-badge-loop]');
 
@@ -2737,3 +2789,106 @@ document.addEventListener('DOMContentLoaded', function(){
     });
 </script>
 @endpush
+@auth('admin')
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+        const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+        // Build a Bootstrap modal once and reuse
+        const modalHtml = `
+        <div class="modal fade" id="quickImageModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Trocar imagem do produto</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Enviar arquivo</label>
+                            <input type="file" id="qiImageFile" accept="image/*" class="form-control" />
+                        </div>
+                        <div class="text-center text-muted">ou</div>
+                        <div class="mt-3">
+                            <label class="form-label">Usar link (URL)</label>
+                            <input type="url" id="qiImageUrl" placeholder="https://exemplo.com/imagem.jpg" class="form-control" />
+                        </div>
+                        <input type="hidden" id="qiProductId" />
+                        <small class="text-muted d-block mt-2">Formatos: jpeg, png, jpg, gif, webp, avif. Máx 10MB.</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-danger" id="qiImageRemove">Remover imagem</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="qiImageSave">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        if (!document.getElementById('quickImageModal')) {
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+        }
+        const qiModalEl = document.getElementById('quickImageModal');
+        const qiModal = new bootstrap.Modal(qiModalEl);
+        const qiFile = document.getElementById('qiImageFile');
+        const qiUrl = document.getElementById('qiImageUrl');
+        const qiProductId = document.getElementById('qiProductId');
+        let qiTargetImg = null;
+
+        function openQuick(productId, imgEl){
+                qiProductId.value = productId;
+                qiFile.value = '';
+                qiUrl.value = '';
+                qiTargetImg = imgEl;
+                qiModal.show();
+        }
+
+        // Delegate click on product card image
+        document.addEventListener('click', function(e){
+                const img = e.target.closest('.js-quick-change-image');
+                if (!img) return;
+                const card = img.closest('[data-product-id]');
+                if (!card) return;
+                e.preventDefault();
+                e.stopPropagation();
+                openQuick(card.getAttribute('data-product-id'), img);
+        }, true);
+
+        document.getElementById('qiImageSave').addEventListener('click', function(){
+                const id = qiProductId.value;
+                const file = qiFile.files && qiFile.files[0];
+                const url = qiUrl.value.trim();
+                if (!id) return;
+                if (file) {
+                        const fd = new FormData();
+                        fd.append('featured_image', file);
+                        fetch(`/admin/products/${id}/update-images`, { method:'POST', headers:{ 'X-CSRF-TOKEN': CSRF, 'Accept':'application/json' }, body: fd })
+                            .then(r=>r.json()).then(data=>applyResult(id, data)).catch(err=>alert(err.message));
+                } else if (url) {
+                        fetch(`/admin/products/${id}/update-images`, { method:'POST', headers:{ 'Content-Type':'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept':'application/json' }, body: JSON.stringify({ featured_image_url: url }) })
+                            .then(r=>r.json()).then(data=>applyResult(id, data)).catch(err=>alert(err.message));
+                } else {
+                        alert('Envie um arquivo ou informe uma URL.');
+                }
+        });
+
+        document.getElementById('qiImageRemove').addEventListener('click', function(){
+                const id = qiProductId.value;
+                if (!id) return;
+                const fd = new FormData();
+                fd.append('remove_featured_image', '1');
+                fetch(`/admin/products/${id}/update-images`, { method:'POST', headers:{ 'X-CSRF-TOKEN': CSRF, 'Accept':'application/json' }, body: fd })
+                    .then(r=>r.json()).then(data=>applyResult(id, data)).catch(err=>alert(err.message));
+        });
+
+        function applyResult(id, data){
+                if (!data.success) { alert(data.message || 'Erro ao atualizar imagem'); return; }
+                if (qiTargetImg && Array.isArray(data.images) && data.images.length) {
+                        qiTargetImg.src = data.images[0];
+                }
+                qiModal.hide();
+        }
+});
+</script>
+@endpush
+@endauth
