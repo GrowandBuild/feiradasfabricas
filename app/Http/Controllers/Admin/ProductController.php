@@ -11,6 +11,7 @@ use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use App\Models\Department;
 
 class ProductController extends Controller
 {
@@ -159,15 +160,39 @@ class ProductController extends Controller
     public function brandsList(Request $request)
     {
         $departmentSlug = $request->query('department');
-
         $query = Product::query()
             ->whereNotNull('brand')
             ->where('brand', '<>', '');
 
         if ($departmentSlug) {
-            $query->whereHas('department', function ($q) use ($departmentSlug) {
-                $q->where('slug', $departmentSlug);
-            });
+            // Be tolerant with the department identifier: allow numeric id, exact slug,
+            // case-insensitive slug, or a slugified form of the provided value.
+            $dept = null;
+            $maybeId = is_numeric($departmentSlug) ? (int)$departmentSlug : null;
+            $normalized = Str::slug((string)$departmentSlug);
+
+            if ($maybeId) {
+                $dept = Department::find($maybeId);
+            }
+
+            if (!$dept) {
+                $dept = Department::where('slug', $departmentSlug)
+                    ->orWhereRaw('LOWER(slug) = LOWER(?)', [$departmentSlug])
+                    ->orWhere('slug', $normalized)
+                    ->first();
+            }
+
+            if ($dept) {
+                // Filter by department_id directly (faster than whereHas)
+                $query->where('department_id', $dept->id);
+            } else {
+                // Last resort: try a loose match by department name or slug in related table
+                $query->whereHas('department', function ($q) use ($departmentSlug, $normalized) {
+                    $q->whereRaw('LOWER(slug) = LOWER(?)', [$departmentSlug])
+                      ->orWhere('slug', $normalized)
+                      ->orWhere('name', 'like', "%{$departmentSlug}%");
+                });
+            }
         }
 
         $brands = $query->select('brand')
