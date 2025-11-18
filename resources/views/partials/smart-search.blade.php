@@ -438,6 +438,7 @@
                     <input type="text" id="spNewTitle" class="form-control" placeholder="Título da seção (opcional)">
                     <button class="sp-btn sp-btn-secondary" id="spAdd">Adicionar</button>
                 </div>
+                <small id="spBrandsWarning" class="d-block mt-2" style="color:#d97706; display:none;">Nenhuma marca encontrada para este departamento.</small>
                 <small class="d-block mt-2" style="color:#64748b;">Dica: Use as setas para ordenar; desative para ocultar a seção. Salve para persistir.</small>
             </div>
             <div class="sp-footer">
@@ -1165,7 +1166,9 @@
             }
             function fetchBrands(){
                 const dept = detectDepartmentSlug() || 'eletronicos';
-                return fetch(`/admin/products/brands-list?department=${encodeURIComponent(dept)}`, { headers: { 'Accept': 'application/json' }})
+                const targetUrl = `/admin/products/brands-list?department=${encodeURIComponent(dept)}`;
+                // Try to fetch brands scoped to the department; if empty, try a fallback without department param
+                return fetch(targetUrl, { headers: { 'Accept': 'application/json' }})
                     .then(r => r.json())
                     .then(data => {
                         let brandsPayload = [];
@@ -1176,26 +1179,45 @@
                         }
 
                         availableBrands = (brandsPayload || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
-                        if (spNewBrandSelect) {
-                            const baseOption = '<option value="">Selecione a marca…</option>';
-                            if (availableBrands.length) {
-                                spNewBrandSelect.innerHTML = baseOption + availableBrands.map(b => `<option value="${b}">${b}</option>`).join('');
-                            } else {
-                                spNewBrandSelect.innerHTML = baseOption;
-                            }
+                        if ((!availableBrands || !availableBrands.length)) {
+                            // fallback: try without department param
+                            return fetch('/admin/products/brands-list', { headers: { 'Accept': 'application/json' }})
+                                .then(r2 => r2.json())
+                                .then(data2 => {
+                                    let bp = [];
+                                    if (Array.isArray(data2.brands)) bp = data2.brands;
+                                    else if (data2.brands && typeof data2.brands === 'object') bp = Object.values(data2.brands);
+                                    availableBrands = (bp || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
+                                    populateBrandsSelect();
+                                })
+                                .catch(() => { availableBrands = availableBrands || []; populateBrandsSelect(); });
                         }
+                        populateBrandsSelect();
                     })
-                    .catch(() => { availableBrands = null; });
+                    .catch(err => { console.error('fetchBrands error', err); availableBrands = []; populateBrandsSelect(); });
+            }
+
+            function populateBrandsSelect(){
+                if (!spNewBrandSelect) return;
+                const baseOption = '<option value="">Selecione a marca…</option>';
+                if (Array.isArray(availableBrands) && availableBrands.length) {
+                    spNewBrandSelect.innerHTML = baseOption + availableBrands.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+                    const warn = document.getElementById('spBrandsWarning'); if (warn) warn.style.display = 'none';
+                } else {
+                    spNewBrandSelect.innerHTML = baseOption;
+                    const warn = document.getElementById('spBrandsWarning'); if (warn) warn.style.display = 'block';
+                }
             }
             function renderSectionsList(){
                 const arr = getCurrentSectionsConfig();
+                // If not on a department page, show a hint but still render any available configuration
                 if (!onDepartmentPage()) {
                     sectionsUnsupported.style.display = 'block';
                     sectionsUnsupported.textContent = 'Abra este painel em uma página de departamento para gerenciar as sessões.';
-                    sectionsList.innerHTML = '';
-                    return;
+                } else {
+                    sectionsUnsupported.style.display = 'none';
                 }
-                sectionsUnsupported.style.display = 'none';
+                // continue to render sections from available configuration even when not on-department
                 sectionsList.innerHTML = '';
                 const hasLookup = Array.isArray(availableBrands) && availableBrands.length > 0;
                 const sanitizedBrands = hasLookup ? availableBrands.map(b => (b ?? '').toString().trim()).filter(Boolean) : [];
