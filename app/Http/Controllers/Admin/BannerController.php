@@ -114,6 +114,15 @@ class BannerController extends Controller
             'show_primary_button_mobile' => 'boolean',
             'show_secondary_button_desktop' => 'boolean',
             'show_secondary_button_mobile' => 'boolean',
+            // CTA labels and links
+            'primary_button_text' => 'nullable|string|max:100',
+            'primary_button_link' => 'nullable|string|max:255',
+            'secondary_button_text' => 'nullable|string|max:100',
+            'secondary_button_link' => 'nullable|string|max:255',
+            'cta_position' => 'nullable|in:top,center,bottom',
+            'cta_align' => 'nullable|in:left,center,right',
+            'cta_size' => 'nullable|in:small,medium,large',
+            'cta_layout' => 'nullable|in:horizontal,vertical',
             'overlay_color' => 'nullable|string|max:20',
             'overlay_opacity' => 'nullable|integer|min:0|max:100',
         ], [
@@ -260,8 +269,17 @@ class BannerController extends Controller
             'show_primary_button_mobile' => 'boolean',
             'show_secondary_button_desktop' => 'boolean',
             'show_secondary_button_mobile' => 'boolean',
-            'overlay_color' => 'nullable|string|max:20',
-            'overlay_opacity' => 'nullable|integer|min:0|max:100',
+                // CTA fields
+                'primary_button_text' => 'nullable|string|max:100',
+                'primary_button_link' => 'nullable|string|max:255',
+                'secondary_button_text' => 'nullable|string|max:100',
+                'secondary_button_link' => 'nullable|string|max:255',
+                'cta_position' => 'nullable|in:top,center,bottom',
+                'cta_align' => 'nullable|in:left,center,right',
+                'cta_size' => 'nullable|in:small,medium,large',
+                'cta_layout' => 'nullable|in:horizontal,vertical',
+                'overlay_color' => 'nullable|string|max:20',
+                'overlay_opacity' => 'nullable|integer|min:0|max:100',
         ], [
             'title.required' => 'O campo título é obrigatório.',
             'title.max' => 'O título não pode ter mais de 255 caracteres.',
@@ -374,6 +392,16 @@ class BannerController extends Controller
                             ->withInput()
                             ->withErrors(['error' => 'Erro ao atualizar banner: ' . $e->getMessage()]);
         }
+    }
+
+    /**
+     * Retorna um fragmento HTML com o banner (usado para atualização via AJAX no front-end).
+     */
+    public function fragment(Banner $banner)
+    {
+        // Renderiza um fragmento simples que corresponde à estrutura usada pelos componentes
+        // Front-end irá buscar este fragmento e substituir qualquer elemento com data-banner-id="{id}"
+        return view('partials.banner-fragment', compact('banner'));
     }
 
     public function destroy(Banner $banner)

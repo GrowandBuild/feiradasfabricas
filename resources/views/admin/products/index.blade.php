@@ -17,6 +17,33 @@
                 </div>
                 <div>
                     <h3 class="mb-1 text-white fw-bold">Gerenciar Produtos</h3>
+                    @if(isset($departments) && $departments->count() > 0)
+                        @php
+                            $deptParam = request()->query('department');
+                            $currentDept = null;
+                            if ($deptParam) {
+                                $currentDept = $departments->firstWhere('slug', $deptParam) ?: $departments->firstWhere('id', $deptParam);
+                            }
+                        @endphp
+                        <div class="mt-2">
+                            <div class="dropdown d-inline-block">
+                                <button class="btn btn-sm btn-white dropdown-toggle" type="button" id="deptDropdownButton" data-bs-toggle="dropdown" aria-expanded="false" style="font-weight:600; color:#374151; background-color: rgba(255,255,255,0.9);">
+                                    @if($currentDept)
+                                        {{ $currentDept->name }}
+                                    @else
+                                        Departamento
+                                    @endif
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="deptDropdownButton">
+                                    @foreach($departments as $d)
+                                        <li><a class="dropdown-item dept-option" href="#" data-slug="{{ $d->slug ?? $d->id }}">{{ $d->name }}</a></li>
+                                    @endforeach
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item dept-clear" href="#">Ver todos</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                    @endif
                     <p class="mb-0 text-white" style="opacity: 0.9;">
                         <i class="bi bi-database me-1"></i>
                         <strong>{{ $products->total() }}</strong> produtos cadastrados
@@ -798,6 +825,101 @@
       </div>
   </div>
 </div>
+@endpush
+
+@push('scripts')
+<script>
+// Handler global para trocar departamento via badge/dropdown
+document.addEventListener('click', function(e){
+    const opt = e.target.closest('.dept-option');
+    if (opt) {
+        e.preventDefault();
+        const slug = opt.getAttribute('data-slug');
+        const params = new URLSearchParams(window.location.search);
+        if (slug) params.set('department', slug);
+        else params.delete('department');
+        params.delete('page');
+        window.location.href = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+        return;
+    }
+
+    const clr = e.target.closest('.dept-clear');
+    if (clr) {
+        e.preventDefault();
+        const params = new URLSearchParams(window.location.search);
+        params.delete('department');
+        params.delete('page');
+        window.location.href = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+        return;
+    }
+});
+</script>
+@endpush
+
+@push('modals')
+@if(empty(request()->query('department')) && isset($departments) && $departments->count() > 0)
+<!-- Modal: Seleção de Departamento ao acessar a página de produtos -->
+<div class="modal fade" id="selectDepartmentModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%); color: white;">
+                <h5 class="modal-title"><i class="bi bi-building me-2"></i>Escolha o departamento</h5>
+            </div>
+            <div class="modal-body">
+                <p class="small text-muted">Selecione para filtrar marcas, categorias e opções por departamento.</p>
+                <div class="list-group">
+                    @foreach($departments as $dept)
+                        <button type="button" class="list-group-item list-group-item-action dept-select-btn" data-slug="{{ $dept->slug ?? $dept->id }}">
+                            {{ $dept->name }}
+                        </button>
+                    @endforeach
+                </div>
+                <div class="mt-3 text-center">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" id="deptSkipBtn">Ver todos (sem departamento)</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        try {
+            var selectModalEl = document.getElementById('selectDepartmentModal');
+            if (!selectModalEl) return;
+
+            var modal = new bootstrap.Modal(selectModalEl);
+            // show modal shortly after load so layout settles
+            setTimeout(function(){ modal.show(); }, 120);
+
+            // Helper to redirect preserving other query params
+            function redirectWithDepartment(deptSlug) {
+                var params = new URLSearchParams(window.location.search);
+                if (deptSlug) params.set('department', deptSlug);
+                else params.delete('department');
+                // ensure page resets to first page when changing department
+                params.delete('page');
+                var newUrl = window.location.pathname + (params.toString() ? ('?' + params.toString()) : '');
+                window.location.href = newUrl;
+            }
+
+            document.querySelectorAll('.dept-select-btn').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var slug = this.getAttribute('data-slug');
+                    redirectWithDepartment(slug);
+                });
+            });
+
+            document.getElementById('deptSkipBtn').addEventListener('click', function() {
+                // Close modal and keep user on page without department param
+                modal.hide();
+            });
+        } catch (e) {
+            console.error('Erro no modal de seleção de departamento', e);
+        }
+    });
+</script>
+@endif
 @endpush
 
 @section('styles')

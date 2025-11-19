@@ -117,19 +117,49 @@ class ProductController extends Controller
             ]);
         }
 
-        $products = $query->paginate(20);
+    $products = $query->paginate(20);
         $categories = Category::all();
         // Opções de filtro (evitar consultas dentro da view)
-        $brands = Product::query()
-            ->whereNotNull('brand')
-            ->distinct()
-            ->orderBy('brand')
-            ->pluck('brand');
+        // Obter marcas para filtros: usar fonte canonical `brands` quando disponível
+        $brands = collect();
+        try {
+            $deptSlug = $request->query('department');
+            $dept = null;
+            if ($deptSlug) {
+                $maybeId = is_numeric($deptSlug) ? (int)$deptSlug : null;
+                $normalized = Str::slug((string)$deptSlug);
+                if ($maybeId) {
+                    $dept = Department::find($maybeId);
+                }
+                if (!$dept) {
+                    $dept = Department::where('slug', $deptSlug)
+                        ->orWhereRaw('LOWER(slug) = LOWER(?)', [$deptSlug])
+                        ->orWhere('slug', $normalized)
+                        ->first();
+                }
+            }
+
+            $brandQuery = \App\Models\Brand::query();
+            if (!empty($dept) && isset($dept->id)) {
+                $brandQuery->where('department_id', $dept->id);
+            }
+            $brands = $brandQuery->orderBy('name')->pluck('name');
+        } catch (\Exception $e) {
+            // fallback: extrair de products.brand para compatibilidade
+            $brands = Product::query()
+                ->whereNotNull('brand')
+                ->distinct()
+                ->orderBy('brand')
+                ->pluck('brand');
+        }
         $suppliers = Product::query()
             ->whereNotNull('supplier')
             ->distinct()
             ->orderBy('supplier')
             ->pluck('supplier');
+        // Load departments for initial selection prompt (if needed in the view)
+        $departments = Department::orderBy('name')
+            ->get(['id','name','slug']);
         
         // Buscar todas as cores cadastradas no banco com seus hexadecimais
         $colorsFromDB = ProductVariation::whereNotNull('color')
@@ -145,7 +175,7 @@ class ProductController extends Controller
         
         // Não criar valores padrão aqui - deixar a view usar os defaults apenas para exibição
 
-        return view('admin.products.index', compact('products', 'categories', 'colorsFromDB', 'brands', 'suppliers'));
+        return view('admin.products.index', compact('products', 'categories', 'colorsFromDB', 'brands', 'suppliers', 'departments'));
     }
 
     public function create()
@@ -159,55 +189,39 @@ class ProductController extends Controller
      */
     public function brandsList(Request $request)
     {
+        // New behavior: use single canonical source for brands: the `brands` table.
+        // Keep department scoping.
         $departmentSlug = $request->query('department');
-        $query = Product::query()
-            ->whereNotNull('brand')
-            ->where('brand', '<>', '');
-
+        $dept = null;
         if ($departmentSlug) {
-            // Be tolerant with the department identifier: allow numeric id, exact slug,
-            // case-insensitive slug, or a slugified form of the provided value.
-            $dept = null;
             $maybeId = is_numeric($departmentSlug) ? (int)$departmentSlug : null;
             $normalized = Str::slug((string)$departmentSlug);
-
             if ($maybeId) {
                 $dept = Department::find($maybeId);
             }
-
             if (!$dept) {
                 $dept = Department::where('slug', $departmentSlug)
                     ->orWhereRaw('LOWER(slug) = LOWER(?)', [$departmentSlug])
                     ->orWhere('slug', $normalized)
                     ->first();
             }
-
-            if ($dept) {
-                // Filter by department_id directly (faster than whereHas)
-                $query->where('department_id', $dept->id);
-            } else {
-                // Last resort: try a loose match by department name or slug in related table
-                $query->whereHas('department', function ($q) use ($departmentSlug, $normalized) {
-                    $q->whereRaw('LOWER(slug) = LOWER(?)', [$departmentSlug])
-                      ->orWhere('slug', $normalized)
-                      ->orWhere('name', 'like', "%{$departmentSlug}%");
-                });
-            }
         }
 
-        $brands = $query->select('brand')
-            ->distinct()
-            ->orderBy('brand')
-            ->pluck('brand')
-            ->filter(function ($b) {
-                return is_string($b) && trim($b) !== '';
-            })
-            ->values();
+        try {
+            $brandQuery = \App\Models\Brand::query();
+            if (!empty($dept) && isset($dept->id)) {
+                $brandQuery->where('department_id', $dept->id);
+            }
+            $brands = $brandQuery->orderBy('name')
+                ->pluck('name')
+                ->filter(function ($b) { return is_string($b) && trim($b) !== ''; })
+                ->values();
 
-        return response()->json([
-            'success' => true,
-            'brands' => $brands,
-        ]);
+            return response()->json(['success' => true, 'brands' => $brands]);
+        } catch (\Exception $e) {
+            // If brands table/model isn't available, return empty array to avoid breaking frontend
+            return response()->json(['success' => true, 'brands' => []]);
+        }
     }
 
     public function store(Request $request)

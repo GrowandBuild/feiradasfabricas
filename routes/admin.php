@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentBadgeController;
 use App\Http\Controllers\Admin\AlbumController as AdminAlbumController;
+use App\Http\Controllers\Admin\BrandController;
 // use App\Http\Controllers\Admin\MelhorEnvioController; // removido (frete)
 use Illuminate\Support\Facades\Route;
 
@@ -40,6 +41,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('products', ProductController::class);
     // Lista de marcas (JSON)
     Route::get('products/brands-list', [ProductController::class, 'brandsList'])->name('products.brands-list');
+    // Inline create brand (quick admin)
+    Route::post('brands/inline-create', [BrandController::class, 'inlineCreate'])->name('brands.inline-create');
         // Ativar/Desativar produtos em massa por marca
         Route::post('products/bulk-toggle-by-brand', [ProductController::class, 'bulkToggleByBrand'])->name('products.bulk-toggle-by-brand');
         Route::post('products/{product}/adjust-stock', [ProductController::class, 'adjustStock'])->name('products.adjust-stock');
@@ -61,12 +64,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Categorias
         Route::resource('categories', CategoryController::class);
+        // JSON list for categories (used by quick-create modal)
+        Route::get('categories/list', [CategoryController::class, 'list'])->name('categories.list');
 
     // Departamentos
     Route::get('departments/inline-snapshot', [DepartmentController::class, 'inlineSnapshot'])->name('departments.inline-snapshot');
     Route::put('departments/inline-sync', [DepartmentController::class, 'inlineSync'])->name('departments.inline-sync');
     Route::post('departments/{department}/save-theme-colors', [DepartmentController::class, 'saveThemeColors'])->name('departments.saveThemeColors');
     Route::get('departments/{department}/restore-theme-colors', [DepartmentController::class, 'restoreThemeColors'])->name('departments.restoreThemeColors');
+    // Department sections (brands/categories/tags/dynamic)
+    Route::get('departments/{department}/sections', [App\Http\Controllers\Admin\DepartmentSectionController::class, 'index'])->name('departments.sections.index');
+    Route::put('departments/{department}/sections', [App\Http\Controllers\Admin\DepartmentSectionController::class, 'sync'])->name('departments.sections.sync');
     Route::resource('departments', DepartmentController::class);
 
         // Pedidos
@@ -89,6 +97,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Banners
         Route::resource('banners', BannerController::class);
+    // Fragment endpoint to return a single banner HTML fragment (used by AJAX front-end updates)
+    Route::get('banners/{banner}/fragment', [BannerController::class, 'fragment'])->name('banners.fragment');
         Route::patch('banners/{banner}/toggle-active', [BannerController::class, 'toggleActive'])->name('banners.toggle-active');
 
         // Álbuns (novo sistema simples)

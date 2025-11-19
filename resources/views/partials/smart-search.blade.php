@@ -46,12 +46,17 @@
         .smart-search-item-price { font-size: 13px; font-weight: 600; color: #10b981; }
         .smart-search-empty, .smart-search-loading { text-align: center; padding: 40px 20px; color: #64748b; }
     /* Quick overlays inside panel */
-    .ss-overlay { position: absolute; inset: 0; background: rgba(0,0,0,.25); display: none; align-items: center; justify-content: center; z-index: 1200; }
+    /* Overlays must cover the whole viewport. Use fixed so they're not clipped by the FAB container. */
+    .ss-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.32); display: none; align-items: center; justify-content: center; z-index: 1500; }
     .ss-overlay.active { display: flex; }
-    .ss-modal { width: 92%; max-width: 420px; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.3); overflow: hidden; }
-    .ss-modal .ss-header { padding: 12px 16px; font-weight: 600; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: space-between; }
-    .ss-modal .ss-body { padding: 16px; }
-    .ss-modal .ss-footer { padding: 12px 16px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #e2e8f0; }
+    /* Modal: compact header/footer and scrollable body to avoid large top/bottom gaps */
+    .ss-modal { width: 92%; max-width: 420px; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.3); overflow: hidden; display: flex; flex-direction: column; max-height: 85vh; }
+    .ss-modal .ss-header { padding: 10px 12px; font-weight: 600; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: space-between; gap:8px; }
+    .ss-modal .ss-body { padding: 12px; overflow: auto; flex: 1 1 auto; max-height: calc(85vh - 96px); }
+    .ss-modal .ss-footer { padding: 8px 12px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #e2e8f0; flex-shrink: 0; }
+    /* Tab buttons inside modal header - compact */
+    .ss-tab { padding: 6px 10px; font-size: 0.85rem; border-radius: 8px; background: #f3f4f6; color: #0f172a; border: none; cursor: pointer; }
+    .ss-tab.active { background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%); color: #fff; }
     .ss-btn { border: none; border-radius: 8px; padding: 8px 12px; font-weight: 600; cursor: pointer; }
     .ss-btn-primary { background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%); color: #fff; }
     .ss-btn-secondary { background: #e5e7eb; color: #111827; }
@@ -181,6 +186,10 @@
         <button class="sections-trigger" id="sectionsTrigger" title="Sessões de marcas">
             <i class="bi bi-grid-3x3-gap-fill"></i>
         </button>
+        <!-- Botão Produtos (quick-create) -->
+        <button class="sections-trigger" id="productsTrigger" title="Produtos (criar rápido)">
+            <i class="bi bi-box-seam"></i>
+        </button>
         <!-- Botão de Tema (pincel) -->
         <button class="theme-trigger" id="themeTrigger" title="Cores do site">
             <i class="bi bi-palette-fill"></i>
@@ -251,6 +260,159 @@
                         <button class="ss-btn ss-btn-secondary" id="ssImageCancel">Cancelar</button>
                         <button class="ss-btn ss-btn-primary" id="ssImageSave">Salvar</button>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Create Product Modal (Tabbed) -->
+        <div class="ss-overlay" id="ssQuickProductOverlay" aria-modal="true" role="dialog" style="display:none;">
+            <div class="ss-modal" style="max-width:900px; width:96%;">
+                <div class="ss-header" style="display:flex; align-items:center; gap:12px;">
+                    <div style="flex:1; display:flex; gap:8px; align-items:center;">
+                        <strong>Criar produto rápido</strong>
+                        <nav style="display:flex; gap:6px; margin-left:8px;">
+                            <button type="button" class="ss-btn ss-tab active" data-tab="general">Geral</button>
+                            <button type="button" class="ss-btn ss-tab" data-tab="pricing">Preço</button>
+                            <button type="button" class="ss-btn ss-tab" data-tab="inventory">Estoque</button>
+                            <button type="button" class="ss-btn ss-tab" data-tab="images">Imagens</button>
+                            <button type="button" class="ss-btn ss-tab" data-tab="shipping">Envio</button>
+                            <button type="button" class="ss-btn ss-tab" data-tab="seo">SEO</button>
+                            <button type="button" class="ss-btn ss-tab" data-tab="attrs">Atributos</button>
+                        </nav>
+                    </div>
+                    <button class="ss-btn ss-btn-secondary" id="ssQuickProductClose">Fechar</button>
+                </div>
+                <div class="ss-body">
+                    <form id="qpForm" onsubmit="return false;">
+                        <div class="qp-tabs">
+                            <div class="qp-tab-panel" data-panel="general">
+                                <div class="mb-2">
+                                    <label class="form-label">Nome do produto</label>
+                                    <input type="text" id="qpName" class="form-control" placeholder="Nome do produto" />
+                                </div>
+                                <div class="mb-2 d-flex gap-2">
+                                    <div style="flex:1">
+                                        <label class="form-label">Marca</label>
+                                        <select id="qpBrand" class="form-select"><option value="">Selecione a marca</option></select>
+                                    </div>
+                                    <div style="width:180px">
+                                        <label class="form-label">SKU</label>
+                                        <input type="text" id="qpSku" class="form-control" placeholder="SKU" />
+                                    </div>
+                                    <div style="width:120px">
+                                        <label class="form-label">Ativo</label>
+                                        <div><input type="checkbox" id="qpActive" checked /> Ativo</div>
+                                    </div>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Categorias</label>
+                                    <select id="qpCategories" class="form-select" multiple style="min-height:80px;"></select>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Breve descrição</label>
+                                    <textarea id="qpShortDesc" class="form-control" rows="2"></textarea>
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Descrição completa (HTML opcional)</label>
+                                    <textarea id="qpDescription" class="form-control" rows="6"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="qp-tab-panel" data-panel="pricing" style="display:none;">
+                                <div class="d-flex gap-2 mb-2">
+                                    <div style="flex:1">
+                                        <label class="form-label">Preço (R$)</label>
+                                        <input type="number" id="qpPrice" class="form-control" step="0.01" placeholder="0.00" />
+                                    </div>
+                                    <div style="width:160px">
+                                        <label class="form-label">Preço Promocional</label>
+                                        <input type="number" id="qpComparePrice" class="form-control" step="0.01" placeholder="0.00" />
+                                    </div>
+                                    <div style="width:160px">
+                                        <label class="form-label">Custo</label>
+                                        <input type="number" id="qpCostPrice" class="form-control" step="0.01" placeholder="0.00" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="qp-tab-panel" data-panel="inventory" style="display:none;">
+                                <div class="d-flex gap-2 mb-2">
+                                    <div style="width:140px">
+                                        <label class="form-label">Estoque</label>
+                                        <input type="number" id="qpStock" class="form-control" value="0" />
+                                    </div>
+                                    <div style="width:140px">
+                                        <label class="form-label">Min stock</label>
+                                        <input type="number" id="qpMinStock" class="form-control" value="0" />
+                                    </div>
+                                    <div style="width:160px">
+                                        <label class="form-label">Código de Barras</label>
+                                        <input type="text" id="qpBarcode" class="form-control" placeholder="GTIN / EAN" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="qp-tab-panel" data-panel="images" style="display:none;">
+                                <div class="mb-2">
+                                    <label class="form-label">Imagens (arraste ou selecione)</label>
+                                    <input type="file" id="qpImages" class="form-control" accept="image/*" multiple />
+                                    <small class="text-muted">Envie até 10 imagens. O primeiro arquivo será a imagem destaque.</small>
+                                </div>
+                                <div id="qpPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
+                            </div>
+
+                            <div class="qp-tab-panel" data-panel="shipping" style="display:none;">
+                                <div class="d-flex gap-2 mb-2">
+                                    <div style="width:160px">
+                                        <label class="form-label">Peso (kg)</label>
+                                        <input type="number" id="qpWeight" class="form-control" step="0.01" placeholder="0.00" />
+                                    </div>
+                                    <div style="width:160px">
+                                        <label class="form-label">Comprimento (cm)</label>
+                                        <input type="number" id="qpLength" class="form-control" step="0.1" placeholder="0.0" />
+                                    </div>
+                                    <div style="width:160px">
+                                        <label class="form-label">Largura (cm)</label>
+                                        <input type="number" id="qpWidth" class="form-control" step="0.1" placeholder="0.0" />
+                                    </div>
+                                    <div style="width:160px">
+                                        <label class="form-label">Altura (cm)</label>
+                                        <input type="number" id="qpHeight" class="form-control" step="0.1" placeholder="0.0" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="qp-tab-panel" data-panel="seo" style="display:none;">
+                                <div class="mb-2">
+                                    <label class="form-label">Slug (opcional)</label>
+                                    <input type="text" id="qpSlug" class="form-control" placeholder="slug-do-produto" />
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Título SEO</label>
+                                    <input type="text" id="qpSeoTitle" class="form-control" />
+                                </div>
+                                <div class="mb-2">
+                                    <label class="form-label">Descrição SEO</label>
+                                    <textarea id="qpSeoDescription" class="form-control" rows="3"></textarea>
+                                </div>
+                            </div>
+
+                            <div class="qp-tab-panel" data-panel="attrs" style="display:none;">
+                                <div id="qpAttributesList" style="display:flex; flex-direction:column; gap:8px;">
+                                    <!-- attribute rows inserted here -->
+                                </div>
+                                <div class="d-flex gap-2 mt-2">
+                                    <input type="text" id="qpAttrKey" class="form-control" placeholder="Nome do atributo (ex: Cor)" />
+                                    <input type="text" id="qpAttrValue" class="form-control" placeholder="Valor (ex: Vermelho)" />
+                                    <button type="button" id="qpAddAttr" class="ss-btn ss-btn-primary">Adicionar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="ss-footer">
+                    <button class="ss-btn ss-btn-secondary" id="ssQuickProductCancel">Cancelar</button>
+                    <button class="ss-btn ss-btn-primary" id="ssQuickProductSave">Criar produto</button>
                 </div>
             </div>
         </div>
@@ -432,9 +594,12 @@
                 </div>
                 <ul class="sp-list" id="sectionsList"></ul>
                 <div class="mt-2 d-flex gap-2 align-items-stretch">
-                    <select id="spNewBrandSelect" class="form-select" style="min-width: 160px;">
-                        <option value="">Selecione a marca…</option>
-                    </select>
+                    <div style="display:flex; gap:6px; align-items:center;">
+                        <select id="spNewBrandSelect" class="form-select" style="min-width: 160px;">
+                            <option value="">Selecione a marca…</option>
+                        </select>
+                        <button type="button" id="spCreateBrandBtn" class="sp-btn sp-btn-primary" title="Criar marca">Criar marca</button>
+                    </div>
                     <input type="text" id="spNewTitle" class="form-control" placeholder="Título da seção (opcional)">
                     <button class="sp-btn sp-btn-secondary" id="spAdd">Adicionar</button>
                 </div>
@@ -444,6 +609,27 @@
             <div class="sp-footer">
                 <button class="sp-btn sp-btn-secondary" id="sectionsCancel">Cancelar</button>
                 <button class="sp-btn sp-btn-primary" id="sectionsSave">Salvar</button>
+            </div>
+            <!-- Overlay/modal para criar marca rapidamente -->
+            <div class="ss-overlay" id="spCreateBrandOverlay" aria-modal="true" role="dialog" style="display:none;">
+                <div class="ss-modal">
+                    <div class="ss-header">
+                        <span>Criar marca</span>
+                        <button class="ss-btn ss-btn-secondary" id="spCreateBrandClose">Fechar</button>
+                    </div>
+                    <div class="ss-body">
+                        <label class="form-label">Nome da marca</label>
+                        <input type="text" id="spCreateBrandName" class="form-control mb-2" placeholder="Ex: Acme">
+                        <label class="form-label">Slug (opcional)</label>
+                        <input type="text" id="spCreateBrandSlug" class="form-control mb-2" placeholder="acme">
+                        <label class="form-label">Logo (URL opcional)</label>
+                        <input type="url" id="spCreateBrandLogo" class="form-control" placeholder="https://...">
+                    </div>
+                    <div class="ss-footer">
+                        <button class="ss-btn ss-btn-secondary" id="spCreateBrandCancel">Cancelar</button>
+                        <button class="ss-btn ss-btn-primary" id="spCreateBrandSave">Criar</button>
+                    </div>
+                </div>
             </div>
             <!-- Confirmação de troca de marca -->
             <div class="ss-overlay" id="spConfirmOverlay" aria-modal="true" role="dialog">
@@ -1201,13 +1387,93 @@
                 if (!spNewBrandSelect) return;
                 const baseOption = '<option value="">Selecione a marca…</option>';
                 if (Array.isArray(availableBrands) && availableBrands.length) {
-                    spNewBrandSelect.innerHTML = baseOption + availableBrands.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+                    const optionsHtml = baseOption + availableBrands.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
+                    spNewBrandSelect.innerHTML = optionsHtml;
+                    // Also update quick-create brand select if present
+                    const qpBrandSelect = document.getElementById('qpBrand');
+                    if (qpBrandSelect) qpBrandSelect.innerHTML = optionsHtml;
                     const warn = document.getElementById('spBrandsWarning'); if (warn) warn.style.display = 'none';
                 } else {
                     spNewBrandSelect.innerHTML = baseOption;
+                    const qpBrandSelect = document.getElementById('qpBrand');
+                    if (qpBrandSelect) qpBrandSelect.innerHTML = baseOption;
                     const warn = document.getElementById('spBrandsWarning'); if (warn) warn.style.display = 'block';
                 }
             }
+
+            // When a brand is chosen manually, hide the 'no brands' warning
+            if (spNewBrandSelect) {
+                spNewBrandSelect.addEventListener('change', function(){
+                    const warn = document.getElementById('spBrandsWarning');
+                    if (!warn) return;
+                    if (this.value && this.value.trim()) warn.style.display = 'none';
+                    else {
+                        // if select has options > 1 it means there are brands available
+                        warn.style.display = this.options && this.options.length > 1 ? 'none' : 'block';
+                    }
+                });
+            }
+
+            // Quick-create brand modal handling
+            const spCreateBrandBtn = document.getElementById('spCreateBrandBtn');
+            const spCreateBrandOverlay = document.getElementById('spCreateBrandOverlay');
+            const spCreateBrandClose = document.getElementById('spCreateBrandClose');
+            const spCreateBrandCancel = document.getElementById('spCreateBrandCancel');
+            const spCreateBrandSave = document.getElementById('spCreateBrandSave');
+            const spCreateBrandName = document.getElementById('spCreateBrandName');
+            const spCreateBrandSlug = document.getElementById('spCreateBrandSlug');
+            const spCreateBrandLogo = document.getElementById('spCreateBrandLogo');
+
+            function openSpCreateBrand(){
+                if (!spCreateBrandOverlay) return;
+                spCreateBrandName.value = '';
+                spCreateBrandSlug.value = '';
+                spCreateBrandLogo.value = '';
+                spCreateBrandOverlay.style.display = 'flex';
+                setTimeout(() => spCreateBrandName.focus(), 50);
+            }
+            function closeSpCreateBrand(){
+                if (!spCreateBrandOverlay) return;
+                spCreateBrandOverlay.style.display = 'none';
+            }
+
+            if (spCreateBrandBtn) {
+                spCreateBrandBtn.addEventListener('click', function(){ openSpCreateBrand(); });
+            }
+            spCreateBrandClose?.addEventListener('click', closeSpCreateBrand);
+            spCreateBrandCancel?.addEventListener('click', closeSpCreateBrand);
+
+            spCreateBrandSave?.addEventListener('click', function(){
+                const name = (spCreateBrandName?.value || '').trim();
+                const slug = (spCreateBrandSlug?.value || '').trim();
+                const logo = (spCreateBrandLogo?.value || '').trim();
+                if (!name) { alert('Informe o nome da marca.'); return; }
+                const payload = { name };
+                if (slug) payload.department = slug; // reuse department param optionally for scoping
+                if (logo) payload.logo = logo;
+
+                fetch('/admin/brands/inline-create', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || !data.success) throw new Error(data?.message || 'Erro ao criar marca');
+                    // Add to available brands and select it
+                    availableBrands = availableBrands || [];
+                    if (!availableBrands.find(b => b.toLowerCase() === data.brand.toLowerCase())) {
+                        availableBrands.push(data.brand);
+                    }
+                    populateBrandsSelect();
+                    spNewBrandSelect.value = data.brand;
+                    // Also set the quick-create product brand select if present
+                    const qpBrandSelect = document.getElementById('qpBrand');
+                    if (qpBrandSelect) qpBrandSelect.value = data.brand;
+                    closeSpCreateBrand();
+                })
+                .catch(err => { alert(err.message || 'Erro ao criar marca'); });
+            });
             function renderSectionsList(){
                 const arr = getCurrentSectionsConfig();
                 // If not on a department page, show a hint but still render any available configuration
@@ -1285,8 +1551,33 @@
                 if (dir > 0 && el.nextElementSibling) el.parentNode.insertBefore(el.nextElementSibling, el);
             }
             function initSectionsPanel(){
+                // When opening the Sections panel in a department page, prefer loading persisted DB sections
+                const dept = detectDepartmentSlug() || 'eletronicos';
                 fetchBrands().then(() => {
-                    renderSectionsList();
+                    // Try to fetch saved sections from server for this department
+                    fetch(`/admin/departments/${encodeURIComponent(dept)}/sections`, { headers: { 'Accept': 'application/json' }})
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.success && Array.isArray(data.sections)) {
+                                // Convert to the legacy config shape
+                                window.DepartmentSectionsConfig = data.sections.map(s => ({
+                                    brand: s.type === 'brand' ? (s.reference || '') : '',
+                                    title: s.title || (s.reference ? ('Produtos ' + s.reference) : ''),
+                                    enabled: s.enabled !== false,
+                                    type: s.type,
+                                    reference: s.reference,
+                                    id: s.id,
+                                }));
+                                renderSectionsList();
+                                return;
+                            }
+                            // fallback to client config
+                            renderSectionsList();
+                        })
+                        .catch(() => {
+                            // fallback when server not available
+                            renderSectionsList();
+                        });
                 });
             }
             sectionsList?.addEventListener('click', function(e){
@@ -1322,6 +1613,7 @@
                     alert('Marca inválida. Selecione uma marca existente.');
                     return;
                 }
+
                 const current = getCurrentSectionsConfig();
                 current.push({ brand, title: title || ('Produtos ' + brand), enabled: true });
                 window.DepartmentSectionsConfig = current;
@@ -1463,11 +1755,19 @@
             }
             sectionsSave?.addEventListener('click', function(){
                 const arr = readSectionsList();
-                // Persistir via settings
                 const dept = detectDepartmentSlug() || 'eletronicos';
-                const key = `dept_${dept}_sections`;
-                const payload = {}; payload[key] = JSON.stringify(arr);
-                fetch(`/admin/settings`, {
+                // Normalize to server shape
+                const payload = { sections: arr.map((s, idx) => ({
+                    type: s.brand ? 'brand' : (s.type || 'brand'),
+                    reference: s.brand || s.reference || '',
+                    reference_id: s.reference_id || null,
+                    title: s.title || ('Produtos ' + (s.brand || s.reference || '')),
+                    enabled: s.enabled !== false,
+                    sort_order: idx,
+                    metadata: s.metadata || null,
+                })) };
+
+                fetch(`/admin/departments/${encodeURIComponent(dept)}/sections`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
                     body: JSON.stringify(payload)
@@ -1475,8 +1775,8 @@
                 .then(r => r.json())
                 .then(data => {
                     if (!data.success) throw new Error(data.message || 'Erro ao salvar seções');
-                    window.DepartmentSectionsConfig = arr;
-                    applySectionsToPage(arr);
+                    // Reload sections from server
+                    initSectionsPanel();
                     sectionsPanel.classList.remove('active');
                 })
                 .catch(err => alert(err.message));
@@ -1736,6 +2036,197 @@
                 })
                 .catch(err => { alert(err.message); });
             });
+
+            // Quick Create Product modal wiring (tabbed, images, attributes, FormData submit)
+            const productsTriggerBtn = document.getElementById('productsTrigger');
+            const qpOverlay = document.getElementById('ssQuickProductOverlay');
+            const qpClose = document.getElementById('ssQuickProductClose');
+            const qpCancel = document.getElementById('ssQuickProductCancel');
+            const qpSave = document.getElementById('ssQuickProductSave');
+
+            // Tab switching
+            document.querySelectorAll('.ss-tab').forEach(btn => {
+                btn.addEventListener('click', function(){
+                    document.querySelectorAll('.ss-tab').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    const panel = btn.dataset.tab;
+                    document.querySelectorAll('.qp-tab-panel').forEach(p => p.style.display = (p.dataset.panel === panel) ? '' : 'none');
+                });
+            });
+
+            // Simple attribute rows
+            const qpAttributesList = document.getElementById('qpAttributesList');
+            const qpAddAttrBtn = document.getElementById('qpAddAttr');
+            const qpAttrKey = document.getElementById('qpAttrKey');
+            const qpAttrValue = document.getElementById('qpAttrValue');
+            function addAttributeRow(key, value){
+                if (!qpAttributesList) return;
+                const wrap = document.createElement('div');
+                wrap.style.display = 'flex'; wrap.style.gap = '8px'; wrap.style.alignItems = 'center';
+                const k = document.createElement('input'); k.type = 'text'; k.className = 'form-control'; k.value = key || ''; k.placeholder = 'Nome';
+                const v = document.createElement('input'); v.type = 'text'; v.className = 'form-control'; v.value = value || ''; v.placeholder = 'Valor';
+                const rem = document.createElement('button'); rem.type = 'button'; rem.className = 'ss-btn ss-btn-secondary'; rem.textContent = 'Remover';
+                rem.addEventListener('click', () => wrap.remove());
+                wrap.appendChild(k); wrap.appendChild(v); wrap.appendChild(rem);
+                qpAttributesList.appendChild(wrap);
+            }
+            qpAddAttrBtn?.addEventListener('click', function(){
+                const key = (qpAttrKey?.value || '').trim();
+                const val = (qpAttrValue?.value || '').trim();
+                if (!key || !val) { alert('Informe nome e valor do atributo.'); return; }
+                addAttributeRow(key, val);
+                qpAttrKey.value = ''; qpAttrValue.value = '';
+            });
+
+            // Image preview
+            const qpImagesInput = document.getElementById('qpImages');
+            const qpPreview = document.getElementById('qpPreview');
+            function renderImagePreviews(files){
+                if (!qpPreview) return;
+                qpPreview.innerHTML = '';
+                Array.from(files || []).slice(0,10).forEach(f => {
+                    const url = URL.createObjectURL(f);
+                    const img = document.createElement('img'); img.src = url; img.style.width = '96px'; img.style.height = '96px'; img.style.objectFit = 'cover'; img.style.borderRadius = '6px';
+                    qpPreview.appendChild(img);
+                });
+            }
+            qpImagesInput?.addEventListener('change', function(){ renderImagePreviews(this.files); });
+
+            function clearQuickForm(){
+                const form = document.getElementById('qpForm');
+                if (!form) return; form.reset();
+                if (qpPreview) qpPreview.innerHTML = '';
+                if (qpAttributesList) qpAttributesList.innerHTML = '';
+                // repopulate selects
+                loadQuickFormOptions();
+            }
+
+            function openQuickProduct(){ if (!qpOverlay) return; qpOverlay.style.display = 'flex'; loadQuickFormOptions(); setTimeout(()=>document.getElementById('qpName')?.focus(),60); }
+            function closeQuickProduct(){ if (!qpOverlay) return; qpOverlay.style.display = 'none'; }
+            productsTriggerBtn?.addEventListener('click', () => openQuickProduct());
+            qpClose?.addEventListener('click', closeQuickProduct);
+            qpCancel?.addEventListener('click', () => { closeQuickProduct(); });
+
+            // Load brands and categories
+            function loadQuickFormOptions(){
+                // brands - always attempt a fresh fetch scoped to department (fallback to global)
+                const brandEl = document.getElementById('qpBrand');
+                if (brandEl) {
+                    // Prefer department slug from current page path (if any), fallback to ?department= in query string
+                    const detectedDept = (typeof detectDepartmentSlug === 'function') ? (detectDepartmentSlug() || '') : '';
+                    const qDept = (new URLSearchParams(window.location.search)).get('department') || '';
+                    const dept = detectedDept || qDept || '';
+                    const url = dept ? `/admin/products/brands-list?department=${encodeURIComponent(dept)}` : '/admin/products/brands-list';
+                    fetch(url, { headers: { 'Accept': 'application/json' } })
+                        .then(r => r.json())
+                        .then(data => {
+                            let list = [];
+                            if (Array.isArray(data.brands)) list = data.brands;
+                            else if (data.brands && typeof data.brands === 'object') list = Object.values(data.brands);
+                            list = (list || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
+                            const base = '<option value="">Selecione a marca</option>';
+                            brandEl.innerHTML = base + (list.length ? list.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('') : '');
+                        })
+                        .catch(err => {
+                            console.error('brands-list fetch failed', err);
+                            brandEl.innerHTML = '<option value="">Selecione a marca</option>';
+                        });
+                }
+
+                // categories
+                const catsEl = document.getElementById('qpCategories');
+                fetch('/admin/categories/list', { headers: { 'Accept': 'application/json' } })
+                    .then(r => r.json())
+                    .then(data => {
+                        const list = Array.isArray(data) ? data : (data.categories || []);
+                        if (!catsEl) return;
+                        catsEl.innerHTML = '';
+                        list.forEach(cat => {
+                            const opt = document.createElement('option');
+                            opt.value = cat.id || cat.value || '';
+                            opt.textContent = cat.name || cat.title || String(cat.id || opt.value);
+                            catsEl.appendChild(opt);
+                        });
+                    })
+                    .catch(err => console.error('Categorias quick-create falha', err));
+            }
+
+            // Gather form data and submit (use FormData if images present)
+            qpSave?.addEventListener('click', function(){
+                try {
+                    const name = (document.getElementById('qpName')?.value || '').trim();
+                    if (!name) { alert('Informe o nome do produto.'); document.querySelector('[data-panel="general"] input#qpName')?.focus(); return; }
+                    const payload = {};
+                    payload.name = name;
+                    payload.brand = (document.getElementById('qpBrand')?.value || '').trim() || null;
+                    payload.sku = (document.getElementById('qpSku')?.value || '').trim() || null;
+                    payload.is_active = document.getElementById('qpActive')?.checked ? 1 : 0;
+                    payload.short_description = (document.getElementById('qpShortDesc')?.value || '').trim() || null;
+                    payload.description = (document.getElementById('qpDescription')?.value || '').trim() || null;
+                    payload.categories = Array.from(document.getElementById('qpCategories')?.selectedOptions || []).map(o => Number(o.value)).filter(Boolean);
+                    payload.price = document.getElementById('qpPrice')?.value ? parseFloat(document.getElementById('qpPrice').value) : null;
+                    payload.compare_price = document.getElementById('qpComparePrice')?.value ? parseFloat(document.getElementById('qpComparePrice').value) : null;
+                    payload.cost_price = document.getElementById('qpCostPrice')?.value ? parseFloat(document.getElementById('qpCostPrice').value) : null;
+                    payload.stock = document.getElementById('qpStock')?.value ? parseInt(document.getElementById('qpStock').value,10) : 0;
+                    payload.min_stock = document.getElementById('qpMinStock')?.value ? parseInt(document.getElementById('qpMinStock').value,10) : 0;
+                    payload.barcode = (document.getElementById('qpBarcode')?.value || '').trim() || null;
+                    payload.weight = document.getElementById('qpWeight')?.value ? parseFloat(document.getElementById('qpWeight').value) : null;
+                    payload.length = document.getElementById('qpLength')?.value ? parseFloat(document.getElementById('qpLength').value) : null;
+                    payload.width = document.getElementById('qpWidth')?.value ? parseFloat(document.getElementById('qpWidth').value) : null;
+                    payload.height = document.getElementById('qpHeight')?.value ? parseFloat(document.getElementById('qpHeight').value) : null;
+                    payload.slug = (document.getElementById('qpSlug')?.value || '').trim() || null;
+                    payload.seo_title = (document.getElementById('qpSeoTitle')?.value || '').trim() || null;
+                    payload.seo_description = (document.getElementById('qpSeoDescription')?.value || '').trim() || null;
+
+                    // attributes
+                    const attrs = [];
+                    Array.from(qpAttributesList?.children || []).forEach(row => {
+                        const k = row.querySelector('input:nth-child(1)')?.value?.trim();
+                        const v = row.querySelector('input:nth-child(2)')?.value?.trim();
+                        if (k && v) attrs.push({ name: k, value: v });
+                    });
+                    if (attrs.length) payload.attributes = attrs;
+
+                    const files = qpImagesInput?.files || [];
+                    let useForm = (files && files.length > 0);
+
+                    if (useForm) {
+                        const fd = new FormData();
+                        Object.keys(payload).forEach(k => {
+                            const val = payload[k];
+                            if (Array.isArray(val)) {
+                                fd.append(k, JSON.stringify(val));
+                            } else if (val !== null && val !== undefined) {
+                                fd.append(k, String(val));
+                            }
+                        });
+                        Array.from(files).slice(0,10).forEach((f, idx) => fd.append('images[]', f));
+                        // send
+                        fetch('/admin/products', { method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: fd })
+                            .then(r => r.json())
+                            .then(handleCreateResponse)
+                            .catch(err => alert(err.message || 'Erro ao criar produto'));
+                    } else {
+                        // JSON submit
+                        fetch('/admin/products', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: JSON.stringify(payload) })
+                            .then(r => r.json())
+                            .then(handleCreateResponse)
+                            .catch(err => alert(err.message || 'Erro ao criar produto'));
+                    }
+                } catch(ex) { alert(ex.message || 'Erro inesperado'); }
+            });
+
+            function handleCreateResponse(data){
+                if (!data || !data.success) {
+                    const msg = data && (data.message || (data.errors && Object.values(data.errors).flat().join('\n'))) || 'Erro ao criar produto';
+                    alert(msg);
+                    return;
+                }
+                closeQuickProduct(); clearQuickForm();
+                if (data.product && data.product.id) alert('Produto criado com sucesso (ID ' + data.product.id + ').'); else alert('Produto criado com sucesso.');
+                // Optionally reload available data
+                fetchBrands();
+            }
         });
     </script>
 @endauth

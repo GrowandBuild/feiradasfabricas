@@ -526,31 +526,40 @@ window.DepartmentSectionsConfig = (function(){
 @endpush
 
 @section('content')
-<!-- Hero Section -->
-<div class="hero-section">
-    <div class="hero-banner-full">
-        <div class="hero-banner-image hero-default-bg">
-            <div class="hero-banner-overlay">
-                <div class="container">
-                    <div class="row align-items-center hero-content-row">
-                        <div class="col-lg-8">
-                            <div class="hero-banner-content">
-                                <h1 class="hero-banner-title">
-                                    <i class="{{ $department->icon ?? 'fas fa-tshirt' }} me-3"></i>
-                                    {{ $department->name }}
-                                </h1>
-                                <p class="hero-banner-subtitle">
-                                    {{ $department->description }}
-                                </p>
-                                <div class="hero-banner-actions">
-                                    <a href="{{ route('products') }}?department={{ $department->slug }}" class="btn hero-btn-primary">
-                                        <i class="fas fa-shopping-bag me-2"></i>
-                                        Ver Produtos
-                                    </a>
-                                    <a href="{{ route('contact') }}" class="btn hero-btn-secondary">
-                                        <i class="fas fa-phone me-2"></i>
-                                        Contato
-                                    </a>
+<!-- Hero Section (unificado via partial banner-universal) -->
+<div class="hero-section no-padding">
+    @php
+        use App\Helpers\BannerHelper;
+        $hasHero = BannerHelper::getBannersForDisplay($department->id ?? null, 'hero', 1)->count() > 0;
+    @endphp
+
+    @if($hasHero)
+        @include('partials.banner-universal', ['departmentId' => $department->id ?? null, 'position' => 'hero', 'limit' => 5])
+    @else
+        <div class="hero-banner-full">
+            <div class="hero-banner-image hero-default-bg">
+                <div class="hero-banner-overlay">
+                    <div class="container">
+                        <div class="row align-items-center hero-content-row">
+                            <div class="col-lg-8">
+                                <div class="hero-banner-content">
+                                    <h1 class="hero-banner-title">
+                                        <i class="{{ $department->icon ?? 'fas fa-tshirt' }} me-3"></i>
+                                        {{ $department->name }}
+                                    </h1>
+                                    <p class="hero-banner-subtitle">
+                                        {{ $department->description }}
+                                    </p>
+                                    <div class="hero-banner-actions">
+                                        <a href="{{ route('products') }}?department={{ $department->slug }}" class="btn hero-btn-primary">
+                                            <i class="fas fa-shopping-bag me-2"></i>
+                                            Ver Produtos
+                                        </a>
+                                        <a href="{{ route('contact') }}" class="btn hero-btn-secondary">
+                                            <i class="fas fa-phone me-2"></i>
+                                            Contato
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -558,7 +567,7 @@ window.DepartmentSectionsConfig = (function(){
                 </div>
             </div>
         </div>
-    </div>
+    @endif
 </div>
 
 <!-- Categorias -->

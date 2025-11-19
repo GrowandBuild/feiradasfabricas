@@ -1242,7 +1242,8 @@
     .badge-item {
         padding: 10px;
         transition: transform 0.3s ease;
-        flex: 1 1 auto;
+        /* prevent items from stretching into non-square shapes on small screens */
+        flex: 0 0 auto;
         min-width: 80px;
         max-width: 120px;
     }
@@ -1259,7 +1260,8 @@
 
     .badge-circle {
         width: 100%;
-        aspect-ratio: 1;
+        /* enforce a square container to avoid oval images */
+        aspect-ratio: 1 / 1;
         max-width: 100px;
         border-radius: 50%;
         margin: 0 auto 10px;
@@ -1351,132 +1353,15 @@
 @endsection
 
 @section('content')
-<!-- Hero Section com Banner Oficial Ocupando Todo o Espaço -->
-<div class="hero-section">
-    @if($heroBanners && $heroBanners->count() > 0)
-        <div id="heroBannerCarousel" class="carousel slide hero-carousel" data-bs-ride="carousel">
-            <div class="carousel-inner">
-                @foreach($heroBanners as $index => $banner)
-                    @php
-                        $showTitle = $banner->show_title ?? true;
-                        $showDescription = $banner->show_description ?? true;
-                        $showPrimaryDesktop = $banner->show_primary_button_desktop ?? true;
-                        $showPrimaryMobile = $banner->show_primary_button_mobile ?? true;
-                        $showSecondaryDesktop = $banner->show_secondary_button_desktop ?? true;
-                        $showSecondaryMobile = $banner->show_secondary_button_mobile ?? true;
-                        $overlayEnabled = $banner->show_overlay ?? true;
+<!-- Hero Section com Banner Oficial Ocupando Todo o Espaço (unificado via include) -->
+<div class="hero-section no-padding">
+    @php
+        use App\Helpers\BannerHelper;
+        $hasHero = BannerHelper::getBannersForDisplay($department->id ?? null, 'hero', 1)->count() > 0;
+    @endphp
 
-                        $overlayStyle = '';
-                        if ($overlayEnabled) {
-                            $rawOverlayColor = $banner->overlay_color ?? 'rgba(15,23,42,0.65)';
-                            if (\Illuminate\Support\Str::startsWith($rawOverlayColor, '#')) {
-                                $hex = ltrim($rawOverlayColor, '#');
-                                if (strlen($hex) === 3) {
-                                    $hex = preg_replace('/(.)/', '$1$1', $hex);
-                                }
-                                $rgb = [
-                                    hexdec(substr($hex, 0, 2)),
-                                    hexdec(substr($hex, 2, 2)),
-                                    hexdec(substr($hex, 4, 2)),
-                                ];
-                                $opacity = max(min($banner->overlay_opacity ?? 70, 100), 0) / 100;
-                                $overlayStyle = "background: rgba({$rgb[0]}, {$rgb[1]}, {$rgb[2]}, {$opacity});";
-                            } else {
-                                $overlayStyle = "background: {$rawOverlayColor};";
-                            }
-                        }
-
-                        $primaryButtonClasses = null;
-                        if ($showPrimaryDesktop || $showPrimaryMobile) {
-                            $primaryButtonClasses = 'btn hero-btn-primary align-items-center gap-2';
-                            if ($showPrimaryDesktop && $showPrimaryMobile) {
-                                $primaryButtonClasses .= ' d-inline-flex';
-                            } elseif ($showPrimaryDesktop) {
-                                $primaryButtonClasses .= ' d-none d-md-inline-flex';
-                            } else {
-                                $primaryButtonClasses .= ' d-inline-flex d-md-none';
-                            }
-                        }
-
-                        // department-specific primary color (fallback to global theme)
-                        $deptPrimaryColor = setting('dept_' . ($department->slug ?? '') . '_theme_primary', setting('theme_primary', '#0f172a'));
-
-                        $secondaryButtonClasses = null;
-                        if ($showSecondaryDesktop || $showSecondaryMobile) {
-                            $secondaryButtonClasses = 'btn hero-btn-secondary align-items-center gap-2';
-                            if ($showSecondaryDesktop && $showSecondaryMobile) {
-                                $secondaryButtonClasses .= ' d-inline-flex';
-                            } elseif ($showSecondaryDesktop) {
-                                $secondaryButtonClasses .= ' d-none d-md-inline-flex';
-                            } else {
-                                $secondaryButtonClasses .= ' d-inline-flex d-md-none';
-                            }
-                        }
-
-                        $hasAnyButton = $primaryButtonClasses || $secondaryButtonClasses;
-                    @endphp
-                    <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                        <div class="hero-banner-full">
-                            <div class="hero-banner-image" 
-                                 style="background-image: url('{{ $banner->image ? asset('storage/' . $banner->image) : '' }}');">
-                                <div class="hero-banner-overlay {{ $overlayEnabled ? '' : 'no-overlay' }}" @if($overlayEnabled && $overlayStyle) style="{{ $overlayStyle }}" @endif>
-                                    <div class="container">
-                                        <div class="row align-items-center hero-content-row">
-                                            <div class="col-lg-8">
-                                                <div class="hero-banner-content">
-                                                    @if($showTitle)
-                                                        <h1 class="hero-banner-title">{{ $banner->title ?: 'Feira das Fábricas' }}</h1>
-                                                    @endif
-
-                                                    @if($showDescription)
-                                                        <p class="hero-banner-subtitle">
-                                                            {{ $banner->description ?: 'O melhor em eletrônicos e tecnologia para sua empresa e para você.' }}
-                                                        </p>
-                                                    @endif
-
-                                                    @if($hasAnyButton)
-                                                        <div class="hero-banner-actions">
-                                                            @if($primaryButtonClasses)
-                                                                <a href="{{ route('products') }}" class="{{ $primaryButtonClasses }}" style="background: {{ $deptPrimaryColor }}; color: #fff; border: none;">
-                                                                    <i class="fas fa-shopping-bag me-2"></i>
-                                                                    Ver Produtos
-                                                                </a>
-                                                            @endif
-
-                                                            @if($secondaryButtonClasses)
-                                                                @php
-                                                                    $secondaryHref = $banner->link ?: route('contact');
-                                                                    $secondaryLabel = $banner->link ? 'Saiba Mais' : 'Contato';
-                                                                    $secondaryIcon = $banner->link ? 'fas fa-arrow-right' : 'fas fa-phone';
-                                                                @endphp
-                                                                <a href="{{ $secondaryHref }}" class="{{ $secondaryButtonClasses }}">
-                                                                    <i class="{{ $secondaryIcon }} me-2"></i>
-                                                                    {{ $secondaryLabel }}
-                                                                </a>
-                                                            @endif
-                                                        </div>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
-            </div>
-            @if($heroBanners->count() > 1)
-                <button class="carousel-control-prev hero-control-prev" type="button" data-bs-target="#heroBannerCarousel" data-bs-slide="prev">
-                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Anterior</span>
-                </button>
-                <button class="carousel-control-next hero-control-next" type="button" data-bs-target="#heroBannerCarousel" data-bs-slide="next">
-                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                    <span class="visually-hidden">Próximo</span>
-                </button>
-            @endif
-        </div>
+    @if($hasHero)
+        @include('components.banner-slider', ['departmentId' => $department->id ?? null, 'position' => 'hero', 'limit' => 5])
     @else
         <!-- Banner Padrão quando não há banners -->
         <div class="hero-banner-full">

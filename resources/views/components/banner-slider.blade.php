@@ -33,12 +33,11 @@
                 $hasImage = ($desktopImageUrl && $banner->image) || ($mobileImageUrl && $banner->mobile_image);
             @endphp
             
-            <div class="banner-slide {{ $index === 0 ? 'active' : '' }}" 
-                 data-slide="{{ $index }}">
-            
-                @if($banner->link)
-                    <a href="{{ $banner->link }}" class="banner-link">
-                @endif
+          <div class="banner-slide {{ $index === 0 ? 'active' : '' }}" 
+              data-slide="{{ $index }}"
+              data-banner-id="{{ $banner->id }}"
+              data-banner-title="{{ $banner->title }}"
+              @if(!empty($banner->link)) data-slide-link="{{ $banner->link }}" @endif>
                 
                 <div class="banner-image-container" 
                      style="@if(!$desktopImageUrl && !$mobileImageUrl) background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); @endif">
@@ -57,33 +56,138 @@
                              loading="lazy"
                              onerror="this.style.display='none';">
                     @endif
+                                {{-- CTA buttons (respect flags). Primary uses banner->link if present. --}}
+                                @php
+                                    $showPrimaryDesktop = isset($banner->show_primary_button_desktop) ? (bool) $banner->show_primary_button_desktop : true;
+                                    $showPrimaryMobile = isset($banner->show_primary_button_mobile) ? (bool) $banner->show_primary_button_mobile : true;
+                                    $showSecondaryDesktop = isset($banner->show_secondary_button_desktop) ? (bool) $banner->show_secondary_button_desktop : false;
+                                    $showSecondaryMobile = isset($banner->show_secondary_button_mobile) ? (bool) $banner->show_secondary_button_mobile : false;
+                                    $hasAnyCta = $showPrimaryDesktop || $showPrimaryMobile || $showSecondaryDesktop || $showSecondaryMobile;
+                                    $hasLink = !empty($banner->link);
+                                    $ctaHref = $hasLink ? $banner->link : '#';
+                                @endphp
+                                @if($hasAnyCta)
+                                    @php
+                                        $ctaSize = $banner->cta_size ?? 'medium';
+                                        $ctaSizeClass = $ctaSize === 'small' ? 'btn-sm' : ($ctaSize === 'large' ? 'btn-lg' : '');
+                                    @endphp
+                                    <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }} cta-size-{{ $banner->cta_size ?? 'medium' }} cta-layout-{{ $banner->cta_layout ?? 'horizontal' }}">
+                                        @if($showPrimaryDesktop)
+                                                    @if($hasLink)
+                                                        <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-desktop btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-lock-fill me-2"></i>
+                                                            Ver detalhes
+                                                        </a>
+                                                    @else
+                                                        <button type="button" class="btn btn-primary banner-cta-desktop btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-lock-fill me-2"></i>
+                                                            Ver detalhes
+                                                        </button>
+                                                    @endif
+                                                @endif
+                                        @if($showSecondaryDesktop)
+                                            @if($hasLink)
+                                                <a href="{{ $ctaHref }}" class="btn banner-cta-desktop btn-outline-cta btn-pill {{ $ctaSizeClass }}">
+                                                    <i class="bi bi-telephone-fill me-2"></i>
+                                                    Saiba mais
+                                                </a>
+                                            @else
+                                                <button type="button" class="btn banner-cta-desktop btn-outline-cta btn-pill {{ $ctaSizeClass }}">
+                                                    <i class="bi bi-telephone-fill me-2"></i>
+                                                    Saiba mais
+                                                </button>
+                                            @endif
+                                        @endif
+
+                                        @if($showPrimaryMobile)
+                                                @if($hasLink)
+                                                    <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-mobile btn-pill {{ $ctaSizeClass }}">
+                                                    <i class="bi bi-lock-fill me-2"></i>
+                                                    Ver
+                                                </a>
+                                            @else
+                                                    <button type="button" class="btn btn-primary banner-cta-mobile btn-pill {{ $ctaSizeClass }}">
+                                                    <i class="bi bi-lock-fill me-2"></i>
+                                                    Ver
+                                                </button>
+                                            @endif
+                                        @endif
+                                        @if($showSecondaryMobile)
+                                            @if($hasLink)
+                                                <a href="{{ $ctaHref }}" class="btn banner-cta-mobile btn-outline-cta btn-pill {{ $ctaSizeClass }}">
+                                                    <i class="bi bi-telephone-fill me-2"></i>
+                                                    Mais
+                                                </a>
+                                            @else
+                                                <button type="button" class="btn banner-cta-mobile btn-outline-cta btn-pill {{ $ctaSizeClass }}">
+                                                    <i class="bi bi-telephone-fill me-2"></i>
+                                                    Mais
+                                                </button>
+                                            @endif
+                                        @endif
+                                    </div>
+                                @endif
                 
-                    @if(!empty($banner->title) || !empty($banner->description))
-                        @php
-                            // Estilos do Título
-                            $titleColor = $banner->text_color ?? '#ffffff';
-                            $titleSize = $banner->text_size ?? '2.5rem';
-                            $titleAlign = $banner->text_align ?? 'center';
-                            $titleVerticalAlign = $banner->text_vertical_align ?? 'bottom';
-                            $titleWeight = $banner->text_font_weight ?? '700';
-                            
-                            // Estilos da Descrição
-                            $descColor = $banner->description_color ?? '#ffffff';
-                            $descSize = $banner->description_size ?? '1.2rem';
-                            $descAlign = $banner->description_align ?? 'center';
-                            $descVerticalAlign = $banner->description_vertical_align ?? 'bottom';
-                            
-                            // Determinar posição vertical do overlay
-                            $verticalPosition = match($titleVerticalAlign) {
-                                'top' => 'top: 0; bottom: auto; transform: none;',
-                                'center' => 'top: 50%; bottom: auto; transform: translateY(-50%);',
-                                'bottom' => 'bottom: 0; top: auto; transform: none;',
-                                default => 'bottom: 0; top: auto; transform: none;'
-                            };
-                        @endphp
-                        <div class="banner-overlay" style="{{ $verticalPosition }}">
-                            <div class="banner-content" style="text-align: {{ $titleAlign }};">
-                                @if(!empty($banner->title))
+                    @php
+                        // Flags de exibição vindas do model (podem ser nulas em dados antigos — assumir true por compatibilidade)
+                        $showTitleFlag = isset($banner->show_title) ? (bool) $banner->show_title : true;
+                        $showDescriptionFlag = isset($banner->show_description) ? (bool) $banner->show_description : true;
+                        $showOverlayFlag = isset($banner->show_overlay) ? (bool) $banner->show_overlay : true;
+
+                        // Conteúdo efetivamente disponível
+                        $hasTitle = $showTitleFlag && !empty($banner->title);
+                        $hasDescription = $showDescriptionFlag && !empty($banner->description);
+
+                        // Estilos do Título
+                        $titleColor = $banner->text_color ?? '#ffffff';
+                        $titleSize = $banner->text_size ?? '2.5rem';
+                        $titleAlign = $banner->text_align ?? 'center';
+                        $titleVerticalAlign = $banner->text_vertical_align ?? 'bottom';
+                        $titleWeight = $banner->text_font_weight ?? '700';
+                        
+                        // Estilos da Descrição
+                        $descColor = $banner->description_color ?? '#ffffff';
+                        $descSize = $banner->description_size ?? '1.2rem';
+                        $descAlign = $banner->description_align ?? 'center';
+                        $descVerticalAlign = $banner->description_vertical_align ?? 'bottom';
+
+                        // Determinar posição vertical do overlay
+                        $verticalPosition = match($titleVerticalAlign) {
+                            'top' => 'top: 0; bottom: auto; transform: none;',
+                            'center' => 'top: 50%; bottom: auto; transform: translateY(-50%);',
+                            'bottom' => 'bottom: 0; top: auto; transform: none;',
+                            default => 'bottom: 0; top: auto; transform: none;'
+                        };
+                    @endphp
+
+                    @if($hasTitle || $hasDescription)
+                        @if($showOverlayFlag)
+                            <div class="banner-overlay" style="{{ $verticalPosition }}">
+                                <div class="banner-content" style="text-align: {{ $titleAlign }};">
+                                    @if($hasTitle)
+                                        <h2 class="banner-title" 
+                                            style="color: {{ $titleColor }} !important; 
+                                                   font-size: {{ $titleSize }} !important; 
+                                                   font-weight: {{ $titleWeight }} !important; 
+                                                   text-align: {{ $titleAlign }} !important;">
+                                            {{ $banner->title }}
+                                        </h2>
+                                    @endif
+
+                                    @if($hasDescription)
+                                        <p class="banner-description" 
+                                           style="color: {{ $descColor }} !important; 
+                                                  font-size: {{ $descSize }} !important; 
+                                                  text-align: {{ $descAlign }} !important;">
+                                            {{ $banner->description }}
+                                        </p>
+                                    @endif
+                                </div>
+                            </div>
+                        @else
+                            {{-- Show title/description without overlay background when overlay is disabled --}}
+                            <div class="banner-content banner-content-no-overlay" style="position: absolute; left: 0; right: 0; {{ $verticalPosition }}; z-index: 5; text-align: {{ $titleAlign }};">
+                                @if($hasTitle)
                                     <h2 class="banner-title" 
                                         style="color: {{ $titleColor }} !important; 
                                                font-size: {{ $titleSize }} !important; 
@@ -92,8 +196,8 @@
                                         {{ $banner->title }}
                                     </h2>
                                 @endif
-                                
-                                @if(!empty($banner->description))
+
+                                @if($hasDescription)
                                     <p class="banner-description" 
                                        style="color: {{ $descColor }} !important; 
                                               font-size: {{ $descSize }} !important; 
@@ -102,13 +206,21 @@
                                     </p>
                                 @endif
                             </div>
-                        </div>
+                        @endif
                     @endif
                 </div>
                 
-                @if($banner->link)
-                    </a>
-                @endif
+                {{-- slide-level link handled by JS via data-slide-link to avoid nested anchors --}}
+
+                @auth('admin')
+                    <button type="button" class="admin-edit-banner-btn edit-banner-btn" 
+                            title="Editar banner"
+                            data-banner-id="{{ $banner->id }}"
+                            data-banner-title="{{ $banner->title }}"
+                            style="position: absolute; top: 10px; right: 10px; z-index: 9999; background: rgba(255,255,255,0.9); border-radius: 6px; border: 1px solid rgba(0,0,0,0.06); padding: .45rem .5rem;">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                @endauth
             </div>
         @endforeach
     </div>
@@ -148,8 +260,9 @@
 .banner-slides-wrapper {
     position: relative;
     width: 100%;
-    height: 500px;
-    min-height: 500px;
+    /* Use viewport relative height to match hero areas; allow smaller min-height for small screens */
+    height: 50vh;
+    min-height: 300px;
 }
 
 .banner-slide {
@@ -305,8 +418,8 @@
 
 @media (max-width: 768px) {
     .banner-slides-wrapper {
-        height: 400px;
-        min-height: 400px;
+        height: 40vh;
+        min-height: 300px;
     }
     
     .banner-overlay {
@@ -346,8 +459,8 @@
 
 @media (max-width: 480px) {
     .banner-slides-wrapper {
-        height: 300px;
-        min-height: 300px;
+        height: 35vh;
+        min-height: 220px;
     }
     
     .banner-overlay {
@@ -376,6 +489,47 @@
         width: 10px;
         height: 10px;
     }
+}
+
+.banner-ctas { display:flex; gap: .6rem; align-items: center; position: absolute; z-index: 6; }
+
+/* Size variants applied via wrapper classes to avoid Bootstrap override issues */
+.banner-ctas.cta-size-small .btn { padding: .35rem .7rem; font-size: .82rem; }
+.banner-ctas.cta-size-medium .btn { padding: .55rem 1rem; font-size: .95rem; }
+.banner-ctas.cta-size-large .btn { padding: .8rem 1.4rem; font-size: 1.02rem; }
+
+.banner-ctas .btn { /* fallback */ padding: .55rem 1rem; font-size: .95rem; }
+
+/* vertical position */
+.banner-ctas.cta-pos-top { top: 1.5rem; bottom: auto; transform: none; }
+.banner-ctas.cta-pos-center { top: 50%; bottom: auto; transform: translateY(-50%); }
+.banner-ctas.cta-pos-bottom { bottom: calc(1.5rem + 28px); top: auto; transform: none; /* lift above indicators (dots ~20px + gap) */ }
+
+/* lateral alignment: give safe offsets so CTAs don't collide with slider arrows */
+.banner-ctas.cta-align-left { left: 70px; right: auto; justify-content: flex-start; }
+.banner-ctas.cta-align-center { left: 0; right: 0; justify-content: center; }
+.banner-ctas.cta-align-right { right: 70px; left: auto; justify-content: flex-end; }
+
+/* vertical layout stack */
+.banner-ctas.cta-layout-vertical { flex-direction: column; gap: .5rem; }
+.banner-ctas.cta-layout-vertical .btn { display: inline-flex; align-items: center; }
+.banner-ctas.cta-layout-vertical.cta-align-left { align-items: flex-start; left: 70px; }
+.banner-ctas.cta-layout-vertical.cta-align-right { align-items: flex-end; right: 70px; }
+.banner-ctas.cta-layout-vertical.cta-pos-bottom { bottom: calc(1.5rem + 28px); }
+.banner-ctas .btn { padding: .55rem 1rem; font-size: .95rem; }
+.banner-cta-mobile { display: none; }
+ .btn-pill { border-radius: 999px; padding: .6rem 1.2rem; font-weight: 600; }
+ .btn-outline-cta { background: transparent; border: 2px solid var(--secondary-color); color: var(--secondary-color); }
+ .btn-outline-cta:hover { background: color-mix(in srgb, var(--secondary-color), white 12%); color: var(--text-dark); }
+/* ensure banner link doesn't visually block CTAs */
+.banner-link { background: transparent; }
+@media (max-width: 768px) {
+    .banner-cta-desktop { display: none; }
+    .banner-cta-mobile { display: inline-block; }
+    /* On mobile prefer center; but keep small lateral offsets if explicitly chosen */
+    .banner-ctas { justify-content: center; left: 0; right: 0; }
+    .banner-ctas.cta-align-left { left: .75rem; right: auto; }
+    .banner-ctas.cta-align-right { right: .75rem; left: auto; }
 }
 </style>
 
@@ -449,6 +603,24 @@ document.addEventListener('DOMContentLoaded', function() {
         slider.addEventListener('mouseenter', stopAutoplay);
         slider.addEventListener('mouseleave', startAutoplay);
     }
+
+    // Click-to-navigate for slides (avoid nested anchors). If a slide has data-slide-link,
+    // navigate when the user clicks the slide but NOT when clicking CTAs or admin buttons.
+    slider.addEventListener('click', function(e) {
+        const target = e.target;
+        const slide = target.closest('.banner-slide');
+        if (!slide) return;
+        const link = slide.dataset.slideLink;
+        if (!link) return;
+
+        // If click originated inside a CTA, an anchor, or the admin edit button, do nothing.
+        if (target.closest('.banner-ctas') || target.closest('a') || target.closest('button') || target.closest('.admin-edit-banner-btn')) {
+            return;
+        }
+
+        // otherwise navigate same window
+        window.location.href = link;
+    });
 });
 </script>
 @endif

@@ -55,6 +55,15 @@ class Banner extends Model
         'show_primary_button_mobile',
         'show_secondary_button_desktop',
         'show_secondary_button_mobile',
+    // CTA labels/links and display options
+    'primary_button_text',
+    'primary_button_link',
+    'secondary_button_text',
+    'secondary_button_link',
+    'cta_position',
+    'cta_align',
+    'cta_size',
+    'cta_layout',
         'overlay_color',
         'overlay_opacity',
     ];

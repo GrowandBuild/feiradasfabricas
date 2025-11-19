@@ -108,6 +108,21 @@ class BannerHelper
             return null;
         }
 
+        // Normalize common stored values to the storage disk relative path
+        // Some records may contain "storage/filename" or "/storage/filename" or leading slashes
+        // We want paths relative to storage/app/public, e.g. "banners/xxx.jpg"
+        if (str_starts_with($imagePath, '/')) {
+            $imagePath = ltrim($imagePath, '/');
+        }
+
+        if (str_starts_with($imagePath, 'storage/')) {
+            $imagePath = substr($imagePath, strlen('storage/'));
+        }
+
+        if (str_starts_with($imagePath, 'public/')) {
+            $imagePath = substr($imagePath, strlen('public/'));
+        }
+
         // Se for uma URL externa (começa com http), retorna diretamente
         if (str_starts_with($imagePath, 'http')) {
             return $imagePath;
@@ -116,7 +131,23 @@ class BannerHelper
         // Se for um arquivo local, usa Storage::url() que é mais confiável
         // Verifica se o arquivo existe no storage público
         if (Storage::disk('public')->exists($imagePath)) {
-            return Storage::disk('public')->url($imagePath);
+            $url = Storage::disk('public')->url($imagePath);
+
+            // If running in an HTTP request and the generated URL host doesn't match the current request host
+            // prefer returning a relative /storage/... path so the image is requested on the same host/port
+            try {
+                if (function_exists('request') && request()) {
+                    $generatedHost = parse_url($url, PHP_URL_HOST);
+                    $currentHost = request()->getHost();
+                    if ($generatedHost && $generatedHost !== $currentHost) {
+                        return '/storage/' . $imagePath;
+                    }
+                }
+            } catch (\Throwable $e) {
+                // if anything goes wrong, fall back to the absolute URL
+            }
+
+            return $url;
         }
         
         // Fallback para asset() caso o Storage não funcione

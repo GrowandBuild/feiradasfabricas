@@ -20,10 +20,7 @@
     <div class="row g-3">
         @foreach($banners as $banner)
             <div class="col-md-{{ 12 / $banners->count() }}">
-                <div class="banner-item">
-                    @if($banner->link)
-                        <a href="{{ $banner->link }}" class="banner-link" target="_blank">
-                    @endif
+                <div class="banner-item" data-banner-id="{{ $banner->id }}" data-banner-title="{{ $banner->title }}" @if(!empty($banner->link)) data-slide-link="{{ $banner->link }}" data-slide-link-target="_blank" @endif>
                     
                     <div class="banner-image-container">
                         <img src="{{ BannerHelper::getBannerImageUrl($banner) }}" 
@@ -31,23 +28,179 @@
                              class="banner-image"
                              loading="lazy">
                         
-                        @if($banner->title || $banner->description)
-                            <div class="banner-overlay">
-                                <div class="banner-content">
-                                    @if($banner->title)
-                                        <h3 class="banner-title">{{ $banner->title }}</h3>
-                                    @endif
-                                    @if($banner->description)
-                                        <p class="banner-description">{{ $banner->description }}</p>
-                                    @endif
-                                </div>
-                            </div>
-                        @endif
+                        @php
+                            $showTitleFlag = isset($banner->show_title) ? (bool) $banner->show_title : true;
+                            $showDescriptionFlag = isset($banner->show_description) ? (bool) $banner->show_description : true;
+                            $showOverlayFlag = isset($banner->show_overlay) ? (bool) $banner->show_overlay : true;
+
+                            $hasTitle = $showTitleFlag && !empty($banner->title);
+                            $hasDescription = $showDescriptionFlag && !empty($banner->description);
+                        @endphp
+
+                            @php
+                                $showPrimaryDesktop = isset($banner->show_primary_button_desktop) ? (bool) $banner->show_primary_button_desktop : true;
+                                $showPrimaryMobile = isset($banner->show_primary_button_mobile) ? (bool) $banner->show_primary_button_mobile : true;
+                                $showSecondaryDesktop = isset($banner->show_secondary_button_desktop) ? (bool) $banner->show_secondary_button_desktop : false;
+                                $showSecondaryMobile = isset($banner->show_secondary_button_mobile) ? (bool) $banner->show_secondary_button_mobile : false;
+                                $hasAnyCta = $showPrimaryDesktop || $showPrimaryMobile || $showSecondaryDesktop || $showSecondaryMobile;
+                                $hasLink = !empty($banner->link);
+                                $ctaHref = $hasLink ? $banner->link : '#';
+                            @endphp
+
+                            @if($hasTitle || $hasDescription)
+                                @if($showOverlayFlag)
+                                    <div class="banner-overlay">
+                                        <div class="banner-content">
+                                            @if($hasTitle)
+                                                <h3 class="banner-title">{{ $banner->title }}</h3>
+                                            @endif
+                                            @if($hasDescription)
+                                                <p class="banner-description">{{ $banner->description }}</p>
+                                            @endif
+                                            @if($hasAnyCta)
+                                                @php
+                                                    $ctaSize = $banner->cta_size ?? 'medium';
+                                                    $ctaSizeClass = $ctaSize === 'small' ? 'btn-sm' : ($ctaSize === 'large' ? 'btn-lg' : '');
+                                                @endphp
+                                                <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }} cta-size-{{ $banner->cta_size ?? 'medium' }} cta-layout-{{ $banner->cta_layout ?? 'horizontal' }}">
+                                                    @if($showPrimaryDesktop)
+                                                        @if($hasLink)
+                                                            <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-desktop btn-pill">
+                                                                <i class="bi bi-lock-fill me-2"></i>
+                                                                Ver detalhes
+                                                            </a>
+                                                        @else
+                                                            <button type="button" class="btn btn-primary banner-cta-desktop btn-pill">
+                                                                <i class="bi bi-lock-fill me-2"></i>
+                                                                Ver detalhes
+                                                            </button>
+                                                        @endif
+                                                    @endif
+                                                    @if($showSecondaryDesktop)
+                                                        @if($hasLink)
+                                                            <a href="{{ $ctaHref }}" class="btn banner-cta-desktop btn-outline-cta btn-pill">
+                                                                <i class="bi bi-telephone-fill me-2"></i>
+                                                                Saiba mais
+                                                            </a>
+                                                        @else
+                                                            <button type="button" class="btn banner-cta-desktop btn-outline-cta btn-pill">
+                                                                <i class="bi bi-telephone-fill me-2"></i>
+                                                                Saiba mais
+                                                            </button>
+                                                        @endif
+                                                    @endif
+
+                                                    @if($showPrimaryMobile)
+                                                        @if($hasLink)
+                                                            <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-mobile btn-pill">
+                                                                <i class="bi bi-lock-fill me-2"></i>
+                                                                Ver
+                                                            </a>
+                                                        @else
+                                                            <button type="button" class="btn btn-primary banner-cta-mobile btn-pill">
+                                                                <i class="bi bi-lock-fill me-2"></i>
+                                                                Ver
+                                                            </button>
+                                                        @endif
+                                                    @endif
+                                                    @if($showSecondaryMobile)
+                                                        @if($hasLink)
+                                                            <a href="{{ $ctaHref }}" class="btn banner-cta-mobile btn-outline-cta btn-pill">
+                                                                <i class="bi bi-telephone-fill me-2"></i>
+                                                                Mais
+                                                            </a>
+                                                        @else
+                                                            <button type="button" class="btn banner-cta-mobile btn-outline-cta btn-pill">
+                                                                <i class="bi bi-telephone-fill me-2"></i>
+                                                                Mais
+                                                            </button>
+                                                        @endif
+                                                    @endif
+                                                </div>
+                                            @endif
+                                        </div>
+                                    </div>
+                                @else
+                                    {{-- show content without overlay background --}}
+                                    <div class="banner-content banner-content-no-overlay" style="position:absolute; left:0; right:0; bottom:1rem; z-index:5; text-align:center;">
+                                        @if($hasTitle)
+                                            <h3 class="banner-title">{{ $banner->title }}</h3>
+                                        @endif
+                                        @if($hasDescription)
+                                            <p class="banner-description">{{ $banner->description }}</p>
+                                        @endif
+                                        @if($hasAnyCta)
+                                            <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }}">
+                                                @if($showPrimaryDesktop)
+                                                    @if($hasLink)
+                                                        <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-desktop btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-lock-fill me-2"></i>
+                                                            Ver detalhes
+                                                        </a>
+                                                    @else
+                                                        <button type="button" class="btn btn-primary banner-cta-desktop btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-lock-fill me-2"></i>
+                                                            Ver detalhes
+                                                        </button>
+                                                    @endif
+                                                @endif
+                                                @if($showSecondaryDesktop)
+                                                    @if($hasLink)
+                                                        <a href="{{ $ctaHref }}" class="btn banner-cta-desktop btn-outline-cta btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-telephone-fill me-2"></i>
+                                                            Saiba mais
+                                                        </a>
+                                                    @else
+                                                        <button type="button" class="btn banner-cta-desktop btn-outline-cta btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-telephone-fill me-2"></i>
+                                                            Saiba mais
+                                                        </button>
+                                                    @endif
+                                                @endif
+
+                                                @if($showPrimaryMobile)
+                                                    @if($hasLink)
+                                                        <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-mobile btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-lock-fill me-2"></i>
+                                                            Ver
+                                                        </a>
+                                                    @else
+                                                        <button type="button" class="btn btn-primary banner-cta-mobile btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-lock-fill me-2"></i>
+                                                            Ver
+                                                        </button>
+                                                    @endif
+                                                @endif
+                                                @if($showSecondaryMobile)
+                                                    @if($hasLink)
+                                                        <a href="{{ $ctaHref }}" class="btn banner-cta-mobile btn-outline-cta btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-telephone-fill me-2"></i>
+                                                            Mais
+                                                        </a>
+                                                    @else
+                                                        <button type="button" class="btn banner-cta-mobile btn-outline-cta btn-pill {{ $ctaSizeClass }}">
+                                                            <i class="bi bi-telephone-fill me-2"></i>
+                                                            Mais
+                                                        </button>
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endif
+                            @endif
+                        @auth('admin')
+                            <button type="button" class="admin-edit-banner-btn edit-banner-btn" 
+                                    title="Editar banner" 
+                                    data-banner-id="{{ $banner->id }}" 
+                                    data-banner-title="{{ $banner->title }}"
+                                    style="position: absolute; top: 10px; right: 10px; z-index: 9999; background: rgba(255,255,255,0.9); border-radius: 6px; border: 1px solid rgba(0,0,0,0.06); padding: .45rem .5rem;">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                        @endauth
                     </div>
                     
-                    @if($banner->link)
-                        </a>
-                    @endif
+                    {{-- slide-level link handled by delegated JS; keep inner CTA anchors as-is --}}
                 </div>
             </div>
         @endforeach
@@ -151,5 +304,61 @@
         font-size: 0.8rem;
     }
 }
+
+.banner-ctas { display:flex; gap: .5rem; align-items: center; position: absolute; z-index: 6; }
+
+/* Size variants applied via wrapper classes to avoid Bootstrap override issues */
+.banner-ctas.cta-size-small .btn { padding: .35rem .6rem; font-size: .82rem; }
+.banner-ctas.cta-size-medium .btn { padding: .45rem .9rem; font-size: .9rem; }
+.banner-ctas.cta-size-large .btn { padding: .7rem 1.2rem; font-size: 1rem; }
+
+.banner-ctas .btn { /* fallback */ padding: .45rem .9rem; font-size: .9rem; }
+
+/* vertical position */
+.banner-ctas.cta-pos-top { top: 0.8rem; bottom: auto; transform: none; }
+.banner-ctas.cta-pos-center { top: 50%; bottom: auto; transform: translateY(-50%); }
+.banner-ctas.cta-pos-bottom { bottom: 1rem; top: auto; transform: none; }
+
+/* lateral alignment: avoid edge controls (use smaller safe offset for static banners) */
+.banner-ctas.cta-align-left { left: 2rem; right: auto; justify-content: flex-start; }
+.banner-ctas.cta-align-center { left: 0; right: 0; justify-content: center; }
+.banner-ctas.cta-align-right { right: 2rem; left: auto; justify-content: flex-end; }
+
+/* vertical layout stack for static banners */
+.banner-ctas.cta-layout-vertical { flex-direction: column; gap: .4rem; }
+.banner-ctas.cta-layout-vertical.cta-align-left { align-items: flex-start; left: 2rem; }
+.banner-ctas.cta-layout-vertical.cta-align-right { align-items: flex-end; right: 2rem; }
+.banner-ctas.cta-layout-vertical.cta-pos-bottom { bottom: 1rem; }
+.banner-cta-mobile { display: none; }
+.banner-link { background: transparent; }
+@media (max-width: 768px) {
+    .banner-cta-desktop { display: none; }
+    .banner-cta-mobile { display: inline-block; }
+    .banner-ctas { left: 0; right: 0; justify-content: center; }
+    .banner-ctas.cta-align-left { left: .75rem; right: auto; }
+    .banner-ctas.cta-align-right { right: .75rem; left: auto; }
+}
 </style>
 @endif
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.banner-static').forEach(function(wrapper) {
+        wrapper.addEventListener('click', function(e) {
+            const target = e.target;
+            const item = target.closest('.banner-item');
+            if (!item) return;
+            const link = item.dataset.slideLink;
+            if (!link) return;
+
+            // ignore clicks on CTAs, anchors, buttons or admin edit
+            if (target.closest('.banner-ctas') || target.closest('a') || target.closest('button') || target.closest('.admin-edit-banner-btn')) {
+                return;
+            }
+
+            const targetAttr = item.dataset.slideLinkTarget || '_self';
+            window.open(link, targetAttr);
+        });
+    });
+});
+</script>

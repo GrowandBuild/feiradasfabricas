@@ -418,6 +418,16 @@
             min-height: 70vh;
         }
 
+        /* When we render a full-bleed hero banner (slider) we remove the
+           extra padding and let the banner component control height so the
+           image touches the next section. Apply this by adding class
+           `no-padding` to the `.hero-section` element where appropriate. */
+        .hero-section.no-padding {
+            padding: 0;
+            min-height: auto;
+            background: transparent;
+        }
+
         .hero-banner {
             background: #374151;
             border-radius: 12px;
@@ -1434,5 +1444,211 @@
 
         {{-- Busca Inteligente Flutuante para Admin (global) --}}
         @include('partials.smart-search')
+        
+        @auth('admin')
+            {{-- Include banner edit modal globally for admins so they can edit from front-end view --}}
+            @includeIf('admin.banners.modal-edit')
+
+            <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                // Reuse the same modal used in admin pages (#editBannerModal)
+                const editModalEl = document.getElementById('editBannerModal');
+                if (!editModalEl) return;
+                const editModal = new bootstrap.Modal(editModalEl);
+                const modalBody = document.getElementById('editBannerModalBody');
+
+                function openBannerEditor(bannerId, bannerTitle){
+                    if (!bannerId) return;
+                    document.getElementById('editBannerModalLabel').innerHTML = `<i class="bi bi-pencil"></i> Editar Banner: ${bannerTitle || ''}`;
+                    modalBody.innerHTML = `
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Carregando...</span>
+                            </div>
+                            <p class="mt-3 text-muted">Carregando formulário...</p>
+                        </div>
+                    `;
+                    editModal.show();
+
+                    fetch(`{{ route('admin.banners.edit', ':id') }}`.replace(':id', bannerId), {
+                        method: 'GET',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html',
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                        }
+                    }).then(r => {
+                        if (!r.ok) throw new Error('Erro ao carregar formulário');
+                        return r.text();
+                    }).then(html => {
+                        modalBody.innerHTML = html;
+                    }).catch(err => {
+                        console.error(err);
+                        modalBody.innerHTML = `<div class="alert alert-danger">Erro ao carregar formulário: ${err.message}</div>`;
+                    });
+                }
+
+                document.body.addEventListener('click', function(e){
+                    const btn = e.target.closest('.edit-banner-btn');
+                    if (!btn) return;
+                    e.preventDefault();
+                    const id = btn.dataset.bannerId;
+                    const title = btn.dataset.bannerTitle || '';
+                    openBannerEditor(id, title);
+                });
+
+                // Also allow left-clicking the banner wrapper itself to open the editor.
+                // We avoid interfering with normal links, buttons or modifier-key clicks so
+                // admins can still navigate normally when needed.
+                document.body.addEventListener('click', function(e){
+                    const wrapper = e.target.closest('[data-banner-id]');
+                    if (!wrapper) return;
+                    // If the click was on the small edit button, it's already handled above.
+                    if (e.target.closest('.edit-banner-btn')) return;
+                    // Don't hijack clicks on interactive elements (links, buttons, inputs, labels)
+                    if (e.target.closest('a, button, input, textarea, select, label')) return;
+                    // Respect modifier keys (allow ctrl/cmd/shift clicks to act as usual)
+                    if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+                    // Prevent default navigation and open the editor for this banner
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const id = wrapper.dataset.bannerId;
+                    const title = wrapper.dataset.bannerTitle || '';
+                    openBannerEditor(id, title);
+                });
+            });
+            </script>
+
+        <script>
+            // Delegated handler for banner edit form submit so injected form (via innerHTML)
+            // is submitted via AJAX and does not navigate away.
+            document.addEventListener('submit', function(e){
+                const form = e.target.closest('#banner-edit-form');
+                if (!form) return;
+                // only handle when form is inside the edit modal
+                if (!document.getElementById('editBannerModal')) return;
+                e.preventDefault();
+                (async function(){
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    const originalHtml = submitBtn ? submitBtn.innerHTML : null;
+                    try {
+                        if (submitBtn) { submitBtn.disabled = true; submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Salvando...'; }
+                        // remove any previous ajax error block
+                        const prev = form.querySelector('.ajax-errors'); if (prev) prev.remove();
+                        const fd = new FormData(form);
+                        const resp = await fetch(form.action, {
+                            method: 'POST',
+                            body: fd,
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json, text/html'
+                            },
+                            credentials: 'same-origin'
+                        });
+
+                        const contentType = (resp.headers.get('content-type') || '');
+                        function showToast(msg){
+                            const toastEl = document.getElementById('toast-notification');
+                            const toastMessage = document.getElementById('toast-message');
+                            if (toastMessage) toastMessage.textContent = msg;
+                            if (toastEl) { const t = new bootstrap.Toast(toastEl); t.show(); }
+                            else console.log(msg);
+                        }
+
+                        function renderErrors(errors){
+                            const container = document.createElement('div');
+                            container.className = 'alert alert-danger ajax-errors';
+                            let html = '<strong><i class="bi bi-exclamation-triangle"></i> Erros:</strong><ul class="mb-0 mt-2">';
+                            for (const key in errors){
+                                if (!errors.hasOwnProperty(key)) continue;
+                                const arr = errors[key];
+                                for (const m of arr){ html += `<li>${m}</li>`; }
+                            }
+                            html += '</ul>';
+                            container.innerHTML = html;
+                            form.insertBefore(container, form.firstChild);
+                            const firstKey = Object.keys(errors)[0];
+                            if (firstKey){
+                                const field = form.querySelector(`[name="${firstKey}"]`);
+                                if (field) try{ field.focus(); }catch(e){}
+                            }
+                        }
+
+                        if (contentType.includes('application/json')){
+                            const json = await resp.json();
+                            if (json && json.success) {
+                                showToast(json.message || 'Banner atualizado com sucesso!');
+                                const modalEl = document.getElementById('editBannerModal');
+                                if (modalEl){ const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl); bs.hide(); }
+                                try { window.dispatchEvent(new CustomEvent('banner:updated', { detail: { id: json.id || null } } )); } catch(e){}
+                            } else if (json && json.errors) {
+                                renderErrors(json.errors || {});
+                            } else {
+                                showToast('Resposta inesperada do servidor.');
+                            }
+                        } else if (contentType.includes('text/html')){
+                            const text = await resp.text();
+                            if (/banner atualizado/i.test(text) || /Banner atualizado/i.test(text)){
+                                showToast('Banner atualizado com sucesso!');
+                                const modalEl = document.getElementById('editBannerModal');
+                                if (modalEl){ const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl); bs.hide(); }
+                                try { window.dispatchEvent(new CustomEvent('banner:updated', { detail: { id: null } } )); } catch(e){}
+                            } else {
+                                // server returned HTML (probably the same form with errors) -> replace modal body
+                                const modalBody = document.getElementById('editBannerModalBody');
+                                if (modalBody) modalBody.innerHTML = text;
+                            }
+                        } else if (resp.status === 422) {
+                            const json = await resp.json();
+                            renderErrors(json.errors || {});
+                        } else {
+                            const text = await resp.text();
+                            if (/banner atualizado/i.test(text)){
+                                showToast('Banner atualizado com sucesso!');
+                                const modalEl = document.getElementById('editBannerModal');
+                                if (modalEl){ const bs = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl); bs.hide(); }
+                                try { window.dispatchEvent(new CustomEvent('banner:updated', { detail: { id: null } } )); } catch(e){}
+                            } else {
+                                alert('Erro ao salvar banner. Veja o console para mais detalhes.');
+                                console.error('Resposta inesperada ao salvar banner:', resp, text);
+                            }
+                        }
+                    } catch(err){
+                        console.error('Erro AJAX ao salvar banner', err);
+                        alert('Erro ao salvar banner: ' + (err.message || err));
+                    } finally {
+                        if (submitBtn) { submitBtn.disabled = false; submitBtn.innerHTML = originalHtml; }
+                    }
+                })();
+            }, true);
+        </script>
+        <script>
+            // Quando um banner for atualizado, solicitar o fragmento renderizado e substituir
+            // todas as ocorrências no DOM com data-banner-id="{id}"
+            window.addEventListener('banner:updated', function(e){
+                try {
+                    const id = (e && e.detail && e.detail.id) ? e.detail.id : null;
+                    if (!id) return;
+                    const url = `/admin/banners/${id}/fragment`;
+                    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'text/html' }, credentials: 'same-origin' })
+                        .then(r => {
+                            if (!r.ok) throw new Error('Erro ao buscar fragmento do banner');
+                            return r.text();
+                        })
+                        .then(html => {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            const newEl = doc.body.firstElementChild;
+                            if (!newEl) return;
+                            const selector = `[data-banner-id="${id}"]`;
+                            const els = Array.from(document.querySelectorAll(selector));
+                            els.forEach(el => {
+                                el.replaceWith(newEl.cloneNode(true));
+                            });
+                        }).catch(err => console.error('Erro ao atualizar banner no DOM', err));
+                } catch (err) { console.error('banner:updated handler error', err); }
+            });
+        </script>
+        @endauth
 </body>
 </html>

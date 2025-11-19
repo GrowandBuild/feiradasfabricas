@@ -102,4 +102,13 @@ class CategoryController extends Controller
         return redirect()->route('admin.categories.index')
                         ->with('success', 'Categoria excluída com sucesso!');
     }
+
+    /**
+     * Return a lightweight list of categories for selects (JSON)
+     */
+    public function list()
+    {
+        $cats = Category::select('id', 'name')->orderBy('name')->get();
+        return response()->json(['success' => true, 'categories' => $cats]);
+    }
 }
