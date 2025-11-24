@@ -35,9 +35,29 @@
     <meta name="theme-color" content="{{ $dept_setting('theme_secondary', '#ff9900') }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
-    <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    @php $siteFavicon = setting('site_favicon'); $siteAppIcon = setting('site_app_icon'); @endphp
+    @if($siteAppIcon)
+        @php
+            $appPath = public_path('storage/' . $siteAppIcon);
+            $appVer = file_exists($appPath) ? filemtime($appPath) : time();
+        @endphp
+        <link rel="apple-touch-icon" href="{{ asset('storage/' . $siteAppIcon) }}?_={{ $appVer }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('storage/' . $siteAppIcon) }}?_={{ $appVer }}">
+    @else
+        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    @endif
+    @if($siteFavicon)
+        @php
+            $favPath = public_path('storage/' . $siteFavicon);
+            $favVer = file_exists($favPath) ? filemtime($favPath) : time();
+        @endphp
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}">
+        <link rel="mask-icon" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}" color="{{ $dept_setting('theme_secondary', '#ff9900') }}">
+    @else
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    @endif
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons (para a lupa da Busca Inteligente) -->

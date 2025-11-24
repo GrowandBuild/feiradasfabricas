@@ -50,6 +50,18 @@
                         </div>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label">App Icon (ícone para instalação / homescreen)</label>
+                        <div class="d-flex gap-3 align-items-center">
+                            @php $appIcon = setting('site_app_icon'); @endphp
+                            <img id="preview_app_icon" src="{{ $appIcon ? asset('storage/' . $appIcon) : asset('favicon_io/apple-touch-icon.png') }}" alt="App Icon" style="height:72px; width:72px; object-fit:contain; background:#fff; padding:6px; border:1px solid #e9ecef;">
+                            <div>
+                                <input type="file" id="appIconInput" accept="image/*" class="form-control-file">
+                                <small class="form-text text-muted">Envie um PNG quadrado (recomendado 512x512). Será usado como apple-touch-icon e para instalação PWA.</small>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="d-flex gap-2">
                         <button id="saveIdentity" class="btn btn-primary">Salvar Identidade</button>
                         <button id="resetIdentity" class="btn btn-outline-secondary">Cancelar</button>
@@ -153,6 +165,31 @@ document.addEventListener('DOMContentLoaded', function(){
                 showAlert(data.message || 'Erro ao enviar favicon', 'danger');
             }
         }).catch(e => showAlert('Erro de rede ao enviar favicon', 'danger'));
+    });
+
+    // App Icon upload
+    const appIconInput = document.getElementById('appIconInput');
+    appIconInput?.addEventListener('change', function(){
+        const file = this.files && this.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('app_icon', file);
+        fetch('{{ route('admin.settings.upload-app-icon') }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrftoken },
+            body: fd,
+            credentials: 'same-origin'
+        }).then(r => r.json()).then(data => {
+            if (data && data.success) {
+                const img = document.getElementById('preview_app_icon');
+                img.src = data.url + '?_=' + Date.now();
+                showAlert('App icon atualizado.', 'success');
+            } else if (data && data.errors) {
+                showAlert(Object.values(data.errors).flat().join('; '), 'danger');
+            } else {
+                showAlert(data.message || 'Erro ao enviar app icon', 'danger');
+            }
+        }).catch(e => showAlert('Erro de rede ao enviar app icon', 'danger'));
     });
 });
 </script>

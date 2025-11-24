@@ -778,4 +778,34 @@ class SettingController extends Controller
             return response()->json([ 'success' => false, 'message' => 'Erro ao fazer upload do favicon.' ], 500);
         }
     }
+
+    /**
+     * Upload do app icon (ícone para instalação / apple-touch-icon)
+     */
+    public function uploadAppIcon(Request $request)
+    {
+        try {
+            $request->validate([
+                'app_icon' => 'required|image|mimes:png,jpg,jpeg,svg,webp|dimensions:max_width=2048,max_height=2048|max:10240'
+            ]);
+
+            $file = $request->file('app_icon');
+            $filename = 'site_app_icon_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('site-logos', $filename, 'public');
+
+            Setting::set('site_app_icon', $path, 'string', 'general');
+
+            return response()->json([
+                'success' => true,
+                'path' => $path,
+                'url' => asset('storage/' . $path),
+                'message' => 'App icon atualizado com sucesso.'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return response()->json([ 'success' => false, 'errors' => $ve->errors() ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao fazer upload do app icon: ' . $e->getMessage());
+            return response()->json([ 'success' => false, 'message' => 'Erro ao fazer upload do app icon.' ], 500);
+        }
+    }
 }
