@@ -221,96 +221,56 @@
 
         <!-- Botão de Tema (pincel) -->
         <button class="theme-trigger" id="themeTrigger" title="Cores do site">
-            <i class="bi bi-palette-fill"></i>
-        </button>
-        <button class="smart-search-trigger" id="smartSearchTrigger" title="Buscar produto">
-            <i class="bi bi-search"></i>
-        </button>
+            function fetchBrands(){
+                const rawDept = detectDepartmentSlug() || 'eletronicos';
+                const dept = rawDept;
+                const targetUrl = `/admin/brands/list?department=${encodeURIComponent(dept)}`;
 
-        <div class="smart-search-panel" id="smartSearchPanel" role="dialog" aria-label="Painel de busca rápida">
-            <div class="smart-search-header">
-                <h3>Buscar produtos</h3>
-                <button class="smart-search-close" id="smartSearchClose" aria-label="Fechar busca">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div class="smart-search-input-wrapper">
-                <div class="smart-search-input-group">
-                    <input id="smartSearchInput" class="smart-search-input" type="search" placeholder="Procurar produto..." aria-label="Pesquisar produto" />
-                    <button id="smartSearchClear" class="smart-search-clear" title="Limpar" aria-label="Limpar busca" style="display:none;"><i class="bi bi-x-lg"></i></button>
-                </div>
-            </div>
-            <div class="smart-search-results" id="smartSearchResults">
-                <div class="smart-search-empty">
-                    <i class="bi bi-search"></i>
-                    <p>Digite algo para buscar produtos</p>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Painel de Departamentos -->
-        <div class="departments-panel" id="departmentsPanel">
-            <div class="dp-header">
-                <span><i class="bi bi-diagram-3 me-2"></i> Departamentos</span>
-                <button class="smart-search-close" id="departmentsClose" aria-label="Fechar">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div class="dp-body">
-                <div id="dpLoading">Carregando departamentos...</div>
-                <div id="dpEmpty">Nenhum departamento cadastrado ainda.</div>
-                <ul class="dp-list" id="departmentsList"></ul>
-                <div class="dp-quick-add">
-                    <input type="text" id="dpNewName" class="form-control dp-full" placeholder="Nome do novo departamento">
-                    <input type="text" id="dpNewSlug" class="form-control" placeholder="Slug (opcional)">
-                    <input type="text" id="dpNewIcon" class="form-control" placeholder="Classe do ícone (ex: fas fa-store)">
-                    <input type="color" id="dpNewColor" class="form-control form-control-color" value="#667eea" title="Cor destaque">
-                    <textarea id="dpNewDescription" class="form-control dp-full" placeholder="Descrição (opcional)" rows="2"></textarea>
-                    <button class="sp-btn sp-btn-secondary dp-full" id="dpAdd" type="button">Adicionar departamento</button>
-                </div>
-            </div>
-            <div class="dp-footer">
-                <button class="sp-btn sp-btn-secondary" id="departmentsCancel" type="button">Fechar</button>
-                <button class="sp-btn sp-btn-primary" id="departmentsSave" type="button">Salvar alterações</button>
-            </div>
-            <!-- departments confirm overlay moved below to avoid nesting -->
-        </div>
+                console.debug('fetchBrands: trying', targetUrl);
 
-        <!-- Painel de Tema -->
-        <div class="theme-panel" id="themePanel">
-            <div class="tp-header">
-                <span><i class="bi bi-palette me-2"></i> Cores do Site</span>
-                <button class="smart-search-close" id="themeClose" aria-label="Fechar">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div class="tp-body">
-                <div class="tp-intro">
-                    <i class="bi bi-info-circle-fill"></i>
-                    <div>
-                        <strong>Personalize a identidade visual em poucos cliques.</strong>
-                        <div>As alterações aparecem instantaneamente na pré-visualização abaixo. Quando estiver satisfeito, clique em <strong>Salvar</strong> para aplicar para todos os visitantes.</div>
-                    </div>
-                </div>
-                <div class="tp-preview" aria-live="polite">
-                    <div class="tp-preview-header">
-                        <span>Topo do site</span>
-                        <div class="tp-preview-search">
-                            <div class="bar" title="Área da busca"></div>
-                            <div class="tp-preview-actions">
-                                <div class="btn-outline">Categorias</div>
-                                <div class="btn-solid">Buscar</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tp-preview-card">
-                        <span class="tag">Oferta</span>
-                        <span class="title">Produto destaque com cor de texto escuro</span>
-                        <span class="price">R$ 1.299,00</span>
-                        <div style="display:flex; gap:8px;">
-                            <div class="btn-solid" style="padding:8px 14px; border-radius:8px; font-size:11px;">Ver detalhes</div>
-                            <div class="btn-outline" style="padding:8px 14px; border-radius:8px; font-size:11px;">Adicionar</div>
-                        </div>
+                return fetch(targetUrl, { headers: { 'Accept': 'application/json' }})
+                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(data => {
+                        console.debug('fetchBrands response for', dept, data);
+                        // BrandController returns either an array of {id,name} or a plain array of strings.
+                        let bp = [];
+                        if (Array.isArray(data)) {
+                            if (data.length && typeof data[0] === 'object') {
+                                bp = data.map(b => (b.name || b.title || b.id || '').toString().trim()).filter(Boolean);
+                            } else {
+                                bp = data.map(b => (b ?? '').toString().trim()).filter(Boolean);
+                            }
+                        } else if (data && typeof data === 'object') {
+                            // support { brands: [...] } shape
+                            const arr = Array.isArray(data.brands) ? data.brands : Object.values(data.brands || {});
+                            bp = arr.map(b => (b && typeof b === 'object' ? (b.name || b.title || b.id) : b) ?? '').map(String).map(s => s.trim()).filter(Boolean);
+                        }
+
+                        availableBrands = bp;
+                        if (availableBrands && availableBrands.length) {
+                            populateBrandsSelect();
+                            return;
+                        }
+
+                        // Fallback: try global brands list without department
+                        return fetch('/admin/brands/list', { headers: { 'Accept': 'application/json' }})
+                            .then(r2 => { if (!r2.ok) throw new Error('HTTP ' + r2.status); return r2.json(); })
+                            .then(data2 => {
+                                let bp2 = [];
+                                if (Array.isArray(data2)) {
+                                    if (data2.length && typeof data2[0] === 'object') bp2 = data2.map(b => (b.name || b.title || b.id || '').toString().trim()).filter(Boolean);
+                                    else bp2 = data2.map(b => (b ?? '').toString().trim()).filter(Boolean);
+                                } else if (data2 && typeof data2 === 'object') {
+                                    const arr2 = Array.isArray(data2.brands) ? data2.brands : Object.values(data2.brands || {});
+                                    bp2 = arr2.map(b => (b && typeof b === 'object' ? (b.name || b.title || b.id) : b) ?? '').map(String).map(s => s.trim()).filter(Boolean);
+                                }
+                                availableBrands = bp2;
+                                populateBrandsSelect();
+                            })
+                            .catch(err => { console.error('fetchBrands fallback failed', err); availableBrands = []; populateBrandsSelect(); });
+                    })
+                    .catch(err => { console.error('fetchBrands error', err); availableBrands = []; populateBrandsSelect(); });
+            }
                     </div>
                 </div>
                 <div class="tp-fields">
