@@ -1704,7 +1704,28 @@
             }
 
             function populateBrandsSelect(){
-                // Brands UI removed; no-op
+                try {
+                    const selects = Array.from(document.querySelectorAll('.sp-brand-select'));
+                    // build option elements
+                    selects.forEach(sel => {
+                        // preserve current value
+                        const prev = (sel.value || '').toString();
+                        sel.innerHTML = '';
+                        const empty = document.createElement('option');
+                        empty.value = '';
+                        empty.textContent = '— Selecionar referência —';
+                        sel.appendChild(empty);
+                        (availableBrands || []).forEach(b => {
+                            try {
+                                const opt = document.createElement('option');
+                                opt.value = b;
+                                opt.textContent = b;
+                                sel.appendChild(opt);
+                            } catch(e) {}
+                        });
+                        if (prev) sel.value = prev;
+                    });
+                } catch(e) { console.debug && console.debug('populateBrandsSelect failed', e); }
             }
 
             // When a brand is chosen manually, hide the 'no brands' warning
@@ -1777,6 +1798,11 @@
                         <div>
                             <div class="d-flex gap-2 align-items-center">
                                 <input type="text" class="form-control form-control-sm sp-title" value="${sec.title || ''}" placeholder="Título">
+                                <div style="min-width:160px; max-width:260px;">
+                                    <select class="form-select form-select-sm sp-brand-select">
+                                        <option value="">— Carregando referências —</option>
+                                    </select>
+                                </div>
                                 <div class="sp-actions">
                                     <button type="button" class="sp-btn sp-btn-secondary sp-up" title="Subir"><i class="bi bi-arrow-up"></i></button>
                                     <button type="button" class="sp-btn sp-btn-secondary sp-down" title="Descer"><i class="bi bi-arrow-down"></i></button>
@@ -1791,6 +1817,8 @@
                     `;
                     sectionsList.appendChild(li);
                 });
+                // populate selects after rendering
+                populateBrandsSelect();
             }
             function readSectionsList(){
                 const items = sectionsList.querySelectorAll('.sp-item');
@@ -1810,7 +1838,7 @@
                 if (dir > 0 && el.nextElementSibling) el.parentNode.insertBefore(el.nextElementSibling, el);
             }
             function initSectionsPanel(){
-                // Load saved sections from server for this department (no brand lookup)
+                // Load saved sections from server for this department and also fetch available brands
                 const dept = detectDepartmentSlug() || 'eletronicos';
                 fetch(`/admin/departments/${encodeURIComponent(dept)}/sections`, { headers: { 'Accept': 'application/json' }})
                     .then(r => r.json())
@@ -1825,9 +1853,14 @@
                                 id: s.id,
                             }));
                         }
+                        // Ensure brand list is loaded before rendering selects
+                        return fetchBrands().catch(() => {});
+                    })
+                    .then(() => {
                         renderSectionsList();
                     })
                     .catch(() => {
+                        // fallback: render anyway
                         renderSectionsList();
                     });
             }
