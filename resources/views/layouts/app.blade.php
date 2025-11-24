@@ -1,5 +1,5 @@
 @php
-    $deptSlug = isset($currentDepartmentSlug) ? $currentDepartmentSlug : null;
+    $deptSlug = isset($currentDepartmentSlug) ? $currentDepartmentSlug : session('current_department_slug');
     $dept_setting = function($key, $default = null) use ($deptSlug) {
         if ($deptSlug) {
             $deptKey = 'dept_' . $deptSlug . '_' . $key;
