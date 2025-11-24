@@ -91,6 +91,15 @@ class SettingController extends Controller
                 Setting::set($key, $value);
             }
 
+            // If site identity related settings changed, regenerate web manifest
+            $identityKeys = ['site_name', 'site_description', 'site_app_icon', 'site_favicon', 'theme_secondary'];
+            foreach ($identityKeys as $k) {
+                if (array_key_exists($k, $settings)) {
+                    try { $this->generateWebManifest(); } catch (\Throwable $e) { Log::warning('generateWebManifest failed: '.$e->getMessage()); }
+                    break;
+                }
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Configurações atualizadas com sucesso!',
@@ -712,6 +721,65 @@ class SettingController extends Controller
     }
 
     /**
+     * Generate a site.webmanifest file in public/ based on current settings.
+     */
+    private function generateWebManifest()
+    {
+        $name = setting('site_name', 'Feira das Fábricas');
+        $short = setting('site_short_name', str_replace(' ', '', substr($name, 0, 12)));
+        $description = setting('site_description', 'Loja online');
+        $startUrl = setting('site_start_url', '/?source=pwa');
+        $theme = setting('theme_secondary', '#ff9900');
+
+        $appIcon = setting('site_app_icon');
+        $fav = setting('site_favicon');
+
+        $icons = [];
+        // prefer storage URLs with cache-bust
+        if ($appIcon) {
+            $path = public_path('storage/' . $appIcon);
+            $ver = file_exists($path) ? filemtime($path) : time();
+            $url = asset('storage/' . $appIcon) . '?_=' . $ver;
+            $icons[] = [ 'src' => $url, 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ];
+            $icons[] = [ 'src' => $url, 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ];
+        }
+        if ($fav) {
+            $path = public_path('storage/' . $fav);
+            $ver = file_exists($path) ? filemtime($path) : time();
+            $url = asset('storage/' . $fav) . '?_=' . $ver;
+            $icons[] = [ 'src' => $url, 'sizes' => '32x32', 'type' => 'image/png' ];
+            $icons[] = [ 'src' => $url, 'sizes' => '16x16', 'type' => 'image/png' ];
+        }
+
+        // fallbacks to public assets
+        if (empty($icons)) {
+            $icons = [
+                [ 'src' => asset('android-chrome-192x192.png'), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+                [ 'src' => asset('android-chrome-512x512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ],
+                [ 'src' => asset('favicon-32x32.png'), 'sizes' => '32x32', 'type' => 'image/png' ],
+                [ 'src' => asset('favicon-16x16.png'), 'sizes' => '16x16', 'type' => 'image/png' ],
+                [ 'src' => asset('apple-touch-icon.png'), 'sizes' => '180x180', 'type' => 'image/png' ],
+            ];
+        }
+
+        $manifest = [
+            'name' => $name,
+            'short_name' => $short,
+            'description' => $description,
+            'start_url' => $startUrl,
+            'scope' => '/',
+            'display' => 'standalone',
+            'orientation' => 'portrait',
+            'background_color' => setting('theme_primary', '#0f172a'),
+            'theme_color' => $theme,
+            'icons' => $icons,
+        ];
+
+        $json = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        file_put_contents(public_path('site.webmanifest'), $json);
+    }
+
+    /**
      * Upload da logo do site via painel admin (chamada AJAX)
      */
     public function uploadLogo(Request $request)
@@ -723,6 +791,13 @@ class SettingController extends Controller
 
             $file = $request->file('logo');
 
+            // remove old logo file if present
+            $old = Setting::get('site_logo');
+            if ($old) {
+                $oldPath = public_path('storage/' . $old);
+                try { if (file_exists($oldPath)) @unlink($oldPath); } catch (\Throwable $e) { Log::warning('Could not unlink old site_logo: '.$e->getMessage()); }
+            }
+
             // Gerar nome único
             $filename = 'site_logo_' . time() . '.' . $file->getClientOriginalExtension();
 
@@ -731,6 +806,9 @@ class SettingController extends Controller
 
             // Salvar em settings (usa Setting::set helper em outro lugar)
             Setting::set('site_logo', $path, 'string', 'general');
+
+            // regenerate manifest if needed
+            try { $this->generateWebManifest(); } catch (\Throwable $e) { Log::warning('generateWebManifest failed: '.$e->getMessage()); }
 
             return response()->json([
                 'success' => true,
@@ -758,12 +836,22 @@ class SettingController extends Controller
 
             $file = $request->file('favicon');
 
+            // remove old favicon
+            $old = Setting::get('site_favicon');
+            if ($old) {
+                $oldPath = public_path('storage/' . $old);
+                try { if (file_exists($oldPath)) @unlink($oldPath); } catch (\Throwable $e) { Log::warning('Could not unlink old site_favicon: '.$e->getMessage()); }
+            }
+
             $filename = 'site_favicon_' . time() . '.' . $file->getClientOriginalExtension();
 
             // Armazenar em storage/app/public/site-logos (shared area)
             $path = $file->storeAs('site-logos', $filename, 'public');
 
             Setting::set('site_favicon', $path, 'string', 'general');
+
+            // regenerate manifest so favicon is reflected
+            try { $this->generateWebManifest(); } catch (\Throwable $e) { Log::warning('generateWebManifest failed: '.$e->getMessage()); }
 
             return response()->json([
                 'success' => true,
@@ -790,10 +878,21 @@ class SettingController extends Controller
             ]);
 
             $file = $request->file('app_icon');
+
+            // remove old app icon
+            $old = Setting::get('site_app_icon');
+            if ($old) {
+                $oldPath = public_path('storage/' . $old);
+                try { if (file_exists($oldPath)) @unlink($oldPath); } catch (\Throwable $e) { Log::warning('Could not unlink old site_app_icon: '.$e->getMessage()); }
+            }
+
             $filename = 'site_app_icon_' . time() . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('site-logos', $filename, 'public');
 
             Setting::set('site_app_icon', $path, 'string', 'general');
+
+            // regenerate manifest so app icon is reflected
+            try { $this->generateWebManifest(); } catch (\Throwable $e) { Log::warning('generateWebManifest failed: '.$e->getMessage()); }
 
             return response()->json([
                 'success' => true,

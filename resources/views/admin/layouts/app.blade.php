@@ -5,8 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="robots" content="noindex,nofollow">
-    <title>@yield('title', 'Painel Administrativo') - Feira das Fábricas</title>
-    <link rel="icon" type="image/svg+xml" href="{{ asset('logo-ofc.svg') }}">
+    <title>@yield('title', 'Painel Administrativo') - {{ setting('site_name', 'Feira das Fábricas') }}</title>
+    @php $siteFavicon = setting('site_favicon'); $siteAppIcon = setting('site_app_icon'); @endphp
+    @if($siteAppIcon)
+        @php
+            $appPath = public_path('storage/' . $siteAppIcon);
+            $appVer = file_exists($appPath) ? filemtime($appPath) : time();
+        @endphp
+        <link rel="apple-touch-icon" href="{{ asset('storage/' . $siteAppIcon) }}?_={{ $appVer }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('storage/' . $siteAppIcon) }}?_={{ $appVer }}">
+    @else
+        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    @endif
+    @if($siteFavicon)
+        @php
+            $favPath = public_path('storage/' . $siteFavicon);
+            $favVer = file_exists($favPath) ? filemtime($favPath) : time();
+        @endphp
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}">
+        <link rel="mask-icon" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}" color="{{ setting('theme_secondary', '#ff9900') }}">
+    @else
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
+        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+    @endif
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -1009,7 +1032,7 @@
                             }
                         @endphp
                         <a href="{{ route('admin.dashboard') }}" class="sidebar-brand" id="admin-logo-link">
-                            <img id="admin-site-logo" src="{{ $siteLogoUrl }}" alt="Feira das Fábricas" 
+                            <img id="admin-site-logo" src="{{ $siteLogoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" 
                                  style="height: 40px; width: auto; cursor: pointer;">
                         </a>
                     </div>

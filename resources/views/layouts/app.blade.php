@@ -30,7 +30,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>@yield('title', 'Feira das Fábricas')</title>
+    <title>@yield('title', setting('site_name', 'Feira das Fábricas'))</title>
     
     <meta name="theme-color" content="{{ $dept_setting('theme_secondary', '#ff9900') }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -58,6 +58,7 @@
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
     @endif
+    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons (para a lupa da Busca Inteligente) -->
@@ -945,7 +946,7 @@
         <div class="container">
             <!-- Logo -->
             <a class="navbar-brand" href="{{ route('home') }}">
-                <img src="{{ $logoUrl }}" alt="Feira das Fábricas" class="logo-img">
+                <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img">
             </a>
 
             <!-- Navbar content (sempre aberto) -->
@@ -959,7 +960,7 @@
                 <div class="mobile-header">
                     <div class="mobile-top-bar">
                         <a class="mobile-logo" href="{{ route('home') }}">
-                            <img src="{{ $logoUrl }}" alt="Feira das Fábricas" class="logo-img">
+                            <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img">
                         </a>
                         <button class="mobile-menu-button" type="button" aria-label="Abrir menu">
                             <i class="fas fa-bars"></i>
@@ -1105,7 +1106,7 @@
         <div class="container">
             <div class="row">
                 <div class="col-md-4">
-                    <h5>Feira das Fábricas</h5>
+                    <h5>{{ setting('site_name', 'Feira das Fábricas') }}</h5>
                     <p>O melhor em eletrônicos e tecnologia para sua empresa e para você.</p>
                 </div>
                 <div class="col-md-2">
@@ -1144,7 +1145,7 @@
             <hr class="my-4">
             <div class="row align-items-center">
                 <div class="col-md-6">
-                    <p class="mb-0">&copy; 2024 Feira das Fábricas. Todos os direitos reservados.</p>
+                    <p class="mb-0">&copy; {{ date('Y') }} {{ setting('site_name', 'Feira das Fábricas') }}. Todos os direitos reservados.</p>
                 </div>
                 <div class="col-md-6 text-end">
                     <a href="#" class="text-light me-3"><i class="fab fa-facebook"></i></a>
