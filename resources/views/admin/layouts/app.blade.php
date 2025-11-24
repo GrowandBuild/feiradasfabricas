@@ -1000,9 +1000,17 @@
             <div class="col-md-3 col-lg-2 px-0">
                 <div class="sidebar">
                     <div class="sidebar-header">
-                        <a href="{{ route('admin.dashboard') }}" class="sidebar-brand">
-                            <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" 
-                                 style="height: 40px; width: auto;">
+                        @php
+                            $siteLogo = setting('site_logo') ?: 'logo-ofc.svg';
+                            if (\Illuminate\Support\Str::startsWith($siteLogo, ['http', 'https'])) {
+                                $siteLogoUrl = $siteLogo;
+                            } else {
+                                $siteLogoUrl = asset(\Illuminate\Support\Str::startsWith($siteLogo, 'storage/') ? $siteLogo : 'storage/' . $siteLogo);
+                            }
+                        @endphp
+                        <a href="{{ route('admin.dashboard') }}" class="sidebar-brand" id="admin-logo-link">
+                            <img id="admin-site-logo" src="{{ $siteLogoUrl }}" alt="Feira das Fábricas" 
+                                 style="height: 40px; width: auto; cursor: pointer;">
                         </a>
                     </div>
                     <nav class="nav flex-column px-3">
@@ -1298,7 +1306,35 @@
         </div>
     </div>
 
-    <!-- Smart Search Flutuante -->
+        <!-- Smart Search Flutuante -->
+        <!-- Logo upload modal (admin) -->
+        <div class="modal fade" id="logoUploadModal" tabindex="-1" aria-labelledby="logoUploadModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="logoUploadModalLabel">Substituir logo do site</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="logoUploadForm" enctype="multipart/form-data">
+                            @csrf
+                            <div class="mb-3">
+                                <label for="logoFile" class="form-label">Escolher imagem</label>
+                                <input class="form-control" type="file" id="logoFile" name="logo" accept="image/*">
+                            </div>
+                            <div class="mb-3">
+                                <img id="logoPreview" src="" alt="Pré-visualização" style="max-width:100%; display:none;" />
+                            </div>
+                            <div id="logoUploadAlert" class="alert d-none" role="alert"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" id="logoUploadSubmit" class="btn btn-primary">Enviar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     <div class="smart-search-fab">
         <button class="smart-search-trigger" id="smartSearchTrigger" title="Buscar produto">
             <i class="bi bi-search"></i>
@@ -1610,6 +1646,89 @@
                     container.style.scrollBehavior = '';
                 });
             });
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const adminLogoLink = document.getElementById('admin-logo-link');
+            const adminSiteLogo = document.getElementById('admin-site-logo');
+            const logoModalEl = document.getElementById('logoUploadModal');
+            const logoFile = document.getElementById('logoFile');
+            const logoPreview = document.getElementById('logoPreview');
+            const logoUploadSubmit = document.getElementById('logoUploadSubmit');
+            const logoUploadAlert = document.getElementById('logoUploadAlert');
+
+            if (!adminLogoLink || !adminSiteLogo || !logoModalEl) return;
+
+            const logoModal = new bootstrap.Modal(logoModalEl);
+
+            adminLogoLink.addEventListener('click', function (e) {
+                e.preventDefault();
+                logoUploadAlert.classList.add('d-none');
+                logoPreview.style.display = 'none';
+                logoPreview.src = '';
+                logoFile.value = '';
+                logoModal.show();
+            });
+
+            logoFile && logoFile.addEventListener('change', function (e) {
+                const file = this.files && this.files[0];
+                if (!file) { logoPreview.style.display = 'none'; return; }
+                const reader = new FileReader();
+                reader.onload = function (ev) {
+                    logoPreview.src = ev.target.result;
+                    logoPreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
+            });
+
+            logoUploadSubmit && logoUploadSubmit.addEventListener('click', function () {
+                const file = logoFile.files && logoFile.files[0];
+                if (!file) {
+                    showAlert('Selecione uma imagem para enviar.', 'danger');
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append('logo', file);
+
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+                fetch("{{ route('admin.settings.upload-logo') }}", {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': token,
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: formData
+                })
+                .then(response => response.json().then(data => ({ status: response.status, body: data })))
+                .then(({ status, body }) => {
+                    if (status === 200 && body.success) {
+                        const newUrl = body.url + '?v=' + Date.now();
+                        adminSiteLogo.src = newUrl;
+                        showAlert(body.message || 'Logo atualizada.', 'success');
+                        setTimeout(() => {
+                            logoModal.hide();
+                        }, 800);
+                    } else if (status === 422 && body.errors) {
+                        const messages = Object.values(body.errors).flat().join(' ');
+                        showAlert(messages || 'Erros de validação.', 'danger');
+                    } else {
+                        showAlert(body.message || 'Erro ao enviar a imagem.', 'danger');
+                    }
+                })
+                .catch(err => {
+                    console.error('Upload logo error', err);
+                    showAlert('Erro ao enviar a imagem.', 'danger');
+                });
+            });
+
+            function showAlert(message, type) {
+                logoUploadAlert.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-info');
+                logoUploadAlert.classList.add('alert-' + (type === 'success' ? 'success' : (type === 'danger' ? 'danger' : 'info')));
+                logoUploadAlert.textContent = message;
+            }
         });
     </script>
 </body>

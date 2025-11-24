@@ -710,4 +710,39 @@ class SettingController extends Controller
         return redirect()->back()
                         ->with('success', 'Configuração criada com sucesso!');
     }
+
+    /**
+     * Upload da logo do site via painel admin (chamada AJAX)
+     */
+    public function uploadLogo(Request $request)
+    {
+        try {
+            $request->validate([
+                'logo' => 'required|image|mimes:png,jpg,jpeg,svg,webp|max:10240'
+            ]);
+
+            $file = $request->file('logo');
+
+            // Gerar nome único
+            $filename = 'site_logo_' . time() . '.' . $file->getClientOriginalExtension();
+
+            // Armazenar em storage/app/public/site-logos
+            $path = $file->storeAs('site-logos', $filename, 'public');
+
+            // Salvar em settings (usa Setting::set helper em outro lugar)
+            Setting::set('site_logo', $path, 'string', 'general');
+
+            return response()->json([
+                'success' => true,
+                'path' => $path,
+                'url' => asset('storage/' . $path),
+                'message' => 'Logo atualizada com sucesso.'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return response()->json([ 'success' => false, 'errors' => $ve->errors() ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao fazer upload da logo: ' . $e->getMessage());
+            return response()->json([ 'success' => false, 'message' => 'Erro ao fazer upload da logo.' ], 500);
+        }
+    }
 }
