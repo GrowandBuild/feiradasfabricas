@@ -100,9 +100,19 @@ class SettingController extends Controller
                 }
             }
 
+            // also return current theme map so frontend can apply immediately
+            $themeKeys = ['theme_primary','theme_secondary','theme_accent','theme_dark_bg','theme_text_light','theme_text_dark','theme_success','theme_warning','theme_danger','theme_border'];
+            $theme = [];
+            foreach ($themeKeys as $k) {
+                $v = Setting::get($k);
+                if ($v !== null && $v !== '') $theme[$k] = $v;
+            }
+
             return response()->json([
                 'success' => true,
                 'message' => 'Configurações atualizadas com sucesso!',
+                'theme' => $theme,
+                'slug' => session('current_department_slug', null),
             ]);
 
         } catch (\Exception $e) {
@@ -905,6 +915,44 @@ class SettingController extends Controller
         } catch (\Exception $e) {
             \Log::error('Erro ao fazer upload do app icon: ' . $e->getMessage());
             return response()->json([ 'success' => false, 'message' => 'Erro ao fazer upload do app icon.' ], 500);
+        }
+    }
+
+    /**
+     * Store a theme map in the session so subsequent public pages can use it immediately.
+     * Expects JSON payload: { theme: { theme_primary: '#...', theme_secondary: '#...', ... }, slug: 'optional-dept-slug' }
+     */
+    public function setSessionTheme(Request $request)
+    {
+        try {
+            $data = $request->input('theme');
+            $slug = $request->input('slug');
+            if (!is_array($data)) {
+                return response()->json([ 'success' => false, 'message' => 'Payload inválido: theme deve ser um objeto.' ], 422);
+            }
+
+            // sanitize: only keep keys we expect
+            $allowed = [
+                'theme_primary','theme_secondary','theme_accent','theme_dark_bg','theme_text_light','theme_text_dark',
+                'theme_success','theme_warning','theme_danger','theme_border'
+            ];
+
+            $theme = [];
+            foreach ($allowed as $k) {
+                if (array_key_exists($k, $data) && $data[$k] !== null && $data[$k] !== '') {
+                    $theme[$k] = (string) $data[$k];
+                }
+            }
+
+            if ($slug) {
+                session(['current_department_slug' => $slug]);
+            }
+            session(['current_department_theme' => $theme]);
+
+            return response()->json([ 'success' => true, 'message' => 'Tema salvo na sessão.', 'theme' => $theme, 'slug' => $slug ?? null ]);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao setSessionTheme: ' . $e->getMessage());
+            return response()->json([ 'success' => false, 'message' => 'Erro ao salvar tema na sessão.' ], 500);
         }
     }
 }

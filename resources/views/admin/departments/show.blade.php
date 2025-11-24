@@ -1,5 +1,39 @@
 @extends('admin.layouts.app')
 
+@section('title', $department->name)
+@section('page-title', $department->name)
+
+@section('content')
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <h5>Detalhes</h5>
+                <p><strong>Slug:</strong> {{ $department->slug }}</p>
+                <p><strong>Cor:</strong> <span style="display:inline-block;width:24px;height:18px;background:{{ $department->color ?? '#ddd' }};border:1px solid #ccc;border-radius:3px;"></span></p>
+                <p><strong>Descrição:</strong></p>
+                <div class="mb-3">{!! nl2br(e($department->description)) !!}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body">
+                <p><strong>Produtos ativos:</strong> {{ $department->products()->active()->count() }}</p>
+                <p><strong>Ordenação:</strong> {{ $department->sort_order }}</p>
+                <p><strong>Ativo:</strong> {{ $department->is_active ? 'Sim' : 'Não' }}</p>
+                <div class="d-flex gap-2 mt-3">
+                    <a href="{{ route('admin.departments.edit', $department) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                    <a href="{{ route('admin.departments.index') }}" class="btn btn-sm btn-outline-primary">Voltar</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@endsection
+@extends('admin.layouts.app')
+
 @section('title', 'Departamento: ' . $department->name)
 @section('page-title', $department->name)
 @section('page-subtitle')

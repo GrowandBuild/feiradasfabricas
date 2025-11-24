@@ -2,6 +2,68 @@
 
 @section('title', 'Departamentos')
 @section('page-title', 'Departamentos')
+
+@section('content')
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="mb-0">Lista de departamentos</h5>
+    <a href="{{ route('admin.departments.create') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Criar Departamento</a>
+</div>
+
+@if(session('success'))
+    <div class="alert alert-success">{{ session('success') }}</div>
+@endif
+@if(session('error'))
+    <div class="alert alert-danger">{{ session('error') }}</div>
+@endif
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table mb-0">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Slug</th>
+                    <th>Cor</th>
+                    <th class="text-center">Ativo</th>
+                    <th class="text-center">Produtos</th>
+                    <th class="text-end">Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($departments as $dept)
+                    <tr>
+                        <td><a href="{{ route('admin.departments.show', $dept) }}">{{ $dept->name }}</a></td>
+                        <td>{{ $dept->slug }}</td>
+                        <td><span style="display:inline-block;width:24px;height:18px;background:{{ $dept->color ?? '#ddd' }};border:1px solid #ccc;border-radius:3px;"></span></td>
+                        <td class="text-center">{{ $dept->is_active ? 'Sim' : 'Não' }}</td>
+                        <td class="text-center">{{ $dept->products()->active()->count() }}</td>
+                        <td class="text-end">
+                            <a href="{{ route('admin.departments.edit', $dept) }}" class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-pencil"></i></a>
+                            <form action="{{ route('admin.departments.destroy', $dept) }}" method="POST" style="display:inline" onsubmit="return confirm('Excluir departamento?');">
+                                @csrf
+                                @method('DELETE')
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="6" class="text-center text-muted">Nenhum departamento encontrado.</td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
+    <div class="card-footer">
+        {{ $departments->links() }}
+    </div>
+</div>
+
+@endsection
+@extends('admin.layouts.app')
+
+@section('title', 'Departamentos')
+@section('page-title', 'Departamentos')
 @section('page-subtitle')
     <p class="text-muted mb-0">Gerencie os departamentos da loja</p>
 @endsection
@@ -92,6 +154,12 @@
                                                    class="btn btn-sm btn-outline-primary" title="Editar">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
+                                                <button type="button" class="btn btn-sm btn-outline-success apply-dept-theme" data-id="{{ $department->id }}" title="Aplicar tema deste departamento">
+                                                    <i class="bi bi-palette"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary restore-dept-theme" data-id="{{ $department->id }}" title="Restaurar tema padrão deste departamento">
+                                                    <i class="bi bi-arrow-counterclockwise"></i>
+                                                </button>
                                                 <form action="{{ route('admin.departments.destroy', $department) }}" 
                                                       method="POST" class="d-inline" 
                                                       onsubmit="return confirm('Tem certeza que deseja excluir este departamento?')">
@@ -192,3 +260,39 @@
     </div>
 </div>
 @endsection
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    function handleResponseAndApply(theme){
+        if (!theme) return;
+        // Normalize keys expected by the layout listener
+        const payload = { theme: { theme_primary: theme.theme_primary || theme.primary || theme.themePrimary || theme.primary_color, theme_secondary: theme.theme_secondary || theme.secondary || theme.themeSecondary || theme.secondary_color } };
+        window.dispatchEvent(new CustomEvent('theme:updated', { detail: payload }));
+    }
+
+    document.querySelectorAll('.apply-dept-theme').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const id = this.dataset.id;
+            if (!confirm('Aplicar o tema deste departamento no painel para pré-visualização?')) return;
+            fetch(`/admin/departments/${id}/restore-theme-colors`, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (data) handleResponseAndApply(data);
+                }).catch(err => { console.error('Erro ao aplicar tema:', err); alert('Erro ao aplicar tema. Veja o console.'); });
+        });
+    });
+
+    document.querySelectorAll('.restore-dept-theme').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const id = this.dataset.id;
+            if (!confirm('Restaurar cores padrão do departamento e aplicar no painel?')) return;
+            fetch(`/admin/departments/${id}/restore-theme-colors`, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (data) handleResponseAndApply(data);
+                }).catch(err => { console.error('Erro ao restaurar tema:', err); alert('Erro ao restaurar tema. Veja o console.'); });
+        });
+    });
+});
+</script>
+@endpush

@@ -46,65 +46,28 @@
             --info-color: #06b6d4;
             --light-bg: #f8fafc;
             --card-bg: #ffffff;
-            --text-primary: #1e293b;
-            --text-secondary: #64748b;
-            --border-color: #e2e8f0;
-            --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-            --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-            --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-            --border-radius: 0.75rem;
-            --border-radius-sm: 0.5rem;
-        }
-
-        * {
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: var(--light-bg);
-            color: var(--text-primary);
-            line-height: 1.6;
-        }
-
-        .sidebar {
-            min-height: 100vh;
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
-            box-shadow: var(--shadow-md);
-            position: sticky;
-            top: 0;
-            z-index: 10;
-            max-height: 100vh;
-            overflow-y: auto;
-            overflow-x: hidden;
-        }
-        
-        .sidebar::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .sidebar::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.05);
-        }
-        
-        .sidebar::-webkit-scrollbar-thumb {
-            background: rgba(255,255,255,0.2);
-            border-radius: 3px;
-        }
-        
-        .sidebar::-webkit-scrollbar-thumb:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .sidebar::before {
-            content: '';
-            position: absolute;
-            top: 0;
+    
             left: 0;
             right: 0;
             bottom: 0;
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.05"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.05"/><circle cx="50" cy="10" r="1" fill="white" opacity="0.03"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-            pointer-events: none;
+        }
+
+        /* Sidebar safe-fallback: garante contraste mesmo se variáveis de tema estiverem ausentes */
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-dark, #0f172a) 0%, rgba(15,23,42,0.85) 100%);
+            min-height: 100vh;
+            padding-top: 1rem;
+            color: var(--text-primary, #ffffff);
+        }
+
+        /* Defaults for commonly used CSS variables that may be missing */
+        :root {
+            --text-primary: var(--text-primary, #ffffff);
+            --text-secondary: var(--text-secondary, rgba(255,255,255,0.75));
+            --border-color: var(--border-color, rgba(255,255,255,0.06));
+            --card-bg: var(--card-bg, #0b1220);
+            --admin-header-height: 72px;
         }
 
         .sidebar .nav-link {
@@ -172,6 +135,7 @@
             min-height: 100vh;
             position: relative;
             z-index: 1;
+            padding-top: calc(var(--admin-header-height, 72px) + 8px);
         }
 
         .card {
@@ -252,13 +216,17 @@
         }
 
         .navbar-admin {
-            background: var(--card-bg);
-            box-shadow: var(--shadow-sm);
-            border-bottom: 1px solid var(--border-color);
+            /* Fixed, solid header */
+            background: var(--accent-color, #ff8c00);
+            color: #ffffff;
+            box-shadow: 0 6px 18px rgba(2,6,23,0.12);
+            border-bottom: none;
             padding: 0.9rem 0;
-            position: sticky;
+            position: fixed;
             top: 0;
-            z-index: 900;
+            left: 0;
+            right: 0;
+            z-index: 1100;
         }
 
         .admin-header-top {
@@ -278,25 +246,28 @@
         .page-header-wrap .page-icon {
             width: 48px;
             height: 48px;
-            border-radius: 14px;
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.1) 0%, rgba(148, 163, 184, 0.2) 100%);
-            color: var(--primary-dark);
+            border-radius: 10px;
+            background: linear-gradient(135deg, var(--accent-color, #ff8c00) 0%, var(--accent-dark, #e67e00) 100%);
+            color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.35rem;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 12px rgba(2,6,23,0.12);
         }
 
         .page-heading {
             margin: 0;
             font-size: 1.6rem;
             font-weight: 700;
-            color: var(--primary-dark);
+            color: var(--text-primary, #0f172a);
+            line-height: 1.05;
         }
 
         .page-description {
             margin: 0.15rem 0 0;
-            color: var(--text-secondary);
+            color: var(--text-secondary, #64748b);
             font-size: 0.9rem;
         }
 
@@ -1041,6 +1012,10 @@
                             <i class="bi bi-speedometer2"></i> 
                             <span>Dashboard</span>
                         </a>
+                        <a class="nav-link {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}" href="{{ route('admin.departments.index') }}">
+                            <i class="bi bi-grid-3x3-gap-fill"></i>
+                            <span>Departamentos</span>
+                        </a>
                         <a class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
                             <i class="bi bi-box-seam"></i> 
                             <span>Produtos</span>
@@ -1402,6 +1377,10 @@
                     <i class="bi bi-speedometer2"></i>
                     <span>Dashboard</span>
                 </a>
+                <a class="nav-link {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}" href="{{ route('admin.departments.index') }}">
+                    <i class="bi bi-grid-3x3-gap-fill"></i>
+                    <span>Departamentos</span>
+                </a>
                 <a class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
                     <i class="bi bi-box-seam"></i>
                     <span>Produtos</span>
@@ -1617,7 +1596,73 @@
                 searchResults.innerHTML = html;
             }
         });
-    
+    </script>
+
+    <script>
+        // Wrap fetch to inspect responses from settings.update and dispatch theme:updated when present
+        (function(){
+            const origFetch = window.fetch.bind(window);
+            const settingsUrl = '{{ route("admin.settings.update") }}';
+            window.fetch = function(input, init) {
+                return origFetch(input, init).then(async res => {
+                    try {
+                        const reqUrl = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
+                        if (reqUrl && reqUrl.indexOf(settingsUrl) !== -1) {
+                            let json = null;
+                            try { json = await res.clone().json(); } catch(e) { json = null; }
+                            if (json && json.theme) {
+                                window.dispatchEvent(new CustomEvent('theme:updated', { detail: { theme: json.theme, slug: json.slug || null } }));
+                            }
+                        }
+                    } catch(e) { console.error('fetch wrapper error', e); }
+                    return res;
+                });
+            };
+        })();
+    </script>
+
+    <script>
+        // Listen for theme updates dispatched from settings responses
+        window.addEventListener('theme:updated', function(e) {
+            try {
+                const detail = e && e.detail ? e.detail : {};
+                const theme = detail.theme || {};
+                const slug = detail.slug || null;
+                const mapping = {
+                    'theme_primary': '--primary-color',
+                    'theme_secondary': '--accent-color',
+                    'theme_accent': '--accent-color',
+                    'theme_dark_bg': '--primary-dark',
+                    'theme_text_light': '--text-primary',
+                    'theme_text_dark': '--text-secondary',
+                    'theme_success': '--success-color',
+                    'theme_warning': '--warning-color',
+                    'theme_danger': '--danger-color',
+                    'theme_border': '--border-color'
+                };
+                Object.keys(theme).forEach(k => {
+                    const cssVar = mapping[k] || null;
+                    if (cssVar) {
+                        document.documentElement.style.setProperty(cssVar, theme[k]);
+                    }
+                });
+
+                // Persist theme to session for public pages
+                fetch('{{ route("admin.settings.session-theme") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ theme: theme, slug: slug })
+                }).catch(err => console.error('Erro ao persistir tema na sessão:', err));
+
+            } catch (err) { console.error('Erro ao aplicar tema:', err); }
+        });
+    </script>
+    <script>
         document.addEventListener('DOMContentLoaded', function () {
             const loopContainers = document.querySelectorAll('.admin-bottom-nav [data-admin-loop="true"]');
 

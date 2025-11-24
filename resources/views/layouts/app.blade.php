@@ -32,7 +32,8 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>@yield('title', setting('site_name', 'Feira das Fábricas'))</title>
     
-    <meta name="theme-color" content="{{ $dept_setting('theme_secondary', '#ff9900') }}">
+    @php $sessionTheme = session('current_department_theme', null); @endphp
+    <meta name="theme-color" content="{{ $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff9900') }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     @php $siteFavicon = setting('site_favicon'); $siteAppIcon = setting('site_app_icon'); @endphp
@@ -71,22 +72,22 @@
     <style>
         
         :root {
-            --primary-color: {{ $dept_setting('theme_primary', '#0f172a') }};
-            --secondary-color: {{ $dept_setting('theme_secondary', '#ff6b35') }};
-            --accent-color: {{ $dept_setting('theme_accent', '#0f172a') }};
-            --dark-bg: {{ $dept_setting('theme_dark_bg', '#1e293b') }};
-            --text-light: {{ $dept_setting('theme_text_light', '#f8fafc') }};
-            --text-dark: {{ $dept_setting('theme_text_dark', '#1e293b') }};
+            --primary-color: {{ $sessionTheme['theme_primary'] ?? $dept_setting('theme_primary', '#0f172a') }};
+            --secondary-color: {{ $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff6b35') }};
+            --accent-color: {{ $sessionTheme['theme_accent'] ?? $dept_setting('theme_accent', '#0f172a') }};
+            --dark-bg: {{ $sessionTheme['theme_dark_bg'] ?? $dept_setting('theme_dark_bg', '#1e293b') }};
+            --text-light: {{ $sessionTheme['theme_text_light'] ?? $dept_setting('theme_text_light', '#f8fafc') }};
+            --text-dark: {{ $sessionTheme['theme_text_dark'] ?? $dept_setting('theme_text_dark', '#1e293b') }};
             --header-height: 72px; /* adjust if your header height differs */
             /* map elegant variables used in department templates to theme variables */
             --elegant-accent: var(--secondary-color);
             --elegant-dark: var(--text-dark);
             --text-muted: #64748b;
             --elegant-blue: #334155;
-            --success-color: {{ $dept_setting('theme_success', '#10b981') }};
-            --warning-color: {{ $dept_setting('theme_warning', '#f59e0b') }};
-            --danger-color: {{ $dept_setting('theme_danger', '#ef4444') }};
-            --border-color: {{ $dept_setting('theme_border', '#e2e8f0') }};
+            --success-color: {{ $sessionTheme['theme_success'] ?? $dept_setting('theme_success', '#10b981') }};
+            --warning-color: {{ $sessionTheme['theme_warning'] ?? $dept_setting('theme_warning', '#f59e0b') }};
+            --danger-color: {{ $sessionTheme['theme_danger'] ?? $dept_setting('theme_danger', '#ef4444') }};
+            --border-color: {{ $sessionTheme['theme_border'] ?? $dept_setting('theme_border', '#e2e8f0') }};
             --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
             --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
             --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -900,20 +901,21 @@
                 if ($val !== null && $val !== '') return $val;
             }
             return setting($key, $default);
-        }
+        };
+    $sessionTheme = session('current_department_theme', null);
     @endphp
     <style>
         :root {
-            --primary-color: {{ $dept_setting('theme_primary', '#0f172a') }};
-            --secondary-color: {{ $dept_setting('theme_secondary', '#ff6b35') }};
-            --accent-color: {{ $dept_setting('theme_accent', '#0f172a') }};
-            --dark-bg: {{ $dept_setting('theme_dark_bg', '#1e293b') }};
-            --text-light: {{ $dept_setting('theme_text_light', '#f8fafc') }};
-            --text-dark: {{ $dept_setting('theme_text_dark', '#1e293b') }};
-            --success-color: {{ $dept_setting('theme_success', '#10b981') }};
-            --warning-color: {{ $dept_setting('theme_warning', '#f59e0b') }};
-            --danger-color: {{ $dept_setting('theme_danger', '#ef4444') }};
-            --border-color: {{ $dept_setting('theme_border', '#e2e8f0') }};
+            --primary-color: {{ $sessionTheme['theme_primary'] ?? $dept_setting('theme_primary', '#0f172a') }};
+            --secondary-color: {{ $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff6b35') }};
+            --accent-color: {{ $sessionTheme['theme_accent'] ?? $dept_setting('theme_accent', '#0f172a') }};
+            --dark-bg: {{ $sessionTheme['theme_dark_bg'] ?? $dept_setting('theme_dark_bg', '#1e293b') }};
+            --text-light: {{ $sessionTheme['theme_text_light'] ?? $dept_setting('theme_text_light', '#f8fafc') }};
+            --text-dark: {{ $sessionTheme['theme_text_dark'] ?? $dept_setting('theme_text_dark', '#1e293b') }};
+            --success-color: {{ $sessionTheme['theme_success'] ?? $dept_setting('theme_success', '#10b981') }};
+            --warning-color: {{ $sessionTheme['theme_warning'] ?? $dept_setting('theme_warning', '#f59e0b') }};
+            --danger-color: {{ $sessionTheme['theme_danger'] ?? $dept_setting('theme_danger', '#ef4444') }};
+            --border-color: {{ $sessionTheme['theme_border'] ?? $dept_setting('theme_border', '#e2e8f0') }};
         }
     </style>
     

@@ -128,6 +128,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('settings/upload-favicon', [SettingController::class, 'uploadFavicon'])->name('settings.upload-favicon');
         // Upload do app icon (ícone de instalação / apple-touch-icon)
         Route::post('settings/upload-app-icon', [SettingController::class, 'uploadAppIcon'])->name('settings.upload-app-icon');
+        // Save theme into session so frontend can pick it up immediately
+        Route::post('settings/session-theme', [SettingController::class, 'setSessionTheme'])->name('settings.session-theme');
         Route::post('settings/test-connection', [SettingController::class, 'testConnection'])->name('settings.test-connection');
     // Melhor Envio OAuth
     Route::get('settings/melhor-envio/authorize', [SettingController::class, 'melhorEnvioAuthorize'])->name('settings.melhor-envio.authorize');

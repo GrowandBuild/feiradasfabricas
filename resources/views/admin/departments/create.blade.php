@@ -2,6 +2,56 @@
 
 @section('title', 'Criar Departamento')
 @section('page-title', 'Criar Departamento')
+
+@section('content')
+<div class="card">
+    <div class="card-body">
+        <form action="{{ route('admin.departments.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+
+            <div class="mb-3">
+                <label class="form-label">Nome</label>
+                <input type="text" name="name" class="form-control" required value="{{ old('name') }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Slug (opcional)</label>
+                <input type="text" name="slug" class="form-control" value="{{ old('slug') }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Cor (HEX)</label>
+                <input type="text" name="color" class="form-control" value="{{ old('color', '#667eea') }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Ícone</label>
+                <input type="text" name="icon" class="form-control" value="{{ old('icon') }}" placeholder="Ex: bi bi-phone">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Descrição</label>
+                <textarea name="description" class="form-control">{{ old('description') }}</textarea>
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" checked>
+                <label class="form-check-label" for="is_active">Ativo</label>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ route('admin.departments.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                <button class="btn btn-primary">Salvar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@endsection
+@extends('admin.layouts.app')
+
+@section('title', 'Criar Departamento')
+@section('page-title', 'Criar Departamento')
 @section('page-subtitle')
     <p class="text-muted mb-0">Adicione um novo departamento à loja</p>
 @endsection

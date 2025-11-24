@@ -9,9 +9,52 @@
 @section('content')
 <div class="container-fluid">
     <div class="row">
-        @endpush
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="card-title mb-0"><i class="bi bi-palette me-2"></i>Identidade / Tema</h6>
+                    <small class="text-muted">Logo, favicon, app icon e cores do tema</small>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label">Logo do Site</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <input type="file" id="identityLogoFile" accept="image/*" class="form-control form-control-sm" />
+                                <button type="button" id="identityLogoUploadBtn" class="btn btn-sm btn-primary">Enviar</button>
+                            </div>
+                            <div class="mt-2">
+                                <img id="identityLogoPreview" src="{{ setting('site_logo') ? asset('storage/' . setting('site_logo')) : asset('logo-ofc.svg') }}" alt="Logo" style="max-height:48px;" />
+                            </div>
+                        </div>
 
-        @endsection
+                        <div class="col-6">
+                            <label class="form-label">Favicon</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <input type="file" id="identityFaviconFile" accept="image/*" class="form-control form-control-sm" />
+                                <button type="button" id="identityFaviconUploadBtn" class="btn btn-sm btn-primary">Enviar</button>
+                            </div>
+                            <div class="mt-2">
+                                <img id="identityFaviconPreview" src="{{ setting('site_favicon') ? asset('storage/' . setting('site_favicon')) : asset('favicon-32x32.png') }}" alt="Favicon" style="max-height:32px;" />
+                            </div>
+                        </div>
+
+                        <div class="col-6">
+                            <label class="form-label">App Icon</label>
+                            <div class="d-flex gap-2 align-items-center">
+                                <input type="file" id="identityAppIconFile" accept="image/*" class="form-control form-control-sm" />
+                                <button type="button" id="identityAppIconUploadBtn" class="btn btn-sm btn-primary">Enviar</button>
+                            </div>
+                            <div class="mt-2">
+                                <img id="identityAppIconPreview" src="{{ setting('site_app_icon') ? asset('storage/' . setting('site_app_icon')) : asset('android-chrome-192x192.png') }}" alt="App Icon" style="max-height:48px;" />
+                            </div>
+                        </div>
+
+                        <!-- Color system removed (not functional) -->
+                    </div>
+                </div>
+            </div>
+        </div>
                                         <div class="mb-3">
                                             <label for="email_reply_to" class="form-label">Email de Resposta</label>
                                             <input type="email" class="form-control" id="email_reply_to" 
@@ -160,6 +203,66 @@
 
 @section('scripts')
 <script>
+// Identity / Theme handlers
+document.addEventListener('DOMContentLoaded', function() {
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Logo
+    const logoFile = document.getElementById('identityLogoFile');
+    const logoPreview = document.getElementById('identityLogoPreview');
+    const logoUploadBtn = document.getElementById('identityLogoUploadBtn');
+    if (logoFile) {
+        logoFile.addEventListener('change', function() {
+            const f = this.files && this.files[0];
+            if (!f) return; const r = new FileReader(); r.onload = e => { logoPreview.src = e.target.result; }; r.readAsDataURL(f);
+        });
+    }
+    logoUploadBtn && logoUploadBtn.addEventListener('click', function() {
+        const f = logoFile.files && logoFile.files[0]; if (!f) { showAlert('Selecione um arquivo de logo.', 'danger'); return; }
+        const fd = new FormData(); fd.append('logo', f);
+        fetch('{{ route("admin.settings.upload-logo") }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': token }, body: fd })
+            .then(r => r.json()).then(data => {
+                if (data && data.success) { logoPreview.src = data.url + '?v=' + Date.now(); showAlert(data.message || 'Logo enviada.', 'success'); }
+                else if (data && data.errors) showAlert(Object.values(data.errors).flat().join(' '), 'danger');
+                else showAlert(data.message || 'Erro ao enviar logo.', 'danger');
+            }).catch(err => { console.error(err); showAlert('Erro ao enviar logo.', 'danger'); });
+    });
+
+    // Favicon
+    const favFile = document.getElementById('identityFaviconFile');
+    const favPreview = document.getElementById('identityFaviconPreview');
+    const favUploadBtn = document.getElementById('identityFaviconUploadBtn');
+    favFile && favFile.addEventListener('change', function() { const f = this.files && this.files[0]; if (!f) return; const r = new FileReader(); r.onload = e => { favPreview.src = e.target.result; }; r.readAsDataURL(f); });
+    favUploadBtn && favUploadBtn.addEventListener('click', function() {
+        const f = favFile.files && favFile.files[0]; if (!f) { showAlert('Selecione um arquivo de favicon.', 'danger'); return; }
+        const fd = new FormData(); fd.append('favicon', f);
+        fetch('{{ route("admin.settings.upload-favicon") }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': token }, body: fd })
+            .then(r => r.json()).then(data => {
+                if (data && data.success) { favPreview.src = data.url + '?v=' + Date.now(); showAlert(data.message || 'Favicon enviado.', 'success'); }
+                else if (data && data.errors) showAlert(Object.values(data.errors).flat().join(' '), 'danger');
+                else showAlert(data.message || 'Erro ao enviar favicon.', 'danger');
+            }).catch(err => { console.error(err); showAlert('Erro ao enviar favicon.', 'danger'); });
+    });
+
+    // App icon
+    const appFile = document.getElementById('identityAppIconFile');
+    const appPreview = document.getElementById('identityAppIconPreview');
+    const appUploadBtn = document.getElementById('identityAppIconUploadBtn');
+    appFile && appFile.addEventListener('change', function() { const f = this.files && this.files[0]; if (!f) return; const r = new FileReader(); r.onload = e => { appPreview.src = e.target.result; }; r.readAsDataURL(f); });
+    appUploadBtn && appUploadBtn.addEventListener('click', function() {
+        const f = appFile.files && appFile.files[0]; if (!f) { showAlert('Selecione um arquivo de app icon.', 'danger'); return; }
+        const fd = new FormData(); fd.append('app_icon', f);
+        fetch('{{ route("admin.settings.upload-app-icon") }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': token }, body: fd })
+            .then(r => r.json()).then(data => {
+                if (data && data.success) { appPreview.src = data.url + '?v=' + Date.now(); showAlert(data.message || 'App icon enviado.', 'success'); }
+                else if (data && data.errors) showAlert(Object.values(data.errors).flat().join(' '), 'danger');
+                else showAlert(data.message || 'Erro ao enviar app icon.', 'danger');
+            }).catch(err => { console.error(err); showAlert('Erro ao enviar app icon.', 'danger'); });
+    });
+
+    // Theme controls removed (not functional)
+});
+
 // Função para salvar configurações de pagamento
 function savePaymentConfig(provider) {
     const formData = new FormData();

@@ -21,6 +21,22 @@ class DepartmentController extends Controller
     // Compartilhar contexto para layouts (tema por departamento, etc.)
     view()->share('currentDepartmentSlug', $department->slug);
     view()->share('currentDepartmentName', $department->name);
+        // Persistir slug e tema do departamento na sessão para que páginas
+        // subsequentes (álbuns, produtos, etc.) respeitem as cores do dept
+        try {
+            session(['current_department_slug' => $department->slug]);
+            $theme = [
+                'theme_primary' => setting('dept_' . $department->slug . '_theme_primary', setting('theme_primary')),
+                'theme_secondary' => setting('dept_' . $department->slug . '_theme_secondary', setting('theme_secondary')),
+                'theme_accent' => setting('dept_' . $department->slug . '_theme_accent', setting('theme_accent')),
+                'theme_dark_bg' => setting('dept_' . $department->slug . '_theme_dark_bg', setting('theme_dark_bg')),
+                'theme_text_light' => setting('dept_' . $department->slug . '_theme_text_light', setting('theme_text_light')),
+                'theme_text_dark' => setting('dept_' . $department->slug . '_theme_text_dark', setting('theme_text_dark')),
+            ];
+            session(['current_department_theme' => $theme]);
+        } catch (\Exception $e) {
+            // se session estiver indisponível por algum motivo, apenas continue
+        }
         
         // Produtos em destaque do departamento - priorizar disponíveis
         $featuredProducts = $department->products()

@@ -2,6 +2,62 @@
 
 @section('title', 'Editar Departamento')
 @section('page-title', 'Editar Departamento')
+
+@section('content')
+<div class="card">
+    <div class="card-body">
+        <form action="{{ route('admin.departments.update', $department) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+
+            <div class="mb-3">
+                <label class="form-label">Nome</label>
+                <input type="text" name="name" class="form-control" required value="{{ old('name', $department->name) }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Slug (opcional)</label>
+                <input type="text" name="slug" class="form-control" value="{{ old('slug', $department->slug) }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Cor (HEX)</label>
+                <input type="text" name="color" class="form-control" value="{{ old('color', $department->color ?? '#667eea') }}">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Ícone</label>
+                <input type="text" name="icon" class="form-control" value="{{ old('icon', $department->icon) }}" placeholder="Ex: bi bi-phone">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Descrição</label>
+                <textarea name="description" class="form-control">{{ old('description', $department->description) }}</textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Logo (opcional)</label>
+                <input type="file" name="logo" class="form-control">
+            </div>
+
+            <div class="mb-3 form-check">
+                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" {{ $department->is_active ? 'checked' : '' }}>
+                <label class="form-check-label" for="is_active">Ativo</label>
+            </div>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{{ route('admin.departments.index') }}" class="btn btn-outline-secondary">Cancelar</a>
+                <button class="btn btn-primary">Salvar alterações</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@endsection
+@extends('admin.layouts.app')
+
+@section('title', 'Editar Departamento')
+@section('page-title', 'Editar Departamento')
 @section('page-subtitle')
     <p class="text-muted mb-0">Edite as informações do departamento</p>
 @endsection
@@ -114,9 +170,9 @@
                         <small class="form-text text-muted">Departamentos inativos não aparecerão no site</small>
                                         <div class="mb-3">
                                             <label for="theme_primary" class="form-label">Cor Primária</label>
-                                            <input type="color" id="theme_primary" name="theme_primary" value="{{ old('theme_primary', $department->color ?? '#0f172a') }}" class="form-control form-control-color">
+                                            <input type="color" id="theme_primary" name="theme_primary" value="{{ old('theme_primary', \App\Models\Setting::get('dept_' . $department->slug . '_theme_primary', ($department->color ?? '#0f172a')) ) }}" class="form-control form-control-color">
                                             <label for="theme_secondary" class="form-label mt-2">Cor Secundária</label>
-                                            <input type="color" id="theme_secondary" name="theme_secondary" value="#ff6b35" class="form-control form-control-color">
+                                            <input type="color" id="theme_secondary" name="theme_secondary" value="{{ old('theme_secondary', \App\Models\Setting::get('dept_' . $department->slug . '_theme_secondary', '#ff6b35') ) }}" class="form-control form-control-color">
                                             <div class="mt-3">
                                                 <button type="button" class="btn btn-success" id="saveThemeColors">Salvar como padrão</button>
                                                 <button type="button" class="btn btn-outline-secondary" id="restoreThemeColors">Restaurar padrão</button>
@@ -309,23 +365,40 @@ document.getElementById('saveThemeColors').onclick = function() {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+            'Accept': 'application/json'
         },
         body: JSON.stringify({ theme_primary: primary, theme_secondary: secondary })
     })
     .then(res => res.json())
     .then(data => {
-        document.getElementById('themeColorsMsg').innerHTML = data.success ? 'Cores salvas com sucesso!' : 'Erro ao salvar.';
+        if (data && data.success) {
+            document.getElementById('themeColorsMsg').innerHTML = '<div class="alert alert-success p-2 mb-0">Cores salvas com sucesso!</div>';
+            // Apply immediately in the admin by dispatching the theme:updated event
+            window.dispatchEvent(new CustomEvent('theme:updated', { detail: { theme: { theme_primary: primary, theme_secondary: secondary } } }));
+        } else {
+            document.getElementById('themeColorsMsg').innerHTML = '<div class="alert alert-danger p-2 mb-0">Erro ao salvar.</div>';
+        }
+    }).catch(err => {
+        console.error('Erro ao salvar cores:', err);
+        document.getElementById('themeColorsMsg').innerHTML = '<div class="alert alert-danger p-2 mb-0">Erro ao salvar (ver console).</div>';
     });
 };
 
 document.getElementById('restoreThemeColors').onclick = function() {
-    fetch("{{ route('admin.departments.restoreThemeColors', $department) }}")
+    fetch("{{ route('admin.departments.restoreThemeColors', $department) }}", { headers: { 'Accept': 'application/json' } })
     .then(res => res.json())
     .then(data => {
-        document.getElementById('theme_primary').value = data.theme_primary;
-        document.getElementById('theme_secondary').value = data.theme_secondary;
-        document.getElementById('themeColorsMsg').innerHTML = 'Cores restauradas!';
+        const primary = data.theme_primary || data.themePrimary || data.primary || '#0f172a';
+        const secondary = data.theme_secondary || data.themeSecondary || data.secondary || '#ff6b35';
+        document.getElementById('theme_primary').value = primary;
+        document.getElementById('theme_secondary').value = secondary;
+        document.getElementById('themeColorsMsg').innerHTML = '<div class="alert alert-info p-2 mb-0">Cores restauradas!</div>';
+        // Apply restored theme immediately
+        window.dispatchEvent(new CustomEvent('theme:updated', { detail: { theme: { theme_primary: primary, theme_secondary: secondary } } }));
+    }).catch(err => {
+        console.error('Erro ao restaurar cores:', err);
+        document.getElementById('themeColorsMsg').innerHTML = '<div class="alert alert-danger p-2 mb-0">Erro ao restaurar (ver console).</div>';
     });
 };
 
