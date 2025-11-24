@@ -441,11 +441,29 @@
         #ssQuickProductOverlay .qp-tab-panel > .ss-body { height: 100% !important; overflow: auto !important; box-sizing: border-box; padding-right: 8px; }
         /* Fallback for older markup where .ss-body sits directly under .ss-modal */
         #ssQuickProductOverlay .ss-body { flex: 1 1 auto; overflow: auto !important; }
+
+        /* Ensure the modal footer (Salvar Produto) remains visible: make it sticky and add spacing in the body */
+        #ssQuickProductOverlay .ss-footer {
+            position: sticky;
+            bottom: 0;
+            background: #fff;
+            z-index: 30;
+            box-shadow: 0 -8px 20px rgba(2,6,23,0.06);
+        }
+        /* Prevent body content from being hidden behind the sticky footer */
+        #ssQuickProductOverlay .ss-body { padding-bottom: 72px; }
+
         /* Small adjustment for mobile screens */
         @media (max-width: 640px) {
             #ssQuickProductOverlay .ss-modal { max-width: 96vw; height: 76vh !important; }
             #ssQuickProductOverlay .qp-tab-panel > .ss-body, #ssQuickProductOverlay .ss-body { max-height: none !important; }
+            #ssQuickProductOverlay .ss-body { padding-bottom: 88px; }
         }
+
+        /* Floating actions: fixed buttons shown while quick-create overlay active */
+        #ssQuickProductOverlay .qp-floating-actions { display: none; }
+        #ssQuickProductOverlay.active .qp-floating-actions { display: flex; position: fixed; right: 28px; bottom: 28px; gap: 8px; z-index: 4000; }
+        #ssQuickProductOverlay .qp-floating-actions .ss-btn { box-shadow: 0 8px 20px rgba(2,6,23,0.08); }
     </style>
 
     <div class="ss-overlay" id="ssQuickProductOverlay" aria-modal="true" role="dialog">
@@ -636,6 +654,11 @@
                 <button class="ss-btn ss-btn-secondary" id="dpConfirmCancel" type="button">Cancelar</button>
                 <button class="ss-btn ss-btn-primary" id="dpConfirmApply" type="button">Confirmar</button>
             </div>
+        </div>
+        <!-- Floating actions (duplicate of modal footer) kept visible while overlay is active -->
+        <div class="qp-floating-actions" id="qpFloatingActions" style="display:none;">
+            <button class="ss-btn ss-btn-secondary" id="qpFloatingCancel" type="button">Cancelar</button>
+            <button class="ss-btn ss-btn-primary" id="qpFloatingSave" type="button">Salvar Produto</button>
         </div>
     </div>
 
