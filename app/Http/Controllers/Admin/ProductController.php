@@ -180,11 +180,12 @@ class ProductController extends Controller
             'sell_b2c' => 'nullable|boolean',
             'b2b_price' => 'nullable|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
-            'stock_quantity' => 'required|integer|min:0',
-            'min_stock' => 'required|integer|min:0',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'min_stock' => 'nullable|integer|min:0',
             // 'variations' may arrive as JSON string when sent via FormData; decode below
             'variations' => 'nullable',
             'department_id' => 'nullable|exists:departments,id',
+            'product_type' => 'nullable|in:physical,service',
             'categories' => 'required|array|min:1',
             'categories.*' => 'exists:categories,id',
             'images' => 'nullable',
@@ -198,12 +199,19 @@ class ProductController extends Controller
             'width' => 'nullable|numeric|min:0',
             'height' => 'nullable|numeric|min:0',
         ]);
-
         $data = $request->all();
+        // Ensure product_type present and default to 'physical'
+        $data['product_type'] = $request->input('product_type', 'physical');
         $data['sell_b2b'] = $request->boolean('sell_b2b', true);
         $data['sell_b2c'] = $request->boolean('sell_b2c', true);
         $data['slug'] = Str::slug($request->name);
-        $data['manage_stock'] = true;
+        // If product_type is 'service', do not manage stock by default
+        if (($data['product_type'] ?? 'physical') === 'service') {
+            $data['manage_stock'] = false;
+        } else {
+            // Manage stock only when explicitly requested or when stock_quantity provided
+            $data['manage_stock'] = $request->boolean('manage_stock', $request->filled('stock_quantity'));
+        }
 
         // If SKU was not provided by the frontend (quick-create minimal), generate a unique one server-side
         if (empty($data['sku'])) {
@@ -298,9 +306,10 @@ class ProductController extends Controller
                 $prod->in_stock = $totalStock > 0;
                 $prod->save();
             } else {
-                // Sem variações: usar estoque enviado no request
-                $prod->stock_quantity = (int)$request->stock_quantity;
-                $prod->in_stock = $request->stock_quantity > 0;
+                // Sem variações: usar estoque enviado no request — se não enviado, manter 0 e in_stock false
+                $qty = $request->has('stock_quantity') ? (int)$request->stock_quantity : 0;
+                $prod->stock_quantity = $qty;
+                $prod->in_stock = $qty > 0;
                 $prod->save();
                 $totalStock = (int)$request->stock_quantity;
             }
@@ -358,10 +367,11 @@ class ProductController extends Controller
             'sell_b2c' => 'nullable|boolean',
             'b2b_price' => 'nullable|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
-            'stock_quantity' => 'required|integer|min:0',
-            'min_stock' => 'required|integer|min:0',
+            'stock_quantity' => 'nullable|integer|min:0',
+            'min_stock' => 'nullable|integer|min:0',
             'categories' => 'required|array|min:1',
             'department_id' => 'nullable|exists:departments,id',
+            'product_type' => 'nullable|in:physical,service',
             'categories.*' => 'exists:categories,id',
             'images' => 'nullable',
             'images.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
@@ -376,10 +386,18 @@ class ProductController extends Controller
         ]);
 
         $data = $request->all();
+        $data['product_type'] = $request->input('product_type', $product->product_type ?? 'physical');
         $data['sell_b2b'] = $request->boolean('sell_b2b', true);
         $data['sell_b2c'] = $request->boolean('sell_b2c', true);
         $data['slug'] = Str::slug($request->name);
-        $data['in_stock'] = $request->stock_quantity > 0;
+        // If product_type is service, do not manage stock
+        if (($data['product_type'] ?? 'physical') === 'service') {
+            $data['manage_stock'] = false;
+        } else {
+            $data['manage_stock'] = $request->boolean('manage_stock', $product->manage_stock ?? $request->filled('stock_quantity'));
+        }
+        // If stock_quantity was provided, determine in_stock; otherwise keep current product value
+        $data['in_stock'] = $request->has('stock_quantity') ? ($request->stock_quantity > 0) : ($product->in_stock ?? true);
 
         // Gerenciar imagens - seguindo a mesma lógica simples dos selos de categorias
         $imagePaths = [];

@@ -540,6 +540,14 @@
                         <label class="form-label">Preço de custo</label>
                         <input type="number" id="qpCostPrice" class="form-control" placeholder="Preço de custo" step="0.01" min="0" />
                     </div>
+                    <div class="mb-2">
+                        <label class="form-label">Tipo de produto</label>
+                        <select id="qpProductType" class="form-select">
+                            <option value="physical">Físico</option>
+                            <option value="service">Serviço</option>
+                        </select>
+                        <small class="text-muted">Escolha "Serviço" para produtos que não possuem estoque.</small>
+                    </div>
                     <div class="mb-2 d-flex gap-3 align-items-center" style="align-items:center">
                         <label class="form-label" style="min-width:120px; margin-bottom:0;">Canais de venda</label>
                         <div style="display:flex; gap:10px; align-items:center;">
@@ -587,7 +595,7 @@
                             <div id="qpMvpCombosPreview" style="max-height:220px; overflow:auto; border-top:1px solid #eef2f7; padding-top:8px;"></div>
                         </div>
                     </div>
-                    <div class="mb-2 d-flex gap-2">
+                    <div class="mb-2 d-flex gap-2" id="qpStockBlock">
                         <div style="flex:1">
                             <label class="form-label">Estoque</label>
                             <input type="number" id="qpStock" class="form-control" placeholder="Quantidade em estoque" min="0" />
@@ -2415,6 +2423,8 @@
                 if (!qpOverlay) return;
                 qpOverlay.style.display = 'flex';
                 qpOverlay.classList && qpOverlay.classList.add('active');
+                // Show floating action bar (if present) when opening quick-create
+                try { const flo = document.getElementById('qpFloatingActions'); if (flo) flo.style.display = 'flex'; } catch(e) {}
                 loadQuickFormOptions();
                 setTimeout(()=>{ 
                     const deptEl = document.getElementById('qpDepartment');
@@ -2435,6 +2445,30 @@
                         const generated = generateSkuFromName(qpNameField.value || '');
                         qpSkuField.value = generated;
                     }
+                    // Toggle stock fields according to product type (quick-create)
+                    try {
+                        const pt = document.getElementById('qpProductType');
+                        const block = document.getElementById('qpStockBlock');
+                        const stock = document.getElementById('qpStock');
+                        const minStock = document.getElementById('qpMinStock');
+                        if (pt && block) {
+                            const applyToggle = function(){
+                                try {
+                                    if ((pt.value || 'physical') === 'service') {
+                                        block.style.display = 'none';
+                                        if (stock) stock.value = '';
+                                        if (minStock) minStock.value = '';
+                                    } else {
+                                        block.style.display = '';
+                                    }
+                                } catch(e) { console.debug && console.debug('applyToggle error', e); }
+                            };
+                            pt.removeEventListener('change', applyToggle);
+                            pt.addEventListener('change', applyToggle);
+                            // apply now
+                            applyToggle();
+                        }
+                    } catch(e) { console.debug && console.debug('qp product_type toggle failed', e); }
                     // If a department is already selected, preload its attributes
                     try { const deptSel = document.getElementById('qpDepartment'); if (deptSel && deptSel.value) loadDeptAttributes(deptSel.value); } catch(e) { console.debug && console.debug('preload dept attrs failed', e); }
                     // --- REMOVER SISTEMA DE ATRIBUTOS DO ATALHO QUICK-CREATE ---
@@ -2457,6 +2491,8 @@
                 if (!qpOverlay) return;
                 qpOverlay.style.display = 'none';
                 qpOverlay.classList && qpOverlay.classList.remove('active');
+                // Ensure floating actions hidden when overlay closes
+                try { const flo = document.getElementById('qpFloatingActions'); if (flo) flo.style.display = 'none'; } catch(e) {}
             }
             productsTriggerBtn?.addEventListener('click', function(e){ e.stopPropagation(); try { console.debug('productsTrigger clicked'); } catch(e){}; openQuickProduct(); });
             // Fallback delegated listener: garante abertura mesmo se o listener direto não for registrado
@@ -2471,6 +2507,14 @@
             });
             qpClose?.addEventListener('click', closeQuickProduct);
             qpCancel?.addEventListener('click', () => { closeQuickProduct(); });
+
+            // Wire floating action buttons (duplicate of footer) to reuse existing handlers
+            try {
+                const fpSave = document.getElementById('qpFloatingSave');
+                const fpCancel = document.getElementById('qpFloatingCancel');
+                if (fpSave) fpSave.addEventListener('click', function(){ try { if (typeof qpSave?.click === 'function') qpSave.click(); else if (qpSave) qpSave.dispatchEvent(new Event('click')); } catch(e){} });
+                if (fpCancel) fpCancel.addEventListener('click', function(){ try { if (typeof qpCancel === 'function') { qpCancel(); } else if (qpCancel && typeof qpCancel.click === 'function') qpCancel.click(); else if (qpCancel) qpCancel.dispatchEvent(new Event('click')); } catch(e){} });
+            } catch(e) {}
 
             // From quick-create header, open the product manager overlay (so tabs are reachable)
             // From quick-create header, switch to the product manager tab inside the same modal
@@ -2795,6 +2839,7 @@
                     const payload = {};
                     payload.name = name;
                     payload.sku = (document.getElementById('qpSku')?.value || '').trim() || null;
+                    payload.product_type = document.getElementById('qpProductType')?.value || 'physical';
                     payload.is_active = document.getElementById('qpActive')?.checked ? 1 : 0;
                     payload.short_description = (document.getElementById('qpShortDesc')?.value || '').trim() || null;
                     // Ensure description exists (server requires it). Prefer full description, then short, then name.
@@ -2953,6 +2998,7 @@
                             const name = (nameInput?.value || '').trim();
                             if (!name) { window.ssShowToast && ssShowToast('Informe o nome do produto.', 'warning'); nameInput && nameInput.focus(); return; }
                             const payload = { name };
+                            payload.product_type = document.getElementById('qpProductType')?.value || 'physical';
                             // collect categories if any
                             const cats = document.getElementById('qpCategories');
                             if (cats) payload.categories = Array.from(cats.selectedOptions || []).map(o => Number(o.value)).filter(Boolean);

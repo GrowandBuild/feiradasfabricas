@@ -42,8 +42,16 @@ class Product extends Model
         'height',
         'sort_order',
         'department_id',
+        'product_type',
         'sell_b2b',
         'sell_b2c',
+    ];
+
+    /**
+     * Default attribute values
+     */
+    protected $attributes = [
+        'product_type' => 'physical',
     ];
 
     protected $casts = [

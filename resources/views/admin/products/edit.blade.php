@@ -38,7 +38,7 @@
                         </div>
                     </div>
                     
-                    <div class="row">
+                    <div class="row" id="stockFieldsRow">
                         <div class="col-md-8">
                             <div class="mb-3">
                                 <label for="name" class="form-label">
@@ -154,6 +154,21 @@
                                     <div class="invalid-feedback">
                                         <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
                                     </div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="mb-3">
+                                <label for="product_type" class="form-label">
+                                    <i class="bi bi-box me-1"></i>Tipo de Produto
+                                </label>
+                                <select id="product_type" name="product_type" class="form-select @error('product_type') is-invalid @enderror">
+                                    <option value="physical" {{ old('product_type', $product->product_type ?? 'physical') === 'physical' ? 'selected' : '' }}>Físico</option>
+                                    <option value="service" {{ old('product_type', $product->product_type ?? 'physical') === 'service' ? 'selected' : '' }}>Serviço</option>
+                                </select>
+                                <small class="text-muted">Escolha "Serviço" para produtos que não possuem controle de estoque.</small>
+                                @error('product_type')
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
@@ -532,25 +547,36 @@
 
  
 <script>
+// Aguardar o DOM carregar
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Script de imagens, preços e atributos carregado');
-
+    console.log('Script de imagens e preços carregado');
+    
     const productId = @json($product->id ?? null);
     const CSRF_TOKEN = (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
-
+    
     // ========== FUNCIONALIDADE DE CÁLCULO DE PREÇOS EM TEMPO REAL ==========
+    
+    // Elementos dos campos de preço
     const priceInput = document.getElementById('price');
     const b2bPriceInput = document.getElementById('b2b_price');
     const costPriceInput = document.getElementById('cost_price');
-
+    
     function normalizePrice(value) {
-        if (!value && value !== 0) return null;
+        if (!value && value !== 0) {
+            return null;
+        }
+
         let cleanValue = value.toString().trim();
         cleanValue = cleanValue.replace(/[^0-9,.-]/g, '');
         cleanValue = cleanValue.replace('\u00a0', '').replace('\u00a0', '');
-        if (cleanValue === '' || cleanValue === ',') return null;
+
+        if (cleanValue === '' || cleanValue === ',') {
+            return null;
+        }
+
         const commaCount = (cleanValue.match(/,/g) || []).length;
         const dotCount = (cleanValue.match(/\./g) || []).length;
+
         if (commaCount > 1 || dotCount > 1) {
             cleanValue = cleanValue.replace(/\./g, '');
             cleanValue = cleanValue.replace(/,/g, '.');
@@ -570,34 +596,60 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             cleanValue = cleanValue.replace(/\./g, '');
         }
+
         const parsed = parseFloat(cleanValue);
         return isNaN(parsed) ? null : parsed;
     }
-
+    
+    // Função para formatar valores monetários
     function formatCurrency(value) {
-        if (value === null || value === undefined || value === '') return '';
+        if (value === null || value === undefined || value === '') {
+            return '';
+        }
         const numberValue = typeof value === 'number' ? value : parseFloat(value);
-        if (isNaN(numberValue)) return '';
-        return numberValue.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        if (isNaN(numberValue)) {
+            return '';
+        }
+        return numberValue.toLocaleString('pt-BR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
     }
-
+    
+    // Função para atualizar preço baseado no custo
     function updateCostPriceFromServer(costPrice) {
-        if (!productId || !costPrice || costPrice <= 0) return;
+        if (!productId || !costPrice || costPrice <= 0) {
+            return;
+        }
+
         const loaderClass = 'is-loading';
         costPriceInput.classList.add(loaderClass);
         costPriceInput.disabled = true;
+
         fetch(`/admin/products/${productId}/update-cost-price`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' },
-            body: JSON.stringify({ cost_price: costPrice })
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': CSRF_TOKEN,
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                cost_price: costPrice
+            })
         })
         .then(response => response.json())
         .then(data => {
             if (data.success && data.product) {
                 const { cost_price, b2c_price, b2b_price } = data.product;
-                if (costPriceInput) costPriceInput.value = cost_price ?? formatCurrency(costPrice);
-                if (priceInput && b2c_price) priceInput.value = b2c_price;
-                if (b2bPriceInput && b2b_price) b2bPriceInput.value = b2b_price;
+                if (costPriceInput) {
+                    costPriceInput.value = cost_price ?? formatCurrency(costPrice);
+                }
+                if (priceInput && b2c_price) {
+                    priceInput.value = b2c_price;
+                }
+                if (b2bPriceInput && b2b_price) {
+                    b2bPriceInput.value = b2b_price;
+                }
                 costPriceInput.classList.add('border-success');
                 setTimeout(() => costPriceInput.classList.remove('border-success'), 2000);
             } else {
@@ -613,45 +665,99 @@ document.addEventListener('DOMContentLoaded', function() {
             costPriceInput.classList.remove(loaderClass);
         });
     }
-
+    
+    // Função para atualizar preço B2B automaticamente local
     function updateB2BPrice() {
         if (priceInput && b2bPriceInput && priceInput.value) {
             const normalized = normalizePrice(priceInput.value);
-            if (normalized !== null) b2bPriceInput.value = formatCurrency(normalized * 0.9);
+            if (normalized !== null) {
+                const newB2BPrice = normalized * 0.9;
+                b2bPriceInput.value = formatCurrency(newB2BPrice);
+            }
         }
     }
-
+    
+    // Função para calcular preço baseado no custo e markup padrão
     function calculatePriceFromCost() {
         const normalizedCost = normalizePrice(costPriceInput.value);
-        if (normalizedCost !== null) updateCostPriceFromServer(normalizedCost);
+        if (normalizedCost !== null) {
+            updateCostPriceFromServer(normalizedCost);
+        }
     }
-
-    if (priceInput) priceInput.addEventListener('blur', function() { this.value = formatCurrency(normalizePrice(this.value)); updateB2BPrice(); });
-    if (costPriceInput) costPriceInput.addEventListener('blur', function() { const normalizedCost = normalizePrice(this.value); if (normalizedCost !== null && normalizedCost > 0) { this.value = formatCurrency(normalizedCost); updateCostPriceFromServer(normalizedCost); } else { this.value = ''; } });
-    if (b2bPriceInput) b2bPriceInput.addEventListener('blur', function() { this.value = formatCurrency(normalizePrice(this.value)); });
-
+    
+    if (priceInput) {
+        priceInput.addEventListener('blur', function() {
+            this.value = formatCurrency(normalizePrice(this.value));
+            updateB2BPrice();
+        });
+    }
+    
+    if (costPriceInput) {
+        costPriceInput.addEventListener('blur', function() {
+            const normalizedCost = normalizePrice(this.value);
+            if (normalizedCost !== null && normalizedCost > 0) {
+                this.value = formatCurrency(normalizedCost);
+                updateCostPriceFromServer(normalizedCost);
+            } else {
+                this.value = '';
+            }
+        });
+    }
+    
+    if (b2bPriceInput) {
+        b2bPriceInput.addEventListener('blur', function() {
+            this.value = formatCurrency(normalizePrice(this.value));
+        });
+    }
+    
+    // Botão para calcular preço baseado no custo
     const calculatePriceBtn = document.createElement('button');
     calculatePriceBtn.type = 'button';
     calculatePriceBtn.className = 'btn btn-outline-info btn-sm mt-2';
     calculatePriceBtn.innerHTML = '<i class="bi bi-calculator me-1"></i>Calcular Preço (30% markup)';
     calculatePriceBtn.onclick = calculatePriceFromCost;
-    if (costPriceInput && costPriceInput.parentNode) costPriceInput.parentNode.appendChild(calculatePriceBtn);
-
+    
+    // Adicionar botão após o campo de preço de custo
+    if (costPriceInput && costPriceInput.parentNode) {
+        costPriceInput.parentNode.appendChild(calculatePriceBtn);
+    }
+    
     // ========== FUNCIONALIDADE DE IMAGENS ==========
+    // Seguindo a mesma lógica simples dos selos de categorias
+    
     const imageInput = document.getElementById('images');
     const container = document.getElementById('images-container');
+    
     if (imageInput && container) {
         console.log('✅ Campo de imagens e container encontrados');
+        
+        // Armazenar referência aos arquivos selecionados
         let selectedFiles = [];
+        
+        // Adicionar preview das novas imagens selecionadas
         imageInput.addEventListener('change', function(e) {
             const files = e.target.files;
-            if (!files || files.length === 0) return;
+            
+            if (!files || files.length === 0) {
+                return;
+            }
+            
+            console.log('📸 Arquivos selecionados:', files.length);
+            
+            // Limpar previews anteriores de novas imagens
             const newImagePreviews = container.querySelectorAll('.new-image-preview');
             newImagePreviews.forEach(preview => preview.remove());
+            
+            // Adicionar novos arquivos à lista
             selectedFiles = Array.from(files);
+            
+            // Adicionar preview das novas imagens
             selectedFiles.forEach((file, index) => {
+                console.log(`📷 Processando arquivo ${index + 1}:`, file.name);
+                
                 if (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.avif')) {
                     const reader = new FileReader();
+                    
                     reader.onload = function(e) {
                         const col = document.createElement('div');
                         col.className = 'col-md-3 mb-2 new-image-preview';
@@ -671,49 +777,130 @@ document.addEventListener('DOMContentLoaded', function() {
                             </div>
                         `;
                         container.appendChild(col);
+                        console.log('✅ Preview adicionado para:', file.name);
                     };
-                    reader.onerror = function() { console.error('❌ Erro ao ler arquivo:', file.name); };
+                    
+                    reader.onerror = function() {
+                        console.error('❌ Erro ao ler arquivo:', file.name);
+                    };
+                    
                     reader.readAsDataURL(file);
                 } else {
+                    console.warn('⚠️ Arquivo não é uma imagem:', file.name);
                     alert(`O arquivo "${file.name}" não é uma imagem válida.`);
                 }
             });
         });
     } else {
-        if (!imageInput) console.error('❌ Campo de imagens não encontrado!');
-        if (!container) console.error('❌ Container de imagens não encontrado!');
+        if (!imageInput) {
+            console.error('❌ Campo de imagens não encontrado!');
+        }
+        if (!container) {
+            console.error('❌ Container de imagens não encontrado!');
+        }
     }
-
+    
+    // Função para remover preview de nova imagem
     window.removeNewImagePreview = function(button, fileName) {
-        if (!confirm('Tem certeza que deseja remover esta imagem do upload?')) return;
-        const preview = button.closest('.new-image-preview');
-        if (preview) {
-            preview.remove();
-            const imageInput = document.getElementById('images');
-            if (imageInput && imageInput.files) {
-                const dt = new DataTransfer();
-                const files = Array.from(imageInput.files);
-                const filteredFiles = files.filter(file => file.name !== fileName);
-                filteredFiles.forEach(file => dt.items.add(file));
-                imageInput.files = dt.files;
+        if (confirm('Tem certeza que deseja remover esta imagem do upload?')) {
+            const preview = button.closest('.new-image-preview');
+            if (preview) {
+                preview.remove();
+                
+                // Remover o arquivo do input usando DataTransfer
+                const imageInput = document.getElementById('images');
+                if (imageInput && imageInput.files) {
+                    const dt = new DataTransfer();
+                    const files = Array.from(imageInput.files);
+                    
+                    // Remover o arquivo pelo nome
+                    const filteredFiles = files.filter(file => file.name !== fileName);
+                    
+                    // Adicionar os arquivos restantes ao DataTransfer
+                    filteredFiles.forEach(file => dt.items.add(file));
+                    
+                    // Atualizar o input
+                    imageInput.files = dt.files;
+                    
+                    console.log('🗑️ Imagem removida do upload. Arquivos restantes:', dt.files.length);
+                }
             }
         }
     };
-
+    
     console.log('✅ Funcionalidades de preços e imagens inicializadas!');
+});
 
-    // ========== MÓDULO DE ATRIBUTOS DO DEPARTAMENTO ==========
+function removeExistingImage(button, imagePath) {
+    if (confirm('Tem certeza que deseja remover esta imagem?')) {
+        // Remove o elemento visual
+        const imageItem = button.closest('.image-item');
+        imageItem.remove();
+        
+        // Remove o input hidden correspondente
+        const existingInputs = document.querySelectorAll('.existing-image-input');
+        existingInputs.forEach(input => {
+            if (input.value === imagePath) {
+                input.remove();
+            }
+        });
+        
+        // Verificar se todas as imagens foram removidas
+        const remainingInputs = document.querySelectorAll('.existing-image-input');
+        if (remainingInputs.length === 0) {
+            document.getElementById('all-images-removed').value = '1';
+        }
+        
+        // Debug: verificar se o input foi removido
+        console.log('Imagem removida:', imagePath);
+        console.log('Inputs restantes:', remainingInputs.length);
+    }
+}
+
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    try {
+        const pt = document.getElementById('product_type');
+        const stockRow = document.getElementById('stockFieldsRow');
+        const stockQty = document.getElementById('stock_quantity');
+        const minStock = document.getElementById('min_stock');
+        const apply = function(){
+            if (!pt || !stockRow) return;
+            if ((pt.value || 'physical') === 'service') {
+                stockRow.style.display = 'none';
+                if (stockQty) { stockQty.required = false; stockQty.value = '' }
+                if (minStock) { minStock.required = false; minStock.value = '' }
+            } else {
+                stockRow.style.display = '';
+                if (stockQty) stockQty.required = true;
+                if (minStock) minStock.required = true;
+            }
+        };
+        pt && pt.addEventListener('change', apply);
+        apply();
+    } catch(e) { console.debug && console.debug('product_type toggle failed', e); }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Carregar atributos do departamento do produto e renderizar painel
     try {
         const deptAttributesPanel = document.getElementById('deptAttributesPanel');
+        const deptAttributesLoading = document.getElementById('deptAttributesLoading');
+        const productId = @json($product->id ?? null);
+        const CSRF_TOKEN = (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
         let currentDepartment = @json($product->department_id ?? null);
 
         function renderAttributes(data) {
             if (!deptAttributesPanel) return;
             deptAttributesPanel.innerHTML = '';
+
             if (!data || !data.attributes || data.attributes.length === 0) {
                 deptAttributesPanel.innerHTML = '<p class="text-muted">Nenhum atributo encontrado para este departamento.</p>';
                 return;
             }
+
             data.attributes.forEach(attr => {
                 const group = document.createElement('div');
                 group.className = 'mb-3';
@@ -721,19 +908,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 title.className = 'form-label fw-semibold';
                 title.textContent = attr.name || attr.key;
                 group.appendChild(title);
+
                 const wrap = document.createElement('div');
                 wrap.className = 'd-flex flex-wrap gap-2';
+
                 attr.values.forEach(v => {
                     const id = `dept-attr-${attr.key}-${v.value}`.replace(/[^a-zA-Z0-9-_]/g, '_');
                     const div = document.createElement('div');
                     div.className = 'form-check';
                     div.style.minWidth = '160px';
+
                     const input = document.createElement('input');
                     input.type = 'checkbox';
                     input.className = 'form-check-input dept-attr-checkbox';
                     input.id = id;
                     input.dataset.type = attr.key;
                     input.dataset.value = v.value;
+
                     const label = document.createElement('label');
                     label.className = 'form-check-label';
                     label.htmlFor = id;
@@ -742,13 +933,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     } else {
                         label.textContent = v.value;
                     }
+
                     div.appendChild(input);
                     div.appendChild(label);
                     wrap.appendChild(div);
                 });
+
                 group.appendChild(wrap);
                 deptAttributesPanel.appendChild(group);
             });
+
+            // Botões de ação
             const actions = document.createElement('div');
             actions.className = 'd-flex gap-2 mt-2';
             const addBtn = document.createElement('button');
@@ -756,71 +951,197 @@ document.addEventListener('DOMContentLoaded', function() {
             addBtn.className = 'btn btn-sm btn-primary';
             addBtn.textContent = 'Adicionar valores selecionados como variações';
             addBtn.addEventListener('click', applySelectedAttributes);
+
             const openModalBtn = document.createElement('button');
             openModalBtn.type = 'button';
             openModalBtn.className = 'btn btn-sm btn-outline-secondary';
             openModalBtn.textContent = 'Abrir Gerenciador de Variações';
-            openModalBtn.addEventListener('click', function() { const modalEl = document.getElementById('variationsModal'); if (modalEl) { const modal = new bootstrap.Modal(modalEl); modal.show(); } });
+            openModalBtn.addEventListener('click', function() {
+                const modalEl = document.getElementById('variationsModal');
+                if (modalEl) {
+                    const modal = new bootstrap.Modal(modalEl);
+                    // set product id on the button that opens modal so it triggers load
+                    const btn = document.querySelector('[data-bs-target="#variationsModal"]');
+                    // show modal
+                    modal.show();
+                }
+            });
+
             const refreshBtn = document.createElement('button');
             refreshBtn.type = 'button';
             refreshBtn.className = 'btn btn-sm btn-outline-info';
             refreshBtn.textContent = 'Atualizar atributos';
             refreshBtn.addEventListener('click', function(){ fetchAndRenderForDepartment(currentDepartment); });
-            actions.appendChild(addBtn); actions.appendChild(refreshBtn); actions.appendChild(openModalBtn); deptAttributesPanel.appendChild(actions);
+
+            actions.appendChild(addBtn);
+            actions.appendChild(refreshBtn);
+            actions.appendChild(openModalBtn);
+            deptAttributesPanel.appendChild(actions);
         }
 
         function applySelectedAttributes() {
             const checkboxes = Array.from(document.querySelectorAll('.dept-attr-checkbox')).filter(cb => cb.checked);
-            if (checkboxes.length === 0) { alert('Selecione ao menos um valor para adicionar.'); return; }
-            if (!confirm(`Adicionar ${checkboxes.length} valor(es) selecionado(s) como variações deste produto?`)) return;
+            if (checkboxes.length === 0) {
+                alert('Selecione ao menos um valor para adicionar.');
+                return;
+            }
+
+            if (!confirm(`Adicionar ${checkboxes.length} valor(es) selecionado(s) como variações deste produto?`)) {
+                return;
+            }
+            // Group selected values by attribute type
             const groups = {};
-            checkboxes.forEach(cb => { const type = cb.dataset.type; const value = cb.dataset.value; if (!groups[type]) groups[type] = []; groups[type].push(value); });
+            checkboxes.forEach(cb => {
+                const type = cb.dataset.type;
+                const value = cb.dataset.value;
+                if (!groups[type]) groups[type] = [];
+                groups[type].push(value);
+            });
+
+            // Build arrays for cartesian product
             const keys = Object.keys(groups);
             const arrays = keys.map(k => groups[k].map(v => ({ key: k, value: v })));
-            function cartesianProduct(arr) { return arr.reduce((a, b) => a.flatMap(d => b.map(e => d.concat([e]))), [[]]); }
-            function slugify(str) { return String(str || '').toLowerCase().normalize('NFD').replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').replace(/[^a-z0-9_-]/g, '').replace(/^_+|_+$/g, ''); }
-            const combos = cartesianProduct(arrays).map(combo => { const attrs = {}; combo.forEach(c => { const slug = slugify(c.key); attrs[slug] = c.value; }); return { attributes: attrs }; });
-            if (combos.length > 300) { if (!confirm(`Serão criadas ${combos.length} variações. Continuar?`)) return; }
-            fetch(`/admin/products/${productId}/variations/bulk-add`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }, body: JSON.stringify({ combos }) })
-            .then(r => r.json()).then(data => { if (data && data.success) { alert(`Operação concluída. ${data.created} nova(s) variação(ões) criada(s).`); const variationsModalEl = document.getElementById('variationsModal'); if (variationsModalEl && bootstrap.Modal.getInstance(variationsModalEl)) { const prodIdInput = document.getElementById('variationsProductId'); if (prodIdInput) loadVariations(prodIdInput.value); } } else { console.error('bulk-add failed', data); alert('Erro ao criar variações em lote. Veja console para detalhes.'); } }).catch(err => { console.error(err); alert('Erro ao criar variações. Veja console para detalhes.'); });
+
+            function cartesianProduct(arr) {
+                return arr.reduce((a, b) => a.flatMap(d => b.map(e => d.concat([e]))), [[]]);
+            }
+
+            // Normaliza uma chave para um slug seguro (ex: "Armazenamento" -> "armazenamento")
+            function slugify(str) {
+                return String(str || '')
+                    .toLowerCase()
+                    .normalize('NFD').replace(/[^\w\s-]/g, '')
+                    .replace(/\s+/g, '_')
+                    .replace(/[^a-z0-9_-]/g, '')
+                    .replace(/^_+|_+$/g, '');
+            }
+
+            // Gerar combos mantendo a relação atributo->valor de forma genérica
+            const combos = cartesianProduct(arrays).map(combo => {
+                const attrs = {};
+                combo.forEach(c => {
+                    const slug = slugify(c.key);
+                    // se houver chaves duplicadas por alguma razão, última vence
+                    attrs[slug] = c.value;
+                });
+                return { attributes: attrs };
+            });
+
+            // Para o resumo/aviso, mostrar nomes originais dos atributos
+            const attributeNames = keys.map(k => k);
+
+            // Warn if too many
+            if (combos.length > 300) {
+                if (!confirm(`Serão criadas ${combos.length} variações. Continuar?`)) return;
+            }
+
+            // Post combos to bulk endpoint
+            const csrf = CSRF_TOKEN;
+            fetch(`/admin/products/${productId}/variations/bulk-add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ combos })
+            }).then(r => r.json())
+            .then(data => {
+                if (data && data.success) {
+                    alert(`Operação concluída. ${data.created} nova(s) variação(ões) criada(s).`);
+                    const variationsModalEl = document.getElementById('variationsModal');
+                    if (variationsModalEl && bootstrap.Modal.getInstance(variationsModalEl)) {
+                        const prodIdInput = document.getElementById('variationsProductId');
+                        if (prodIdInput) loadVariations(prodIdInput.value);
+                    }
+                } else {
+                    console.error('bulk-add failed', data);
+                    alert('Erro ao criar variações em lote. Veja console para detalhes.');
+                }
+            }).catch(err => {
+                console.error(err);
+                alert('Erro ao criar variações. Veja console para detalhes.');
+            });
         }
+
+        if (!deptAttributesPanel) return;
 
         function fetchAndRenderForDepartment(dept) {
-            if (!dept) { deptAttributesPanel.innerHTML = '<p class="text-muted">Produto sem departamento definido. Atribua um departamento para obter sugestões.</p>'; return; }
+            if (!dept) {
+                deptAttributesPanel.innerHTML = '<p class="text-muted">Produto sem departamento definido. Atribua um departamento para obter sugestões.</p>';
+                return;
+            }
+
             deptAttributesPanel.innerHTML = '<p class="text-muted">Carregando atributos do departamento...</p>';
-            fetch(`/admin/attributes/list?department=${dept}`, { headers: { 'Accept': 'application/json' } }).then(response => response.json()).then(data => renderAttributes(data)).catch(error => { console.error('Erro ao carregar atributos do departamento:', error); deptAttributesPanel.innerHTML = '<p class="text-muted text-danger">Erro ao carregar atributos. Verifique o console.</p>'; });
+            fetch(`/admin/attributes/list?department=${dept}`, { headers: { 'Accept': 'application/json' } })
+                .then(response => response.json())
+                .then(data => renderAttributes(data))
+                .catch(error => {
+                    console.error('Erro ao carregar atributos do departamento:', error);
+                    deptAttributesPanel.innerHTML = '<p class="text-muted text-danger">Erro ao carregar atributos. Verifique o console.</p>';
+                });
         }
 
-        if (deptAttributesPanel) fetchAndRenderForDepartment(currentDepartment);
+        // Inicialização: carregar para o departamento atual (se houver)
+        if (deptAttributesPanel) {
+            fetchAndRenderForDepartment(currentDepartment);
+        }
 
+        // Sincronizar quando o departamento mudar. Suporta select[name="department_id"], #qpDepartment e input combobox #qpDeptCombo
         function bindDepartmentChange() {
             const selectors = [document.querySelector('select[name="department_id"]'), document.getElementById('qpDepartment'), document.getElementById('qpDeptCombo'), document.getElementById('department_id')];
-            selectors.forEach(el => { if (!el) return; const handler = function(e) { let val = el.value || null; if (el.id === 'qpDeptCombo') { const sel = document.getElementById('qpDepartment'); if (sel && sel.value) val = sel.value; } if (val === null || val === '') { currentDepartment = null; fetchAndRenderForDepartment(null); return; } if (val == currentDepartment) return; currentDepartment = val; fetchAndRenderForDepartment(currentDepartment); }; el.addEventListener('change', handler); el.addEventListener('input', handler); });
+            selectors.forEach(el => {
+                if (!el) return;
+                // For text combobox we listen input+change; for select just change
+                const handler = function(e) {
+                    let val = el.value || null;
+                    // qpDeptCombo might contain text; try to find linked select value
+                    if (el.id === 'qpDeptCombo') {
+                        const sel = document.getElementById('qpDepartment');
+                        if (sel && sel.value) val = sel.value;
+                    }
+                    if (val === null || val === '') {
+                        currentDepartment = null;
+                        fetchAndRenderForDepartment(null);
+                        return;
+                    }
+                    if (val == currentDepartment) return; // sem mudança
+                    currentDepartment = val;
+                    fetchAndRenderForDepartment(currentDepartment);
+                };
+
+                el.addEventListener('change', handler);
+                el.addEventListener('input', handler);
+            });
         }
 
         bindDepartmentChange();
 
-        (function startDeptPoll(){ let last = currentDepartment; setInterval(function(){ const candidates = [document.querySelector('select[name="department_id"]'), document.getElementById('qpDepartment'), document.getElementById('qpDeptCombo'), document.getElementById('department_id')]; let found = null; for (const el of candidates) { if (!el) continue; let v = el.value || null; if (el.id === 'qpDeptCombo') { const sel = document.getElementById('qpDepartment'); if (sel && sel.value) v = sel.value; } if (v) { found = v; break; } } if ((found || null) !== last) { last = found || null; currentDepartment = last; fetchAndRenderForDepartment(currentDepartment); } }, 800); })();
+        // Fallback: polling rápido para detectar mudanças em componentes customizados
+        (function startDeptPoll(){
+            let last = currentDepartment;
+            setInterval(function(){
+                const candidates = [document.querySelector('select[name="department_id"]'), document.getElementById('qpDepartment'), document.getElementById('qpDeptCombo'), document.getElementById('department_id')];
+                let found = null;
+                for (const el of candidates) {
+                    if (!el) continue;
+                    let v = el.value || null;
+                    if (el.id === 'qpDeptCombo') {
+                        const sel = document.getElementById('qpDepartment');
+                        if (sel && sel.value) v = sel.value;
+                    }
+                    if (v) { found = v; break; }
+                }
+                if ((found || null) !== last) {
+                    last = found || null;
+                    currentDepartment = last;
+                    fetchAndRenderForDepartment(currentDepartment);
+                }
+            }, 800);
+        })();
     } catch (e) {
         console.error('Erro no módulo de atributos do departamento:', e);
     }
 });
-
-function removeExistingImage(button, imagePath) {
-    if (confirm('Tem certeza que deseja remover esta imagem?')) {
-        const imageItem = button.closest('.image-item');
-        if (imageItem) imageItem.remove();
-        const existingInputs = document.querySelectorAll('.existing-image-input');
-        existingInputs.forEach(input => { if (input.value === imagePath) input.remove(); });
-        const remainingInputs = document.querySelectorAll('.existing-image-input');
-        if (remainingInputs.length === 0) {
-            const allRemoved = document.getElementById('all-images-removed');
-            if (allRemoved) allRemoved.value = '1';
-        }
-        console.log('Imagem removida:', imagePath);
-        console.log('Inputs restantes:', remainingInputs.length);
-    }
-}
-
 </script>
 @endsection
