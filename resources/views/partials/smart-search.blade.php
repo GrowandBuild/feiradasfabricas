@@ -223,6 +223,96 @@
         <button class="theme-trigger" id="themeTrigger" title="Cores do site">
             <i class="bi bi-palette-fill"></i>
         </button>
+        <button class="smart-search-trigger" id="smartSearchTrigger" title="Buscar produto">
+            <i class="bi bi-search"></i>
+        </button>
+
+        <div class="smart-search-panel" id="smartSearchPanel" role="dialog" aria-label="Painel de busca rápida">
+            <div class="smart-search-header">
+                <h3>Buscar produtos</h3>
+                <button class="smart-search-close" id="smartSearchClose" aria-label="Fechar busca">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="smart-search-input-wrapper">
+                <div class="smart-search-input-group">
+                    <input id="smartSearchInput" class="smart-search-input" type="search" placeholder="Procurar produto..." aria-label="Pesquisar produto" />
+                    <button id="smartSearchClear" class="smart-search-clear" title="Limpar" aria-label="Limpar busca" style="display:none;"><i class="bi bi-x-lg"></i></button>
+                </div>
+            </div>
+            <div class="smart-search-results" id="smartSearchResults">
+                <div class="smart-search-empty">
+                    <i class="bi bi-search"></i>
+                    <p>Digite algo para buscar produtos</p>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Painel de Departamentos -->
+        <div class="departments-panel" id="departmentsPanel">
+            <div class="dp-header">
+                <span><i class="bi bi-diagram-3 me-2"></i> Departamentos</span>
+                <button class="smart-search-close" id="departmentsClose" aria-label="Fechar">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="dp-body">
+                <div id="dpLoading">Carregando departamentos...</div>
+                <div id="dpEmpty">Nenhum departamento cadastrado ainda.</div>
+                <ul class="dp-list" id="departmentsList"></ul>
+                <div class="dp-quick-add">
+                    <input type="text" id="dpNewName" class="form-control dp-full" placeholder="Nome do novo departamento">
+                    <input type="text" id="dpNewSlug" class="form-control" placeholder="Slug (opcional)">
+                    <input type="text" id="dpNewIcon" class="form-control" placeholder="Classe do ícone (ex: fas fa-store)">
+                    <input type="color" id="dpNewColor" class="form-control form-control-color" value="#667eea" title="Cor destaque">
+                    <textarea id="dpNewDescription" class="form-control dp-full" placeholder="Descrição (opcional)" rows="2"></textarea>
+                    <button class="sp-btn sp-btn-secondary dp-full" id="dpAdd" type="button">Adicionar departamento</button>
+                </div>
+            </div>
+            <div class="dp-footer">
+                <button class="sp-btn sp-btn-secondary" id="departmentsCancel" type="button">Fechar</button>
+                <button class="sp-btn sp-btn-primary" id="departmentsSave" type="button">Salvar alterações</button>
+            </div>
+            <!-- departments confirm overlay moved below to avoid nesting -->
+        </div>
+
+        <!-- Painel de Tema -->
+        <div class="theme-panel" id="themePanel">
+            <div class="tp-header">
+                <span><i class="bi bi-palette me-2"></i> Cores do Site</span>
+                <button class="smart-search-close" id="themeClose" aria-label="Fechar">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
+            <div class="tp-body">
+                <div class="tp-intro">
+                    <i class="bi bi-info-circle-fill"></i>
+                    <div>
+                        <strong>Personalize a identidade visual em poucos cliques.</strong>
+                        <div>As alterações aparecem instantaneamente na pré-visualização abaixo. Quando estiver satisfeito, clique em <strong>Salvar</strong> para aplicar para todos os visitantes.</div>
+                    </div>
+                </div>
+                <div class="tp-preview" aria-live="polite">
+                    <div class="tp-preview-header">
+                        <span>Topo do site</span>
+                        <div class="tp-preview-search">
+                            <div class="bar" title="Área da busca"></div>
+                            <div class="tp-preview-actions">
+                                <div class="btn-outline">Categorias</div>
+                                <div class="btn-solid">Buscar</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tp-preview-card">
+                        <span class="tag">Oferta</span>
+                        <span class="title">Produto destaque com cor de texto escuro</span>
+                        <span class="price">R$ 1.299,00</span>
+                        <div style="display:flex; gap:8px;">
+                            <div class="btn-solid" style="padding:8px 14px; border-radius:8px; font-size:11px;">Ver detalhes</div>
+                            <div class="btn-outline" style="padding:8px 14px; border-radius:8px; font-size:11px;">Adicionar</div>
+                        </div>
+                    </div>
+                </div>
                 <div class="tp-fields">
                     <div class="tp-field" data-key="theme_primary">
                         <span class="tp-label">Primária</span>
@@ -1614,28 +1704,7 @@
             }
 
             function populateBrandsSelect(){
-                try {
-                    const selects = Array.from(document.querySelectorAll('.sp-brand-select'));
-                    // build option elements
-                    selects.forEach(sel => {
-                        // preserve current value
-                        const prev = (sel.value || '').toString();
-                        sel.innerHTML = '';
-                        const empty = document.createElement('option');
-                        empty.value = '';
-                        empty.textContent = '— Selecionar referência —';
-                        sel.appendChild(empty);
-                        (availableBrands || []).forEach(b => {
-                            try {
-                                const opt = document.createElement('option');
-                                opt.value = b;
-                                opt.textContent = b;
-                                sel.appendChild(opt);
-                            } catch(e) {}
-                        });
-                        if (prev) sel.value = prev;
-                    });
-                } catch(e) { console.debug && console.debug('populateBrandsSelect failed', e); }
+                // Brands UI removed; no-op
             }
 
             // When a brand is chosen manually, hide the 'no brands' warning
@@ -1708,11 +1777,6 @@
                         <div>
                             <div class="d-flex gap-2 align-items-center">
                                 <input type="text" class="form-control form-control-sm sp-title" value="${sec.title || ''}" placeholder="Título">
-                                <div style="min-width:160px; max-width:260px;">
-                                    <select class="form-select form-select-sm sp-brand-select">
-                                        <option value="">— Carregando referências —</option>
-                                    </select>
-                                </div>
                                 <div class="sp-actions">
                                     <button type="button" class="sp-btn sp-btn-secondary sp-up" title="Subir"><i class="bi bi-arrow-up"></i></button>
                                     <button type="button" class="sp-btn sp-btn-secondary sp-down" title="Descer"><i class="bi bi-arrow-down"></i></button>
@@ -1727,8 +1791,6 @@
                     `;
                     sectionsList.appendChild(li);
                 });
-                // populate selects after rendering
-                populateBrandsSelect();
             }
             function readSectionsList(){
                 const items = sectionsList.querySelectorAll('.sp-item');
@@ -1748,7 +1810,7 @@
                 if (dir > 0 && el.nextElementSibling) el.parentNode.insertBefore(el.nextElementSibling, el);
             }
             function initSectionsPanel(){
-                // Load saved sections from server for this department and also fetch available brands
+                // Load saved sections from server for this department (no brand lookup)
                 const dept = detectDepartmentSlug() || 'eletronicos';
                 fetch(`/admin/departments/${encodeURIComponent(dept)}/sections`, { headers: { 'Accept': 'application/json' }})
                     .then(r => r.json())
@@ -1763,14 +1825,9 @@
                                 id: s.id,
                             }));
                         }
-                        // Ensure brand list is loaded before rendering selects
-                        return fetchBrands().catch(() => {});
-                    })
-                    .then(() => {
                         renderSectionsList();
                     })
                     .catch(() => {
-                        // fallback: render anyway
                         renderSectionsList();
                     });
             }

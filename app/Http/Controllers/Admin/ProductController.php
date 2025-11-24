@@ -446,24 +446,11 @@ class ProductController extends Controller
             $data['variation_images'] = $filteredVariationImages;
         }
 
-        // Garantir valores inteiros/defaut para campos de estoque para evitar nulls
-        $oldStock = (int) ($product->stock_quantity ?? 0);
-
-        // Se for serviço, normalizar estoque para 0 (DB exige NOT NULL)
-        if (($data['product_type'] ?? 'physical') === 'service') {
-            $data['stock_quantity'] = 0;
-            $data['min_stock'] = 0;
-            $data['in_stock'] = false;
-        } else {
-            // Para produtos físicos, usar valores enviados ou manter o atual como fallback
-            $data['stock_quantity'] = $request->has('stock_quantity') ? (int) $request->stock_quantity : ($product->stock_quantity ?? 0);
-            $data['min_stock'] = $request->has('min_stock') ? (int) $request->min_stock : ($product->min_stock ?? 0);
-            $data['in_stock'] = ($data['stock_quantity'] ?? 0) > 0;
-        }
-
-        $newStock = (int) ($data['stock_quantity'] ?? 0);
-
-        if ($oldStock !== $newStock) {
+        // Log de alteração de estoque se necessário
+        $oldStock = $product->stock_quantity;
+        $newStock = $request->stock_quantity;
+        
+        if ($oldStock != $newStock) {
             InventoryLog::create([
                 'product_id' => $product->id,
                 'admin_id' => auth('admin')->id(),
