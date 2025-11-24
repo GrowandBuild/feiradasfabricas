@@ -5,7 +5,7 @@
 
 @section('content')
     <div class="container py-5">
-        @php($linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null)
+        @php $linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null; @endphp
     <nav aria-label="breadcrumb" class="mb-4">
         <ol class="breadcrumb">
             <li class="breadcrumb-item"><a href="{{ route('home') }}">Início</a></li>

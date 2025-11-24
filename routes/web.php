@@ -166,6 +166,12 @@ Route::get('/register-b2b', [CustomerAuthController::class, 'showB2BRegisterForm
 // Incluir rotas administrativas
 require __DIR__.'/admin.php';
 
+// Endpoint público leve para categorias (usado por autocomplete em páginas públicas)
+Route::get('/categories/json', function () {
+    $cats = \App\Models\Category::select('id', 'name')->orderBy('name')->get();
+    return response()->json(['success' => true, 'categories' => $cats]);
+})->name('categories.public');
+
 // API de Busca Avançada
 Route::prefix('api/search')->group(function () {
     Route::get('/', [App\Http\Controllers\SearchController::class, 'search']);

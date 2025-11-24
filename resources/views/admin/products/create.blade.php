@@ -136,6 +136,28 @@
                         @enderror
                     </div>
 
+                    <!-- Marca -->
+                    <div class="mb-3">
+                        <label for="brand_id" class="form-label">Marca do Produto</label>
+                        <select class="form-select @error('brand_id') is-invalid @enderror"
+                                id="brand_id" name="brand_id">
+                            <option value="">— Nenhuma marca selecionada —</option>
+                            @php
+                                $brands = \App\Models\Brand::active()->orderBy('sort_order')->orderBy('name')->get();
+                            @endphp
+                            @foreach($brands as $brand)
+                                <option value="{{ $brand->id }}"
+                                        {{ old('brand_id') == $brand->id ? 'selected' : '' }}>
+                                    {{ $brand->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">Selecione a marca do produto (opcional)</small>
+                        @error('brand_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
                     <!-- Imagens -->
                     <div class="mb-3">
                         <label for="images" class="form-label">Imagens do Produto</label>
@@ -147,18 +169,8 @@
                         @enderror
                     </div>
 
-                    <!-- Informações Adicionais -->
+                    <!-- Informações Adicionais (Marca removida) -->
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="brand" class="form-label">Marca</label>
-                                <input type="text" class="form-control @error('brand') is-invalid @enderror" 
-                                       id="brand" name="brand" value="{{ old('brand') }}">
-                                @error('brand')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="model" class="form-label">Modelo</label>

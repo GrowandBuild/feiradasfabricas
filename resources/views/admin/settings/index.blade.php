@@ -307,7 +307,7 @@
                                         <div class="row mb-3">
                                             <div class="col-md-6">
                                                 <label for="melhor_envio_declared_mode" class="form-label">Modo Valor Declarado</label>
-                                                @php($declaredMode = setting('melhor_envio_declared_mode','none'))
+                                                @php $declaredMode = setting('melhor_envio_declared_mode','none'); @endphp
                                                 <select id="melhor_envio_declared_mode" class="form-select">
                                                     <option value="none" {{ $declaredMode==='none' ? 'selected' : '' }}>Sem seguro (mínimo)</option>
                                                     <option value="cost" {{ $declaredMode==='cost' ? 'selected' : '' }}>Custo</option>
@@ -323,7 +323,7 @@
                                             </div>
                                         </div>
                                         <div class="mb-3">
-                                            @php($hasToken = !empty(setting('melhor_envio_token', '')))
+                                            @php $hasToken = !empty(setting('melhor_envio_token', '')); @endphp
                                             @if($hasToken)
                                                 <div class="alert alert-success py-2">
                                                     <i class="bi bi-check-circle me-1"></i>

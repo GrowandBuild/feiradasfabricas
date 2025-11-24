@@ -115,83 +115,71 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const imagesModal = document.getElementById('imagesModal');
-    if (imagesModal) {
-        imagesModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const productId = button.getAttribute('data-product-id');
-            const productName = button.getAttribute('data-product-name');
-            
-            document.getElementById('imagesModalLabel').innerHTML = 
-                '<i class="bi bi-images me-2"></i>Gerenciar Imagens - ' + productName;
-            document.getElementById('imagesProductId').value = productId;
-            
-            loadProductImages(productId);
+
+    // Utilitário para limpar o formulário/modal
+    function resetImagesModal() {
+        document.getElementById('imagesForm').reset();
+        [
+            'currentFeaturedImageContainer',
+            'noFeaturedImageAlert',
+            'newFeaturedImagePreview',
+            'currentAdditionalImagesContainer',
+            'noAdditionalImagesAlert',
+            'newAdditionalImagesPreview'
+        ].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
         });
-        
-        // Limpar formulário ao fechar
-        imagesModal.addEventListener('hidden.bs.modal', function() {
-            document.getElementById('imagesForm').reset();
-            document.getElementById('currentFeaturedImageContainer').style.display = 'none';
-            document.getElementById('noFeaturedImageAlert').style.display = 'none';
-            document.getElementById('newFeaturedImagePreview').style.display = 'none';
-            document.getElementById('currentAdditionalImagesContainer').style.display = 'none';
-            document.getElementById('noAdditionalImagesAlert').style.display = 'none';
-            document.getElementById('newAdditionalImagesPreview').style.display = 'none';
-            document.getElementById('currentAdditionalImagesList').innerHTML = '';
-            document.getElementById('newAdditionalImagesList').innerHTML = '';
+        ['currentAdditionalImagesList', 'newAdditionalImagesList'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '';
         });
     }
-    
-    // Preview da imagem de destaque - seguindo padrão do banner
-    const featuredImageInput = document.getElementById('featuredImageInput');
-    if (featuredImageInput) {
-        featuredImageInput.addEventListener('change', function(e) {
+
+    // Preview de imagem
+    function previewImage(inputId, previewContainerId, previewImgId, successMsgId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        input.addEventListener('change', function(e) {
             const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    // Criar ou atualizar preview
-                    let preview = document.getElementById('new-featured-image-preview');
-                    if (!preview) {
-                        preview = document.createElement('img');
-                        preview.id = 'new-featured-image-preview';
-                        preview.className = 'img-thumbnail mt-2';
-                        preview.style.maxWidth = '300px';
-                        document.getElementById('newFeaturedImagePreview').appendChild(preview);
-                    }
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                    document.getElementById('newFeaturedImagePreview').style.display = 'block';
-                    
-                    // Mostrar mensagem de sucesso
-                    let successMsg = document.getElementById('new-featured-image-success');
-                    if (!successMsg) {
-                        successMsg = document.createElement('div');
-                        successMsg.id = 'new-featured-image-success';
-                        successMsg.className = 'alert alert-success mt-2';
-                        document.getElementById('newFeaturedImagePreview').appendChild(successMsg);
-                    }
-                    successMsg.innerHTML = '<i class="bi bi-check-circle"></i> Nova imagem de destaque selecionada: ' + file.name;
-                };
-                reader.readAsDataURL(file);
-            }
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                let preview = document.getElementById(previewImgId);
+                if (!preview) {
+                    preview = document.createElement('img');
+                    preview.id = previewImgId;
+                    preview.className = 'img-thumbnail mt-2';
+                    preview.style.maxWidth = '300px';
+                    document.getElementById(previewContainerId).appendChild(preview);
+                }
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                document.getElementById(previewContainerId).style.display = 'block';
+                let successMsg = document.getElementById(successMsgId);
+                if (!successMsg) {
+                    successMsg = document.createElement('div');
+                    successMsg.id = successMsgId;
+                    successMsg.className = 'alert alert-success mt-2';
+                    document.getElementById(previewContainerId).appendChild(successMsg);
+                }
+                successMsg.innerHTML = `<i class="bi bi-check-circle"></i> Nova imagem selecionada: ${file.name}`;
+            };
+            reader.readAsDataURL(file);
         });
     }
-    
-    // Preview das imagens adicionais
-    const additionalImagesInput = document.getElementById('additionalImagesInput');
-    if (additionalImagesInput) {
-        additionalImagesInput.addEventListener('change', function(e) {
+
+    // Preview de múltiplas imagens
+    function previewMultipleImages(inputId, previewContainerId, previewListId) {
+        const input = document.getElementById(inputId);
+        if (!input) return;
+        input.addEventListener('change', function(e) {
             const files = e.target.files;
-            const previewContainer = document.getElementById('newAdditionalImagesPreview');
-            const previewList = document.getElementById('newAdditionalImagesList');
-            
+            const previewContainer = document.getElementById(previewContainerId);
+            const previewList = document.getElementById(previewListId);
             previewList.innerHTML = '';
-            
             if (files && files.length > 0) {
                 previewContainer.style.display = 'block';
-                
                 Array.from(files).forEach((file, index) => {
                     if (file.type.startsWith('image/')) {
                         const reader = new FileReader();
@@ -200,9 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             col.className = 'col-md-3 mb-2';
                             col.innerHTML = `
                                 <div class="position-relative">
-                                    <img src="${e.target.result}" 
-                                         class="img-thumbnail" 
-                                         style="width: 100%; height: 100px; object-fit: cover;">
+                                    <img src="${e.target.result}" class="img-thumbnail" style="width: 100%; height: 100px; object-fit: cover;">
                                     <span class="badge bg-success position-absolute top-0 start-0">Nova</span>
                                 </div>
                             `;
@@ -216,6 +202,24 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Inicialização do modal
+    const imagesModal = document.getElementById('imagesModal');
+    if (imagesModal) {
+        imagesModal.addEventListener('show.bs.modal', function(event) {
+            const button = event.relatedTarget;
+            const productId = button.getAttribute('data-product-id');
+            const productName = button.getAttribute('data-product-name');
+            document.getElementById('imagesModalLabel').innerHTML = `<i class="bi bi-images me-2"></i>Gerenciar Imagens - ${productName}`;
+            document.getElementById('imagesProductId').value = productId;
+            loadProductImages(productId);
+        });
+        imagesModal.addEventListener('hidden.bs.modal', resetImagesModal);
+    }
+
+    // Preview listeners
+    previewImage('featuredImageInput', 'newFeaturedImagePreview', 'new-featured-image-preview', 'new-featured-image-success');
+    previewMultipleImages('additionalImagesInput', 'newAdditionalImagesPreview', 'newAdditionalImagesList');
 });
 
 function loadProductImages(productId) {

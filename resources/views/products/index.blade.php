@@ -48,21 +48,7 @@
                             </div>
                         @endif
 
-                        <!-- Filtro por Marca -->
-                        @if($brands->count() > 0)
-                            <div class="mb-3">
-                                <label for="brand" class="form-label">Marca</label>
-                                <select class="form-select" id="brand" name="brand">
-                                    <option value="">Todas as marcas</option>
-                                    @foreach($brands as $brand)
-                                        <option value="{{ $brand }}" 
-                                                {{ request('brand') == $brand ? 'selected' : '' }}>
-                                            {{ $brand }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
+                        <!-- Marca filter removed -->
 
                         <!-- Ordenação -->
                         <div class="mb-3">
@@ -93,7 +79,7 @@
                     </span>
                 </div>
                 
-                @if(request()->hasAny(['category', 'brand', 'search']))
+                @if(request()->hasAny(['category', 'search']))
                     <div class="active-filters">
                         <span class="text-muted me-2">Filtros ativos:</span>
                         @if(request('category'))
@@ -103,12 +89,7 @@
                                 <a href="{{ route('products', request()->except('category')) }}" class="text-white ms-1">×</a>
                             </span>
                         @endif
-                        @if(request('brand'))
-                            <span class="badge bg-primary me-1">
-                                {{ request('brand') }}
-                                <a href="{{ route('products', request()->except('brand')) }}" class="text-white ms-1">×</a>
-                            </span>
-                        @endif
+                        {{-- brand removed --}}
                         @if(request('search'))
                             <span class="badge bg-primary me-1">
                                 "{{ request('search') }}"
@@ -122,7 +103,7 @@
             @if($products->count() > 0)
                 <!-- Grid de Produtos -->
                 <div class="row">
-                    @php($linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null)
+                    @php $linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null; @endphp
                     @foreach($products as $product)
                         <div class="col-lg-4 col-md-6 mb-4">
                             <div class="card h-100 product-card {{ $product->is_unavailable ? 'product-unavailable' : '' }}" 
@@ -161,11 +142,7 @@
                                 </div>
                                 
                                 <div class="card-body d-flex flex-column">
-                                    <div class="mb-2">
-                                        @if($product->brand)
-                                            <small class="text-muted">{{ $product->brand }}</small>
-                                        @endif
-                                    </div>
+                                    <!-- Brand display removed -->
                                     
                                     <h6 class="card-title">{{ Str::limit($product->name, 60) }}</h6>
                                     
@@ -507,7 +484,7 @@
 <script>
     // Auto-submit form when filters change
     document.addEventListener('DOMContentLoaded', function() {
-        const selects = document.querySelectorAll('#category, #brand, #sort');
+        const selects = document.querySelectorAll('#category, #sort');
         selects.forEach(select => {
             select.addEventListener('change', function() {
                 this.form.submit();

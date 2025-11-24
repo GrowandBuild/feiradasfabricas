@@ -12,7 +12,6 @@ use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentBadgeController;
 use App\Http\Controllers\Admin\AlbumController as AdminAlbumController;
-use App\Http\Controllers\Admin\BrandController;
 // use App\Http\Controllers\Admin\MelhorEnvioController; // removido (frete)
 use Illuminate\Support\Facades\Route;
 
@@ -39,16 +38,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Produtos
         Route::resource('products', ProductController::class);
-    // Lista de marcas (JSON)
-    Route::get('products/brands-list', [ProductController::class, 'brandsList'])->name('products.brands-list');
-    // Inline create brand (quick admin)
-    Route::post('brands/inline-create', [BrandController::class, 'inlineCreate'])->name('brands.inline-create');
-        // Ativar/Desativar produtos em massa por marca
-        Route::post('products/bulk-toggle-by-brand', [ProductController::class, 'bulkToggleByBrand'])->name('products.bulk-toggle-by-brand');
+        // Marcas (submenu de produtos)
+        Route::resource('brands', App\Http\Controllers\Admin\BrandController::class);
+        Route::patch('brands/{brand}/toggle-active', [App\Http\Controllers\Admin\BrandController::class, 'toggleActive'])->name('brands.toggle-active');
+        Route::get('brands/list', [App\Http\Controllers\Admin\BrandController::class, 'list'])->name('brands.list');
         Route::post('products/{product}/adjust-stock', [ProductController::class, 'adjustStock'])->name('products.adjust-stock');
         Route::get('products/{product}/variations', [ProductController::class, 'getVariations'])->name('products.variations');
+        Route::get('attributes/list', [ProductController::class, 'attributesList'])->name('attributes.list');
         Route::post('products/{product}/variations/toggle', [ProductController::class, 'toggleVariation'])->name('products.variations.toggle');
         Route::post('products/{product}/variations/add', [ProductController::class, 'addVariation'])->name('products.variations.add');
+        // Bulk add full variation combinations (expects payload { combos: [{ram, storage, color}, ...] })
+        Route::post('products/{product}/variations/bulk-add', [ProductController::class, 'bulkAddVariations'])->name('products.variations.bulk-add');
         Route::post('products/{product}/variations/update-stock', [ProductController::class, 'updateStock'])->name('products.variations.update-stock');
         Route::post('products/{product}/variations/color-images', [ProductController::class, 'updateColorImages'])->name('products.variations.color-images');
         Route::delete('products/{product}/variations/{variationId}', [ProductController::class, 'deleteVariation'])->name('products.variations.destroy');

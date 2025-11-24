@@ -12,13 +12,27 @@ class Brand extends Model
     protected $fillable = [
         'name',
         'slug',
+        'description',
         'logo',
-        'department_id',
+        'is_active',
+        'sort_order',
     ];
 
-    // Helpful accessor for normalized key
-    public function getKeyNameAttribute()
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public function products()
     {
-        return $this->attributes['name'] ?? null;
+        return $this->hasMany(Product::class);
+    }
+
+    /**
+     * Local scope to filter only active brands.
+     * Usage: App\Models\Brand::active()->get();
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
     }
 }

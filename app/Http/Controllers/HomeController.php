@@ -45,10 +45,10 @@ class HomeController extends Controller
             });
         }
 
-        // Filtro por marca
-        if ($request->filled('brand')) {
-            $query->where('brand', $request->brand);
-        }
+        // Filtro por marca (REMOVED): prevent any brand-specific DB queries
+        // if ($request->filled('brand')) {
+        //     $query->where('brand', $request->brand);
+        // }
 
         // Busca por nome
         if ($request->filled('search')) {
@@ -84,12 +84,8 @@ class HomeController extends Controller
 
         $products = $query->paginate(12);
         $categories = Category::active()->ordered()->get();
-        $brands = Product::active()
-            ->available() // Apenas marcas de produtos disponíveis
-            ->distinct()
-            ->pluck('brand')
-            ->filter()
-            ->sort();
+        // Brands removed: provide empty collection for compatibility with views
+        $brands = collect();
 
         return view('products.index', compact('products', 'categories', 'brands'));
     }
@@ -176,10 +172,7 @@ class HomeController extends Controller
             'name' => $pageTitle,
             'image' => $variantImages,
             'sku' => $variation->sku ?? $product->sku,
-            'brand' => [
-                '@type' => 'Brand',
-                'name' => $product->brand ?? 'Marca'
-            ],
+            // 'brand' removed from schema per request
             'description' => $metaDescription,
             'offers' => [
                 '@type' => 'Offer',

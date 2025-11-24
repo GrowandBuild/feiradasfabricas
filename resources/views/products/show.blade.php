@@ -76,7 +76,7 @@
         <div class="product-column thumbnails-area">
             <div class="thumbnails-container">
                 <div id="thumbnailsWrapper" class="thumbnails-wrapper d-flex flex-column">
-                    @php($images = $product->all_images ?? [])
+                    @php $images = $product->all_images ?? []; @endphp
                     @forelse($images as $index => $image)
                         <div class="thumbnail-item">
                             <img src="{{ $image }}"
@@ -146,6 +146,15 @@
                     <div class="price-card mb-3">
                         <div class="price-section">
                             <span class="h3 price-value" id="product-price-display">R$ {{ number_format($product->price, 2, ',', '.') }}</span>
+                            @if(!is_null($product->compare_price) && $product->compare_price > $product->price)
+                                <div class="d-flex align-items-center gap-2">
+                                    <small class="text-muted compare-price text-decoration-line-through">R$ {{ number_format($product->compare_price, 2, ',', '.') }}</small>
+                                    @php
+                                        $discountPercent = round((($product->compare_price - $product->price) / max($product->compare_price, 1)) * 100);
+                                    @endphp
+                                    <span class="badge bg-danger discount-badge">-{{ $discountPercent }}%</span>
+                                </div>
+                            @endif
                             <span class="sub-price">Preço à vista</span>
                                 </div>
                         {{-- Frete removido --}}
@@ -205,7 +214,7 @@
                                     <h6 class="variation-label">Cor:</h6>
                                     <div class="variation-options" id="color-options">
                                         @foreach($colorOptions as $color)
-                                            @php($colorHex = optional($variationData->firstWhere('color', $color))['color_hex'])
+                                            @php $colorHex = optional($variationData->firstWhere('color', $color))['color_hex']; @endphp
                                             <label class="variation-option" data-variation-type="color" data-value="{{ $color }}">
                                                 <input type="radio" name="color" value="{{ $color }}" {{ $loop->first ? 'checked' : '' }}>
                                                 <span class="variation-option-content">
@@ -343,7 +352,7 @@
             <div class="col-12">
                 <h3 class="mb-4">Produtos Relacionados</h3>
                 <div class="row">
-                    @php($linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null)
+                    @php $linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null; @endphp
                     @foreach($relatedProducts as $relatedProduct)
                         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
                             <div class="card h-100 product-card">
@@ -361,7 +370,6 @@
                                 </div>
                                 <div class="card-body d-flex flex-column">
                                     <h6 class="card-title">{{ Str::limit($relatedProduct->name, 50) }}</h6>
-                                    <p class="text-muted small mb-2">{{ $relatedProduct->brand }}</p>
                                     <div class="mt-auto">
                                         @if($relatedProduct->sale_price && $relatedProduct->sale_price < $relatedProduct->price)
                                             <div class="d-flex align-items-center">
@@ -710,6 +718,16 @@
         font-weight: 800;
         font-size: 2.25rem;
         letter-spacing: -0.02em;
+    }
+    .compare-price {
+        font-size: 0.95rem;
+        margin-left: 6px;
+    }
+    .discount-badge {
+        font-weight: 700;
+        font-size: 0.85rem;
+        padding: 0.35rem 0.5rem;
+        border-radius: 6px;
     }
     
     .variation-select option.variation-option-disabled {

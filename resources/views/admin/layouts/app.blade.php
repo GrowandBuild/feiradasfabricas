@@ -933,14 +933,7 @@
             flex-wrap: wrap;
         }
 
-        .smart-search-item-brand {
-            font-size: 12px;
-            padding: 2px 8px;
-            background: var(--primary-color);
-            color: white;
-            border-radius: 4px;
-            font-weight: 500;
-        }
+        /* .smart-search-item-brand removed — brand UI deleted. Keeping comment for safety. */
 
         .smart-search-item-price {
             font-size: 13px;
@@ -1021,6 +1014,10 @@
                             <i class="bi bi-box-seam"></i> 
                             <span>Produtos</span>
                         </a>
+                        <a class="nav-link {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}" href="{{ route('admin.brands.index') }}" style="padding-left: 2.5rem;">
+                            <i class="bi bi-tag"></i> 
+                            <span>Marcas</span>
+                        </a>
                         <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
                             <i class="bi bi-tags"></i> 
                             <span>Categorias</span>
@@ -1048,7 +1045,7 @@
                         <!-- Galerias removidas -->
                         <a class="nav-link {{ request()->routeIs('admin.department-badges.*') ? 'active' : '' }}" href="{{ route('admin.department-badges.index') }}">
                             <i class="bi bi-award"></i>
-                            <span>Selos de Marcas</span>
+                            <span>Selos</span>
                         </a>
                         <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                             <i class="bi bi-people"></i> 
@@ -1067,8 +1064,8 @@
                             <div class="d-flex align-items-start gap-2">
                                 <i class="bi bi-lightbulb-fill" style="color: #fbbf24; font-size: 1.2rem; flex-shrink: 0;"></i>
                                 <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #fbbf24;">Diversidade paga:</strong> Ofereça múltiplas marcas e variações. Clientes adoram opções!
+                                        <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
+                                        <strong style="color: #fbbf24;">Diversidade paga:</strong> Ofereça múltiplas opções e variações. Clientes adoram escolhas!
                                     </p>
                                 </div>
                             </div>
@@ -1146,8 +1143,8 @@
                             <div class="d-flex align-items-start gap-2">
                                 <i class="bi bi-trophy-fill" style="color: #22c55e; font-size: 1.2rem; flex-shrink: 0;"></i>
                                 <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #22c55e;">Marcas de confiança:</strong> Apple, Samsung, Xiaomi... Nomes fortes atraem e convertem!
+                                        <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
+                                        <strong style="color: #22c55e;">Fornecedores de confiança:</strong> Nomes fortes atraem e convertem!
                                     </p>
                                 </div>
                             </div>
@@ -1350,6 +1347,10 @@
                     <i class="bi bi-box-seam"></i>
                     <span>Produtos</span>
                 </a>
+                <a class="nav-link {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}" href="{{ route('admin.brands.index') }}">
+                    <i class="bi bi-tag"></i>
+                    <span>Marcas</span>
+                </a>
                 <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
                     <i class="bi bi-tags"></i>
                     <span>Categorias</span>
@@ -1517,7 +1518,6 @@
                 
                 products.forEach(product => {
                     const image = product.first_image || '{{ asset("images/no-image.svg") }}';
-                    const brand = product.brand || 'Sem marca';
                     const price = product.price ? `R$ ${parseFloat(product.price).toFixed(2).replace('.', ',')}` : 'Preço não definido';
                     const listUrl = `{{ route('admin.products.index') }}?highlight=${product.id}#product-${product.id}`;
                     
@@ -1547,7 +1547,6 @@
                                     ${statusBadges}
                                 </div>
                                 <div class="smart-search-item-meta">
-                                    <span class="smart-search-item-brand">${brand}</span>
                                     <span class="smart-search-item-price">${price}</span>
                                 </div>
                             </div>

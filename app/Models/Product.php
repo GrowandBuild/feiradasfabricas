@@ -17,6 +17,7 @@ class Product extends Model
         'short_description',
         'sku',
         'price',
+        'compare_price',
         'b2b_price',
         'cost_price',
         'profit_margin_b2b',
@@ -29,6 +30,7 @@ class Product extends Model
         'is_unavailable',
         'is_featured',
         'brand',
+        'brand_id',
         'model',
         'supplier',
         'images',
@@ -40,6 +42,8 @@ class Product extends Model
         'height',
         'sort_order',
         'department_id',
+        'sell_b2b',
+        'sell_b2c',
     ];
 
     protected $casts = [
@@ -49,6 +53,7 @@ class Product extends Model
         'is_unavailable' => 'boolean',
         'is_featured' => 'boolean',
         'price' => 'decimal:2',
+        'compare_price' => 'decimal:2',
         'b2b_price' => 'decimal:2',
         'cost_price' => 'decimal:2',
         'profit_margin_b2b' => 'decimal:2',
@@ -60,6 +65,8 @@ class Product extends Model
         'images' => 'array',
         'variation_images' => 'array',
         'specifications' => 'array',
+        'sell_b2b' => 'boolean',
+        'sell_b2c' => 'boolean',
     ];
 
     /**
@@ -68,6 +75,31 @@ class Product extends Model
     public function department()
     {
         return $this->belongsTo(Department::class);
+    }
+
+    /**
+     * Relacionamento com marca (opcional).
+     * Mantemos a coluna string `brand` por compatibilidade; a referência nova fica em `brand_id`.
+     */
+    public function brandModel()
+    {
+        return $this->belongsTo(Brand::class, 'brand_id');
+    }
+
+    /**
+     * Nome da marca — prefere o relacionamento `brandModel`, cai back para a coluna `brand`.
+     */
+    public function getBrandNameAttribute()
+    {
+        if ($this->relationLoaded('brandModel') && $this->brandModel) {
+            return $this->brandModel->name;
+        }
+
+        if ($this->brandModel) {
+            return $this->brandModel->name;
+        }
+
+        return $this->attributes['brand'] ?? null;
     }
 
     /**

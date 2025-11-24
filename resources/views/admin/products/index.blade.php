@@ -154,19 +154,7 @@
                 <input type="text" class="form-control filter-input" name="search" value="{{ request('search') }}" 
                        placeholder="Nome, SKU ou descrição">
             </div>
-            <div class="col-md-2">
-                <label class="form-label">
-                    <i class="bi bi-award me-1"></i>Marca
-                </label>
-                <select name="brand" class="form-select filter-select">
-                    <option value="">Todas</option>
-                    @foreach(($brands ?? collect()) as $brand)
-                        <option value="{{ $brand }}" {{ request('brand') == $brand ? 'selected' : '' }}>
-                            {{ $brand }}
-                        </option>
-                    @endforeach
-                </select>
-            </div>
+            <!-- Marca filter removed per request -->
             <div class="col-md-2">
                 <label class="form-label">
                     <i class="bi bi-tags me-1"></i>Categoria
@@ -230,7 +218,7 @@
             </div>
         </form>
         
-        @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status', 'supplier']))
+        @if(request()->hasAny(['search', 'category', 'status', 'stock_status', 'supplier']))
             <div class="mt-3 p-2 d-flex align-items-center justify-content-between" style="background-color: white; border-radius: 6px; border-left: 3px solid #f97316;">
                 <span class="text-muted me-2" style="font-size: 0.85rem;">
                     <i class="bi bi-funnel-fill me-1" style="color: #f97316;"></i>
@@ -290,7 +278,7 @@
                                 <input type="checkbox" id="selectAll" class="form-check-input" title="Selecionar todos" style="cursor: pointer; width: 20px; height: 20px;">
                             </th>
                             <th style="width: 320px; padding: 16px; font-weight: 600; color: #374151; font-size: 0.95rem;">Produto</th>
-                            <th style="width: 100px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Marca</th>
+                            <!-- Marca column removed -->
                             <th style="width: 240px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Preço e Margens</th>
                             <th class="text-center" style="width: 90px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Estoque</th>
                             <th class="text-center" style="width: 120px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Variações</th>
@@ -391,15 +379,7 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td style="padding: 12px 8px;">
-                                    @if($product->brand)
-                                        <span class="badge bg-primary" style="font-size: 0.85rem; padding: 5px 10px;">
-                                            {{ Str::limit($product->brand, 12) }}
-                                        </span>
-                                    @else
-                                        <span class="text-muted" style="font-size: 0.85rem;">-</span>
-                                    @endif
-                                </td>
+                                <!-- Marca cell removed -->
                                 <td style="padding: 10px 8px;" onclick="event.stopPropagation();">
                                     @php
                                         $hasVariations = ($product->variations_count ?? 0) > 0;
@@ -662,7 +642,7 @@
                 </div>
                 <h4 class="mb-3" style="color: #374151; font-weight: 600;">Nenhum produto encontrado</h4>
                 <p class="text-muted mb-4" style="font-size: 1rem;">
-                    @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status', 'supplier']))
+                                @if(request()->hasAny(['search', 'category', 'status', 'stock_status', 'supplier']))
                         <i class="bi bi-funnel me-1"></i>
                         Nenhum produto corresponde aos filtros aplicados.
                     @else
@@ -671,7 +651,7 @@
                     @endif
                 </p>
                 <div class="d-flex gap-2 justify-content-center">
-                    @if(request()->hasAny(['search', 'brand', 'category', 'status', 'stock_status', 'supplier']))
+                    @if(request()->hasAny(['search', 'category', 'status', 'stock_status', 'supplier']))
                         <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary shadow-sm">
                             <i class="bi bi-arrow-left me-1"></i> Limpar Filtros
                         </a>

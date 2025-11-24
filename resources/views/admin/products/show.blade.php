@@ -52,10 +52,7 @@
                 </div>
 
                 <div class="row mb-3">
-                    <div class="col-md-4">
-                        <label class="fw-bold text-muted">Marca</label>
-                        <p>{{ $product->brand ?: 'N/A' }}</p>
-                    </div>
+                    <!-- Marca removida do painel de detalhes -->
                     <div class="col-md-4">
                         <label class="fw-bold text-muted">Modelo</label>
                         <p>{{ $product->model ?: 'N/A' }}</p>

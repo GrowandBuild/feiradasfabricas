@@ -92,8 +92,8 @@
 
             /* (banner behavior restored to the original rules further below) */
 
-            /* Reduce badge / brand logo sizes */
-            .brand-logo, .badge-circle {
+            /* Reduce badge sizes */
+            .badge-circle {
                 width: 80px !important;
                 height: 80px !important;
             }
@@ -140,6 +140,10 @@
             /* Footer compact */
             .footer {
                 padding: 2rem 0 0.75rem !important;
+            }
+
+            .footer a {
+                text-decoration: none !important;
             }
 
         * {
@@ -458,49 +462,15 @@
             box-shadow: 0 10px 30px color-mix(in srgb, var(--primary-color), transparent 80%);
         }
 
-        .brands-section {
-            background: white;
-            padding: 2rem 0;
-        }
-
-        .brand-logo {
-            width: 90px;
-            height: 90px;
-            background: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 0.8rem;
-            border: 2px solid #d1d5db;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .brand-logo:hover {
-            border-color: var(--primary-color);
-        }
-
-        .brand-logo img {
-            max-width: 80px;
-            max-height: 80px;
-            object-fit: contain;
-        }
-
-        .brands-section h2,
-        .brands-section p {
-            color: #374151 !important;
-        }
-
-        .brands-section h6 {
-            color: #374151 !important;
-            font-weight: 500;
-            font-size: 0.9rem;
-        }
 
         .footer {
             background-color: var(--text-dark);
             color: white;
             padding: 3rem 0 1rem;
+        }
+
+        .footer a {
+            text-decoration: none;
         }
 
         @media (max-width: 768px) {
@@ -793,7 +763,6 @@
         }
         .tp-btn-secondary, .ss-btn-secondary { background: var(--border-color); color: var(--text-dark); }
         .tp-btn-danger, .ss-btn-danger { background: var(--danger-color); color: #fff; }
-        .smart-search-item-brand { background: var(--primary-color); }
         /* Ensure badges and small accents use secondary or accent colors */
         .badge, .badge-pill { background: var(--secondary-color); color: #fff; }
         /* Ensure hero buttons follow theme (override inline or other hero-specific vars) */
@@ -1132,7 +1101,7 @@
                     <h6>Conta</h6>
                     <ul class="list-unstyled">
                         <li><a href="{{ route('register') }}" class="text-light">Criar Conta</a></li>
-                        <li><a href="{{ route('register.b2b') }}" class="text-light">Conta B2B</a></li>
+                        <li><a href="{{ route('register.b2b') }}" class="text-light">Conta B2B</a><br><small class="text-light">Condições especiais para empresas. Preços diferenciados e atendimento prioritário.</small></li>
                         <li><a href="{{ route('login') }}" class="text-light">Login</a></li>
                     </ul>
                 </div>

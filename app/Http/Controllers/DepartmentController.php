@@ -38,21 +38,9 @@ class DepartmentController extends Controller
             ->take(6)
             ->get();
 
-        // Produtos por marca (se for eletrônicos)
+        // Produtos por marca (REMOVED): prevent any brand-specific DB queries.
+        // Keep an empty collection for compatibility with views that expect `brandProducts`.
         $brandProducts = collect();
-        if ($department->slug === 'eletronicos') {
-            $brands = ['Apple', 'Samsung', 'Xiaomi', 'Motorola', 'Infinix', 'JBL', 'Oppo', 'Realme', 'Tecno'];
-            foreach ($brands as $brand) {
-                $products = $department->products()
-                    ->active()
-                    ->where('brand', $brand)
-                    ->take(4)
-                    ->get();
-                if ($products->count() > 0) {
-                    $brandProducts->put(strtolower($brand), $products);
-                }
-            }
-        }
 
         // Banners do departamento
         $heroBanners = BannerHelper::getBannersForDisplay($department->id, 'hero', 5);
@@ -63,118 +51,20 @@ class DepartmentController extends Controller
             ->ordered()
             ->get();
 
-        // Para eletrônicos, usar a view específica com todos os produtos por marca
+        // Para eletrônicos: evitar carregar produtos por marca (REMOVED).
+        // Criar placeholders vazios para compatibilidade com as views.
         if ($department->slug === 'eletronicos') {
-            // Buscar produtos por marca para eletrônicos
-            $appleProducts = $department->products()
-                ->active()
-                ->where('brand', 'Apple')
-                ->inStock()
-                ->with(['categories'])
-                ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-                ->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('sort_order', 'desc')
-                ->orderBy('name')
-                ->get();
+            $appleProducts = collect();
+            $samsungProducts = collect();
+            $xiaomiProducts = collect();
+            $motorolaProducts = collect();
+            $infinixProducts = collect();
+            $jblProducts = collect();
+            $oppoProducts = collect();
+            $realmeProducts = collect();
+            $tecnoProducts = collect();
 
-            $samsungProducts = $department->products()
-                ->active()
-                ->where('brand', 'Samsung')
-                ->inStock()
-                ->with(['categories'])
-                ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-                ->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('sort_order', 'desc')
-                ->orderBy('name')
-                ->get();
-
-            $xiaomiProducts = $department->products()
-                ->active()
-                ->where('brand', 'Xiaomi')
-                ->inStock()
-                ->with(['categories'])
-                ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-                ->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('sort_order', 'desc')
-                ->orderBy('name')
-                ->get();
-
-            $motorolaProducts = $department->products()
-                ->active()
-                ->where('brand', 'Motorola')
-                ->inStock()
-                ->with(['categories'])
-                ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-                ->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('sort_order', 'desc')
-                ->orderBy('name')
-                ->get();
-
-            $infinixProducts = $department->products()
-                ->active()
-                ->where('brand', 'Infinix')
-                ->inStock()
-                ->with(['categories'])
-                ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-                ->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('sort_order', 'desc')
-                ->orderBy('name')
-                ->get();
-
-            $jblProducts = $department->products()
-                ->active()
-                ->where('brand', 'JBL')
-                ->inStock()
-                ->with(['categories'])
-                ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-                ->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('sort_order', 'desc')
-                ->orderBy('name')
-                ->get();
-
-            $oppoProducts = $department->products()
-                ->active()
-                ->where('brand', 'Oppo')
-                ->inStock()
-                ->with(['categories'])
-                ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-                ->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('sort_order', 'desc')
-                ->orderBy('name')
-                ->get();
-
-            $realmeProducts = $department->products()
-                ->active()
-                ->where('brand', 'Realme')
-                ->inStock()
-                ->with(['categories'])
-                ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-                ->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('sort_order', 'desc')
-                ->orderBy('name')
-                ->get();
-
-            $tecnoProducts = $department->products()
-                ->active()
-                ->where('brand', 'Tecno')
-                ->inStock()
-                ->with(['categories'])
-                ->orderBy('is_unavailable', 'asc') // Disponíveis primeiro
-                ->orderBy('is_featured', 'desc')
-                ->orderBy('created_at', 'desc')
-                ->orderBy('sort_order', 'desc')
-                ->orderBy('name')
-                ->get();
-
-            // Produtos mais recentes - priorizar disponíveis
+            // Produtos mais recentes - manter consulta genérica (não é diretamente por marca)
             $latestProducts = $department->products()
                 ->active()
                 ->inStock()
@@ -183,9 +73,6 @@ class DepartmentController extends Controller
                 ->latest()
                 ->take(8)
                 ->get();
-
-            // Banners específicos do departamento (já carregados acima)
-            // $heroBanners já contém os banners específicos do departamento
 
             return view('department.eletronicos', compact(
                 'department',

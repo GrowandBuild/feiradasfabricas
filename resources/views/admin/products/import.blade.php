@@ -85,7 +85,7 @@
                     <h6><i class="bi bi-exclamation-triangle"></i> Campos obrigatórios:</h6>
                     <ul class="mb-0 small">
                         <li><strong>nome:</strong> Nome do produto</li>
-                        <li><strong>marca:</strong> Marca do produto</li>
+                        <!-- marca removed -->
                         <li><strong>preco:</strong> Preço de venda</li>
                         <li><strong>estoque:</strong> Quantidade em estoque</li>
                     </ul>

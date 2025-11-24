@@ -10,6 +10,7 @@ use App\Models\ProductVariation;
 use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Department;
 
@@ -33,9 +34,7 @@ class ProductController extends Controller
             });
         }
 
-        if ($request->filled('brand') && !$isSmartSearch) {
-            $query->where('brand', $request->brand);
-        }
+        // brand filter removed
 
         if ($request->filled('category') && !$isSmartSearch) {
             $query->whereHas('categories', function ($q) use ($request) {
@@ -102,7 +101,6 @@ class ProductController extends Controller
                     return [
                         'id' => $product->id,
                         'name' => $product->name,
-                        'brand' => $product->brand,
                         'price' => $product->price,
                         'first_image' => $product->first_image,
                         'sku' => $product->sku,
@@ -119,39 +117,7 @@ class ProductController extends Controller
 
     $products = $query->paginate(20);
         $categories = Category::all();
-        // Opções de filtro (evitar consultas dentro da view)
-        // Obter marcas para filtros: usar fonte canonical `brands` quando disponível
-        $brands = collect();
-        try {
-            $deptSlug = $request->query('department');
-            $dept = null;
-            if ($deptSlug) {
-                $maybeId = is_numeric($deptSlug) ? (int)$deptSlug : null;
-                $normalized = Str::slug((string)$deptSlug);
-                if ($maybeId) {
-                    $dept = Department::find($maybeId);
-                }
-                if (!$dept) {
-                    $dept = Department::where('slug', $deptSlug)
-                        ->orWhereRaw('LOWER(slug) = LOWER(?)', [$deptSlug])
-                        ->orWhere('slug', $normalized)
-                        ->first();
-                }
-            }
-
-            $brandQuery = \App\Models\Brand::query();
-            if (!empty($dept) && isset($dept->id)) {
-                $brandQuery->where('department_id', $dept->id);
-            }
-            $brands = $brandQuery->orderBy('name')->pluck('name');
-        } catch (\Exception $e) {
-            // fallback: extrair de products.brand para compatibilidade
-            $brands = Product::query()
-                ->whereNotNull('brand')
-                ->distinct()
-                ->orderBy('brand')
-                ->pluck('brand');
-        }
+        // brand lists removed (no DB queries for brands)
         $suppliers = Product::query()
             ->whereNotNull('supplier')
             ->distinct()
@@ -175,7 +141,7 @@ class ProductController extends Controller
         
         // Não criar valores padrão aqui - deixar a view usar os defaults apenas para exibição
 
-        return view('admin.products.index', compact('products', 'categories', 'colorsFromDB', 'brands', 'suppliers', 'departments'));
+        return view('admin.products.index', compact('products', 'categories', 'colorsFromDB', 'suppliers', 'departments'));
     }
 
     public function create()
@@ -184,62 +150,47 @@ class ProductController extends Controller
         return view('admin.products.create', compact('categories'));
     }
 
-    /**
-     * Retorna lista distinta de marcas (JSON), opcionalmente filtrada por departamento (slug)
-     */
-    public function brandsList(Request $request)
-    {
-        // New behavior: use single canonical source for brands: the `brands` table.
-        // Keep department scoping.
-        $departmentSlug = $request->query('department');
-        $dept = null;
-        if ($departmentSlug) {
-            $maybeId = is_numeric($departmentSlug) ? (int)$departmentSlug : null;
-            $normalized = Str::slug((string)$departmentSlug);
-            if ($maybeId) {
-                $dept = Department::find($maybeId);
-            }
-            if (!$dept) {
-                $dept = Department::where('slug', $departmentSlug)
-                    ->orWhereRaw('LOWER(slug) = LOWER(?)', [$departmentSlug])
-                    ->orWhere('slug', $normalized)
-                    ->first();
-            }
-        }
-
-        try {
-            $brandQuery = \App\Models\Brand::query();
-            if (!empty($dept) && isset($dept->id)) {
-                $brandQuery->where('department_id', $dept->id);
-            }
-            $brands = $brandQuery->orderBy('name')
-                ->pluck('name')
-                ->filter(function ($b) { return is_string($b) && trim($b) !== ''; })
-                ->values();
-
-            return response()->json(['success' => true, 'brands' => $brands]);
-        } catch (\Exception $e) {
-            // If brands table/model isn't available, return empty array to avoid breaking frontend
-            return response()->json(['success' => true, 'brands' => []]);
-        }
-    }
+    // brandsList removed
 
     public function store(Request $request)
     {
+        // If categories were sent as a JSON string (FormData submit with files), decode them
+        $catsInput = $request->input('categories');
+        if (is_string($catsInput) && $catsInput !== '') {
+            $decodedCats = json_decode($catsInput, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decodedCats)) {
+                $request->merge(['categories' => $decodedCats]);
+            } else {
+                // tolerate comma-separated list like "1,2,3"
+                if (preg_match('/^\d+(,\d+)*$/', trim($catsInput))) {
+                    $arr = array_map('intval', explode(',', $catsInput));
+                    $request->merge(['categories' => $arr]);
+                }
+            }
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'description' => 'required|string',
-            'sku' => 'required|string|unique:products,sku',
+            // SKU can be omitted from quick-create; generate server-side if missing
+            'sku' => 'nullable|string|unique:products,sku',
             'price' => 'required|numeric|min:0',
+            'compare_price' => 'nullable|numeric|min:0',
+            'sell_b2b' => 'nullable|boolean',
+            'sell_b2c' => 'nullable|boolean',
             'b2b_price' => 'nullable|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'required|integer|min:0',
             'min_stock' => 'required|integer|min:0',
+            // 'variations' may arrive as JSON string when sent via FormData; decode below
+            'variations' => 'nullable',
+            'department_id' => 'nullable|exists:departments,id',
             'categories' => 'required|array|min:1',
             'categories.*' => 'exists:categories,id',
             'images' => 'nullable',
             'images.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
             'specifications' => 'nullable|array',
+            'brand_id' => 'nullable|exists:brands,id',
             'brand' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
             'weight' => 'nullable|numeric|min:0',
@@ -249,11 +200,26 @@ class ProductController extends Controller
         ]);
 
         $data = $request->all();
+        $data['sell_b2b'] = $request->boolean('sell_b2b', true);
+        $data['sell_b2c'] = $request->boolean('sell_b2c', true);
         $data['slug'] = Str::slug($request->name);
-        $data['in_stock'] = $request->stock_quantity > 0;
         $data['manage_stock'] = true;
 
-        // Upload de imagens
+        // If SKU was not provided by the frontend (quick-create minimal), generate a unique one server-side
+        if (empty($data['sku'])) {
+            $base = strtoupper(preg_replace('/[^A-Z0-9]/', '', Str::slug($request->name ?: 'PRD')));
+            if (!$base) $base = 'PRD';
+            $candidate = $base;
+            $attempt = 0;
+            while (\App\Models\Product::where('sku', $candidate)->exists()) {
+                $attempt++;
+                $candidate = $base . '-' . rand(100, 999) . ($attempt > 10 ? '-' . time() : '');
+                if ($attempt > 50) break;
+            }
+            $data['sku'] = $candidate;
+        }
+
+        // Upload de imagens (salva no storage imediatamente)
         if ($request->hasFile('images')) {
             $imagePaths = [];
             foreach ($request->file('images') as $image) {
@@ -263,20 +229,105 @@ class ProductController extends Controller
             $data['images'] = $imagePaths;
         }
 
-        $product = Product::create($data);
-        $product->categories()->attach($request->categories);
+        $variationsInput = $request->input('variations', []);
+        // Accept variations as JSON string when submitted via FormData
+        if (is_string($variationsInput) && $variationsInput !== '') {
+            $decoded = json_decode($variationsInput, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $variationsInput = $decoded;
+            } else {
+                // if decoding fails, fallback to empty array to avoid validation errors
+                $variationsInput = [];
+            }
+        }
 
-        // Log de estoque inicial
-        InventoryLog::create([
-            'product_id' => $product->id,
-            'admin_id' => auth('admin')->id(),
-            'type' => 'in',
-            'quantity_before' => 0,
-            'quantity_change' => $request->stock_quantity,
-            'quantity_after' => $request->stock_quantity,
-            'notes' => 'Estoque inicial',
-            'reference' => 'Criação do produto',
-        ]);
+        // Criar produto e variações dentro de uma transação
+        $product = DB::transaction(function () use ($data, $request, $variationsInput) {
+            // Criar o produto básico
+            $prod = Product::create($data);
+
+            // Relacionar categorias
+            if ($request->has('categories')) {
+                $prod->categories()->attach($request->categories);
+            }
+
+            // Se vierem variações, persistir cada uma
+            $totalStock = 0;
+            if (is_array($variationsInput) && !empty($variationsInput)) {
+                foreach ($variationsInput as $v) {
+                    $sku = isset($v['sku']) && trim($v['sku']) !== '' ? trim($v['sku']) : null;
+
+                    // Gerar SKU se não informado
+                    if (empty($sku)) {
+                        $sku = $prod->sku . '-' . strtoupper(substr(sha1(uniqid((string) rand(), true)), 0, 6));
+                    }
+
+                    // Garantir unicidade simples para SKU
+                    while ($sku && ProductVariation::where('sku', $sku)->exists()) {
+                        $sku .= '-' . rand(100, 999);
+                    }
+
+                    $stockQty = isset($v['stock_quantity']) ? (int)$v['stock_quantity'] : 0;
+                    $price = isset($v['price']) ? round((float)$v['price'], 2) : $prod->price;
+                    $b2bPrice = isset($v['b2b_price']) ? round((float)$v['b2b_price'], 2) : $prod->b2b_price;
+                    $costPrice = isset($v['cost_price']) ? round((float)$v['cost_price'], 2) : $prod->cost_price;
+
+                    ProductVariation::create([
+                        'product_id' => $prod->id,
+                        'name' => $v['name'] ?? null,
+                        'sku' => $sku,
+                        'price' => $price,
+                        'b2b_price' => $b2bPrice,
+                        'cost_price' => $costPrice,
+                        'stock_quantity' => $stockQty,
+                        'in_stock' => $stockQty > 0,
+                        'is_active' => true,
+                        'sort_order' => 0,
+                        // Accept explicit variation attribute fields if provided by the frontend
+                        'ram' => isset($v['ram']) ? ($v['ram'] === '' ? null : $v['ram']) : null,
+                        'storage' => isset($v['storage']) ? ($v['storage'] === '' ? null : $v['storage']) : null,
+                        'color' => isset($v['color']) ? ($v['color'] === '' ? null : $v['color']) : null,
+                        'color_hex' => isset($v['color_hex']) ? ($v['color_hex'] === '' ? null : $v['color_hex']) : null,
+                    ]);
+
+                    $totalStock += $stockQty;
+                }
+
+                // Atualizar estoque do produto pai com a soma das variações
+                $prod->stock_quantity = $totalStock;
+                $prod->in_stock = $totalStock > 0;
+                $prod->save();
+            } else {
+                // Sem variações: usar estoque enviado no request
+                $prod->stock_quantity = (int)$request->stock_quantity;
+                $prod->in_stock = $request->stock_quantity > 0;
+                $prod->save();
+                $totalStock = (int)$request->stock_quantity;
+            }
+
+            // Log de estoque inicial (somatório)
+            InventoryLog::create([
+                'product_id' => $prod->id,
+                'admin_id' => auth('admin')->id(),
+                'type' => 'in',
+                'quantity_before' => 0,
+                'quantity_change' => $totalStock,
+                'quantity_after' => $totalStock,
+                'notes' => 'Estoque inicial',
+                'reference' => 'Criação do produto',
+            ]);
+
+            return $prod;
+        });
+
+        // If the client expects JSON (AJAX/fetch), respond with JSON payload
+        if ($request->expectsJson() || $request->ajax() || $request->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Produto criado com sucesso!',
+                'product' => $product->fresh()->toArray(),
+            ]);
+        }
 
         return redirect()->route('admin.products.index')
                         ->with('success', 'Produto criado com sucesso!');
@@ -302,15 +353,20 @@ class ProductController extends Controller
             'description' => 'required|string',
             'sku' => 'required|string|unique:products,sku,' . $product->id,
             'price' => 'required|numeric|min:0',
+            'compare_price' => 'nullable|numeric|min:0',
+            'sell_b2b' => 'nullable|boolean',
+            'sell_b2c' => 'nullable|boolean',
             'b2b_price' => 'nullable|numeric|min:0',
             'cost_price' => 'nullable|numeric|min:0',
             'stock_quantity' => 'required|integer|min:0',
             'min_stock' => 'required|integer|min:0',
             'categories' => 'required|array|min:1',
+            'department_id' => 'nullable|exists:departments,id',
             'categories.*' => 'exists:categories,id',
             'images' => 'nullable',
             'images.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
             'specifications' => 'nullable|array',
+            'brand_id' => 'nullable|exists:brands,id',
             'brand' => 'nullable|string|max:255',
             'model' => 'nullable|string|max:255',
             'weight' => 'nullable|numeric|min:0',
@@ -320,6 +376,8 @@ class ProductController extends Controller
         ]);
 
         $data = $request->all();
+        $data['sell_b2b'] = $request->boolean('sell_b2b', true);
+        $data['sell_b2c'] = $request->boolean('sell_b2c', true);
         $data['slug'] = Str::slug($request->name);
         $data['in_stock'] = $request->stock_quantity > 0;
 
@@ -585,8 +643,6 @@ class ProductController extends Controller
             // Obter margens de lucro (padrão: B2B 10%, B2C 20%)
             $profitMarginB2B = $product->profit_margin_b2b ?? 10.00;
             $profitMarginB2C = $product->profit_margin_b2c ?? 20.00;
-
-            // Validar margens
             if ($profitMarginB2B < 0 || $profitMarginB2B > 1000) {
                 $profitMarginB2B = 10.00;
             }
@@ -611,7 +667,6 @@ class ProductController extends Controller
             $product->update([
                 'cost_price' => $costPrice,
                 'b2b_price' => $b2bPrice,
-                'price' => $b2cPrice,
             ]);
 
             return response()->json([
@@ -1115,6 +1170,72 @@ class ProductController extends Controller
             }
         }
         
+        return response()->json([
+            'success' => true,
+            'message' => $created . ' nova(s) variação(ões) criada(s)',
+            'created' => $created
+        ]);
+    }
+
+    /**
+     * Bulk add full variation combinations.
+     * Expects payload: { combos: [ { ram: '12GB', storage: '256GB', color: 'Azul' }, ... ] }
+     */
+    public function bulkAddVariations(Request $request, Product $product)
+    {
+        $request->validate([
+            'combos' => 'required|array',
+            'combos.*.ram' => 'nullable|string|max:255',
+            'combos.*.storage' => 'nullable|string|max:255',
+            'combos.*.color' => 'nullable|string|max:255',
+        ]);
+
+        $combos = $request->input('combos', []);
+        $created = 0;
+
+        foreach ($combos as $c) {
+            $ram = isset($c['ram']) && $c['ram'] !== '' ? trim($c['ram']) : null;
+            $storage = isset($c['storage']) && $c['storage'] !== '' ? trim($c['storage']) : null;
+            $color = isset($c['color']) && $c['color'] !== '' ? trim($c['color']) : null;
+
+            // Check existing
+            $query = $product->variations();
+            if ($ram) $query->where('ram', $ram); else $query->whereNull('ram');
+            if ($storage) $query->where('storage', $storage); else $query->whereNull('storage');
+            if ($color) $query->where('color', $color); else $query->whereNull('color');
+
+            $existing = $query->first();
+            if ($existing) continue;
+
+            // Build SKU
+            $skuParts = [$product->sku];
+            if ($ram) $skuParts[] = str_replace('GB', '', $ram);
+            if ($storage) $skuParts[] = str_replace('GB', '', $storage);
+            if ($color) $skuParts[] = strtoupper(substr($color, 0, 3));
+            $sku = implode('-', array_filter($skuParts));
+
+            // Ensure unique SKU
+            while (ProductVariation::where('sku', $sku)->exists()) {
+                $sku .= '-' . rand(100, 999);
+            }
+
+            ProductVariation::create([
+                'product_id' => $product->id,
+                'ram' => $ram ?: null,
+                'storage' => $storage ?: null,
+                'color' => $color ?: null,
+                'sku' => $sku,
+                'price' => $product->price,
+                'b2b_price' => $product->b2b_price,
+                'cost_price' => $product->cost_price,
+                'stock_quantity' => 0,
+                'in_stock' => false,
+                'is_active' => true,
+                'sort_order' => 0
+            ]);
+            $created++;
+        }
+
         return response()->json([
             'success' => true,
             'message' => $created . ' nova(s) variação(ões) criada(s)',
@@ -1790,58 +1911,110 @@ class ProductController extends Controller
         return $image;
     }
 
+    // bulkToggleByBrand removed
+
     /**
-     * (Admin) Ativa/Desativa produtos em massa por marca e (opcional) por departamento
-     * Parâmetros: brand (string), department (slug opcional), active (bool)
+     * Retorna atributos agregados por departamento (ram, storage, color)
+     * Espera query param `department` com slug ou id.
      */
-    public function bulkToggleByBrand(Request $request)
+    public function attributesList(Request $request)
     {
-        try {
-            $request->validate([
-                'brand' => 'required|string',
-                'department' => 'nullable|string',
-                'active' => 'required|boolean',
-            ]);
+        $deptParam = $request->query('department');
 
-            $brand = trim($request->brand);
-            $deptSlug = $request->department ? trim($request->department) : null;
-            $active = (bool)$request->active;
-
-            $query = Product::query();
-            // Comparação case-insensitive
-            $query->whereRaw('LOWER(brand) = LOWER(?)', [$brand]);
-
-            if ($deptSlug) {
-                $query->whereHas('department', function($q) use ($deptSlug){
-                    $q->where('slug', $deptSlug);
-                });
-            }
-
-            $count = $query->update(['is_active' => $active]);
-
-            return response()->json([
-                'success' => true,
-                'updated' => $count,
-                'active' => $active,
-                'brand' => $brand,
-                'department' => $deptSlug,
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Dados inválidos',
-                'errors' => $e->errors(),
-            ], 422);
-        } catch (\Exception $e) {
-            \Log::error('Erro no bulkToggleByBrand', [
-                'brand' => $request->brand,
-                'department' => $request->department,
-                'exception' => $e,
-            ]);
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao atualizar produtos: ' . $e->getMessage(),
-            ], 500);
+        if (empty($deptParam)) {
+            return response()->json(['attributes' => []]);
         }
+
+        // Resolver departamento por id ou slug
+        $department = null;
+        if (is_numeric($deptParam)) {
+            $department = Department::find((int)$deptParam);
+        } else {
+            $department = Department::where('slug', $deptParam)->first();
+        }
+
+        if (!$department) {
+            return response()->json(['attributes' => []]);
+        }
+
+        // Agregar valores distintos das colunas de variação para os produtos do departamento
+        $deptId = $department->id;
+
+        $rams = DB::table('product_variations')
+            ->join('products', 'product_variations.product_id', '=', 'products.id')
+            ->where('products.department_id', $deptId)
+            ->whereNotNull('product_variations.ram')
+            ->distinct()
+            ->pluck('product_variations.ram')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        $storages = DB::table('product_variations')
+            ->join('products', 'product_variations.product_id', '=', 'products.id')
+            ->where('products.department_id', $deptId)
+            ->whereNotNull('product_variations.storage')
+            ->distinct()
+            ->pluck('product_variations.storage')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        $colors = DB::table('product_variations')
+            ->join('products', 'product_variations.product_id', '=', 'products.id')
+            ->where('products.department_id', $deptId)
+            ->whereNotNull('product_variations.color')
+            ->distinct()
+            ->pluck('product_variations.color')
+            ->filter()
+            ->values()
+            ->toArray();
+
+        // Mapa color -> hex
+        $colorHexMapRaw = DB::table('product_variations')
+            ->join('products', 'product_variations.product_id', '=', 'products.id')
+            ->where('products.department_id', $deptId)
+            ->whereNotNull('product_variations.color')
+            ->whereNotNull('product_variations.color_hex')
+            ->select('product_variations.color', 'product_variations.color_hex')
+            ->distinct()
+            ->get();
+
+        $colorHexMap = [];
+        foreach ($colorHexMapRaw as $row) {
+            $colorHexMap[$row->color] = strtolower($row->color_hex);
+        }
+
+        $attributes = [];
+        if (!empty($colors)) {
+            $attributes[] = [
+                'key' => 'color',
+                'name' => 'Cor',
+                'values' => array_map(function ($c) use ($colorHexMap) {
+                    return ['value' => $c, 'hex' => $colorHexMap[$c] ?? null];
+                }, $colors)
+            ];
+        }
+
+        if (!empty($rams)) {
+            $attributes[] = [
+                'key' => 'ram',
+                'name' => 'RAM',
+                'values' => array_map(function ($v) { return ['value' => $v]; }, $rams)
+            ];
+        }
+
+        if (!empty($storages)) {
+            $attributes[] = [
+                'key' => 'storage',
+                'name' => 'Armazenamento',
+                'values' => array_map(function ($v) { return ['value' => $v]; }, $storages)
+            ];
+        }
+
+        return response()->json([
+            'department' => ['id' => $department->id, 'slug' => $department->slug, 'name' => $department->name],
+            'attributes' => $attributes
+        ]);
     }
 }

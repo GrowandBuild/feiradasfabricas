@@ -4,7 +4,7 @@
             <h6 class="mb-0"><i class="bi bi-truck me-2"></i> Calcule o frete</h6>
             <small class="text-muted">via Melhor Envio</small>
         </div>
-        @php($sandbox = setting('melhor_envio_sandbox', true))
+        @php $sandbox = setting('melhor_envio_sandbox', true); @endphp
         @if($sandbox)
             <div class="alert alert-warning py-1 mb-2"><small><i class="bi bi-exclamation-triangle me-1"></i>Ambiente de teste (sandbox) — valores podem estar acima do real.</small></div>
         @endif

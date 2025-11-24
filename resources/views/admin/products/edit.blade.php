@@ -229,7 +229,52 @@
                         @enderror
                     </div>
 
-                    <!-- Imagens -->
+                    <!-- Marca -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="fw-semibold mb-3" style="color: var(--accent-color);">
+                                <i class="bi bi-tag me-2"></i>Marca
+                            </h6>
+                        </div>
+                    </div>
+                    <!-- Sugestões de Atributos (pelo Departamento) -->
+                    <div class="row mb-4" id="dept-attributes-section">
+                        <div class="col-12">
+                            <h6 class="fw-semibold mb-3" style="color: var(--accent-color);">
+                                <i class="bi bi-list-ul me-2"></i>Sugestões de Atributos (pelo Departamento)
+                            </h6>
+                        </div>
+                        <div class="col-12">
+                            <div class="border rounded p-3" id="deptAttributesPanel">
+                                <p class="text-muted" id="deptAttributesLoading">Carregando atributos do departamento...</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="brand_id" class="form-label">
+                            <i class="bi bi-tag-fill me-1"></i>Marca do Produto
+                        </label>
+                        <select class="form-select @error('brand_id') is-invalid @enderror"
+                                id="brand_id" name="brand_id">
+                            <option value="">— Nenhuma marca selecionada —</option>
+                            @php
+                                $brands = \App\Models\Brand::active()->orderBy('sort_order')->orderBy('name')->get();
+                            @endphp
+                            @foreach($brands as $brand)
+                                <option value="{{ $brand->id }}"
+                                        {{ old('brand_id', $product->brand_id) == $brand->id ? 'selected' : '' }}>
+                                    {{ $brand->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">Selecione a marca do produto (opcional)</small>
+                        @error('brand_id')
+                            <div class="invalid-feedback">
+                                <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
+                            </div>
+                        @enderror
+                    </div>
                     <div class="row mb-4">
                         <div class="col-12">
                             <h6 class="fw-semibold mb-3" style="color: var(--accent-color);">
@@ -290,18 +335,8 @@
                         </div>
                     </div>
 
-                    <!-- Informações Adicionais -->
+                    <!-- Informações Adicionais (Marca removida) -->
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="mb-3">
-                                <label for="brand" class="form-label">Marca</label>
-                                <input type="text" class="form-control @error('brand') is-invalid @enderror" 
-                                       id="brand" name="brand" value="{{ old('brand', $product->brand) }}">
-                                @error('brand')
-                                    <div class="invalid-feedback">{{ $message }}</div>
-                                @enderror
-                            </div>
-                        </div>
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="model" class="form-label">Modelo</label>
@@ -805,5 +840,266 @@ function removeExistingImage(button, imagePath) {
     }
 }
 
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Carregar atributos do departamento do produto e renderizar painel
+    try {
+        const deptAttributesPanel = document.getElementById('deptAttributesPanel');
+        const deptAttributesLoading = document.getElementById('deptAttributesLoading');
+        const productId = {{ $product->id }};
+        let currentDepartment = {{ $product->department_id ?? 'null' }};
+
+        function renderAttributes(data) {
+            if (!deptAttributesPanel) return;
+            deptAttributesPanel.innerHTML = '';
+
+            if (!data || !data.attributes || data.attributes.length === 0) {
+                deptAttributesPanel.innerHTML = '<p class="text-muted">Nenhum atributo encontrado para este departamento.</p>';
+                return;
+            }
+
+            data.attributes.forEach(attr => {
+                const group = document.createElement('div');
+                group.className = 'mb-3';
+                const title = document.createElement('label');
+                title.className = 'form-label fw-semibold';
+                title.textContent = attr.name || attr.key;
+                group.appendChild(title);
+
+                const wrap = document.createElement('div');
+                wrap.className = 'd-flex flex-wrap gap-2';
+
+                attr.values.forEach(v => {
+                    const id = `dept-attr-${attr.key}-${v.value}`.replace(/[^a-zA-Z0-9-_]/g, '_');
+                    const div = document.createElement('div');
+                    div.className = 'form-check';
+                    div.style.minWidth = '160px';
+
+                    const input = document.createElement('input');
+                    input.type = 'checkbox';
+                    input.className = 'form-check-input dept-attr-checkbox';
+                    input.id = id;
+                    input.dataset.type = attr.key;
+                    input.dataset.value = v.value;
+
+                    const label = document.createElement('label');
+                    label.className = 'form-check-label';
+                    label.htmlFor = id;
+                    if (attr.key === 'color' && v.hex) {
+                        label.innerHTML = `<span class="me-2" style="display:inline-block;width:18px;height:14px;background:${v.hex};border:1px solid #ddd;vertical-align:middle;"></span> ${v.value}`;
+                    } else {
+                        label.textContent = v.value;
+                    }
+
+                    div.appendChild(input);
+                    div.appendChild(label);
+                    wrap.appendChild(div);
+                });
+
+                group.appendChild(wrap);
+                deptAttributesPanel.appendChild(group);
+            });
+
+            // Botões de ação
+            const actions = document.createElement('div');
+            actions.className = 'd-flex gap-2 mt-2';
+            const addBtn = document.createElement('button');
+            addBtn.type = 'button';
+            addBtn.className = 'btn btn-sm btn-primary';
+            addBtn.textContent = 'Adicionar valores selecionados como variações';
+            addBtn.addEventListener('click', applySelectedAttributes);
+
+            const openModalBtn = document.createElement('button');
+            openModalBtn.type = 'button';
+            openModalBtn.className = 'btn btn-sm btn-outline-secondary';
+            openModalBtn.textContent = 'Abrir Gerenciador de Variações';
+            openModalBtn.addEventListener('click', function() {
+                const modalEl = document.getElementById('variationsModal');
+                if (modalEl) {
+                    const modal = new bootstrap.Modal(modalEl);
+                    // set product id on the button that opens modal so it triggers load
+                    const btn = document.querySelector('[data-bs-target="#variationsModal"]');
+                    // show modal
+                    modal.show();
+                }
+            });
+
+            const refreshBtn = document.createElement('button');
+            refreshBtn.type = 'button';
+            refreshBtn.className = 'btn btn-sm btn-outline-info';
+            refreshBtn.textContent = 'Atualizar atributos';
+            refreshBtn.addEventListener('click', function(){ fetchAndRenderForDepartment(currentDepartment); });
+
+            actions.appendChild(addBtn);
+            actions.appendChild(refreshBtn);
+            actions.appendChild(openModalBtn);
+            deptAttributesPanel.appendChild(actions);
+        }
+
+        function applySelectedAttributes() {
+            const checkboxes = Array.from(document.querySelectorAll('.dept-attr-checkbox')).filter(cb => cb.checked);
+            if (checkboxes.length === 0) {
+                alert('Selecione ao menos um valor para adicionar.');
+                return;
+            }
+
+            if (!confirm(`Adicionar ${checkboxes.length} valor(es) selecionado(s) como variações deste produto?`)) {
+                return;
+            }
+            // Group selected values by attribute type
+            const groups = {};
+            checkboxes.forEach(cb => {
+                const type = cb.dataset.type;
+                const value = cb.dataset.value;
+                if (!groups[type]) groups[type] = [];
+                groups[type].push(value);
+            });
+
+            // Build arrays for cartesian product
+            const keys = Object.keys(groups);
+            const arrays = keys.map(k => groups[k].map(v => ({ key: k, value: v })));
+
+            function cartesianProduct(arr) {
+                return arr.reduce((a, b) => a.flatMap(d => b.map(e => d.concat([e]))), [[]]);
+            }
+
+            // Normaliza uma chave para um slug seguro (ex: "Armazenamento" -> "armazenamento")
+            function slugify(str) {
+                return String(str || '')
+                    .toLowerCase()
+                    .normalize('NFD').replace(/[^\w\s-]/g, '')
+                    .replace(/\s+/g, '_')
+                    .replace(/[^a-z0-9_-]/g, '')
+                    .replace(/^_+|_+$/g, '');
+            }
+
+            // Gerar combos mantendo a relação atributo->valor de forma genérica
+            const combos = cartesianProduct(arrays).map(combo => {
+                const attrs = {};
+                combo.forEach(c => {
+                    const slug = slugify(c.key);
+                    // se houver chaves duplicadas por alguma razão, última vence
+                    attrs[slug] = c.value;
+                });
+                return { attributes: attrs };
+            });
+
+            // Para o resumo/aviso, mostrar nomes originais dos atributos
+            const attributeNames = keys.map(k => k);
+
+            // Warn if too many
+            if (combos.length > 300) {
+                if (!confirm(`Serão criadas ${combos.length} variações. Continuar?`)) return;
+            }
+
+            // Post combos to bulk endpoint
+            const csrf = document.querySelector('meta[name="csrf-token"]').content;
+            fetch(`/admin/products/${productId}/variations/bulk-add`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrf,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({ combos })
+            }).then(r => r.json())
+            .then(data => {
+                if (data && data.success) {
+                    alert(`Operação concluída. ${data.created} nova(s) variação(ões) criada(s).`);
+                    const variationsModalEl = document.getElementById('variationsModal');
+                    if (variationsModalEl && bootstrap.Modal.getInstance(variationsModalEl)) {
+                        const prodIdInput = document.getElementById('variationsProductId');
+                        if (prodIdInput) loadVariations(prodIdInput.value);
+                    }
+                } else {
+                    console.error('bulk-add failed', data);
+                    alert('Erro ao criar variações em lote. Veja console para detalhes.');
+                }
+            }).catch(err => {
+                console.error(err);
+                alert('Erro ao criar variações. Veja console para detalhes.');
+            });
+        }
+
+        if (!deptAttributesPanel) return;
+
+        function fetchAndRenderForDepartment(dept) {
+            if (!dept) {
+                deptAttributesPanel.innerHTML = '<p class="text-muted">Produto sem departamento definido. Atribua um departamento para obter sugestões.</p>';
+                return;
+            }
+
+            deptAttributesPanel.innerHTML = '<p class="text-muted">Carregando atributos do departamento...</p>';
+            fetch(`/admin/attributes/list?department=${dept}`, { headers: { 'Accept': 'application/json' } })
+                .then(response => response.json())
+                .then(data => renderAttributes(data))
+                .catch(error => {
+                    console.error('Erro ao carregar atributos do departamento:', error);
+                    deptAttributesPanel.innerHTML = '<p class="text-muted text-danger">Erro ao carregar atributos. Verifique o console.</p>';
+                });
+        }
+
+        // Inicialização: carregar para o departamento atual (se houver)
+        if (deptAttributesPanel) {
+            fetchAndRenderForDepartment(currentDepartment);
+        }
+
+        // Sincronizar quando o departamento mudar. Suporta select[name="department_id"], #qpDepartment e input combobox #qpDeptCombo
+        function bindDepartmentChange() {
+            const selectors = [document.querySelector('select[name="department_id"]'), document.getElementById('qpDepartment'), document.getElementById('qpDeptCombo'), document.getElementById('department_id')];
+            selectors.forEach(el => {
+                if (!el) return;
+                // For text combobox we listen input+change; for select just change
+                const handler = function(e) {
+                    let val = el.value || null;
+                    // qpDeptCombo might contain text; try to find linked select value
+                    if (el.id === 'qpDeptCombo') {
+                        const sel = document.getElementById('qpDepartment');
+                        if (sel && sel.value) val = sel.value;
+                    }
+                    if (val === null || val === '') {
+                        currentDepartment = null;
+                        fetchAndRenderForDepartment(null);
+                        return;
+                    }
+                    if (val == currentDepartment) return; // sem mudança
+                    currentDepartment = val;
+                    fetchAndRenderForDepartment(currentDepartment);
+                };
+
+                el.addEventListener('change', handler);
+                el.addEventListener('input', handler);
+            });
+        }
+
+        bindDepartmentChange();
+
+        // Fallback: polling rápido para detectar mudanças em componentes customizados
+        (function startDeptPoll(){
+            let last = currentDepartment;
+            setInterval(function(){
+                const candidates = [document.querySelector('select[name="department_id"]'), document.getElementById('qpDepartment'), document.getElementById('qpDeptCombo'), document.getElementById('department_id')];
+                let found = null;
+                for (const el of candidates) {
+                    if (!el) continue;
+                    let v = el.value || null;
+                    if (el.id === 'qpDeptCombo') {
+                        const sel = document.getElementById('qpDepartment');
+                        if (sel && sel.value) v = sel.value;
+                    }
+                    if (v) { found = v; break; }
+                }
+                if ((found || null) !== last) {
+                    last = found || null;
+                    currentDepartment = last;
+                    fetchAndRenderForDepartment(currentDepartment);
+                }
+            }, 800);
+        })();
+    } catch (e) {
+        console.error('Erro no módulo de atributos do departamento:', e);
+    }
+});
 </script>
 @endsection

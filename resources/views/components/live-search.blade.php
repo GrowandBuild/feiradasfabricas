@@ -328,13 +328,7 @@
     gap: 0.5rem;
 }
 
-.live-search-item-brand {
-    font-size: 0.75rem;
-    color: #94a3b8;
-    font-weight: 500;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
+    /* .live-search-item-brand removed — brand UI deleted. Keeping comment for safety. */
 
 .live-search-item-price {
     font-weight: 700;
@@ -626,7 +620,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <div class="live-search-item-name">${escapeHtml(title)}</div>
                         ${shortDescription ? `<div class="live-search-item-description">${escapeHtml(shortDescription)}</div>` : ''}
                         <div class="live-search-item-footer">
-                            ${product.brand ? `<span class="live-search-item-brand">${escapeHtml(product.brand)}</span>` : ''}
                             <span class="live-search-item-price">${price}</span>
                         </div>
                     </div>

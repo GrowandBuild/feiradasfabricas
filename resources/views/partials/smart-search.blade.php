@@ -42,15 +42,42 @@
     .smart-search-item-name { font-weight: 600; font-size: 14px; color: #1e293b; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .smart-search-item-name .js-rename-product { cursor: pointer; color: #1e293b; text-decoration: underline; text-underline-offset: 2px; }
         .smart-search-item-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
-        .smart-search-item-brand { font-size: 12px; padding: 2px 8px; background: #1e293b; color: #fff; border-radius: 4px; font-weight: 500; }
+        /* .smart-search-item-brand removed — brand UI deleted. Keeping comment for safety. */
         .smart-search-item-price { font-size: 13px; font-weight: 600; color: #10b981; }
         .smart-search-empty, .smart-search-loading { text-align: center; padding: 40px 20px; color: #64748b; }
     /* Quick overlays inside panel */
-    /* Overlays must cover the whole viewport. Use fixed so they're not clipped by the FAB container. */
-    .ss-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.32); display: none; align-items: center; justify-content: center; z-index: 1500; }
+    /* Overlays must cover the whole viewport and center their modal content. */
+    .ss-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; z-index: 3000; pointer-events: auto; }
     .ss-overlay.active { display: flex; }
-    /* Modal: compact header/footer and scrollable body to avoid large top/bottom gaps */
-    .ss-modal { width: 92%; max-width: 420px; background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,.3); overflow: hidden; display: flex; flex-direction: column; max-height: 85vh; }
+    /* Quick-create categories UI */
+    .qp-cat-wrapper { position: relative; }
+    .qp-cat-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+    .qp-cat-chip { background:#f1f5f9; border:1px solid rgba(15,23,42,0.06); padding:6px 8px; border-radius:999px; display:inline-flex; gap:8px; align-items:center; font-size:13px; }
+    .qp-cat-chip button { border: none; background: transparent; color: #64748b; cursor: pointer; padding:0; margin:0; }
+    .qp-cat-dropdown .qp-cat-row { padding:8px 10px; cursor:pointer; border-bottom:1px solid #f1f5f9; }
+    .qp-cat-dropdown .qp-cat-row:hover { background:#f8fafc; }
+    /* Combobox department styles */
+    .qp-dept-combobox { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(15,23,42,0.08); background: #fff; box-shadow: 0 6px 18px rgba(2,6,23,0.04); font-weight:600; padding-left:46px; }
+    .qp-dept-combobox:focus { outline: none; box-shadow: 0 8px 20px rgba(99,102,241,0.12); border-color: var(--secondary-color); }
+    .qp-dept-list { background:#fff; border:1px solid rgba(15,23,42,0.06); border-radius:8px; max-height:280px; overflow:auto; box-shadow:0 12px 30px rgba(2,6,23,0.12); }
+    .qp-dept-item { padding:10px 12px; cursor:pointer; border-bottom:1px solid rgba(15,23,42,0.03); font-weight:600; color:#0f172a; }
+    .qp-dept-item:hover, .qp-dept-item.qp-dept-highlight { background: linear-gradient(90deg, rgba(99,102,241,0.06), rgba(99,102,241,0.03)); }
+    .qp-dept-item small { display:block; font-weight:400; color:#64748b; font-size:12px; }
+    .qp-dept-swatch { position:absolute; left:10px; top:50%; transform:translateY(-50%); width:28px; height:28px; border-radius:8px; box-shadow:0 6px 14px rgba(2,6,23,0.08); border:1px solid rgba(255,255,255,0.4); }
+    /* Department select (prominent, modern) */
+    .qp-dept-select { display: inline-block; min-width: 320px; max-width: 520px; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(15,23,42,0.08); background: linear-gradient(180deg, #fff, #fbfdff); box-shadow: 0 8px 20px rgba(2,6,23,0.06); font-size: 1rem; font-weight: 600; color: #0f172a; }
+    .qp-dept-select:focus { outline: none; box-shadow: 0 6px 18px rgba(99,102,241,0.12); border-color: var(--secondary-color); }
+    .qp-dept-select option[disabled] { color: #94a3b8; }
+    .visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
+    /* Quick-create price preview */
+    .qp-price-preview { background: linear-gradient(90deg,#f8fafc, #ffffff); border: 1px solid rgba(148,163,184,0.12); padding: 10px 12px; border-radius: 8px; display:flex; gap:12px; align-items:center; }
+    .qp-price-row { display:flex; flex-direction:column; }
+    .qp-price-label { font-size:12px; color:#475569; font-weight:600; }
+    .qp-price-value { font-size:16px; font-weight:700; color:var(--success-color, #10b981); }
+    .qp-price-badge { font-size:11px; color:#334155; background:#eef2ff; padding:4px 8px; border-radius:999px; border:1px solid rgba(99,102,241,0.08); }
+    /* Modal: centered, scrollable body and responsive max width */
+    .ss-modal { width: 94%; max-width: 820px; background: #fff; border-radius: 12px; box-shadow: 0 30px 80px rgba(0,0,0,.45); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; margin: 0 12px; }
+    .ss-modal-center { align-self: center; }
     .ss-modal .ss-header { padding: 10px 12px; font-weight: 600; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: space-between; gap:8px; }
     .ss-modal .ss-body { padding: 12px; overflow: auto; flex: 1 1 auto; max-height: calc(85vh - 96px); }
     .ss-modal .ss-footer { padding: 8px 12px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #e2e8f0; flex-shrink: 0; }
@@ -178,18 +205,20 @@
     </style>
 
     <div class="smart-search-fab">
+        <!-- Botão: Gerenciador curto de Produtos (sacola) - abre criação rápida -->
+        <button class="departments-trigger" id="productsManagerTrigger" title="Gerar Produto Rápido">
+            <i class="bi bi-bag-fill"></i>
+        </button>
         <!-- Botão Gerenciar Departamentos (mais alto) -->
         <button class="departments-trigger" id="departmentsTrigger" title="Departamentos">
             <i class="bi bi-diagram-3-fill"></i>
         </button>
         <!-- Botão Gerenciar Seções (acima da paleta) -->
-        <button class="sections-trigger" id="sectionsTrigger" title="Sessões de marcas">
+        <button class="sections-trigger" id="sectionsTrigger" title="Sessões">
             <i class="bi bi-grid-3x3-gap-fill"></i>
         </button>
-        <!-- Botão Produtos (quick-create) -->
-        <button class="sections-trigger" id="productsTrigger" title="Produtos (criar rápido)">
-            <i class="bi bi-box-seam"></i>
-        </button>
+        <!-- Botão Produtos (quick-create) removido conforme solicitado -->
+
         <!-- Botão de Tema (pincel) -->
         <button class="theme-trigger" id="themeTrigger" title="Cores do site">
             <i class="bi bi-palette-fill"></i>
@@ -198,221 +227,23 @@
             <i class="bi bi-search"></i>
         </button>
 
-        <div class="smart-search-panel" id="smartSearchPanel">
+        <div class="smart-search-panel" id="smartSearchPanel" role="dialog" aria-label="Painel de busca rápida">
             <div class="smart-search-header">
-                <h3><i class="bi bi-lightning-charge-fill me-2"></i>Busca Inteligente</h3>
-                <button class="smart-search-close" id="smartSearchClose" aria-label="Fechar">
+                <h3>Buscar produtos</h3>
+                <button class="smart-search-close" id="smartSearchClose" aria-label="Fechar busca">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
-
             <div class="smart-search-input-wrapper">
                 <div class="smart-search-input-group">
-                    <i class="bi bi-search"></i>
-                    <input type="text" class="smart-search-input" id="smartSearchInput" placeholder="Digite para buscar produtos..." autocomplete="off">
-                    <button class="smart-search-clear" id="smartSearchClear" style="display:none;">
-                        <i class="bi bi-x-circle-fill"></i>
-                    </button>
+                    <input id="smartSearchInput" class="smart-search-input" type="search" placeholder="Procurar produto..." aria-label="Pesquisar produto" />
+                    <button id="smartSearchClear" class="smart-search-clear" title="Limpar" aria-label="Limpar busca" style="display:none;"><i class="bi bi-x-lg"></i></button>
                 </div>
             </div>
-
             <div class="smart-search-results" id="smartSearchResults">
                 <div class="smart-search-empty">
                     <i class="bi bi-search"></i>
                     <p>Digite algo para buscar produtos</p>
-                </div>
-            </div>
-
-            <!-- Overlays: Renomear e Trocar Imagem -->
-            <div class="ss-overlay" id="ssRenameOverlay" aria-modal="true" role="dialog">
-                <div class="ss-modal">
-                    <div class="ss-header">
-                        <span>Renomear produto</span>
-                        <button class="ss-btn ss-btn-secondary" id="ssRenameClose">Fechar</button>
-                    </div>
-                    <div class="ss-body">
-                        <input type="text" id="ssRenameInput" class="form-control" placeholder="Novo nome do produto" />
-                        <input type="hidden" id="ssRenameProductId" />
-                    </div>
-                    <div class="ss-footer">
-                        <button class="ss-btn ss-btn-secondary" id="ssRenameCancel">Cancelar</button>
-                        <button class="ss-btn ss-btn-primary" id="ssRenameSave">Salvar</button>
-                    </div>
-                </div>
-            </div>
-            <div class="ss-overlay" id="ssImageOverlay" aria-modal="true" role="dialog">
-                <div class="ss-modal">
-                    <div class="ss-header">
-                        <span>Trocar imagem destaque</span>
-                        <button class="ss-btn ss-btn-secondary" id="ssImageClose">Fechar</button>
-                    </div>
-                    <div class="ss-body">
-                        <label class="form-label mb-1">Enviar arquivo</label>
-                        <input type="file" id="ssImageFile" accept="image/*" class="form-control mb-3" />
-                        <div class="text-center text-muted my-2">ou</div>
-                        <label class="form-label mb-1">Usar link (URL)</label>
-                        <input type="url" id="ssImageUrl" placeholder="https://exemplo.com/imagem.jpg" class="form-control" />
-                        <input type="hidden" id="ssImageProductId" />
-                        <small class="text-muted d-block mt-2">Formatos: jpeg, png, jpg, gif, webp, avif. Máx 10MB.</small>
-                    </div>
-                    <div class="ss-footer">
-                        <button class="ss-btn ss-btn-danger" id="ssImageRemove">Remover imagem</button>
-                        <button class="ss-btn ss-btn-secondary" id="ssImageCancel">Cancelar</button>
-                        <button class="ss-btn ss-btn-primary" id="ssImageSave">Salvar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Quick Create Product Modal (Tabbed) -->
-        <div class="ss-overlay" id="ssQuickProductOverlay" aria-modal="true" role="dialog" style="display:none;">
-            <div class="ss-modal" style="max-width:900px; width:96%;">
-                <div class="ss-header" style="display:flex; align-items:center; gap:12px;">
-                    <div style="flex:1; display:flex; gap:8px; align-items:center;">
-                        <strong>Criar produto rápido</strong>
-                        <nav style="display:flex; gap:6px; margin-left:8px;">
-                            <button type="button" class="ss-btn ss-tab active" data-tab="general">Geral</button>
-                            <button type="button" class="ss-btn ss-tab" data-tab="pricing">Preço</button>
-                            <button type="button" class="ss-btn ss-tab" data-tab="inventory">Estoque</button>
-                            <button type="button" class="ss-btn ss-tab" data-tab="images">Imagens</button>
-                            <button type="button" class="ss-btn ss-tab" data-tab="shipping">Envio</button>
-                            <button type="button" class="ss-btn ss-tab" data-tab="seo">SEO</button>
-                            <button type="button" class="ss-btn ss-tab" data-tab="attrs">Atributos</button>
-                        </nav>
-                    </div>
-                    <button class="ss-btn ss-btn-secondary" id="ssQuickProductClose">Fechar</button>
-                </div>
-                <div class="ss-body">
-                    <form id="qpForm" onsubmit="return false;">
-                        <div class="qp-tabs">
-                            <div class="qp-tab-panel" data-panel="general">
-                                <div class="mb-2">
-                                    <label class="form-label">Nome do produto</label>
-                                    <input type="text" id="qpName" class="form-control" placeholder="Nome do produto" />
-                                </div>
-                                <div class="mb-2 d-flex gap-2">
-                                    <div style="flex:1">
-                                        <label class="form-label">Marca</label>
-                                        <select id="qpBrand" class="form-select"><option value="">Selecione a marca</option></select>
-                                    </div>
-                                    <div style="width:180px">
-                                        <label class="form-label">SKU</label>
-                                        <input type="text" id="qpSku" class="form-control" placeholder="SKU" />
-                                    </div>
-                                    <div style="width:120px">
-                                        <label class="form-label">Ativo</label>
-                                        <div><input type="checkbox" id="qpActive" checked /> Ativo</div>
-                                    </div>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label">Categorias</label>
-                                    <select id="qpCategories" class="form-select" multiple style="min-height:80px;"></select>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label">Breve descrição</label>
-                                    <textarea id="qpShortDesc" class="form-control" rows="2"></textarea>
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label">Descrição completa (HTML opcional)</label>
-                                    <textarea id="qpDescription" class="form-control" rows="6"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="qp-tab-panel" data-panel="pricing" style="display:none;">
-                                <div class="d-flex gap-2 mb-2">
-                                    <div style="flex:1">
-                                        <label class="form-label">Preço (R$)</label>
-                                        <input type="number" id="qpPrice" class="form-control" step="0.01" placeholder="0.00" />
-                                    </div>
-                                    <div style="width:160px">
-                                        <label class="form-label">Preço Promocional</label>
-                                        <input type="number" id="qpComparePrice" class="form-control" step="0.01" placeholder="0.00" />
-                                    </div>
-                                    <div style="width:160px">
-                                        <label class="form-label">Custo</label>
-                                        <input type="number" id="qpCostPrice" class="form-control" step="0.01" placeholder="0.00" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="qp-tab-panel" data-panel="inventory" style="display:none;">
-                                <div class="d-flex gap-2 mb-2">
-                                    <div style="width:140px">
-                                        <label class="form-label">Estoque</label>
-                                        <input type="number" id="qpStock" class="form-control" value="0" />
-                                    </div>
-                                    <div style="width:140px">
-                                        <label class="form-label">Min stock</label>
-                                        <input type="number" id="qpMinStock" class="form-control" value="0" />
-                                    </div>
-                                    <div style="width:160px">
-                                        <label class="form-label">Código de Barras</label>
-                                        <input type="text" id="qpBarcode" class="form-control" placeholder="GTIN / EAN" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="qp-tab-panel" data-panel="images" style="display:none;">
-                                <div class="mb-2">
-                                    <label class="form-label">Imagens (arraste ou selecione)</label>
-                                    <input type="file" id="qpImages" class="form-control" accept="image/*" multiple />
-                                    <small class="text-muted">Envie até 10 imagens. O primeiro arquivo será a imagem destaque.</small>
-                                </div>
-                                <div id="qpPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:8px;"></div>
-                            </div>
-
-                            <div class="qp-tab-panel" data-panel="shipping" style="display:none;">
-                                <div class="d-flex gap-2 mb-2">
-                                    <div style="width:160px">
-                                        <label class="form-label">Peso (kg)</label>
-                                        <input type="number" id="qpWeight" class="form-control" step="0.01" placeholder="0.00" />
-                                    </div>
-                                    <div style="width:160px">
-                                        <label class="form-label">Comprimento (cm)</label>
-                                        <input type="number" id="qpLength" class="form-control" step="0.1" placeholder="0.0" />
-                                    </div>
-                                    <div style="width:160px">
-                                        <label class="form-label">Largura (cm)</label>
-                                        <input type="number" id="qpWidth" class="form-control" step="0.1" placeholder="0.0" />
-                                    </div>
-                                    <div style="width:160px">
-                                        <label class="form-label">Altura (cm)</label>
-                                        <input type="number" id="qpHeight" class="form-control" step="0.1" placeholder="0.0" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="qp-tab-panel" data-panel="seo" style="display:none;">
-                                <div class="mb-2">
-                                    <label class="form-label">Slug (opcional)</label>
-                                    <input type="text" id="qpSlug" class="form-control" placeholder="slug-do-produto" />
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label">Título SEO</label>
-                                    <input type="text" id="qpSeoTitle" class="form-control" />
-                                </div>
-                                <div class="mb-2">
-                                    <label class="form-label">Descrição SEO</label>
-                                    <textarea id="qpSeoDescription" class="form-control" rows="3"></textarea>
-                                </div>
-                            </div>
-
-                            <div class="qp-tab-panel" data-panel="attrs" style="display:none;">
-                                <div id="qpAttributesList" style="display:flex; flex-direction:column; gap:8px;">
-                                    <!-- attribute rows inserted here -->
-                                </div>
-                                <div class="d-flex gap-2 mt-2">
-                                    <input type="text" id="qpAttrKey" class="form-control" placeholder="Nome do atributo (ex: Cor)" />
-                                    <input type="text" id="qpAttrValue" class="form-control" placeholder="Valor (ex: Vermelho)" />
-                                    <button type="button" id="qpAddAttr" class="ss-btn ss-btn-primary">Adicionar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                </div>
-                <div class="ss-footer">
-                    <button class="ss-btn ss-btn-secondary" id="ssQuickProductCancel">Cancelar</button>
-                    <button class="ss-btn ss-btn-primary" id="ssQuickProductSave">Criar produto</button>
                 </div>
             </div>
         </div>
@@ -442,26 +273,7 @@
                 <button class="sp-btn sp-btn-secondary" id="departmentsCancel" type="button">Fechar</button>
                 <button class="sp-btn sp-btn-primary" id="departmentsSave" type="button">Salvar alterações</button>
             </div>
-            <div class="ss-overlay" id="dpConfirmOverlay" aria-modal="true" role="dialog">
-                <div class="ss-modal" style="max-width:520px;">
-                    <div class="ss-header">
-                        <span>Desativar departamento</span>
-                        <button class="ss-btn ss-btn-secondary" id="dpConfirmClose" type="button">Fechar</button>
-                    </div>
-                    <div class="ss-body">
-                        <div id="dpConfirmText" class="mb-3" style="color:#334155; font-size:14px;"></div>
-                        <div id="dpConfirmDanger" class="border rounded p-2" style="border-color:#fecaca; background:#fef2f2;">
-                            <div style="font-size:13px; color:#7f1d1d;" class="mb-2">Para confirmar, digite exatamente: <strong id="dpConfirmPhrase"></strong></div>
-                            <input type="text" id="dpConfirmInput" class="form-control" placeholder="Digite a frase de confirmação" />
-                        </div>
-                        <small class="text-muted d-block mt-2">Os produtos continuarão disponíveis e poderão ser encontrados via busca.</small>
-                    </div>
-                    <div class="ss-footer">
-                        <button class="ss-btn ss-btn-secondary" id="dpConfirmCancel" type="button">Cancelar</button>
-                        <button class="ss-btn ss-btn-primary" id="dpConfirmApply" type="button">Confirmar</button>
-                    </div>
-                </div>
-            </div>
+            <!-- departments confirm overlay moved below to avoid nesting -->
         </div>
 
         <!-- Painel de Tema -->
@@ -580,10 +392,10 @@
             </div>
         </div>
 
-        <!-- Painel de Seções (Marcas) -->
+        <!-- Painel de Seções -->
         <div class="sections-panel" id="sectionsPanel">
             <div class="sp-header">
-                <span><i class="bi bi-collection me-2"></i> Sessões de Marcas</span>
+                <span><i class="bi bi-collection me-2"></i> Sessões</span>
                 <button class="smart-search-close" id="sectionsClose" aria-label="Fechar">
                     <i class="bi bi-x-lg"></i>
                 </button>
@@ -594,86 +406,326 @@
                 </div>
                 <ul class="sp-list" id="sectionsList"></ul>
                 <div class="mt-2 d-flex gap-2 align-items-stretch">
-                    <div style="display:flex; gap:6px; align-items:center;">
-                        <select id="spNewBrandSelect" class="form-select" style="min-width: 160px;">
-                            <option value="">Selecione a marca…</option>
-                        </select>
-                        <button type="button" id="spCreateBrandBtn" class="sp-btn sp-btn-primary" title="Criar marca">Criar marca</button>
-                    </div>
                     <input type="text" id="spNewTitle" class="form-control" placeholder="Título da seção (opcional)">
                     <button class="sp-btn sp-btn-secondary" id="spAdd">Adicionar</button>
                 </div>
-                <small id="spBrandsWarning" class="d-block mt-2" style="color:#d97706; display:none;">Nenhuma marca encontrada para este departamento.</small>
                 <small class="d-block mt-2" style="color:#64748b;">Dica: Use as setas para ordenar; desative para ocultar a seção. Salve para persistir.</small>
             </div>
             <div class="sp-footer">
                 <button class="sp-btn sp-btn-secondary" id="sectionsCancel">Cancelar</button>
                 <button class="sp-btn sp-btn-primary" id="sectionsSave">Salvar</button>
             </div>
-            <!-- Overlay/modal para criar marca rapidamente -->
-            <div class="ss-overlay" id="spCreateBrandOverlay" aria-modal="true" role="dialog" style="display:none;">
-                <div class="ss-modal">
-                    <div class="ss-header">
-                        <span>Criar marca</span>
-                        <button class="ss-btn ss-btn-secondary" id="spCreateBrandClose">Fechar</button>
-                    </div>
-                    <div class="ss-body">
-                        <label class="form-label">Nome da marca</label>
-                        <input type="text" id="spCreateBrandName" class="form-control mb-2" placeholder="Ex: Acme">
-                        <label class="form-label">Slug (opcional)</label>
-                        <input type="text" id="spCreateBrandSlug" class="form-control mb-2" placeholder="acme">
-                        <label class="form-label">Logo (URL opcional)</label>
-                        <input type="url" id="spCreateBrandLogo" class="form-control" placeholder="https://...">
-                    </div>
-                    <div class="ss-footer">
-                        <button class="ss-btn ss-btn-secondary" id="spCreateBrandCancel">Cancelar</button>
-                        <button class="ss-btn ss-btn-primary" id="spCreateBrandSave">Criar</button>
-                    </div>
+            <!-- Quick-create de marca removido -->
+            <!-- Confirmação de troca de seção -->
+            <!-- sections confirm overlay moved below to avoid nesting -->
+        </div>
+    </div>
+
+    <!-- Quick-create product overlay moved outside the search panel to avoid layout/overflow conflicts -->
+    <style>
+        /* Keep quick-create modal fixed size across tabs and make panels scroll internally */
+        #ssQuickProductOverlay .ss-modal {
+            max-width: 920px !important;
+            width: calc(100% - 48px) !important;
+            height: 80vh !important;
+            box-sizing: border-box;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        /* Header / Footer should not grow */
+        #ssQuickProductOverlay .ss-header { flex: 0 0 auto; }
+        #ssQuickProductOverlay .ss-footer { flex: 0 0 auto; }
+        /* Tab panels fill remaining space and scroll internally without resizing modal */
+        #ssQuickProductOverlay .qp-tab-panel { flex: 1 1 auto; display: block; overflow: hidden; }
+        #ssQuickProductOverlay .qp-tab-panel > .ss-body { height: 100% !important; overflow: auto !important; box-sizing: border-box; padding-right: 8px; }
+        /* Fallback for older markup where .ss-body sits directly under .ss-modal */
+        #ssQuickProductOverlay .ss-body { flex: 1 1 auto; overflow: auto !important; }
+        /* Small adjustment for mobile screens */
+        @media (max-width: 640px) {
+            #ssQuickProductOverlay .ss-modal { max-width: 96vw; height: 76vh !important; }
+            #ssQuickProductOverlay .qp-tab-panel > .ss-body, #ssQuickProductOverlay .ss-body { max-height: none !important; }
+        }
+    </style>
+
+    <div class="ss-overlay" id="ssQuickProductOverlay" aria-modal="true" role="dialog">
+        <div class="ss-modal ss-modal-center" role="document">
+            <div class="ss-header" style="display:flex; align-items:center; justify-content:space-between;">
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="ss-tab active" data-tab="create" id="qpTabCreate">Criar</button>
+                    <button class="ss-tab" data-tab="manage" id="pmTabManage">Gerenciador</button>
+                    <button class="ss-tab" data-tab="latest" id="pmTabLatest">Últimos</button>
+                    <button class="ss-tab" data-tab="attributes" id="pmTabAttributes">Atributos</button>
+                </div>
+                <div style="display:flex; gap:8px; align-items:center;">
+                    <button class="ss-btn ss-btn-secondary" id="ssQuickProductClose" type="button">Fechar</button>
                 </div>
             </div>
-            <!-- Confirmação de troca de marca -->
-            <div class="ss-overlay" id="spConfirmOverlay" aria-modal="true" role="dialog">
-                <div class="ss-modal" style="max-width:520px;">
-                    <div class="ss-header">
-                        <span>Substituir sessão de marca</span>
-                        <button class="ss-btn ss-btn-secondary" id="spConfirmClose">Fechar</button>
+            <div class="qp-tab-panel" data-panel="create">
+            <form id="qpForm" onsubmit="return false;">
+                <div class="ss-body">
+                    <div class="mb-3">
+                        <label class="form-label">Departamento</label>
+                        <div style="display:flex; gap:8px; align-items:center; position:relative;">
+                            <div style="position:relative; width:100%;">
+                                <div class="qp-dept-swatch" id="qpDeptSwatch" title="Departamento" style="display:none;"></div>
+                                <input id="qpDeptCombo" class="form-control qp-dept-combobox" type="text" placeholder="Selecione o departamento..." aria-label="Selecionar departamento" autocomplete="off" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="qpDeptList" />
+                                <div id="qpDeptList" class="qp-dept-list" style="display:none; position:absolute; left:0; right:0; z-index:40;" role="listbox"></div>
+                            </div>
+                            <select id="qpDepartment" name="department_id" class="form-select qp-dept-select visually-hidden" aria-hidden="true" style="display:none;">
+                                <option value="">— Selecione o departamento —</option>
+                            </select>
+                            <button type="button" id="qpDeptHelp" class="ss-btn ss-btn-secondary" title="Ajuda">?</button>
+                        </div>
+                        <small class="text-muted">Escolha o departamento principal deste produto. Pode ser alterado depois.</small>
                     </div>
-                    <div class="ss-body">
-                        <div id="spConfirmText" class="mb-3" style="color:#334155; font-size:14px;"></div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="spConfirmAction" id="spActionReplace" value="replace" checked>
-                            <label class="form-check-label" for="spActionReplace">
-                                Substituir apenas a sessão (recomendado): não altera nenhum produto.
-                            </label>
+                    <div class="mb-2">
+                        <label class="form-label">Nome do produto</label>
+                        <input type="text" id="qpName" class="form-control" placeholder="Nome do produto" />
+                    </div>
+                    <div class="mb-2 d-flex gap-2">
+                        <div style="flex:1">
+                            <label class="form-label">SKU</label>
+                            <input type="text" id="qpSku" class="form-control" placeholder="SKU" />
                         </div>
-                        <div class="form-check mb-2">
-                            <input class="form-check-input" type="radio" name="spConfirmAction" id="spActionHideOld" value="hide_old">
-                            <label class="form-check-label" for="spActionHideOld">
-                                Ocultar seção antiga se existir outra igual (não destrutivo).
-                            </label>
-                        </div>
-                        <div class="form-check mb-3">
-                            <input class="form-check-input" type="radio" name="spConfirmAction" id="spActionDeactivateProducts" value="deactivate_products">
-                            <label class="form-check-label" for="spActionDeactivateProducts">
-                                Também desativar todos os produtos da marca antiga neste departamento (exige confirmação abaixo).
-                            </label>
-                        </div>
-                        <div id="spDangerBox" class="border rounded p-2" style="display:none; border-color:#fecaca; background:#fef2f2;">
-                            <div style="font-size:13px; color:#7f1d1d;" class="mb-2">Para confirmar, digite exatamente: <strong id="spConfirmPhrase"></strong></div>
-                            <input type="text" id="spConfirmInput" class="form-control" placeholder="Digite a frase de confirmação" />
+                        <div style="width:120px">
+                            <label class="form-label">Ativo</label>
+                            <div><input type="checkbox" id="qpActive" checked /> Ativo</div>
                         </div>
                     </div>
-                    <div class="ss-footer">
-                        <button class="ss-btn ss-btn-secondary" id="spConfirmCancel">Cancelar</button>
-                        <button class="ss-btn ss-btn-primary" id="spConfirmApply">Aplicar</button>
+                    <div class="mb-2">
+                        <label class="form-label">Categorias</label>
+                        <div id="qpCategoriesWrapper" class="qp-cat-wrapper">
+                            <div id="qpCatChips" class="qp-cat-chips" aria-hidden="false"></div>
+                            <input id="qpCatSearchInput" class="form-control" type="search" placeholder="Buscar/Adicionar categoria..." aria-label="Pesquisar categorias" autocomplete="off" />
+                            <div id="qpCatDropdown" class="qp-cat-dropdown" style="display:none; max-height:200px; overflow:auto; margin-top:6px; border:1px solid #e6edf3; border-radius:8px; background:#fff; box-shadow:0 8px 18px rgba(15,23,42,0.06);"></div>
+                            <select id="qpCategories" name="categories[]" class="form-select visually-hidden" multiple style="display:none; min-height:80px;"></select>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Breve descrição</label>
+                        <textarea id="qpShortDesc" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Descrição completa (HTML opcional)</label>
+                        <textarea id="qpDescription" class="form-control" rows="6"></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Preço</label>
+                        <input type="number" id="qpPrice" class="form-control" placeholder="Preço" step="0.01" min="0" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Preço de comparação</label>
+                        <input type="number" id="qpComparePrice" class="form-control" placeholder="Preço de comparação" step="0.01" min="0" />
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Preço de custo</label>
+                        <input type="number" id="qpCostPrice" class="form-control" placeholder="Preço de custo" step="0.01" min="0" />
+                    </div>
+                    <div class="mb-2 d-flex gap-3 align-items-center" style="align-items:center">
+                        <label class="form-label" style="min-width:120px; margin-bottom:0;">Canais de venda</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <label style="font-weight:500; font-size:0.95rem;"><input type="checkbox" id="qpSellB2C" checked style="margin-right:6px;" /> Vender em B2C</label>
+                            <label style="font-weight:500; font-size:0.95rem;"><input type="checkbox" id="qpSellB2B" checked style="margin-right:6px;" /> Vender em B2B</label>
+                        </div>
+                        <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+                            <label style="font-size:0.9rem; color:#475569;"><input type="checkbox" id="qpUseMargins" style="margin-right:6px;" /> Calcular preços a partir do custo</label>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <div id="qpPricePreview" class="qp-price-preview" style="display:none;">
+                            <div style="display:flex; flex-direction:column; gap:6px;">
+                                <div style="display:flex; gap:8px; align-items:center;"><span class="qp-price-badge">B2B</span><div class="qp-price-row"><span class="qp-price-label">Preço B2B</span><span id="qpPriceB2bValue" class="qp-price-value">R$ 0,00</span></div></div>
+                                <div style="display:flex; gap:8px; align-items:center;"><span class="qp-price-badge">B2C</span><div class="qp-price-row"><span class="qp-price-label">Preço B2C</span><span id="qpPriceB2cValue" class="qp-price-value">R$ 0,00</span></div></div>
+                            </div>
+                            <div style="margin-left:auto; font-size:12px; color:#64748b;">Calculado</div>
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">Imagens</label>
+                        <input type="file" id="qpImages" class="form-control" multiple accept="image/*" />
+                        <div id="qpPreview" class="d-flex gap-2 mt-2"></div>
+                    </div>
+                    <div class="mb-2" id="qpMvpVariations">
+                        <label class="form-label">Variações (MVP)</label>
+                        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
+                            <button type="button" id="qpMvpToggle" class="ss-btn ss-btn-secondary">Alternar Variations</button>
+                            <small class="text-muted">Fluxo simples: defina eixos (ex: Cor, RAM), adicione valores e gere combinações.</small>
+                        </div>
+
+                        <div id="qpMvpPanel" style="display:none; border:1px dashed #e6edf3; padding:8px; border-radius:6px;">
+                            <div style="display:flex; gap:8px; margin-bottom:8px;">
+                                <input type="text" id="qpMvpAxisName" class="form-control" placeholder="Nome do eixo (ex: Cor)" />
+                                <input type="text" id="qpMvpAxisValues" class="form-control" placeholder="Valores separados por vírgula (ex: Vermelho,Azul)" />
+                                <button type="button" id="qpMvpAddAxisBtn" class="ss-btn ss-btn-primary">Adicionar eixo</button>
+                            </div>
+                            <div id="qpMvpAxesList" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"></div>
+                            <div id="qpMvpSuggestedAttrs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"></div>
+                            <div style="display:flex; gap:8px; margin-bottom:8px;">
+                                <button type="button" id="qpMvpGenerateBtn" class="ss-btn ss-btn-primary">Gerar Variações</button>
+                                <button type="button" id="qpMvpClearBtn" class="ss-btn ss-btn-secondary">Limpar</button>
+                                <div id="qpMvpCount" style="margin-left:auto; color:#64748b; align-self:center;">0 variações</div>
+                            </div>
+                            <div id="qpMvpCombosPreview" style="max-height:220px; overflow:auto; border-top:1px solid #eef2f7; padding-top:8px;"></div>
+                        </div>
+                    </div>
+                    <div class="mb-2 d-flex gap-2">
+                        <div style="flex:1">
+                            <label class="form-label">Estoque</label>
+                            <input type="number" id="qpStock" class="form-control" placeholder="Quantidade em estoque" min="0" />
+                        </div>
+                        <div style="width:160px">
+                            <label class="form-label">Estoque mínimo</label>
+                            <input type="number" id="qpMinStock" class="form-control" placeholder="Estoque mínimo" min="0" />
+                        </div>
                     </div>
                 </div>
+                <div class="ss-footer">
+                    <button class="ss-btn ss-btn-secondary" id="ssQuickProductCancel" type="button">Cancelar</button>
+                    <button class="ss-btn ss-btn-primary" id="ssQuickProductSave" type="button">Salvar Produto</button>
+                </div>
+            </form>
+            </div>
+
+            <!-- Product Manager panels moved into the quick-create modal as tabs -->
+            <div id="pmManagePanel" class="qp-tab-panel" data-panel="manage" style="display:none; padding:16px; max-height:64vh; overflow:auto;">
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+                    <input id="pmSearchInput" type="search" class="form-control" placeholder="Pesquisar produtos por nome, SKU ou ID..." aria-label="Pesquisar produtos" />
+                    <button id="pmNewProduct" class="ss-btn ss-btn-primary" type="button">Criar Rápido</button>
+                </div>
+                <div id="pmResults" style="max-height:52vh; overflow:auto;"></div>
+            </div>
+
+            <div id="pmLatestPanel" class="qp-tab-panel" data-panel="latest" style="display:none; padding:16px; max-height:64vh; overflow:auto;">
+                <div style="margin-bottom:12px; color:#64748b;">Últimos produtos registrados (últimas 20 entradas)</div>
+                <div id="pmLatestResults" style="max-height:52vh; overflow:auto;"></div>
+            </div>
+
+            <div id="pmAttributesPanel" class="qp-tab-panel" data-panel="attributes" style="display:none; padding:16px; max-height:64vh; overflow:auto;">
+                <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
+                    <select id="pmAttrDepartment" class="form-select" style="min-width:180px;">
+                        <option value="">— Selecione o departamento —</option>
+                    </select>
+                    <input id="pmAttrSearch" type="search" class="form-control" placeholder="Filtrar atributos por nome..." aria-label="Pesquisar atributos" />
+                    <button id="pmAttrNewBtn" class="ss-btn ss-btn-primary" type="button">Adicionar Atributo</button>
+                    <button id="pmAttrGenerateBtn" class="ss-btn ss-btn-primary" type="button">Gerar Variações</button>
+                </div>
+                <div id="pmAttributesList" style="max-height:52vh; overflow:auto; border-top:1px solid #eef2f7; padding-top:8px;"></div>
+                <div style="margin-top:10px; color:#64748b; font-size:13px;">Selecione valores e clique em <strong>Aplicar ao Criar Rápido</strong> para inserir atributos no formulário de criação rápida.</div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Departments confirm overlay (moved out of panel) -->
+    <div class="ss-overlay" id="dpConfirmOverlay" aria-modal="true" role="dialog" style="display:none; align-items:center; justify-content:center; z-index:1500;">
+        <div class="ss-modal" style="max-width:520px;">
+            <div class="ss-header">
+                <span>Desativar departamento</span>
+                <button class="ss-btn ss-btn-secondary" id="dpConfirmClose" type="button">Fechar</button>
+            </div>
+            <div class="ss-body">
+                <div id="dpConfirmText" class="mb-3" style="color:#334155; font-size:14px;"></div>
+                <div id="dpConfirmDanger" class="border rounded p-2" style="border-color:#fecaca; background:#fef2f2;">
+                    <div style="font-size:13px; color:#7f1d1d;" class="mb-2">Para confirmar, digite exatamente: <strong id="dpConfirmPhrase"></strong></div>
+                    <input type="text" id="dpConfirmInput" class="form-control" placeholder="Digite a frase de confirmação" />
+                </div>
+                <small class="text-muted d-block mt-2">Os produtos continuarão disponíveis e poderão ser encontrados via busca.</small>
+            </div>
+            <div class="ss-footer">
+                <button class="ss-btn ss-btn-secondary" id="dpConfirmCancel" type="button">Cancelar</button>
+                <button class="ss-btn ss-btn-primary" id="dpConfirmApply" type="button">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sections confirm overlay (moved out of panel) -->
+    <div class="ss-overlay" id="spConfirmOverlay" aria-modal="true" role="dialog" style="display:none; align-items:center; justify-content:center; z-index:1500;">
+        <div class="ss-modal" style="max-width:520px;">
+            <div class="ss-header">
+                <span>Substituir sessão</span>
+                <button class="ss-btn ss-btn-secondary" id="spConfirmClose">Fechar</button>
+            </div>
+            <div class="ss-body">
+                <div id="spConfirmText" class="mb-3" style="color:#334155; font-size:14px;"></div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="spConfirmAction" id="spActionReplace" value="replace" checked>
+                    <label class="form-check-label" for="spActionReplace">
+                        Substituir apenas a sessão (recomendado): não altera nenhum produto.
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input" type="radio" name="spConfirmAction" id="spActionHideOld" value="hide_old">
+                    <label class="form-check-label" for="spActionHideOld">
+                        Ocultar seção antiga se existir outra igual (não destrutivo).
+                    </label>
+                </div>
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="radio" name="spConfirmAction" id="spActionDeactivateProducts" value="deactivate_products">
+                    <label class="form-check-label" for="spActionDeactivateProducts">
+                        Também desativar todos os produtos da sessão anterior neste departamento (exige confirmação abaixo).
+                    </label>
+                </div>
+                <div id="spDangerBox" class="border rounded p-2" style="display:none; border-color:#fecaca; background:#fef2f2;">
+                    <div style="font-size:13px; color:#7f1d1d;" class="mb-2">Para confirmar, digite exatamente: <strong id="spConfirmPhrase"></strong></div>
+                    <input type="text" id="spConfirmInput" class="form-control" placeholder="Digite a frase de confirmação" />
+                </div>
+            </div>
+            <div class="ss-footer">
+                <button class="ss-btn ss-btn-secondary" id="spConfirmCancel">Cancelar</button>
+                <button class="ss-btn ss-btn-primary" id="spConfirmApply">Aplicar</button>
             </div>
         </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Simple toast system to replace blocking alert() calls
+            (function initToasts(){
+                const container = document.createElement('div');
+                container.id = 'ssToastContainer';
+                container.style.position = 'fixed';
+                container.style.right = '20px';
+                container.style.top = '20px';
+                container.style.zIndex = '5000';
+                container.style.display = 'flex';
+                container.style.flexDirection = 'column';
+                container.style.gap = '8px';
+                document.body.appendChild(container);
+
+                window.ssShowToast = function(message, type = 'info', timeout = 4500){
+                    try {
+                        const t = document.createElement('div');
+                        t.className = 'ss-toast ss-toast-' + (type || 'info');
+                        t.style.minWidth = '220px';
+                        t.style.maxWidth = '420px';
+                        t.style.padding = '10px 14px';
+                        t.style.borderRadius = '10px';
+                        t.style.boxShadow = '0 8px 20px rgba(0,0,0,0.2)';
+                        t.style.color = '#fff';
+                        t.style.fontWeight = '600';
+                        t.style.fontSize = '13px';
+                        t.style.opacity = '0';
+                        t.style.transition = 'opacity .2s ease, transform .25s ease';
+                        if (type === 'error') t.style.background = '#ef4444';
+                        else if (type === 'success') t.style.background = '#10b981';
+                        else if (type === 'warning') t.style.background = '#f59e0b';
+                        else t.style.background = '#111827';
+                        t.textContent = message;
+                        container.appendChild(t);
+                        // entrance
+                        requestAnimationFrame(() => { t.style.opacity = '1'; t.style.transform = 'translateY(0)'; });
+                        const hide = () => {
+                            t.style.opacity = '0';
+                            setTimeout(() => { try { t.remove(); } catch(e){} }, 220);
+                        };
+                        if (timeout && timeout > 0) setTimeout(hide, timeout);
+                        // click to dismiss
+                        t.addEventListener('click', hide);
+                        return t;
+                    } catch(e){ console.error('toast error', e); }
+                };
+            })();
             const searchTrigger = document.getElementById('smartSearchTrigger');
             const searchPanel = document.getElementById('smartSearchPanel');
             const searchClose = document.getElementById('smartSearchClose');
@@ -703,6 +755,55 @@
             const departmentsTrigger = document.getElementById('departmentsTrigger');
             const departmentsPanel = document.getElementById('departmentsPanel');
             const departmentsClose = document.getElementById('departmentsClose');
+            const productsTriggerBtn = document.getElementById('productsTrigger');
+            const qpOverlay = document.getElementById('ssQuickProductOverlay');
+            const productsManagerTrigger = document.getElementById('productsManagerTrigger');
+            const qpNameField = document.getElementById('qpName');
+            const qpSkuField = document.getElementById('qpSku');
+            // Categories data and selection for quick-create
+            let qpCategoriesData = [];
+            let qpSelectedCategories = new Set();
+            // Ensure overlay is attached to document.body to avoid clipping/overflow/transform containment issues
+            try {
+                if (qpOverlay) {
+                    // If overlay is not direct child of body, move it to body to ensure fixed positioning works
+                    if (qpOverlay.parentElement && qpOverlay.parentElement !== document.body) {
+                        document.body.appendChild(qpOverlay);
+                    }
+                    // Force essential inline styles so CSS overriding is less likely to hide it accidentally
+                    qpOverlay.style.position = qpOverlay.style.position || 'fixed';
+                    qpOverlay.style.inset = qpOverlay.style.inset || '0';
+                    qpOverlay.style.left = qpOverlay.style.left || '0';
+                    qpOverlay.style.top = qpOverlay.style.top || '0';
+                    qpOverlay.style.display = qpOverlay.style.display || 'none';
+                    qpOverlay.style.alignItems = qpOverlay.style.alignItems || 'center';
+                    qpOverlay.style.justifyContent = qpOverlay.style.justifyContent || 'center';
+                    qpOverlay.style.zIndex = qpOverlay.style.zIndex || '3000';
+                    qpOverlay.style.pointerEvents = qpOverlay.style.pointerEvents || 'auto';
+                    const modalEl = qpOverlay.querySelector('.ss-modal');
+                    if (modalEl) {
+                        modalEl.style.maxWidth = modalEl.style.maxWidth || '820px';
+                        modalEl.style.margin = modalEl.style.margin || '0 auto';
+                    }
+                }
+            } catch(e) { console.debug && console.debug('overlay placement guard failed', e); }
+
+            // Ensure products quick-create shortcut is visible
+            try { if (productsTriggerBtn) productsTriggerBtn.style.display = ''; } catch(e) {}
+            // Bag shortcut should open quick-create as well
+            try {
+                productsManagerTrigger?.addEventListener('click', function(e){
+                    e && e.stopPropagation();
+                    if (typeof openQuickProduct === 'function') openQuickProduct(); else if (qpOverlay) { qpOverlay.style.display = 'flex'; qpOverlay.classList && qpOverlay.classList.add('active'); }
+                    setTimeout(function(){ const btn = document.querySelector('.ss-tab[data-tab="manage"]'); if (btn) btn.click(); try { pmSearchInput && pmSearchInput.focus(); } catch(e){} }, 60);
+                });
+            } catch(e) {}
+
+            // Product Manager removed — use quick-create only
+            // Quick-product modal controls
+            const qpClose = document.getElementById('ssQuickProductClose');
+            const qpCancel = document.getElementById('ssQuickProductCancel');
+            const qpSave = document.getElementById('ssQuickProductSave');
             const departmentsCancel = document.getElementById('departmentsCancel');
             const departmentsSave = document.getElementById('departmentsSave');
             const departmentsList = document.getElementById('departmentsList');
@@ -822,12 +923,12 @@
 
             Object.entries(colorFields).forEach(([key, refs]) => {
                 if (refs.picker) {
-                    refs.picker.addEventListener('input', () => setThemeValue(key, refs.picker.value, 'picker'));
+                    refs.picker?.addEventListener('input', () => setThemeValue(key, refs.picker.value, 'picker'));
                 }
                 if (refs.hex) {
-                    refs.hex.addEventListener('input', () => refs.hex.classList.remove('is-invalid'));
-                    refs.hex.addEventListener('blur', () => setThemeValue(key, refs.hex.value, 'hex'));
-                    refs.hex.addEventListener('keydown', (ev) => {
+                    refs.hex?.addEventListener('input', () => refs.hex.classList.remove('is-invalid'));
+                    refs.hex?.addEventListener('blur', () => setThemeValue(key, refs.hex.value, 'hex'));
+                    refs.hex?.addEventListener('keydown', (ev) => {
                         if (ev.key === 'Enter') {
                             ev.preventDefault();
                             setThemeValue(key, refs.hex.value, 'hex');
@@ -837,7 +938,7 @@
             });
 
             presetButtons.forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn?.addEventListener('click', () => {
                     const preset = {
                         theme_primary: btn.dataset.primary,
                         theme_secondary: btn.dataset.secondary,
@@ -850,10 +951,14 @@
                 });
             });
 
-            let availableBrands = null; // null sinaliza que ainda não carregamos ou houve falha
+            let availableBrands = [];
             let departmentsLoaded = false;
             let departmentsData = [];
             let dpPendingToggle = null;
+            // For quick-create combobox
+            let departmentsForQuick = [];
+            let qpDeptHighlighted = -1;
+            let qpDeptWired = false;
 
             function slugify(str) {
                 return (str || '')
@@ -867,6 +972,128 @@
                     .slice(0, 80);
             }
 
+            // Load department attributes and render suggestions for Quick-Create MVP
+            function loadDeptAttributes(dept){
+                try {
+                    if (!dept) return;
+                    const target = `/admin/attributes/list?department=${encodeURIComponent(dept)}`;
+                    fetch(target, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                        .then(data => {
+                            try { renderDeptAttributes(data); } catch(e) { console.debug && console.debug('renderDeptAttributes error', e); }
+                        })
+                        .catch(err => { console.debug && console.debug('loadDeptAttributes fetch failed', err); renderDeptAttributes(null); });
+                } catch(e) { console.debug && console.debug('loadDeptAttributes failed', e); }
+            }
+
+            function renderDeptAttributes(data){
+                const container = document.getElementById('qpMvpSuggestedAttrs');
+                if (!container) return;
+                container.innerHTML = '';
+                if (!data || !Array.isArray(data.attributes) || data.attributes.length === 0) {
+                    const hint = document.createElement('div'); hint.style.color = '#64748b'; hint.style.fontSize = '13px'; hint.textContent = 'Nenhum atributo encontrado para este departamento.';
+                    container.appendChild(hint); return;
+                }
+                data.attributes.slice(0, 40).forEach(attr => {
+                    try {
+                        const name = attr.name || attr.title || attr.key || '';
+                        const vals = Array.isArray(attr.values) ? attr.values : (attr.values && typeof attr.values === 'string' ? attr.values.split(',') : []);
+                        const btn = document.createElement('button');
+                        btn.type = 'button'; btn.className = 'ss-btn ss-btn-secondary';
+                        btn.style.padding = '6px 10px'; btn.style.fontSize = '13px';
+                        btn.title = `Adicionar eixo ${name} com ${vals.length} valor(es)`;
+                        btn.textContent = `${name} (${vals.length})`;
+                        btn.addEventListener('click', function(){
+                            // Add axis prefilled with values
+                            addMvpAxis(name, vals.map(v => (v || '').toString().trim()).filter(Boolean));
+                            // open panel if closed
+                            const p = document.getElementById('qpMvpPanel'); if (p && p.style.display === 'none') p.style.display = '';
+                        });
+                        container.appendChild(btn);
+                    } catch(e) { console.debug && console.debug('renderDeptAttributes item failed', e); }
+                });
+            }
+
+            function generateSkuFromName(name){
+                const base = (slugify(name || '') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,8) || 'PRD';
+                const rnd = Math.random().toString(36).slice(2,6).toUpperCase();
+                return base + '-' + rnd;
+            }
+
+            // Pricing helpers: defaults mirror server defaults (can be adjusted later)
+            const DEFAULT_MARGIN_B2B = 10.0;
+            const DEFAULT_MARGIN_B2C = 20.0;
+
+            function computePricesFromCost(cost, marginB2b = DEFAULT_MARGIN_B2B, marginB2c = DEFAULT_MARGIN_B2C){
+                const c = parseFloat(cost) || 0;
+                const b2b = +(Math.round((c * (1 + (parseFloat(marginB2b) || 0)/100)) * 100) / 100).toFixed(2);
+                const b2c = +(Math.round((c * (1 + (parseFloat(marginB2c) || 0)/100)) * 100) / 100).toFixed(2);
+                return { b2b, b2c };
+            }
+
+            // Wire quick-create cost -> computed prices when requested
+            const qpCostInput = document.getElementById('qpCostPrice');
+            const qpUseMarginsCheckbox = document.getElementById('qpUseMargins');
+            const qpSellB2BCheckbox = document.getElementById('qpSellB2B');
+            const qpSellB2CCheckbox = document.getElementById('qpSellB2C');
+            function maybeApplyMarginsPreview(){
+                try {
+                    if (!qpUseMarginsCheckbox || !qpCostInput) return;
+                    const use = qpUseMarginsCheckbox.checked;
+                    const costVal = parseFloat(qpCostInput.value || 0);
+                    if (!use || !costVal) return;
+                    const prices = computePricesFromCost(costVal, DEFAULT_MARGIN_B2B, DEFAULT_MARGIN_B2C);
+                    // Show preview in the price input if empty or if user hasn't set manual price
+                    const priceEl = document.getElementById('qpPrice');
+                    if (priceEl && (!priceEl.dataset.manual || priceEl.dataset.manual !== 'true')) {
+                        priceEl.value = prices.b2c;
+                    }
+                    // update pretty preview UI
+                    updatePricePreview(prices.b2b, prices.b2c);
+                } catch(e) { console.debug && console.debug('maybeApplyMarginsPreview failed', e); }
+            }
+
+            function formatCurrencyBRL(val){
+                try {
+                    const n = Number(val) || 0;
+                    return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                } catch(e){ return 'R$ 0,00'; }
+            }
+
+            function updatePricePreview(b2b, b2c){
+                const preview = document.getElementById('qpPricePreview');
+                const b2bEl = document.getElementById('qpPriceB2bValue');
+                const b2cEl = document.getElementById('qpPriceB2cValue');
+                if (!preview || !b2bEl || !b2cEl) return;
+                b2bEl.textContent = formatCurrencyBRL(b2b);
+                b2cEl.textContent = formatCurrencyBRL(b2c);
+                preview.style.display = 'flex';
+            }
+
+            // hide preview when margins disabled or cost empty
+            function hidePricePreview(){
+                const preview = document.getElementById('qpPricePreview');
+                if (preview) preview.style.display = 'none';
+            }
+
+            qpCostInput?.addEventListener('blur', function(){
+                // if useMargins is active, update preview or hide
+                if (qpUseMarginsCheckbox?.checked && (this.value || '').trim()) {
+                    maybeApplyMarginsPreview();
+                } else {
+                    hidePricePreview();
+                }
+            });
+            qpUseMarginsCheckbox?.addEventListener('change', function(){
+                if (this.checked && (qpCostInput?.value || '').trim()) {
+                    maybeApplyMarginsPreview();
+                } else {
+                    hidePricePreview();
+                }
+            });
+            qpCostInput?.addEventListener('input', maybeApplyMarginsPreview);
+            qpUseMarginsCheckbox?.addEventListener('change', maybeApplyMarginsPreview);
+
             function escapeHtml(str) {
                 return (str ?? '').toString()
                     .replace(/&/g, '&amp;')
@@ -876,13 +1103,15 @@
                     .replace(/'/g, '&#39;');
             }
 
+            
+
             if (!searchTrigger || !searchPanel) return;
 
             let searchTimeout = null;
 
             // Abertura/fechamento do painel de tema
             if (themeTrigger && themePanel) {
-                themeTrigger.addEventListener('click', function(){
+                themeTrigger?.addEventListener('click', function(){
                     themePanel.classList.toggle('active');
                 });
                 themeClose && themeClose.addEventListener('click', () => themePanel.classList.remove('active'));
@@ -896,7 +1125,7 @@
 
             // Abertura/fechamento do painel de departamentos
             if (departmentsTrigger && departmentsPanel) {
-                departmentsTrigger.addEventListener('click', function(){
+                departmentsTrigger?.addEventListener('click', function(){
                     const willOpen = !departmentsPanel.classList.contains('active');
                     if (willOpen) {
                         departmentsPanel.classList.add('active');
@@ -1077,12 +1306,14 @@
                 dpConfirmText.textContent = `O departamento "${name}" possui ${productsCount} produto(s) ativo(s). Desativar vai removê-lo das vitrines e navegação principal.`;
                 dpConfirmPhraseEl.textContent = phrase;
                 dpConfirmInput.value = '';
+                dpConfirmOverlay.style.display = 'flex';
                 dpConfirmOverlay.classList.add('active');
             }
 
             function closeDpConfirm(cancelled){
                 if (dpConfirmOverlay) {
                     dpConfirmOverlay.classList.remove('active');
+                    dpConfirmOverlay.style.display = 'none';
                 }
                 if (cancelled && dpPendingToggle?.checkbox) {
                     dpPendingToggle.checkbox.checked = true;
@@ -1351,12 +1582,21 @@
                 try { const parsed = JSON.parse(raw); return Array.isArray(parsed) ? parsed : []; } catch(e){ return []; }
             }
             function fetchBrands(){
-                const dept = detectDepartmentSlug() || 'eletronicos';
+                const rawDept = detectDepartmentSlug() || 'eletronicos';
+                const dept = rawDept;
                 const targetUrl = `/admin/products/brands-list?department=${encodeURIComponent(dept)}`;
-                // Try to fetch brands scoped to the department; if empty, try a fallback without department param
+
+                // Debug: log attempts so we can see what the client requested
+                console.debug('fetchBrands: trying', targetUrl);
+
+                // Try to fetch brands scoped to the department; if empty, try fallbacks
                 return fetch(targetUrl, { headers: { 'Accept': 'application/json' }})
-                    .then(r => r.json())
+                    .then(r => {
+                        if (!r.ok) throw new Error('HTTP ' + r.status);
+                        return r.json();
+                    })
                     .then(data => {
+                        console.debug('fetchBrands response for', dept, data);
                         let brandsPayload = [];
                         if (Array.isArray(data.brands)) {
                             brandsPayload = data.brands;
@@ -1365,45 +1605,80 @@
                         }
 
                         availableBrands = (brandsPayload || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
-                        if ((!availableBrands || !availableBrands.length)) {
-                            // fallback: try without department param
-                            return fetch('/admin/products/brands-list', { headers: { 'Accept': 'application/json' }})
-                                .then(r2 => r2.json())
-                                .then(data2 => {
-                                    let bp = [];
-                                    if (Array.isArray(data2.brands)) bp = data2.brands;
-                                    else if (data2.brands && typeof data2.brands === 'object') bp = Object.values(data2.brands);
-                                    availableBrands = (bp || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
-                                    populateBrandsSelect();
-                                })
-                                .catch(() => { availableBrands = availableBrands || []; populateBrandsSelect(); });
+                        if (availableBrands && availableBrands.length) {
+                            populateBrandsSelect();
+                            return;
                         }
-                        populateBrandsSelect();
+
+                        // Fallback 1: try department by numeric id if the slug resolution failed
+                        return fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' }})
+                            .then(r2 => { if (!r2.ok) throw new Error('HTTP ' + r2.status); return r2.json(); })
+                            .then(deptData => {
+                                const list = Array.isArray(deptData.departments) ? deptData.departments : [];
+                                const norm = (s) => (String(s || '')).toString().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+                                const wanted = norm(dept);
+                                const found = list.find(d => norm(d.slug) === wanted || norm(d.name) === wanted || String(d.id) === String(dept));
+                                if (found && found.id) {
+                                    const tryUrl = `/admin/products/brands-list?department=${encodeURIComponent(found.id)}`;
+                                    console.debug('fetchBrands: trying by id fallback', tryUrl);
+                                    return fetch(tryUrl, { headers: { 'Accept': 'application/json' }})
+                                        .then(r3 => { if (!r3.ok) throw new Error('HTTP ' + r3.status); return r3.json(); })
+                                        .then(data => {
+                                        const list = Array.isArray(data.departments) ? data.departments : (data || []).departments || [];
+                                        // normalize list for both select and combobox
+                                        departmentsForQuick = Array.isArray(list) ? list.map(d => ({
+                                            id: d.id,
+                                            name: d.name || d.title || String(d.id),
+                                            slug: d.slug || null,
+                                            color: d.color || d.theme_primary || '#667eea',
+                                            products_count: d.products_count || d.productsCount || d.products || 0
+                                        })) : [];
+                                            availableBrands = (bp || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
+                                            if (availableBrands && availableBrands.length) {
+                                                populateBrandsSelect();
+                                                return;
+                                            }
+                                            // else continue to next fallback
+                                        })
+                                        .catch(err => console.debug('fetchBrands id-fallback failed', err));
+                                }
+                                // Fallback 2: try without department param (global/all)
+                                return fetch('/admin/products/brands-list', { headers: { 'Accept': 'application/json' }})
+                                    .then(r4 => { if (!r4.ok) throw new Error('HTTP ' + r4.status); return r4.json(); })
+                                    .then(data4 => {
+                                        let bp = [];
+                                        if (Array.isArray(data4.brands)) bp = data4.brands;
+                                        else if (data4.brands && typeof data4.brands === 'object') bp = Object.values(data4.brands);
+                                        availableBrands = (bp || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
+                                        populateBrandsSelect();
+                                    })
+                                    .catch(err => { console.error('fetchBrands final fallback failed', err); availableBrands = []; populateBrandsSelect(); });
+                            })
+                            .catch(err => {
+                                // If dept snapshot failed, still try the no-department call
+                                console.debug('fetchBrands: dept snapshot failed', err);
+                                return fetch('/admin/products/brands-list', { headers: { 'Accept': 'application/json' }})
+                                    .then(r5 => { if (!r5.ok) throw new Error('HTTP ' + r5.status); return r5.json(); })
+                                    .then(data5 => {
+                                        let bp = [];
+                                        if (Array.isArray(data5.brands)) bp = data5.brands;
+                                        else if (data5.brands && typeof data5.brands === 'object') bp = Object.values(data5.brands);
+                                        availableBrands = (bp || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
+                                        populateBrandsSelect();
+                                    })
+                                    .catch(e => { console.error('fetchBrands ultimate fallback failed', e); availableBrands = []; populateBrandsSelect(); });
+                            });
                     })
                     .catch(err => { console.error('fetchBrands error', err); availableBrands = []; populateBrandsSelect(); });
             }
 
             function populateBrandsSelect(){
-                if (!spNewBrandSelect) return;
-                const baseOption = '<option value="">Selecione a marca…</option>';
-                if (Array.isArray(availableBrands) && availableBrands.length) {
-                    const optionsHtml = baseOption + availableBrands.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('');
-                    spNewBrandSelect.innerHTML = optionsHtml;
-                    // Also update quick-create brand select if present
-                    const qpBrandSelect = document.getElementById('qpBrand');
-                    if (qpBrandSelect) qpBrandSelect.innerHTML = optionsHtml;
-                    const warn = document.getElementById('spBrandsWarning'); if (warn) warn.style.display = 'none';
-                } else {
-                    spNewBrandSelect.innerHTML = baseOption;
-                    const qpBrandSelect = document.getElementById('qpBrand');
-                    if (qpBrandSelect) qpBrandSelect.innerHTML = baseOption;
-                    const warn = document.getElementById('spBrandsWarning'); if (warn) warn.style.display = 'block';
-                }
+                // Brands UI removed; no-op
             }
 
             // When a brand is chosen manually, hide the 'no brands' warning
             if (spNewBrandSelect) {
-                spNewBrandSelect.addEventListener('change', function(){
+                spNewBrandSelect?.addEventListener('change', function(){
                     const warn = document.getElementById('spBrandsWarning');
                     if (!warn) return;
                     if (this.value && this.value.trim()) warn.style.display = 'none';
@@ -1443,36 +1718,11 @@
             spCreateBrandClose?.addEventListener('click', closeSpCreateBrand);
             spCreateBrandCancel?.addEventListener('click', closeSpCreateBrand);
 
-            spCreateBrandSave?.addEventListener('click', function(){
+                    spCreateBrandSave?.addEventListener('click', function(){
                 const name = (spCreateBrandName?.value || '').trim();
-                const slug = (spCreateBrandSlug?.value || '').trim();
-                const logo = (spCreateBrandLogo?.value || '').trim();
-                if (!name) { alert('Informe o nome da marca.'); return; }
-                const payload = { name };
-                if (slug) payload.department = slug; // reuse department param optionally for scoping
-                if (logo) payload.logo = logo;
-
-                fetch('/admin/brands/inline-create', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                    body: JSON.stringify(payload)
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (!data || !data.success) throw new Error(data?.message || 'Erro ao criar marca');
-                    // Add to available brands and select it
-                    availableBrands = availableBrands || [];
-                    if (!availableBrands.find(b => b.toLowerCase() === data.brand.toLowerCase())) {
-                        availableBrands.push(data.brand);
-                    }
-                    populateBrandsSelect();
-                    spNewBrandSelect.value = data.brand;
-                    // Also set the quick-create product brand select if present
-                    const qpBrandSelect = document.getElementById('qpBrand');
-                    if (qpBrandSelect) qpBrandSelect.value = data.brand;
-                    closeSpCreateBrand();
-                })
-                .catch(err => { alert(err.message || 'Erro ao criar marca'); });
+                // Quick-create brand functionality removed — simply validate and close overlay for compatibility.
+                if (!name) { window.ssShowToast && ssShowToast('Informe o nome.', 'warning'); return; }
+                closeSpCreateBrand();
             });
             function renderSectionsList(){
                 const arr = getCurrentSectionsConfig();
@@ -1495,36 +1745,14 @@
                         <div class="sp-handle" title="Arrastar"><i class="bi bi-list"></i></div>
                         <div>
                             <div class="d-flex gap-2 align-items-center">
-                                <input type="text" class="form-control form-control-sm sp-title" value="${sec.title || ('Produtos ' + curr)}" placeholder="Título">
+                                <input type="text" class="form-control form-control-sm sp-title" value="${sec.title || ''}" placeholder="Título">
                                 <div class="sp-actions">
                                     <button type="button" class="sp-btn sp-btn-secondary sp-up" title="Subir"><i class="bi bi-arrow-up"></i></button>
                                     <button type="button" class="sp-btn sp-btn-secondary sp-down" title="Descer"><i class="bi bi-arrow-down"></i></button>
                                     <button type="button" class="sp-btn sp-btn-danger sp-remove" title="Remover"><i class="bi bi-trash"></i></button>
                                 </div>
                             </div>
-                            <small>Marca:
-                                <select class="form-select form-select-sm sp-brand-select" style="display:inline-block; width: 180px; margin-left:6px;">
-                                    ${(() => {
-                                        const normalizedCurr = curr.toLowerCase();
-                                        const exists = hasLookup ? sanitizedBrands.some(b => b.toLowerCase() === normalizedCurr) : true;
-
-                                        if (!hasLookup) {
-                                            return curr ? `<option value="${curr}" selected>${curr}</option>` : '';
-                                        }
-
-                                        const missingOpt = (!exists && curr)
-                                            ? `<option value="${curr}" selected>${curr} (inativa)</option>`
-                                            : '';
-
-                                        const opts = sanitizedBrands.map(b => {
-                                            const sel = normalizedCurr === b.toLowerCase() ? 'selected' : '';
-                                            return `<option value="${b}" ${sel}>${b}</option>`;
-                                        }).join('');
-
-                                        return missingOpt + opts;
-                                    })()}
-                                </select>
-                            </small>
+                            
                         </div>
                         <label class="sp-toggle">
                             <input type="checkbox" class="form-check-input sp-enabled" ${sec.enabled === false ? '' : 'checked'}> visível
@@ -1543,7 +1771,7 @@
                         enabled: it.querySelector('.sp-enabled')?.checked !== false
                     });
                 });
-                return arr.filter(x => x.brand);
+                return arr; // include sections even if brand is empty (brand removed from UI)
             }
             function moveItem(el, dir){
                 if (!el) return;
@@ -1551,34 +1779,26 @@
                 if (dir > 0 && el.nextElementSibling) el.parentNode.insertBefore(el.nextElementSibling, el);
             }
             function initSectionsPanel(){
-                // When opening the Sections panel in a department page, prefer loading persisted DB sections
+                // Load saved sections from server for this department (no brand lookup)
                 const dept = detectDepartmentSlug() || 'eletronicos';
-                fetchBrands().then(() => {
-                    // Try to fetch saved sections from server for this department
-                    fetch(`/admin/departments/${encodeURIComponent(dept)}/sections`, { headers: { 'Accept': 'application/json' }})
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data && data.success && Array.isArray(data.sections)) {
-                                // Convert to the legacy config shape
-                                window.DepartmentSectionsConfig = data.sections.map(s => ({
-                                    brand: s.type === 'brand' ? (s.reference || '') : '',
-                                    title: s.title || (s.reference ? ('Produtos ' + s.reference) : ''),
-                                    enabled: s.enabled !== false,
-                                    type: s.type,
-                                    reference: s.reference,
-                                    id: s.id,
-                                }));
-                                renderSectionsList();
-                                return;
-                            }
-                            // fallback to client config
-                            renderSectionsList();
-                        })
-                        .catch(() => {
-                            // fallback when server not available
-                            renderSectionsList();
-                        });
-                });
+                fetch(`/admin/departments/${encodeURIComponent(dept)}/sections`, { headers: { 'Accept': 'application/json' }})
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data && data.success && Array.isArray(data.sections)) {
+                            window.DepartmentSectionsConfig = data.sections.map(s => ({
+                                brand: s.type === 'brand' ? (s.reference || '') : '',
+                                title: s.title || (s.reference ? ('Produtos ' + s.reference) : ''),
+                                enabled: s.enabled !== false,
+                                type: s.type,
+                                reference: s.reference,
+                                id: s.id,
+                            }));
+                        }
+                        renderSectionsList();
+                    })
+                    .catch(() => {
+                        renderSectionsList();
+                    });
             }
             sectionsList?.addEventListener('click', function(e){
                 const item = e.target.closest('.sp-item');
@@ -1587,46 +1807,19 @@
                 if (e.target.closest('.sp-down')) moveItem(item, +1);
                 if (e.target.closest('.sp-remove')) item.remove();
             });
-            // Confirmação ao trocar a marca de uma seção existente
+            // Confirmação ao trocar a seção existente
             let spPendingChange = null; // {itemEl, oldBrand, newBrand}
-            sectionsList?.addEventListener('change', function(e){
-                const select = e.target.closest('.sp-brand-select');
-                if (!select) return;
-                const item = e.target.closest('.sp-item');
-                const oldBrand = (select.getAttribute('data-prev') || '').trim();
-                const newBrand = (select.value || '').trim();
-                if (!oldBrand) {
-                    // primeira vez: apenas anotar prev e sair
-                    select.setAttribute('data-prev', newBrand);
-                    return;
-                }
-                if (oldBrand.toLowerCase() === newBrand.toLowerCase()) return;
-                // Abrir confirmação
-                spPendingChange = { itemEl: item, oldBrand, newBrand, select };
-                openSpConfirm(oldBrand, newBrand);
-            });
+            // sections change handling for brand selection removed (brand selection UI was removed)
             spAdd?.addEventListener('click', function(){
-                const brand = (spNewBrandSelect?.value || '').trim();
                 const title = (spNewTitle?.value || '').trim();
-                if (!brand) { alert('Informe a marca.'); return; }
-                if (Array.isArray(availableBrands) && availableBrands.length && !availableBrands.find(b => String(b).toLowerCase() === brand.toLowerCase())) {
-                    alert('Marca inválida. Selecione uma marca existente.');
-                    return;
-                }
-
+                const label = title || 'Nova seção';
                 const current = getCurrentSectionsConfig();
-                current.push({ brand, title: title || ('Produtos ' + brand), enabled: true });
+                current.push({ brand: '', title: label, enabled: true });
                 window.DepartmentSectionsConfig = current;
-                spNewBrandSelect.value = '';
-                spNewTitle.value = '';
+                if (spNewTitle) spNewTitle.value = '';
                 renderSectionsList();
             });
-            spNewBrandSelect?.addEventListener('change', function(){
-                if (!spNewTitle.value && this.value) {
-                    spNewTitle.value = 'Produtos ' + this.value;
-                }
-            });
-            // Overlay de confirmação para troca de marca
+            // Overlay de confirmação para troca de seção
             const spConfirmOverlay = document.getElementById('spConfirmOverlay');
             const spConfirmClose = document.getElementById('spConfirmClose');
             const spConfirmCancel = document.getElementById('spConfirmCancel');
@@ -1647,10 +1840,14 @@
                 const phrase = `DESATIVAR ${oldBrand.toUpperCase()}`;
                 spConfirmPhraseEl.textContent = phrase;
                 spConfirmInput.value = '';
+                spConfirmOverlay.style.display = 'flex';
                 spConfirmOverlay.classList.add('active');
             }
             function closeSpConfirm(){
-                spConfirmOverlay?.classList.remove('active');
+                if (spConfirmOverlay) {
+                    spConfirmOverlay.classList.remove('active');
+                    spConfirmOverlay.style.display = 'none';
+                }
                 // Reverter select se não aplicou
                 if (spPendingChange?.select) {
                     spPendingChange.select.value = spPendingChange.oldBrand;
@@ -1688,7 +1885,7 @@
                     });
                 }
                 const dept = detectDepartmentSlug() || 'eletronicos';
-                // Ação extra: desativar produtos da marca antiga
+                // Ação extra: desativar produtos da sessão anterior
                 const doDeactivate = spActionDeactivateProducts?.checked === true;
                 const proceedAfter = () => {
                     spPendingChange = null;
@@ -1701,17 +1898,10 @@
                     alert('Confirmação inválida. Digite exatamente a frase exibida.');
                     return;
                 }
-                fetch('/admin/products/bulk-toggle-by-brand', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
-                    body: JSON.stringify({ department: dept, brand: oldBrand, active: false })
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (!data.success) throw new Error(data.message || 'Erro ao desativar produtos da marca antiga');
+                // Bulk toggle by brand removed — skip server request and proceed as successful.
+                try {
                     proceedAfter();
-                })
-                .catch(err => { alert(err.message); proceedAfter(); });
+                } catch(e) { proceedAfter(); }
             });
             function applySectionsToPage(cfg){
                 if (!onDepartmentPage()) return;
@@ -1730,7 +1920,7 @@
                         titleEl.textContent = sec.title || ('Produtos ' + sec.brand);
                     }
                 });
-                // 2) Reordenar DOM dentro do bloco de seções de marcas, preservando o restante da página
+                // 2) Reordenar DOM dentro do bloco de seções, preservando o restante da página
                 const existing = Array.from(document.querySelectorAll('[data-brand-section]'));
                 if (!existing.length) return;
                 const parent = existing[0].parentNode;
@@ -1787,10 +1977,18 @@
                 // Evita bloquear render, aplica logo após paint
                 setTimeout(() => applySectionsToPage(initialCfg), 50);
             }
-            searchTrigger.addEventListener('click', function() {
+            searchTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                // debug
+                try { console.debug('handler: smartSearchTrigger clicked'); } catch(e) {}
                 searchPanel.classList.toggle('active');
-                if (searchPanel.classList.contains('active')) {
-                    setTimeout(() => searchInput && searchInput.focus(), 0);
+                // Ensure quick-product overlay is fully closed when opening the search
+                try { console.debug('smartSearchTrigger: closing quick product if open'); } catch(e) {}
+                if (typeof closeQuickProduct === 'function') {
+                    try { closeQuickProduct(); } catch(err) { /* noop */ }
+                } else if (qpOverlay) {
+                    qpOverlay.style.display = 'none';
+                    qpOverlay.classList && qpOverlay.classList.remove('active');
                 }
             });
             searchClose.addEventListener('click', function() { searchPanel.classList.remove('active'); });
@@ -1868,7 +2066,6 @@
                 let html = '';
                 products.forEach(product => {
                     const image = product.first_image || '{{ asset('images/no-image.svg') }}';
-                    const brand = product.brand || 'Sem marca';
                     const price = product.price ? `R$ ${parseFloat(product.price).toFixed(2).replace('.', ',')}` : 'Preço não definido';
                     const listUrl = `{{ route('admin.products.index') }}?highlight=${product.id}#product-${product.id}`;
 
@@ -1886,9 +2083,8 @@
                             <div class="smart-search-item-details">
                                 <div class="smart-search-item-name" title="${product.name}"><span class="js-rename-product" data-product-id="${product.id}" data-current-name="${product.name}">${product.name}</span> ${statusBadges}</div>
                                 <div class="smart-search-item-meta">
-                                    <span class="smart-search-item-brand">${brand}</span>
-                                    <span class="smart-search-item-price">${price}</span>
-                                </div>
+                                                <span class="smart-search-item-price">${price}</span>
+                                            </div>
                             </div>
                             <i class="bi bi-arrow-right-circle" style="color: var(--secondary-color); font-size:1.5rem;"></i>
                         </a>
@@ -1944,9 +2140,9 @@
             });
 
             // Ações Rename
-            document.getElementById('ssRenameClose').addEventListener('click', closeRename);
-            document.getElementById('ssRenameCancel').addEventListener('click', closeRename);
-            document.getElementById('ssRenameSave').addEventListener('click', function(){
+            document.getElementById('ssRenameClose')?.addEventListener('click', closeRename);
+            document.getElementById('ssRenameCancel')?.addEventListener('click', closeRename);
+            document.getElementById('ssRenameSave')?.addEventListener('click', function(){
                 const id = renameProductId.value;
                 const name = renameInput.value.trim();
                 if (!id || !name) { alert('Informe um nome válido.'); return; }
@@ -1973,9 +2169,9 @@
             });
 
             // Ações Imagem
-            document.getElementById('ssImageClose').addEventListener('click', closeImage);
-            document.getElementById('ssImageCancel').addEventListener('click', closeImage);
-            document.getElementById('ssImageSave').addEventListener('click', function(){
+            document.getElementById('ssImageClose')?.addEventListener('click', closeImage);
+            document.getElementById('ssImageCancel')?.addEventListener('click', closeImage);
+            document.getElementById('ssImageSave')?.addEventListener('click', function(){
                 const id = imageProductId.value;
                 const file = imageFile.files && imageFile.files[0];
                 const url = imageUrl ? imageUrl.value.trim() : '';
@@ -2013,7 +2209,7 @@
                 }
                 closeImage();
             }
-            document.getElementById('ssImageRemove').addEventListener('click', function(){
+            document.getElementById('ssImageRemove')?.addEventListener('click', function(){
                 const id = imageProductId.value;
                 if (!id) return;
                 const fd = new FormData();
@@ -2037,16 +2233,10 @@
                 .catch(err => { alert(err.message); });
             });
 
-            // Quick Create Product modal wiring (tabbed, images, attributes, FormData submit)
-            const productsTriggerBtn = document.getElementById('productsTrigger');
-            const qpOverlay = document.getElementById('ssQuickProductOverlay');
-            const qpClose = document.getElementById('ssQuickProductClose');
-            const qpCancel = document.getElementById('ssQuickProductCancel');
-            const qpSave = document.getElementById('ssQuickProductSave');
-
+            
             // Tab switching
             document.querySelectorAll('.ss-tab').forEach(btn => {
-                btn.addEventListener('click', function(){
+                btn?.addEventListener('click', function(){
                     document.querySelectorAll('.ss-tab').forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
                     const panel = btn.dataset.tab;
@@ -2054,29 +2244,125 @@
                 });
             });
 
-            // Simple attribute rows
-            const qpAttributesList = document.getElementById('qpAttributesList');
-            const qpAddAttrBtn = document.getElementById('qpAddAttr');
-            const qpAttrKey = document.getElementById('qpAttrKey');
-            const qpAttrValue = document.getElementById('qpAttrValue');
-            function addAttributeRow(key, value){
-                if (!qpAttributesList) return;
-                const wrap = document.createElement('div');
-                wrap.style.display = 'flex'; wrap.style.gap = '8px'; wrap.style.alignItems = 'center';
-                const k = document.createElement('input'); k.type = 'text'; k.className = 'form-control'; k.value = key || ''; k.placeholder = 'Nome';
-                const v = document.createElement('input'); v.type = 'text'; v.className = 'form-control'; v.value = value || ''; v.placeholder = 'Valor';
-                const rem = document.createElement('button'); rem.type = 'button'; rem.className = 'ss-btn ss-btn-secondary'; rem.textContent = 'Remover';
-                rem.addEventListener('click', () => wrap.remove());
-                wrap.appendChild(k); wrap.appendChild(v); wrap.appendChild(rem);
-                qpAttributesList.appendChild(wrap);
+            // Quick-create MVP: lightweight axes/variations manager
+            const qpAttributesList = null;
+            const qpAddAttrBtn = null;
+            const qpAttrKey = null;
+            const qpAttrValue = null;
+            const qpVariationsList = null;
+            const qpAddVariationBtn = null;
+
+            // MVP state
+            let qpMvpAxes = []; // [{ name: 'Cor', values: ['Red','Blue'] }, ...]
+            let qpMvpCombos = []; // generated combos
+
+            function renderMvpAxes(){
+                const list = document.getElementById('qpMvpAxesList');
+                if (!list) return;
+                list.innerHTML = '';
+                qpMvpAxes.forEach((axis, idx) => {
+                    const chip = document.createElement('div');
+                    chip.className = 'qp-axis-chip';
+                    chip.style.border = '1px solid #e6edf3';
+                    chip.style.padding = '6px 10px';
+                    chip.style.borderRadius = '8px';
+                    chip.style.background = '#fff';
+                    chip.style.display = 'flex'; chip.style.gap = '8px'; chip.style.alignItems = 'center';
+                    chip.innerHTML = `<strong style="margin-right:8px">${escapeHtml(axis.name)}</strong><span style="color:#64748b">${axis.values.join(', ')}</span>`;
+                    const rem = document.createElement('button'); rem.type='button'; rem.className='ss-btn ss-btn-secondary'; rem.textContent='Remover'; rem.style.marginLeft='8px';
+                    rem.addEventListener('click', ()=>{ qpMvpAxes.splice(idx,1); renderMvpAxes(); });
+                    chip.appendChild(rem);
+                    list.appendChild(chip);
+                });
             }
-            qpAddAttrBtn?.addEventListener('click', function(){
-                const key = (qpAttrKey?.value || '').trim();
-                const val = (qpAttrValue?.value || '').trim();
-                if (!key || !val) { alert('Informe nome e valor do atributo.'); return; }
-                addAttributeRow(key, val);
-                qpAttrKey.value = ''; qpAttrValue.value = '';
-            });
+
+            function addMvpAxis(name, values){
+                if (!name) return;
+                const vals = (Array.isArray(values) ? values : String(values||'').split(',')).map(s=>s.trim()).filter(Boolean);
+                if (!vals.length) return;
+                qpMvpAxes.push({ name: name.trim(), values: vals });
+                renderMvpAxes();
+            }
+
+            function clearMvp(){ qpMvpAxes = []; qpMvpCombos = []; renderMvpAxes(); renderMvpCombos(); document.getElementById('qpMvpCount') && (document.getElementById('qpMvpCount').textContent = '0 variações'); }
+
+            function renderMvpCombos(){
+                const preview = document.getElementById('qpMvpCombosPreview');
+                if (!preview) return;
+                preview.innerHTML = '';
+                if (!qpMvpCombos || !qpMvpCombos.length) { preview.innerHTML = '<div class="text-muted">Nenhuma variação gerada.</div>'; return; }
+                const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse';
+                table.innerHTML = `<thead><tr><th style="text-align:left; padding:6px">Nome</th><th style="padding:6px">SKU</th><th style="padding:6px">Preço</th><th style="padding:6px">Estoque</th><th style="padding:6px">Ação</th></tr></thead>`;
+                const tbody = document.createElement('tbody');
+                qpMvpCombos.forEach((c, i) => {
+                    const tr = document.createElement('tr');
+                    tr.style.borderTop = '1px solid #eef2f7';
+                    tr.innerHTML = `
+                        <td style="padding:6px"><input class="form-control qp-mvp-name" value="${escapeHtml(c.name||'')}" /></td>
+                        <td style="padding:6px"><input class="form-control qp-mvp-sku" value="${escapeHtml(c.sku||'')}" /></td>
+                        <td style="padding:6px"><input class="form-control qp-mvp-price" value="${c.price!=null?c.price:''}" /></td>
+                        <td style="padding:6px"><input class="form-control qp-mvp-stock" value="${c.stock_quantity!=null?c.stock_quantity:''}" /></td>
+                        <td style="padding:6px"><button type="button" class="ss-btn ss-btn-secondary qp-mvp-remove">Remover</button></td>
+                    `;
+                    tr.querySelector('.qp-mvp-remove')?.addEventListener('click', ()=>{ qpMvpCombos.splice(i,1); renderMvpCombos(); document.getElementById('qpMvpCount') && (document.getElementById('qpMvpCount').textContent = qpMvpCombos.length + ' variações'); });
+                    tbody.appendChild(tr);
+                });
+                table.appendChild(tbody);
+                preview.appendChild(table);
+            }
+
+            function generateMvpCombos(){
+                qpMvpCombos = [];
+                if (!qpMvpAxes || qpMvpAxes.length === 0) return [];
+                const arrays = qpMvpAxes.map(a => a.values.map(v => ({ key: a.name, value: v })));
+                const combos = (typeof cartesianProduct === 'function') ? cartesianProduct(arrays) : arrays.reduce((a,b)=>a.flatMap(d=>b.map(e=>d.concat([e]))), [[]]);
+                combos.forEach(combo => {
+                    const attrs = {};
+                    combo.forEach(c => { const slug = slugify(c.key||''); attrs[slug] = c.value; });
+                    const name = combo.map(c=>c.value).join(' / ');
+                    qpMvpCombos.push({ attributes: attrs, name, sku: null, price: null, stock_quantity: 0 });
+                });
+                renderMvpCombos();
+                document.getElementById('qpMvpCount') && (document.getElementById('qpMvpCount').textContent = qpMvpCombos.length + ' variações');
+            }
+
+            // Wire MVP UI actions
+            (function wireMvp(){
+                try {
+                    document.getElementById('qpMvpAddAxisBtn')?.addEventListener('click', function(){
+                        const name = document.getElementById('qpMvpAxisName')?.value || '';
+                        const vals = document.getElementById('qpMvpAxisValues')?.value || '';
+                        if (!name || !vals) { window.ssShowToast && ssShowToast('Informe nome do eixo e seus valores.', 'warning'); return; }
+                        addMvpAxis(name, vals.split(',').map(s=>s.trim()).filter(Boolean));
+                        document.getElementById('qpMvpAxisName').value = '';
+                        document.getElementById('qpMvpAxisValues').value = '';
+                    });
+                    document.getElementById('qpMvpGenerateBtn')?.addEventListener('click', function(){
+                        if (qpMvpAxes.length === 0) { window.ssShowToast && ssShowToast('Adicione ao menos um eixo com valores.', 'warning'); return; }
+                        // safety limit
+                        const total = qpMvpAxes.reduce((acc,a)=>acc*(a.values.length||1), 1);
+                        if (total > 500) { if (!confirm(`Serão geradas ${total} variações. Continuar?`)) return; }
+                        generateMvpCombos();
+                        window.ssShowToast && ssShowToast('Variações geradas (MVP). Edite nomes/sku/price se desejar.', 'success');
+                    });
+                    document.getElementById('qpMvpClearBtn')?.addEventListener('click', clearMvp);
+                    document.getElementById('qpMvpToggle')?.addEventListener('click', function(){ const p = document.getElementById('qpMvpPanel'); if (p) p.style.display = (p.style.display === 'none' ? '' : 'none'); });
+                } catch(e) { console.debug && console.debug('wireMvp failed', e); }
+            })();
+
+            // SKU automatico: gerar a partir do nome enquanto o usuário não editar o campo SKU
+            try {
+                if (qpSkuField) qpSkuField.dataset.manual = (qpSkuField.value || '').trim() ? 'true' : 'false';
+                qpSkuField?.addEventListener('input', function(){ this.dataset.manual = 'true'; });
+                qpNameField?.addEventListener('input', function(){
+                    try {
+                        if (!qpSkuField) return;
+                        if (qpSkuField.dataset.manual === 'true') return; // usuario editou manualmente
+                        const nameVal = (this.value || '').trim();
+                        qpSkuField.value = generateSkuFromName(nameVal);
+                    } catch(e) {}
+                });
+            } catch(e) {}
 
             // Image preview
             const qpImagesInput = document.getElementById('qpImages');
@@ -2101,73 +2387,423 @@
                 loadQuickFormOptions();
             }
 
-            function openQuickProduct(){ if (!qpOverlay) return; qpOverlay.style.display = 'flex'; loadQuickFormOptions(); setTimeout(()=>document.getElementById('qpName')?.focus(),60); }
-            function closeQuickProduct(){ if (!qpOverlay) return; qpOverlay.style.display = 'none'; }
-            productsTriggerBtn?.addEventListener('click', () => openQuickProduct());
+            function openQuickProduct(){
+                try { console.debug('openQuickProduct called'); } catch(e) {}
+                if (!qpOverlay) return;
+                qpOverlay.style.display = 'flex';
+                qpOverlay.classList && qpOverlay.classList.add('active');
+                loadQuickFormOptions();
+                setTimeout(()=>{ 
+                    const deptEl = document.getElementById('qpDepartment');
+                    const nameEl = document.getElementById('qpName');
+                    // Focus department first for better flow; fallback to name
+                    const deptInput = document.getElementById('qpDeptCombo');
+                    if (deptInput) {
+                        try { deptInput.focus(); } catch(e) { if (nameEl) nameEl.focus(); }
+                    } else if (deptEl && deptEl.options && deptEl.options.length > 1) {
+                        try { deptEl.focus(); } catch(e) { if (nameEl) nameEl.focus(); }
+                    } else if (nameEl) {
+                        nameEl.focus();
+                    }
+                    // reset sku manual flag when opening
+                    if (qpSkuField) qpSkuField.dataset.manual = (qpSkuField.value || '').trim() ? 'true' : 'false';
+                    // if name exists and sku not manually set, generate sku
+                    if (qpNameField && qpSkuField && qpSkuField.dataset.manual !== 'true') {
+                        const generated = generateSkuFromName(qpNameField.value || '');
+                        qpSkuField.value = generated;
+                    }
+                    // If a department is already selected, preload its attributes
+                    try { const deptSel = document.getElementById('qpDepartment'); if (deptSel && deptSel.value) loadDeptAttributes(deptSel.value); } catch(e) { console.debug && console.debug('preload dept attrs failed', e); }
+                    // --- REMOVER SISTEMA DE ATRIBUTOS DO ATALHO QUICK-CREATE ---
+                    // Esconder controles de atributos/variações apenas para o atalho de criação rápida
+                    try {
+                        const hideIds = ['qpAttributesList','qpAddAttr','qpAttrKey','qpAttrValue','qpAddVariation','qpVariationsList','qpImages','qpPreview'];
+                        hideIds.forEach(id => {
+                            const el = document.getElementById(id);
+                            if (el) el.style.display = 'none';
+                        });
+                        // também esconder qualquer título/painel pai se existir
+                        const panel = document.getElementById('dept-attributes-section');
+                        if (panel) panel.style.display = 'none';
+                        const variationsPanel = document.getElementById('qpVariationsPanel'); if (variationsPanel) variationsPanel.style.display = 'none';
+                    } catch(e) { console.debug && console.debug('fail hide quick attributes', e); }
+                },60);
+            }
+            function closeQuickProduct(){
+                try { console.debug('closeQuickProduct called'); } catch(e) {}
+                if (!qpOverlay) return;
+                qpOverlay.style.display = 'none';
+                qpOverlay.classList && qpOverlay.classList.remove('active');
+            }
+            productsTriggerBtn?.addEventListener('click', function(e){ e.stopPropagation(); try { console.debug('productsTrigger clicked'); } catch(e){}; openQuickProduct(); });
+            // Fallback delegated listener: garante abertura mesmo se o listener direto não for registrado
+            document.addEventListener('click', function(e){
+                try {
+                    const el = e.target.closest && e.target.closest('#productsTrigger');
+                    if (!el) return;
+                    e.stopPropagation();
+                    try { console.debug('delegated productsTrigger clicked'); } catch(e){}
+                    openQuickProduct();
+                } catch(err) { /* silent */ }
+            });
             qpClose?.addEventListener('click', closeQuickProduct);
             qpCancel?.addEventListener('click', () => { closeQuickProduct(); });
 
+            // From quick-create header, open the product manager overlay (so tabs are reachable)
+            // From quick-create header, switch to the product manager tab inside the same modal
+            document.getElementById('openPmManagerFromQuick')?.addEventListener('click', function(){
+                try {
+                    openQuickProduct();
+                    setTimeout(function(){
+                        const btn = document.querySelector('.ss-tab[data-tab="manage"]');
+                        if (btn) btn.click();
+                        try { pmSearchInput && pmSearchInput.focus(); } catch(e){}
+                    }, 80);
+                } catch(e){ console.debug && console.debug('openPmManagerFromQuick failed', e); }
+            });
+
             // Load brands and categories
             function loadQuickFormOptions(){
-                // brands - always attempt a fresh fetch scoped to department (fallback to global)
-                const brandEl = document.getElementById('qpBrand');
-                if (brandEl) {
-                    // Prefer department slug from current page path (if any), fallback to ?department= in query string
-                    const detectedDept = (typeof detectDepartmentSlug === 'function') ? (detectDepartmentSlug() || '') : '';
-                    const qDept = (new URLSearchParams(window.location.search)).get('department') || '';
-                    const dept = detectedDept || qDept || '';
-                    const url = dept ? `/admin/products/brands-list?department=${encodeURIComponent(dept)}` : '/admin/products/brands-list';
-                    fetch(url, { headers: { 'Accept': 'application/json' } })
-                        .then(r => r.json())
-                        .then(data => {
-                            let list = [];
-                            if (Array.isArray(data.brands)) list = data.brands;
-                            else if (data.brands && typeof data.brands === 'object') list = Object.values(data.brands);
-                            list = (list || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
-                            const base = '<option value="">Selecione a marca</option>';
-                            brandEl.innerHTML = base + (list.length ? list.map(b => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join('') : '');
-                        })
-                        .catch(err => {
-                            console.error('brands-list fetch failed', err);
-                            brandEl.innerHTML = '<option value="">Selecione a marca</option>';
-                        });
-                }
-
-                // categories
                 const catsEl = document.getElementById('qpCategories');
-                fetch('/admin/categories/list', { headers: { 'Accept': 'application/json' } })
-                    .then(r => r.json())
-                    .then(data => {
-                        const list = Array.isArray(data) ? data : (data.categories || []);
-                        if (!catsEl) return;
-                        catsEl.innerHTML = '';
-                        list.forEach(cat => {
-                            const opt = document.createElement('option');
-                            opt.value = cat.id || cat.value || '';
-                            opt.textContent = cat.name || cat.title || String(cat.id || opt.value);
-                            catsEl.appendChild(opt);
-                        });
+                const deptEl = document.getElementById('qpDepartment');
+
+                // Fetch departments for the department selector
+                if (deptEl) {
+                    fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                        .then(data => {
+                            const list = Array.isArray(data.departments) ? data.departments : (data || []).departments || [];
+                            // Clear and populate
+                            // normalize list for both select and combobox
+                            departmentsForQuick = Array.isArray(list) ? list.map(d => ({ id: d.id, name: d.name || d.title || String(d.id), slug: d.slug || null })) : [];
+                            deptEl.innerHTML = '<option value="">— Selecione o departamento —</option>';
+                            if (Array.isArray(departmentsForQuick) && departmentsForQuick.length) {
+                                departmentsForQuick.forEach(d => {
+                                    try {
+                                        const opt = document.createElement('option');
+                                        opt.value = d.id || '';
+                                        opt.textContent = d.name || String(d.id || '');
+                                        deptEl.appendChild(opt);
+                                    } catch(e){}
+                                });
+                            }
+                            // render combobox list if present
+                            renderDeptList('');
+                            // wire combobox handlers once
+                            try { wireDeptCombo(); } catch(e){}
+                            // when the hidden select changes, load attributes for that department
+                            try { deptEl.addEventListener('change', function(){ if (this.value) loadDeptAttributes(this.value); }); } catch(e) {}
+                        })
+                        .catch(err => { console.debug && console.debug('fetch departments failed', err); });
+                }
+                const searchInput = document.getElementById('qpCatSearchInput');
+                const dropdown = document.getElementById('qpCatDropdown');
+                const chips = document.getElementById('qpCatChips');
+                // fetch categories list (expects array or { categories: [] })
+                fetch('/admin/categories/list', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                    .then(r => {
+                        if (r.ok) return r.json();
+                        if (r.status === 404) {
+                            // try public fallback
+                            return fetch('/categories/json', { headers: { 'Accept': 'application/json' } }).then(r2 => r2.ok ? r2.json() : { categories: [] });
+                        }
+                        throw new Error('HTTP ' + r.status);
                     })
-                    .catch(err => console.error('Categorias quick-create falha', err));
+                    .then(data => {
+                        console.debug && console.debug('qp categories fetched', data);
+                        const list = Array.isArray(data) ? data : (data.categories || []);
+                        qpCategoriesData = (list || []).map(c => ({ id: c.id || c.value || String(c.id||''), name: c.name || c.title || String(c.id || '') }));
+                        // populate hidden select for compatibility
+                        if (catsEl) {
+                            catsEl.innerHTML = '';
+                            qpCategoriesData.forEach(cat => {
+                                const opt = document.createElement('option');
+                                opt.value = cat.id;
+                                opt.textContent = cat.name;
+                                catsEl.appendChild(opt);
+                            });
+                        }
+                        renderQpCategoriesDropdown('');
+                        // clear previous selection if any
+                        if (chips) chips.innerHTML = '';
+                        qpSelectedCategories = new Set();
+                    })
+                    .catch(err => { console.error('Categorias quick-create falha', err); qpCategoriesData = []; renderQpCategoriesDropdown(''); });
+
+                // wire search input to filter dropdown
+                (function wireCatSearch(){
+                    const si = document.getElementById('qpCatSearchInput');
+                    if (!si) return;
+                    si.addEventListener('input', function(){ renderQpCategoriesDropdown(this.value || ''); });
+                    si.addEventListener('focus', function(){ renderQpCategoriesDropdown(this.value || ''); });
+                    // Enter to create when no match; basic keyboard support
+                    si.addEventListener('keydown', function(e){
+                        const dd = document.getElementById('qpCatDropdown');
+                        const q = (this.value || '').trim();
+                        if (e.key === 'Enter'){
+                            e.preventDefault();
+                            // if no matched items, create new
+                            const matched = qpCategoriesData.filter(c => (c.name || '').toLowerCase().indexOf(q.toLowerCase()) !== -1);
+                            if (!matched.length && q.length) {
+                                // create and select
+                                createQpCategory(q).catch(err => alert('Erro ao criar categoria: ' + (err.message||err)));
+                                return;
+                            }
+                            // otherwise, if exactly one match, toggle it
+                            if (matched.length === 1) {
+                                toggleQpCategory(matched[0].id, matched[0].name);
+                            }
+                        }
+                        if (e.key === 'Escape') {
+                            if (dd) dd.style.display = 'none';
+                        }
+                    });
+                })();
+            }
+
+            function renderQpCategoriesDropdown(filter){
+                const dropdown = document.getElementById('qpCatDropdown');
+                const si = document.getElementById('qpCatSearchInput');
+                const chips = document.getElementById('qpCatChips');
+                const hidden = document.getElementById('qpCategories');
+                if (!dropdown) return;
+                const q = String(filter || (si && si.value) || '').trim().toLowerCase();
+                dropdown.innerHTML = '';
+                const matched = qpCategoriesData.filter(c => !q || c.name.toLowerCase().indexOf(q) !== -1).slice(0, 200);
+                if (!matched.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'qp-cat-row';
+                    empty.style.color = '#64748b';
+                    empty.textContent = q ? 'Nenhuma categoria encontrada' : 'Carregando categorias...';
+                    dropdown.appendChild(empty);
+                    dropdown.style.display = 'block';
+                    return;
+                }
+                matched.forEach(cat => {
+                    const row = document.createElement('div');
+                    row.className = 'qp-cat-row';
+                    row.setAttribute('data-id', cat.id);
+                    row.textContent = cat.name;
+                    row.addEventListener('click', function(){ toggleQpCategory(cat.id, cat.name); });
+                    dropdown.appendChild(row);
+                });
+                dropdown.style.display = 'block';
+                // render chips from selected
+                if (chips) {
+                    chips.innerHTML = '';
+                    Array.from(qpSelectedCategories).forEach(id => {
+                        const cat = qpCategoriesData.find(c => String(c.id) === String(id));
+                        const label = (cat && cat.name) ? cat.name : String(id);
+                        const chip = document.createElement('span');
+                        chip.className = 'qp-cat-chip';
+                        chip.innerHTML = `<span>${escapeHtml(label)}</span><button type=\"button\" aria-label=\"Remover ${escapeHtml(label)}\">&times;</button>`;
+                        chip.querySelector('button').addEventListener('click', function(){ removeQpCategory(id); });
+                        chips.appendChild(chip);
+                    });
+                }
+                // keep hidden select in sync
+                if (hidden) {
+                    Array.from(hidden.options).forEach(o => { o.selected = qpSelectedCategories.has(String(o.value)); });
+                }
+            }
+
+            /* Department combobox renderer and wiring */
+            function renderDeptList(filter){
+                const listEl = document.getElementById('qpDeptList');
+                const combo = document.getElementById('qpDeptCombo');
+                if (!listEl || !combo) return;
+                const q = String(filter || combo.value || '').trim().toLowerCase();
+                listEl.innerHTML = '';
+                const matched = (departmentsForQuick || []).filter(d => !q || (d.name||'').toLowerCase().indexOf(q) !== -1).slice(0, 200);
+                if (!matched.length) {
+                    const empty = document.createElement('div');
+                    empty.className = 'qp-dept-item';
+                    empty.style.color = '#64748b';
+                    empty.textContent = q ? 'Nenhum departamento encontrado' : 'Carregando departamentos...';
+                    listEl.appendChild(empty);
+                    listEl.style.display = 'block';
+                    qpDeptHighlighted = -1;
+                    return;
+                }
+                matched.forEach((d, idx) => {
+                    const row = document.createElement('div');
+                    row.className = 'qp-dept-item';
+                    row.id = 'qp-dept-item-' + String(d.id);
+                    row.setAttribute('data-id', d.id);
+                    row.setAttribute('data-idx', String(idx));
+                    const count = d.products_count ? `<small>${escapeHtml(String(d.products_count))} produto(s)</small>` : '';
+                    const sw = d.color ? `<span style="display:inline-block; width:12px; height:12px; border-radius:3px; margin-right:8px; vertical-align:middle; background:${escapeHtml(d.color)}; box-shadow:0 2px 6px rgba(2,6,23,0.1);"></span>` : '';
+                    row.innerHTML = `<div>${sw}<span style="vertical-align:middle;">${escapeHtml(d.name || String(d.id || ''))}</span> ${d.slug ? (' <small>' + escapeHtml(d.slug) + '</small>') : ''}${count}</div>`;
+                    row.setAttribute('role','option');
+                    row.addEventListener('click', function(){ selectDept(d.id, d.name, d.color); });
+                    listEl.appendChild(row);
+                });
+                qpDeptHighlighted = -1;
+                listEl.style.display = 'block';
+            }
+
+            function selectDept(id, name, color){
+                const combo = document.getElementById('qpDeptCombo');
+                const hidden = document.getElementById('qpDepartment');
+                const sw = document.getElementById('qpDeptSwatch');
+                if (combo) combo.value = name || '';
+                if (sw) {
+                    if (color) {
+                        sw.style.background = color;
+                        sw.style.display = 'block';
+                        sw.title = name || '';
+                    } else {
+                        sw.style.display = 'none';
+                    }
+                }
+                if (hidden) {
+                    // ensure option exists
+                    let opt = Array.from(hidden.options).find(o => String(o.value) === String(id));
+                    if (!opt) {
+                        opt = document.createElement('option');
+                        opt.value = id; opt.textContent = name || String(id);
+                        hidden.appendChild(opt);
+                    }
+                    hidden.value = id;
+                }
+                // Load department-scoped attributes for the Quick-Create MVP
+                try { loadDeptAttributes(id); } catch(e) { console.debug && console.debug('loadDeptAttributes failed', e); }
+                const listEl = document.getElementById('qpDeptList');
+                if (listEl) { listEl.style.display = 'none'; }
+                const comboEl = document.getElementById('qpDeptCombo');
+                if (comboEl) comboEl.setAttribute('aria-expanded', 'false');
+            }
+
+            function wireDeptCombo(){
+                if (qpDeptWired) return; qpDeptWired = true;
+                const combo = document.getElementById('qpDeptCombo');
+                const listEl = document.getElementById('qpDeptList');
+                if (!combo || !listEl) return;
+                combo.addEventListener('input', function(){ renderDeptList(this.value || ''); });
+                combo.addEventListener('focus', function(){ renderDeptList(this.value || ''); });
+                combo.addEventListener('blur', function(){ setTimeout(()=>{ listEl.style.display = 'none'; }, 180); });
+                combo.addEventListener('keydown', function(e){
+                    const items = Array.from(listEl.querySelectorAll('.qp-dept-item'));
+                    if (!items.length) return;
+                    if (e.key === 'ArrowDown') { e.preventDefault(); qpDeptHighlighted = Math.min(qpDeptHighlighted + 1, items.length - 1); highlightDept(items); }
+                    else if (e.key === 'ArrowUp') { e.preventDefault(); qpDeptHighlighted = Math.max(qpDeptHighlighted - 1, 0); highlightDept(items); }
+                    else if (e.key === 'Enter') { e.preventDefault(); if (qpDeptHighlighted >= 0 && items[qpDeptHighlighted]) { const id = items[qpDeptHighlighted].dataset.id; const name = items[qpDeptHighlighted].querySelector('span')?.textContent?.trim() || items[qpDeptHighlighted].textContent.trim(); selectDept(id, name, (departmentsForQuick.find(d=>String(d.id)===String(id))||{}).color); } }
+                    else if (e.key === 'Escape') { listEl.style.display = 'none'; combo.setAttribute('aria-expanded', 'false'); }
+                });
+                function highlightDept(items){
+                    items.forEach((it, i) => {
+                        const id = it.id || '';
+                        const active = i === qpDeptHighlighted;
+                        it.classList.toggle('qp-dept-highlight', active);
+                        if (active) {
+                            it.scrollIntoView({ block: 'nearest' });
+                            // set aria-activedescendant on the combobox
+                            combo.setAttribute('aria-activedescendant', id);
+                        }
+                    });
+                }
+            }
+
+            function toggleQpCategory(id, name){
+                const sid = String(id);
+                if (qpSelectedCategories.has(sid)) {
+                    qpSelectedCategories.delete(sid);
+                } else {
+                    qpSelectedCategories.add(sid);
+                }
+                renderQpCategoriesDropdown(document.getElementById('qpCatSearchInput')?.value || '');
+                // keep dropdown visible briefly
+                const dd = document.getElementById('qpCatDropdown'); if (dd) dd.style.display = 'block';
+                // focus back to search
+                document.getElementById('qpCatSearchInput')?.focus();
+            }
+
+            function removeQpCategory(id){
+                qpSelectedCategories.delete(String(id));
+                renderQpCategoriesDropdown(document.getElementById('qpCatSearchInput')?.value || '');
+            }
+
+            // Create a new category via public endpoint and select it
+            function createQpCategory(name){
+                if (!name || !name.trim()) return Promise.reject(new Error('Nome inválido'));
+                const payload = { name: name.trim() };
+                const dd = document.getElementById('qpCatDropdown');
+                if (dd) { dd.innerHTML = '<div class="qp-cat-row" style="color:#64748b">Criando categoria…</div>'; dd.style.display = 'block'; }
+                return fetch('/categories/json', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+                    body: JSON.stringify(payload)
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (!data || !data.success) throw new Error((data && data.message) || 'Erro ao criar categoria');
+                    const cat = data.category || (data.categories && data.categories[0]) || { id: data.id || null, name: name };
+                    // normalize and append
+                    const entry = { id: cat.id || String(Date.now()), name: cat.name || name };
+                    qpCategoriesData = qpCategoriesData || [];
+                    // avoid duplicates
+                    if (!qpCategoriesData.find(c => String(c.id) === String(entry.id))) qpCategoriesData.push(entry);
+                    qpSelectedCategories.add(String(entry.id));
+                    // sync hidden select
+                    const hidden = document.getElementById('qpCategories');
+                    if (hidden) {
+                        const opt = Array.from(hidden.options).find(o => String(o.value) === String(entry.id));
+                        if (!opt) {
+                            const newOpt = document.createElement('option'); newOpt.value = entry.id; newOpt.textContent = entry.name; newOpt.selected = true; hidden.appendChild(newOpt);
+                        } else {
+                            opt.selected = true;
+                        }
+                    }
+                    renderQpCategoriesDropdown('');
+                    document.getElementById('qpCatSearchInput')?.focus();
+                    return entry;
+                })
+                .catch(err => {
+                    console.error('createQpCategory failed', err);
+                    throw err;
+                });
             }
 
             // Gather form data and submit (use FormData if images present)
-            qpSave?.addEventListener('click', function(){
+                    qpSave?.addEventListener('click', function(){
                 try {
                     const name = (document.getElementById('qpName')?.value || '').trim();
-                    if (!name) { alert('Informe o nome do produto.'); document.querySelector('[data-panel="general"] input#qpName')?.focus(); return; }
+                    if (!name) { window.ssShowToast && ssShowToast('Informe o nome do produto.', 'warning'); document.querySelector('[data-panel="general"] input#qpName')?.focus(); return; }
                     const payload = {};
                     payload.name = name;
-                    payload.brand = (document.getElementById('qpBrand')?.value || '').trim() || null;
                     payload.sku = (document.getElementById('qpSku')?.value || '').trim() || null;
                     payload.is_active = document.getElementById('qpActive')?.checked ? 1 : 0;
                     payload.short_description = (document.getElementById('qpShortDesc')?.value || '').trim() || null;
-                    payload.description = (document.getElementById('qpDescription')?.value || '').trim() || null;
-                    payload.categories = Array.from(document.getElementById('qpCategories')?.selectedOptions || []).map(o => Number(o.value)).filter(Boolean);
-                    payload.price = document.getElementById('qpPrice')?.value ? parseFloat(document.getElementById('qpPrice').value) : null;
+                    // Ensure description exists (server requires it). Prefer full description, then short, then name.
+                    let desc = (document.getElementById('qpDescription')?.value || '').trim();
+                    if (!desc) desc = payload.short_description || payload.name || '';
+                    payload.description = desc || null;
+                    // read categories from the enhanced selector (qpSelectedCategories) or fallback to hidden select
+                    payload.categories = Array.from(qpSelectedCategories).map(id => Number(id)).filter(Boolean);
+                    // department (optional): include department_id if selected
+                    const deptSel = document.getElementById('qpDepartment');
+                    payload.department_id = deptSel && deptSel.value ? (isNaN(Number(deptSel.value)) ? deptSel.value : Number(deptSel.value)) : null;
+                    // Client-side validation: categories required by server
+                    if (!payload.categories || payload.categories.length === 0) {
+                        window.ssShowToast && ssShowToast('Escolha pelo menos uma categoria antes de salvar (o servidor exige ao menos 1).', 'warning');
+                        return;
+                    }
+                    // Price handling: if user requested margin-based calculation, compute B2B/B2C from cost
+                    const rawCost = document.getElementById('qpCostPrice')?.value;
+                    const useMargins = document.getElementById('qpUseMargins')?.checked;
+                    if (useMargins && rawCost) {
+                        const computed = computePricesFromCost(parseFloat(rawCost || 0), DEFAULT_MARGIN_B2B, DEFAULT_MARGIN_B2C);
+                        payload.price = computed.b2c;
+                        payload.b2b_price = computed.b2b;
+                        payload.cost_price = parseFloat(rawCost);
+                    } else {
+                        payload.price = document.getElementById('qpPrice')?.value ? parseFloat(document.getElementById('qpPrice').value) : null;
+                        payload.b2b_price = document.getElementById('qpB2bPrice')?.value ? parseFloat(document.getElementById('qpB2bPrice').value) : null;
+                        payload.cost_price = document.getElementById('qpCostPrice')?.value ? parseFloat(document.getElementById('qpCostPrice').value) : null;
+                    }
                     payload.compare_price = document.getElementById('qpComparePrice')?.value ? parseFloat(document.getElementById('qpComparePrice').value) : null;
-                    payload.cost_price = document.getElementById('qpCostPrice')?.value ? parseFloat(document.getElementById('qpCostPrice').value) : null;
-                    payload.stock = document.getElementById('qpStock')?.value ? parseInt(document.getElementById('qpStock').value,10) : 0;
+                    // server expects `stock_quantity` and `min_stock`
+                    payload.stock_quantity = document.getElementById('qpStock')?.value ? parseInt(document.getElementById('qpStock').value,10) : 0;
                     payload.min_stock = document.getElementById('qpMinStock')?.value ? parseInt(document.getElementById('qpMinStock').value,10) : 0;
                     payload.barcode = (document.getElementById('qpBarcode')?.value || '').trim() || null;
                     payload.weight = document.getElementById('qpWeight')?.value ? parseFloat(document.getElementById('qpWeight').value) : null;
@@ -2178,17 +2814,18 @@
                     payload.seo_title = (document.getElementById('qpSeoTitle')?.value || '').trim() || null;
                     payload.seo_description = (document.getElementById('qpSeoDescription')?.value || '').trim() || null;
 
-                    // attributes
-                    const attrs = [];
-                    Array.from(qpAttributesList?.children || []).forEach(row => {
-                        const k = row.querySelector('input:nth-child(1)')?.value?.trim();
-                        const v = row.querySelector('input:nth-child(2)')?.value?.trim();
-                        if (k && v) attrs.push({ name: k, value: v });
-                    });
-                    if (attrs.length) payload.attributes = attrs;
+                    // --- Sistema de atributos/variações do atalho removido ---
+                    // As coleções de atributos e variações geradas no modal de atalho foram intencionalmente desativadas.
+                    // Se futuramente formos recriar esse fluxo, reconstruir payload.attributes e payload.variations aqui.
+
+                    // Include sell channel flags
+                    payload.sell_b2b = document.getElementById('qpSellB2B')?.checked ? 1 : 0;
+                    payload.sell_b2c = document.getElementById('qpSellB2C')?.checked ? 1 : 0;
 
                     const files = qpImagesInput?.files || [];
                     let useForm = (files && files.length > 0);
+                    // Ensure price exists (server requires price)
+                    if (!payload.price && payload.price !== 0) payload.price = 0;
 
                     if (useForm) {
                         const fd = new FormData();
@@ -2204,29 +2841,737 @@
                         // send
                         fetch('/admin/products', { method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: fd })
                             .then(r => r.json())
-                            .then(handleCreateResponse)
-                            .catch(err => alert(err.message || 'Erro ao criar produto'));
+                                .then(handleCreateResponse)
+                                .catch(err => { window.ssShowToast && ssShowToast(err.message || 'Erro ao criar produto', 'error'); });
                     } else {
                         // JSON submit
-                        fetch('/admin/products', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: JSON.stringify(payload) })
-                            .then(r => r.json())
-                            .then(handleCreateResponse)
-                            .catch(err => alert(err.message || 'Erro ao criar produto'));
+                            fetch('/admin/products', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: JSON.stringify(payload) })
+                                .then(r => r.json())
+                                .then(handleCreateResponse)
+                                .catch(err => { window.ssShowToast && ssShowToast(err.message || 'Erro ao criar produto', 'error'); });
                     }
-                } catch(ex) { alert(ex.message || 'Erro inesperado'); }
+                } catch(ex) { window.ssShowToast ? ssShowToast(ex.message || 'Erro inesperado', 'error') : alert(ex.message || 'Erro inesperado'); }
             });
 
             function handleCreateResponse(data){
                 if (!data || !data.success) {
                     const msg = data && (data.message || (data.errors && Object.values(data.errors).flat().join('\n'))) || 'Erro ao criar produto';
-                    alert(msg);
+                    window.ssShowToast ? ssShowToast(msg, 'error') : alert(msg);
                     return;
                 }
                 closeQuickProduct(); clearQuickForm();
-                if (data.product && data.product.id) alert('Produto criado com sucesso (ID ' + data.product.id + ').'); else alert('Produto criado com sucesso.');
-                // Optionally reload available data
-                fetchBrands();
+                const successMsg = data.product && data.product.id ? ('Produto criado com sucesso (ID ' + data.product.id + ').') : 'Produto criado com sucesso.';
+                window.ssShowToast ? ssShowToast(successMsg, 'success') : alert(successMsg);
+                // Optionally reload available data (brand list removed)
+            }
+
+            // === Recriação rápida do atalho Produtos (fallback/override) ===
+            (function quickProductRecreate(){
+                try {
+                    const btn = document.getElementById('productsTrigger');
+                    const overlay = document.getElementById('ssQuickProductOverlay');
+                    const form = document.getElementById('qpForm');
+                    const nameInput = document.getElementById('qpName');
+                    const saveBtn = document.getElementById('ssQuickProductSave');
+                    const cancelBtn = document.getElementById('ssQuickProductCancel');
+                    const closeBtn = document.getElementById('ssQuickProductClose');
+
+                    if (!btn || !overlay || !form) return;
+
+                    // Ensure overlay is hidden by default
+                    overlay.style.display = overlay.style.display || 'none';
+
+                    function openNew() {
+                        overlay.style.display = 'flex';
+                        overlay.classList && overlay.classList.add('active');
+                        // reset small form area
+                        try { nameInput && nameInput.focus(); } catch(e){}
+                        // load categories if present
+                        const cats = document.getElementById('qpCategories');
+                        if (cats && !cats.children.length) {
+                            fetch('/admin/categories/list', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                                .then(r => {
+                                    if (r.ok) return r.json();
+                                    if (r.status === 404) return fetch('/categories/json', { headers: { 'Accept': 'application/json' } }).then(r2 => r2.ok ? r2.json() : { categories: [] });
+                                    throw new Error('HTTP ' + r.status);
+                                })
+                                .then(data => {
+                                    console.debug && console.debug('quick fallback categories fetched', data);
+                                    const list = Array.isArray(data) ? data : (data.categories || []);
+                                    cats.innerHTML = '';
+                                    qpCategoriesData = (list || []).map(c => ({ id: c.id || c.value || String(c.id||''), name: c.name || c.title || String(c.id || '') }));
+                                    qpCategoriesData.forEach(cat => {
+                                        const opt = document.createElement('option'); opt.value = cat.id || ''; opt.textContent = cat.name || String(cat.id || ''); cats.appendChild(opt);
+                                    });
+                                    // render enhanced UI too (chips/dropdown)
+                                    try { renderQpCategoriesDropdown(''); } catch(e) {}
+                                }).catch(err => { console.debug && console.debug('quick fallback categories fetch failed', err); });
+                        }
+                    }
+
+                    function closeNew(){
+                        overlay.classList && overlay.classList.remove('active');
+                        overlay.style.display = 'none';
+                    }
+
+                    // Attach handlers (use click assignment to avoid duplicate addEventListener piling)
+                    btn.onclick = function(e){ e && e.stopPropagation(); openNew(); };
+                    closeBtn && (closeBtn.onclick = function(){ closeNew(); });
+                    cancelBtn && (cancelBtn.onclick = function(){ closeNew(); });
+
+                    // click outside modal to close
+                    overlay.addEventListener('click', function(ev){
+                        if (ev.target === overlay) closeNew();
+                    });
+
+                    // minimal save handler
+                    saveBtn && (saveBtn.onclick = function(){
+                        try {
+                            const name = (nameInput?.value || '').trim();
+                            if (!name) { window.ssShowToast && ssShowToast('Informe o nome do produto.', 'warning'); nameInput && nameInput.focus(); return; }
+                            const payload = { name };
+                            // collect categories if any
+                            const cats = document.getElementById('qpCategories');
+                            if (cats) payload.categories = Array.from(cats.selectedOptions || []).map(o => Number(o.value)).filter(Boolean);
+                            // department for quick fallback
+                            const dept = document.getElementById('qpDepartment');
+                            if (dept && dept.value) payload.department_id = isNaN(Number(dept.value)) ? dept.value : Number(dept.value);
+                            // stock fields required by server: send zeros when empty
+                            payload.stock_quantity = document.getElementById('qpStock')?.value ? parseInt(document.getElementById('qpStock').value,10) : 0;
+                            payload.min_stock = document.getElementById('qpMinStock')?.value ? parseInt(document.getElementById('qpMinStock').value,10) : 0;
+                            // require at least one category (server validation)
+                            if (!payload.categories || payload.categories.length === 0) {
+                                window.ssShowToast && ssShowToast('Escolha pelo menos uma categoria antes de salvar.', 'warning');
+                                return;
+                            }
+                            // ensure a description exists
+                            const shortDesc = (document.getElementById('qpShortDesc')?.value || '').trim();
+                            payload.description = (document.getElementById('qpDescription')?.value || '').trim() || shortDesc || payload.name;
+                            // basic price + channel flags + optional margin calc
+                            const rawCost = document.getElementById('qpCostPrice')?.value;
+                            const useMargins = document.getElementById('qpUseMargins')?.checked;
+                            if (useMargins && rawCost) {
+                                const computed = computePricesFromCost(parseFloat(rawCost || 0), DEFAULT_MARGIN_B2B, DEFAULT_MARGIN_B2C);
+                                payload.price = computed.b2c;
+                                payload.b2b_price = computed.b2b;
+                                payload.cost_price = parseFloat(rawCost);
+                            } else {
+                                const priceEl = document.getElementById('qpPrice');
+                                if (priceEl && priceEl.value) payload.price = parseFloat(priceEl.value);
+                            }
+                            payload.sell_b2b = document.getElementById('qpSellB2B')?.checked ? 1 : 0;
+                            payload.sell_b2c = document.getElementById('qpSellB2C')?.checked ? 1 : 0;
+
+                            fetch('/admin/products', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: JSON.stringify(payload) })
+                                .then(r => r.json())
+                                .then(function(data){
+                                    try { handleCreateResponse(data); } catch(e) { window.ssShowToast ? ssShowToast('Produto criado (resposta inesperada)', 'success') : alert('Produto criado (resposta inesperada)'); }
+                                })
+                                .catch(err => { window.ssShowToast ? ssShowToast(err.message || 'Erro ao criar produto', 'error') : alert(err.message || 'Erro ao criar produto'); });
+                        } catch(e) { window.ssShowToast ? ssShowToast(e.message || 'Erro', 'error') : alert(e.message || 'Erro'); }
+                    });
+
+                } catch(e) { console.error('quickProductRecreate failed', e); }
+            })();
+        });
+    </script>
+    <script>
+        // Final safety: ensure quick-open handlers actually open overlays.
+        (function(){
+            function safeOpenQuickProduct(e){
+                try { e && e.stopPropagation(); } catch(e){}
+                try {
+                    if (typeof openQuickProduct === 'function') {
+                        openQuickProduct();
+                        return;
+                    }
+                } catch(err) {
+                    console.debug && console.debug('openQuickProduct threw', err);
+                }
+
+                // Fallback: open overlay manually
+                try {
+                    const qpOverlay = document.getElementById('ssQuickProductOverlay');
+                    if (!qpOverlay) return;
+                    qpOverlay.style.display = 'flex';
+                    qpOverlay.classList && qpOverlay.classList.add('active');
+                    // ensure it's attached to body
+                    if (qpOverlay.parentElement !== document.body) document.body.appendChild(qpOverlay);
+                    // try to load options if available
+                    if (typeof loadQuickFormOptions === 'function') {
+                        try { loadQuickFormOptions(); } catch(e){}
+                    }
+                    // focus department combobox or name
+                    setTimeout(function(){
+                        const dept = document.getElementById('qpDeptCombo') || document.getElementById('qpDepartment');
+                        const name = document.getElementById('qpName');
+                        try { if (dept) dept.focus(); else if (name) name.focus(); } catch(e){}
+                    }, 50);
+                } catch(e){ console.error('safeOpenQuickProduct failed', e); }
+            }
+
+            function attachSafe(id, handler){
+                try {
+                    const btn = document.getElementById(id);
+                    if (!btn) return;
+                    btn.removeEventListener('click', handler);
+                    btn.addEventListener('click', handler);
+                } catch(e){}
+            }
+
+            // Attach to known FAB ids
+            document.addEventListener('DOMContentLoaded', function(){
+                attachSafe('productsTrigger', safeOpenQuickProduct);
+                attachSafe('productsManagerTrigger', safeOpenQuickProduct);
+                // also ensure overlay close buttons wired
+                const qpClose = document.getElementById('ssQuickProductClose');
+                if (qpClose) qpClose.addEventListener('click', function(){ try { document.getElementById('ssQuickProductOverlay').style.display='none'; document.getElementById('ssQuickProductOverlay').classList.remove('active'); } catch(e){} });
+            });
+        })();
+    </script>
+    <script>
+        // Product Manager: tabs, search and "latest" loader
+        document.addEventListener('DOMContentLoaded', function(){
+            const pmTabManage = document.getElementById('pmTabManage');
+            const pmTabLatest = document.getElementById('pmTabLatest');
+            const pmTabAttributes = document.getElementById('pmTabAttributes');
+            const pmManagePanel = document.getElementById('pmManagePanel');
+            const pmLatestPanel = document.getElementById('pmLatestPanel');
+            const pmAttributesPanel = document.getElementById('pmAttributesPanel');
+            // ID do produto selecionado no gerenciador (usado para aplicar variações no servidor)
+            let currentPmProductId = null;
+            const pmSearchInput = document.getElementById('pmSearchInput');
+            const pmResults = document.getElementById('pmResults');
+            const pmLatestResults = document.getElementById('pmLatestResults');
+            const pmManagerClose = document.getElementById('pmManagerClose');
+            const pmManagerCancel = document.getElementById('pmManagerCancel');
+
+            const CSRF_TOKEN = (typeof CSRF !== 'undefined') ? CSRF : (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
+
+            function switchPmTab(tab){
+                if (tab === 'manage'){
+                    pmManagePanel.style.display = '';
+                    pmLatestPanel.style.display = 'none';
+                    pmTabManage.classList.add('active'); pmTabLatest.classList.remove('active');
+                } else {
+                    pmManagePanel.style.display = 'none';
+                    pmLatestPanel.style.display = '';
+                    pmTabManage.classList.remove('active'); pmTabLatest.classList.add('active');
+                    loadPmLatest();
+                }
+            }
+
+            pmTabManage?.addEventListener('click', () => switchPmTab('manage'));
+            pmTabLatest?.addEventListener('click', () => switchPmTab('latest'));
+            pmTabAttributes?.addEventListener('click', () => switchPmTab('attributes'));
+
+            function renderPmItem(prod){
+                const el = document.createElement('div');
+                el.className = 'pm-item d-flex align-items-center';
+                el.style.padding = '10px';
+                el.style.borderBottom = '1px solid #eef2f7';
+                el.dataset.id = prod.id;
+                const img = prod.first_image || '{{ asset('images/no-image.svg') }}';
+                const price = prod.price ? `R$ ${parseFloat(prod.price).toFixed(2).replace('.',',')}` : '—';
+                el.innerHTML = `
+                    <div style="width:64px; height:64px; flex:0 0 64px; margin-right:12px;"><img src="${img}" style="width:100%;height:100%;object-fit:cover;border-radius:6px;" onerror="this.src='{{ asset('images/no-image.svg') }}'"></div>
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px">
+                            <div style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:600;">${escapeHtml(prod.name || prod.title || ('ID ' + prod.id))}</div>
+                            <div style="color:#10b981; font-weight:700;">${price}</div>
+                        </div>
+                        <div style="margin-top:6px; display:flex; gap:8px;">
+                            <a class="btn btn-sm btn-outline-secondary" href="/admin/products/${prod.id}/edit" target="_blank">Editar</a>
+                            <button class="btn btn-sm btn-primary pm-select-btn" title="Selecionar produto">Selecionar</button>
+                            <button class="btn btn-sm btn-danger pm-delete-btn">Remover</button>
+                            <a class="btn btn-sm btn-secondary" href="/admin/products/${prod.id}" target="_blank">Ver</a>
+                        </div>
+                    </div>
+                `;
+                // attach delete handler
+                el.querySelector('.pm-delete-btn')?.addEventListener('click', function(){
+                    if (!confirm('Deseja remover este produto? Essa ação pode ser irreversível.')) return;
+                    const id = prod.id;
+                    fetch(`/admin/products/${id}`, { method: 'DELETE', headers: { 'X-CSRF-TOKEN': CSRF_TOKEN, 'Accept': 'application/json' }})
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data || !data.success) throw new Error(data && data.message ? data.message : 'Erro ao remover produto');
+                            el.remove();
+                            window.ssShowToast && ssShowToast('Produto removido', 'success');
+                        }).catch(err => { window.ssShowToast ? ssShowToast(err.message || 'Erro', 'error') : alert(err.message || 'Erro'); });
+                });
+                // select product button (so attributes tab can apply server-side changes)
+                el.querySelector('.pm-select-btn')?.addEventListener('click', function(){
+                    try {
+                        currentPmProductId = prod.id;
+                        window.ssShowToast && ssShowToast('Produto selecionado para aplicar atributos: ID ' + prod.id, 'info');
+                        const btn = document.querySelector('.ss-tab[data-tab="attributes"]');
+                        if (btn) btn.click();
+                    } catch(e) { console.debug && console.debug('pm select failed', e); }
+                });
+                return el;
+            }
+
+            function escapeHtml(str){ return (str||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+            let pmSearchTimer = null;
+            pmSearchInput?.addEventListener('input', function(){
+                clearTimeout(pmSearchTimer);
+                pmSearchTimer = setTimeout(()=> { loadPmResults(this.value.trim()); }, 250);
+            });
+
+            function loadPmResults(q){
+                if (!pmResults) return;
+                pmResults.innerHTML = '<div style="padding:16px;color:#64748b">Buscando...</div>';
+                const url = `{{ route('admin.products.index') }}?search=${encodeURIComponent(q)}&per_page=50`;
+                fetch(url, { headers: { 'Accept': 'application/json', 'X-Requested-With':'XMLHttpRequest' }, credentials: 'same-origin' })
+                    .then(r => r.json())
+                    .then(data => {
+                        const list = (data && data.products) ? data.products : (Array.isArray(data) ? data : []);
+                        if (!list.length) {
+                            pmResults.innerHTML = '<div style="padding:16px;color:#64748b">Nenhum produto encontrado.</div>';
+                            return;
+                        }
+                        pmResults.innerHTML = '';
+                        list.forEach(p => pmResults.appendChild(renderPmItem(p)));
+                    })
+                    .catch(err => { pmResults.innerHTML = '<div style="padding:16px;color:#ef4444">Erro ao buscar produtos</div>'; console.error(err); });
+            }
+
+            function loadPmLatest(){
+                if (!pmLatestResults) return;
+                pmLatestResults.innerHTML = '<div style="padding:16px;color:#64748b">Carregando últimos produtos...</div>';
+                // try a couple of fallbacks for endpoint
+                const tryUrls = [
+                    `{{ route('admin.products.index') }}?recent=1&per_page=20`,
+                    `{{ route('admin.products.index') }}?order=created_at_desc&per_page=20`,
+                    `{{ route('admin.products.index') }}?per_page=20`
+                ];
+                function tryFetch(i){
+                    if (i >= tryUrls.length) { pmLatestResults.innerHTML = '<div style="padding:16px;color:#64748b">Não foi possível carregar os últimos produtos.</div>'; return; }
+                    fetch(tryUrls[i], { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                        .then(r => r.json())
+                        .then(data => {
+                            const list = (data && data.products) ? data.products : (Array.isArray(data) ? data : []);
+                            if (!list.length && i < tryUrls.length-1) return tryFetch(i+1);
+                            if (!list.length) { pmLatestResults.innerHTML = '<div style="padding:16px;color:#64748b">Nenhum produto recente encontrado.</div>'; return; }
+                            pmLatestResults.innerHTML = '';
+                            list.forEach(p => pmLatestResults.appendChild(renderPmItem(p)));
+                        }).catch(() => tryFetch(i+1));
+                }
+                tryFetch(0);
+            }
+
+            // ----- Attributes management -----
+            const pmAttrDeptSel = document.getElementById('pmAttrDepartment');
+            const pmAttrSearch = document.getElementById('pmAttrSearch');
+            const pmAttributesList = document.getElementById('pmAttributesList');
+            const pmAttrNewBtn = document.getElementById('pmAttrNewBtn');
+            const pmAttrGenerateBtn = document.getElementById('pmAttrGenerateBtn');
+
+            async function populateAttrDepartments(){
+                try {
+                    // use departmentsForQuick if available, else fetch snapshot
+                    let depts = (typeof departmentsForQuick !== 'undefined' && Array.isArray(departmentsForQuick) && departmentsForQuick.length) ? departmentsForQuick : [];
+                    if (!depts.length) {
+                        const r = await fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' } });
+                        if (r.ok) {
+                            const data = await r.json();
+                            depts = Array.isArray(data.departments) ? data.departments.map(d => ({ id: d.id, name: d.name || d.title || String(d.id), slug: d.slug || null })) : [];
+                        }
+                    }
+                    if (!pmAttrDeptSel) return;
+                    pmAttrDeptSel.innerHTML = '<option value="">— Selecione o departamento —</option>';
+                    depts.forEach(d => {
+                        const opt = document.createElement('option'); opt.value = d.id || (d.slug || ''); opt.textContent = d.name || String(d.id || ''); pmAttrDeptSel.appendChild(opt);
+                    });
+                } catch(e){ console.debug && console.debug('populateAttrDepartments failed', e); }
+            }
+
+            async function loadPmAttributesForDept(dept){
+                if (!pmAttributesList) return;
+                pmAttributesList.innerHTML = '<div style="padding:16px;color:#64748b">Carregando atributos...</div>';
+                const tryUrls = [
+                    `/admin/products/attributes?department=${encodeURIComponent(dept)}`,
+                    `/admin/attributes?department=${encodeURIComponent(dept)}`,
+                    `/admin/attributes/list?department=${encodeURIComponent(dept)}`
+                ];
+                let fetched = null;
+                for (let i=0;i<tryUrls.length;i++){
+                    try {
+                        const r = await fetch(tryUrls[i], { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
+                        if (!r.ok) continue;
+                        const js = await r.json();
+                        // Expect shape: { attributes: [ { name: 'Cor', values: ['Azul','Vermelho'] }, ... ] }
+                        if (js && (Array.isArray(js.attributes) || Array.isArray(js))) {
+                            fetched = Array.isArray(js.attributes) ? js.attributes : js;
+                            break;
+                        }
+                    } catch(e){ /* try next */ }
+                }
+                if (!fetched) {
+                    pmAttributesList.innerHTML = '<div style="padding:16px;color:#64748b">Nenhum atributo encontrado para este departamento.</div>';
+                    return;
+                }
+                renderPmAttributes(fetched || []);
+            }
+
+            function renderPmAttributes(list){
+                if (!pmAttributesList) return;
+                pmAttributesList.innerHTML = '';
+                const q = (pmAttrSearch && pmAttrSearch.value || '').trim().toLowerCase();
+                list.forEach(attr => {
+                    const name = attr.name || attr.key || '';
+                    const rawValues = Array.isArray(attr.values) ? attr.values : (Array.isArray(attr.options) ? attr.options : (attr.values_string ? String(attr.values_string).split(',').map(s=>s.trim()).filter(Boolean) : []));
+                    const values = rawValues.map(v => {
+                        if (v && typeof v === 'object') return v;
+                        return { value: String(v) };
+                    });
+                    const valuesText = values.map(v => (v && (v.value || v.name)) ? String(v.value || v.name) : '').join(',');
+                    if (q && !name.toLowerCase().includes(q) && !valuesText.toLowerCase().includes(q)) return;
+                    const wrap = document.createElement('div');
+                    wrap.style.padding = '10px'; wrap.style.borderBottom = '1px solid #f1f5f9';
+                    wrap.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(name)}</div><div><button class="ss-btn ss-btn-primary pm-apply-attr">Aplicar ao Criar Rápido</button> <button class="ss-btn ss-btn-secondary pm-add-server-variations" title="Adicionar como variações (produto selecionado)">Adicionar como variações</button></div></div>`;
+                    const vals = document.createElement('div'); vals.style.marginTop = '8px'; vals.style.display = 'flex'; vals.style.flexWrap = 'wrap'; vals.style.gap = '8px';
+                    values.forEach(v => {
+                        const display = (v && (v.value || v.name)) ? (v.value || v.name) : (v === null || v === undefined ? '' : String(v));
+                        const cbWrap = document.createElement('label'); cbWrap.style.display='inline-flex'; cbWrap.style.alignItems='center'; cbWrap.style.gap='6px'; cbWrap.style.border='1px solid #eef2f7'; cbWrap.style.padding='6px 8px'; cbWrap.style.borderRadius='8px'; cbWrap.style.background='#fff';
+                        const cb = document.createElement('input'); cb.type='checkbox'; cb.value = display; cb.dataset.attr = name; cb.className = 'pm-attr-value';
+                        // store raw object if present for possible future use
+                        if (v && typeof v === 'object') cb.dataset.raw = JSON.stringify(v);
+                        const span = document.createElement('span'); span.textContent = display; span.style.fontSize='13px';
+                        // if color hex present, add a small swatch
+                        if (v && typeof v === 'object' && v.hex) {
+                            const sw = document.createElement('span'); sw.style.display='inline-block'; sw.style.width='12px'; sw.style.height='12px'; sw.style.borderRadius='50%'; sw.style.marginLeft='8px'; sw.style.border='1px solid #e6edf3';
+                            try { sw.style.background = (String(v.hex).startsWith('#') ? String(v.hex) : ('#' + String(v.hex).replace('#',''))); } catch(e){}
+                            cbWrap.appendChild(sw);
+                        }
+                        cbWrap.appendChild(cb); cbWrap.appendChild(span); vals.appendChild(cbWrap);
+                    });
+                    wrap.appendChild(vals);
+                    // attach handler (quick-create insertion disabled)
+                    const btn = wrap.querySelector('.pm-apply-attr');
+                    btn?.addEventListener('click', function(){
+                        try {
+                            window.ssShowToast && ssShowToast('Inserção de atributos no atalho Quick‑Create está desativada.', 'info');
+                        } catch(e) { console.debug && console.debug('pm-apply-attr noop failed', e); }
+                    });
+                    // attach server-side apply (if product selected) - uses bulk endpoint
+                    const serverBtn = wrap.querySelector('.pm-add-server-variations');
+                    serverBtn?.addEventListener('click', async function(){
+                        try {
+                            // collect all checked attribute values across the attributes list
+                            const checked = Array.from(pmAttributesList.querySelectorAll('.pm-attr-value:checked'));
+                            if (!checked.length) { window.ssShowToast && ssShowToast('Selecione ao menos um valor para adicionar.', 'warning'); return; }
+                            if (!currentPmProductId) { window.ssShowToast && ssShowToast('Selecione um produto no Gerenciador antes de aplicar variações no servidor.', 'warning'); return; }
+
+                            // group by attribute name
+                            const groups = {};
+                            checked.forEach(cb => {
+                                const key = cb.dataset.attr || 'value';
+                                const raw = cb.dataset.raw || '';
+                                let meta = null;
+                                if (raw) {
+                                    try { meta = JSON.parse(raw); } catch(e) { meta = raw; }
+                                }
+                                if (!groups[key]) groups[key] = [];
+                                groups[key].push({ key, value: cb.value, meta });
+                            });
+
+                            const keys = Object.keys(groups);
+                            const arrays = keys.map(k => groups[k]);
+                            const combosRaw = (typeof cartesianProduct === 'function') ? cartesianProduct(arrays) : arrays.map(a=>a.map(v=>[v]));
+
+                            if (!combosRaw || !combosRaw.length) { window.ssShowToast && ssShowToast('Nenhuma combinação gerada.', 'warning'); return; }
+
+                            const combos = combosRaw.map(combo => {
+                                const attrs = {};
+                                combo.forEach(c => {
+                                    if (!c || !c.key) return;
+                                    const slug = slugify(c.key || c.attr || '');
+                                    attrs[slug] = c.value;
+                                });
+                                return { attributes: attrs };
+                            });
+
+                            if (combos.length > 500) {
+                                if (!confirm(`Serão geradas ${combos.length} variações. Continuar?`)) return;
+                            }
+
+                            const csrf = CSRF || (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '');
+                            const resp = await fetch(`/admin/products/${currentPmProductId}/variations/bulk-add`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                                body: JSON.stringify({ combos })
+                            });
+                            const data = await resp.json().catch(() => null);
+                            if (data && data.success) {
+                                window.ssShowToast && ssShowToast(`Operação concluída. ${data.created || 0} variação(ões) criada(s).`, 'success');
+                            } else {
+                                console.error('bulk add failed', data);
+                                window.ssShowToast && ssShowToast('Erro ao criar variações em lote. Veja o console.', 'error');
+                            }
+                        } catch(e) { console.error('pm add server variations failed', e); window.ssShowToast && ssShowToast('Erro ao aplicar variações no servidor. Veja console.', 'error'); }
+                    });
+
+                    pmAttributesList.appendChild(wrap);
+                });
+                if (!pmAttributesList.children.length) pmAttributesList.innerHTML = '<div style="padding:16px;color:#64748b">Nenhum atributo disponível.</div>';
+            }
+
+            // Wire department change and search
+            pmAttrDeptSel?.addEventListener('change', function(){ const dept = this.value || ''; if (dept) loadPmAttributesForDept(dept); else pmAttributesList.innerHTML = '<div style="padding:16px;color:#64748b">Selecione um departamento para ver atributos.</div>'; });
+            pmAttrSearch?.addEventListener('input', function(){ // re-filter existing list if present
+                // naive: refetch current dept list to re-render with filter
+                const d = pmAttrDeptSel?.value || '';
+                if (d) loadPmAttributesForDept(d);
+            });
+
+            pmAttrNewBtn?.addEventListener('click', function(){
+                // simple prompt flow: ask attribute name and comma-separated values, then render locally and allow applying
+                const name = prompt('Nome do atributo (ex: Cor, Tamanho, RAM)');
+                if (!name || !name.trim()) return;
+                const valuesRaw = prompt('Valores separados por vírgula (ex: Azul, Vermelho, Verde)');
+                const values = valuesRaw ? valuesRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
+                const obj = { name: name.trim(), values };
+                // prepend to list
+                const curr = [];
+                // try to parse currently visible attributes (no persistent store)
+                try { renderPmAttributes([obj].concat(curr)); } catch(e){ console.debug && console.debug('render new attr failed', e); }
+            });
+
+            // Helper: cartesian product of arrays
+            function cartesianProduct(arr) {
+                return arr.reduce((a, b) => a.flatMap(d => b.map(e => d.concat([e]))), [[]]);
+            }
+
+            // Generate variations from selected attribute values across attributes
+            pmAttrGenerateBtn?.addEventListener('click', function(){
+                try {
+                    if (!pmAttributesList) {
+                        console.error('pmAttrGenerate: pmAttributesList element not found');
+                        window.ssShowToast && ssShowToast('A lista de atributos não está disponível.', 'error');
+                        return;
+                    }
+
+                    // gather checked values grouped by attribute name
+                    const checked = Array.from(pmAttributesList.querySelectorAll('.pm-attr-value:checked'));
+                    if (!checked.length) { window.ssShowToast && ssShowToast('Selecione ao menos um valor para gerar variações.', 'warning'); return; }
+                    const groups = {}; // key -> [{ value, meta }]
+                    checked.forEach(cb => {
+                        const key = cb.dataset.attr || 'value';
+                        const raw = cb.dataset.raw || '';
+                        let meta = null;
+                        if (raw) {
+                            try { meta = JSON.parse(raw); } catch(err) { meta = raw; }
+                        }
+                        if (!groups[key]) groups[key] = [];
+                        groups[key].push({ key, value: cb.value, meta });
+                    });
+
+                    // Prepare arrays for cartesian product ordered by attribute key
+                    const keys = Object.keys(groups);
+                    if (!keys.length) { window.ssShowToast && ssShowToast('Nenhum atributo válido selecionado.', 'warning'); return; }
+                    const arrays = keys.map(k => groups[k]);
+
+                    // Use fallback if cartesianProduct isn't available
+                    const cartesianFn = (typeof cartesianProduct === 'function') ? cartesianProduct : function(arr) { return arr.reduce((a, b) => a.flatMap(d => b.map(e => d.concat([e]))), [[]]); };
+                    const combos = cartesianFn(arrays) || [];
+                    if (!combos.length) { window.ssShowToast && ssShowToast('Nenhuma combinação gerada.', 'warning'); return; }
+
+                    // ensure slugify exists; provide safe fallback
+                    const slugifyFn = (typeof slugify === 'function') ? slugify : function(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').replace(/-{2,}/g,'-').slice(0,80); };
+
+                    // For each combination, create a variation object and add a row
+                    combos.forEach(combo => {
+                        try {
+                            // combo is array of {key, value, meta}
+                            // build a generic attributes map using slugified keys
+                            const attrs = {};
+                            combo.forEach(c => {
+                                if (!c || !c.key) return;
+                                const slug = slugifyFn(c.key || c.attr || '');
+                                attrs[slug] = c.value;
+                            });
+
+                            const variation = { name: combo.map(c => c.value).join(' / '), sku: null, price: null, stock_quantity: 0, attributes: attrs };
+
+                            // Backwards-compatible: expose common fields when present so addVariationRow can still read them
+                            if (attrs.ram) variation.ram = attrs.ram;
+                            if (attrs.storage) variation.storage = attrs.storage;
+                            if (attrs.armazenamento && !variation.storage) variation.storage = attrs.armazenamento;
+                            if (attrs.color) variation.color = attrs.color;
+                            if (attrs.cor && !variation.color) variation.color = attrs.cor;
+
+                            // If any combo item had meta with hex, attach color hex
+                            combo.forEach(c => {
+                                if (!c || !c.key) return;
+                                const slug = slugifyFn(c.key || c.attr || '');
+                                if ((slug === 'color' || slug === 'cor' || slug.indexOf('color') !== -1) && c.meta && (c.meta.hex || c.meta.color_hex)) {
+                                    variation.color_hex = c.meta.hex || c.meta.color_hex;
+                                }
+                            });
+
+                            if (typeof addVariationRow === 'function') addVariationRow(variation);
+                            else console.warn('addVariationRow not available, skipping UI insertion', variation);
+                        } catch(inner) {
+                            console.error('pmAttrGenerate: failed to build variation for combo', combo, inner);
+                        }
+                    });
+
+                    window.ssShowToast && ssShowToast('Variações geradas — revise antes de salvar.', 'success');
+                } catch(e) {
+                    console.error('pmAttrGenerate failed', e, { pmAttributesList, pmAttrGenerateBtn });
+                    window.ssShowToast && ssShowToast('Erro ao gerar variações. Veja console.', 'error');
+                }
+            });
+
+            // Ensure departments list populated when attributes tab opened
+            const origSwitchPmTab = switchPmTab;
+            function switchPmTabWithAttrs(tab){
+                if (tab === 'attributes') {
+                    // hide others
+                    try { if (pmManagePanel) pmManagePanel.style.display = 'none'; } catch(e){}
+                    try { if (pmLatestPanel) pmLatestPanel.style.display = 'none'; } catch(e){}
+                    try { if (pmAttributesPanel) pmAttributesPanel.style.display = ''; } catch(e){}
+                    // update tab active state
+                    try { pmTabManage.classList.remove('active'); } catch(e){}
+                    try { pmTabLatest.classList.remove('active'); } catch(e){}
+                    try { pmTabAttributes && pmTabAttributes.classList.add('active'); } catch(e){}
+                    // populate departments and try select current
+                    populateAttrDepartments();
+                    const current = (typeof getCurrentDepartmentSlug === 'function') ? getCurrentDepartmentSlug() : (window.CurrentDepartmentSlug || null);
+                    if (current && pmAttrDeptSel && !pmAttrDeptSel.value) {
+                        setTimeout(()=>{
+                            Array.from(pmAttrDeptSel.options).forEach(o=>{ if (String(o.text || '').toLowerCase().indexOf(String(current).toLowerCase()) !== -1 || String(o.value) === String(current)) { pmAttrDeptSel.value = o.value; } });
+                            if (pmAttrDeptSel.value) loadPmAttributesForDept(pmAttrDeptSel.value);
+                        }, 120);
+                    }
+                    return;
+                }
+                // fallback to original behavior for manage/latest
+                origSwitchPmTab(tab);
+            }
+            // override switch handler (local + global) so existing listeners call the enhanced version
+            try { switchPmTab = switchPmTabWithAttrs; } catch(e) { window.switchPmTab = switchPmTabWithAttrs; }
+            // call once to ensure default remains (start on manage only when explicitly requested)
+            try { if (typeof switchPmTabWithAttrs === 'function') {/* no-op on load; default will be create */} } catch(e){}
+
+            // initial state: show create tab by default
+            document.querySelectorAll('.ss-tab').forEach(b=>b.classList.remove('active'));
+            document.querySelector('.ss-tab[data-tab="create"]')?.classList.add('active');
+            document.querySelectorAll('.qp-tab-panel').forEach(p => p.style.display = (p.dataset.panel === 'create') ? '' : 'none');
+
+            // wire close/cancel: switch back to create tab (do not close the whole modal)
+            pmManagerClose?.addEventListener('click', function(){
+                try {
+                    document.querySelectorAll('.ss-tab').forEach(b=>b.classList.remove('active'));
+                    document.querySelector('.ss-tab[data-tab="create"]')?.classList.add('active');
+                    document.querySelectorAll('.qp-tab-panel').forEach(p => p.style.display = (p.dataset.panel === 'create') ? '' : 'none');
+                } catch(e) { console.debug && console.debug('pmManagerClose switch failed', e); }
+            });
+            pmManagerCancel?.addEventListener('click', function(){
+                try {
+                    document.querySelectorAll('.ss-tab').forEach(b=>b.classList.remove('active'));
+                    document.querySelector('.ss-tab[data-tab="create"]')?.classList.add('active');
+                    document.querySelectorAll('.qp-tab-panel').forEach(p => p.style.display = (p.dataset.panel === 'create') ? '' : 'none');
+                } catch(e) { console.debug && console.debug('pmManagerCancel switch failed', e); }
+            });
+
+            // when the quick modal changes visibility, autofocus search if manager tab active
+            const overlay = document.getElementById('ssQuickProductOverlay');
+            if (overlay) {
+                const obs = new MutationObserver(function(m){
+                    try {
+                        if (overlay.style.display !== 'none') {
+                            const active = document.querySelector('.ss-tab.active')?.dataset.tab;
+                            if (active === 'manage') setTimeout(()=> pmSearchInput && pmSearchInput.focus(), 80);
+                        }
+                    } catch(e){}
+                });
+                obs.observe(overlay, { attributes: true, attributeFilter: ['style', 'class'] });
             }
         });
     </script>
+    <script>
+        // Defensive fallbacks: ensure FAB shortcuts still open their panels
+        document.addEventListener('DOMContentLoaded', function(){
+            try {
+                // Global error capture to aid debugging (will show toast and console log)
+                window.addEventListener('error', function(ev){
+                    try { console.error('Global JS error:', ev.message, ev.filename + ':' + ev.lineno, ev.error); } catch(e){}
+                    if (window.ssShowToast) ssShowToast('Erro de script detectado. Veja console para detalhes.', 'error', 8000);
+                });
+                window.addEventListener('unhandledrejection', function(ev){
+                    try { console.error('Unhandled promise rejection:', ev.reason); } catch(e){}
+                    if (window.ssShowToast) ssShowToast('Erro assíncrono detectado. Veja console para detalhes.', 'error', 8000);
+                });
+
+                const safeToggle = (btnId, panelId, asOverlay, preferFn) => {
+                    const btn = document.getElementById(btnId);
+                    const panel = document.getElementById(panelId);
+                    if (!btn) {
+                        console.debug && console.debug('safeToggle: button not found', btnId);
+                        return;
+                    }
+                    btn.addEventListener('click', function(e){
+                        e && e.stopPropagation();
+                        try {
+                            if (typeof preferFn === 'function') {
+                                // try preferred handler first (e.g. openQuickProduct)
+                                try { preferFn(); return; } catch(err) { console.debug && console.debug('preferFn failed', err); }
+                            }
+                            if (panel) {
+                                if (panel.classList) panel.classList.toggle('active');
+                                if (asOverlay) {
+                                    // toggle inline display for overlays
+                                    try { panel.style.display = (panel.style.display === 'flex' || panel.classList.contains('active')) ? 'none' : 'flex'; } catch(e) { panel.style.display = panel.style.display === 'flex' ? 'none' : 'flex'; }
+                                }
+                            }
+                        } catch(err){ console.debug && console.debug('safeToggle click handler error', err); }
+                    });
+                };
+
+                safeToggle('smartSearchTrigger', 'smartSearchPanel');
+                safeToggle('productsTrigger', 'ssQuickProductOverlay', true, function(){ if (typeof openQuickProduct === 'function') { try { openQuickProduct(); } catch(e){ console.debug('openQuickProduct threw', e); throw e; } } else { throw new Error('openQuickProduct not defined'); } });
+                safeToggle('productsManagerTrigger', 'ssQuickProductOverlay', true, function(){
+                    try {
+                        // open quick modal and switch to manager tab
+                        if (typeof openQuickProduct === 'function') openQuickProduct();
+                        else { const qp = document.getElementById('ssQuickProductOverlay'); if (qp) { qp.style.display = 'flex'; qp.classList && qp.classList.add('active'); } }
+                        setTimeout(()=>{
+                            const btn = document.querySelector('.ss-tab[data-tab="manage"]'); if (btn) btn.click();
+                            try { pmSearchInput && pmSearchInput.focus(); } catch(e){}
+                        }, 80);
+                    } catch(e) { console.debug && console.debug('open pmManager (tab) failed', e); }
+                });
+                safeToggle('departmentsTrigger', 'departmentsPanel');
+                safeToggle('sectionsTrigger', 'sectionsPanel');
+                safeToggle('themeTrigger', 'themePanel');
+            } catch(e){ console.debug && console.debug('defensive FAB wiring failed', e); }
+        });
+    </script>
 @endauth
+    <script>
+        // Fallback delegado: garante que os FABs abram seus painéis mesmo que algum listener anterior não tenha sido registrado.
+        document.addEventListener('click', function(e){
+            try {
+                const map = [
+                    { btnId: 'departmentsTrigger', panelId: 'departmentsPanel' },
+                    { btnId: 'sectionsTrigger', panelId: 'sectionsPanel' },
+                    { btnId: 'themeTrigger', panelId: 'themePanel' },
+                    { btnId: 'smartSearchTrigger', panelId: 'smartSearchPanel' }
+                ];
+                for (const m of map) {
+                    const el = e.target.closest && e.target.closest('#' + m.btnId);
+                    if (!el) continue;
+                    e.stopPropagation(); e.preventDefault && e.preventDefault();
+                    const panel = document.getElementById(m.panelId);
+                    if (!panel) continue;
+                    if (panel.classList) panel.classList.toggle('active');
+                }
+            } catch(err) {
+                console.debug && console.debug('FAB fallback click handler error', err);
+            }
+        }, true);
+    </script>
