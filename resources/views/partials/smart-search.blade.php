@@ -221,58 +221,8 @@
 
         <!-- Botão de Tema (pincel) -->
         <button class="theme-trigger" id="themeTrigger" title="Cores do site">
-            function fetchBrands(){
-                const rawDept = detectDepartmentSlug() || 'eletronicos';
-                const dept = rawDept;
-                const targetUrl = `/admin/brands/list?department=${encodeURIComponent(dept)}`;
-
-                console.debug('fetchBrands: trying', targetUrl);
-
-                return fetch(targetUrl, { headers: { 'Accept': 'application/json' }})
-                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                    .then(data => {
-                        console.debug('fetchBrands response for', dept, data);
-                        // BrandController returns either an array of {id,name} or a plain array of strings.
-                        let bp = [];
-                        if (Array.isArray(data)) {
-                            if (data.length && typeof data[0] === 'object') {
-                                bp = data.map(b => (b.name || b.title || b.id || '').toString().trim()).filter(Boolean);
-                            } else {
-                                bp = data.map(b => (b ?? '').toString().trim()).filter(Boolean);
-                            }
-                        } else if (data && typeof data === 'object') {
-                            // support { brands: [...] } shape
-                            const arr = Array.isArray(data.brands) ? data.brands : Object.values(data.brands || {});
-                            bp = arr.map(b => (b && typeof b === 'object' ? (b.name || b.title || b.id) : b) ?? '').map(String).map(s => s.trim()).filter(Boolean);
-                        }
-
-                        availableBrands = bp;
-                        if (availableBrands && availableBrands.length) {
-                            populateBrandsSelect();
-                            return;
-                        }
-
-                        // Fallback: try global brands list without department
-                        return fetch('/admin/brands/list', { headers: { 'Accept': 'application/json' }})
-                            .then(r2 => { if (!r2.ok) throw new Error('HTTP ' + r2.status); return r2.json(); })
-                            .then(data2 => {
-                                let bp2 = [];
-                                if (Array.isArray(data2)) {
-                                    if (data2.length && typeof data2[0] === 'object') bp2 = data2.map(b => (b.name || b.title || b.id || '').toString().trim()).filter(Boolean);
-                                    else bp2 = data2.map(b => (b ?? '').toString().trim()).filter(Boolean);
-                                } else if (data2 && typeof data2 === 'object') {
-                                    const arr2 = Array.isArray(data2.brands) ? data2.brands : Object.values(data2.brands || {});
-                                    bp2 = arr2.map(b => (b && typeof b === 'object' ? (b.name || b.title || b.id) : b) ?? '').map(String).map(s => s.trim()).filter(Boolean);
-                                }
-                                availableBrands = bp2;
-                                populateBrandsSelect();
-                            })
-                            .catch(err => { console.error('fetchBrands fallback failed', err); availableBrands = []; populateBrandsSelect(); });
-                    })
-                    .catch(err => { console.error('fetchBrands error', err); availableBrands = []; populateBrandsSelect(); });
-            }
-                    </div>
-                </div>
+            <i class="bi bi-palette-fill"></i>
+        </button>
                 <div class="tp-fields">
                     <div class="tp-field" data-key="theme_primary">
                         <span class="tp-label">Primária</span>
