@@ -1,3 +1,164 @@
+@extends('admin.layouts.app')
+
+@section('content')
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3">
+            <div class="list-group">
+                <a href="#identity" class="list-group-item list-group-item-action active">Identidade Visual</a>
+                <a href="#general" class="list-group-item list-group-item-action">Configurações Gerais</a>
+                <a href="#integrations" class="list-group-item list-group-item-action">Integrações</a>
+            </div>
+        </div>
+        <div class="col-md-9">
+            <div id="settings-alert" style="display:none; margin-bottom:12px;"></div>
+
+            <div id="identity" class="card mb-3">
+                <div class="card-header">Identidade Visual</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Nome do site</label>
+                        <input type="text" id="site_name" class="form-control" value="{{ setting('site_name', config('app.name', 'Feira')) }}">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descrição (meta)</label>
+                        <textarea id="site_description" class="form-control" rows="3">{{ setting('site_description', '') }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Logo do site</label>
+                        <div class="d-flex align-items-center gap-3">
+                            @php $logo = setting('site_logo'); @endphp
+                            <img id="preview_site_logo" src="{{ $logo ? asset('storage/' . $logo) : asset('logo-ofc.svg') }}" alt="Logo" style="height:64px; object-fit:contain; background:#fff; padding:8px; border:1px solid #e9ecef;">
+                            <div>
+                                <button type="button" class="btn btn-secondary" id="openLogoModal">Substituir (abrir modal)</button>
+                                <div class="form-text">Também é possível alterar por departamento nas páginas de departamento.</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Favicon</label>
+                        <div class="d-flex gap-3 align-items-center">
+                            @php $favicon = setting('site_favicon'); @endphp
+                            <img id="preview_favicon" src="{{ $favicon ? asset('storage/' . $favicon) : asset('favicon_io/favicon-32x32.png') }}" alt="Favicon" style="height:48px; width:48px; object-fit:contain; background:#fff; padding:6px; border:1px solid #e9ecef;">
+                            <div>
+                                <input type="file" id="faviconInput" accept="image/*,.ico" class="form-control-file">
+                                <small class="form-text text-muted">Tamanhos recomendados: 32x32, 48x48. Tipos: png, ico, svg, webp.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button id="saveIdentity" class="btn btn-primary">Salvar Identidade</button>
+                        <button id="resetIdentity" class="btn btn-outline-secondary">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="general" class="card mb-3" style="display:none;">
+                <div class="card-header">Configurações Gerais</div>
+                <div class="card-body">
+                    <p>Outras configurações podem ser editadas aqui em breve.</p>
+                </div>
+            </div>
+
+            <div id="integrations" class="card mb-3" style="display:none;">
+                <div class="card-header">Integrações</div>
+                <div class="card-body">
+                    <p>OAuth e provedores aparecem aqui.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    // Tabs
+    document.querySelectorAll('.list-group a').forEach(function(a){
+        a.addEventListener('click', function(e){
+            e.preventDefault();
+            document.querySelectorAll('.list-group a').forEach(x=>x.classList.remove('active'));
+            a.classList.add('active');
+            document.querySelectorAll('#identity, #general, #integrations').forEach(s=>s.style.display='none');
+            const id = a.getAttribute('href').substring(1);
+            document.getElementById(id).style.display = '';
+        });
+    });
+
+    const csrftoken = '{{ csrf_token() }}';
+
+    // Open existing modal if available
+    document.getElementById('openLogoModal')?.addEventListener('click', function(){
+        const btn = document.getElementById('admin-logo-link');
+        if (btn) { btn.click(); }
+        else {
+            // fallback: show file picker to update logo inline
+            alert('Modal de logo não encontrado. Use o formulário de departamento ou carregue manualmente.');
+        }
+    });
+
+    // Save site name/description via PUT JSON
+    document.getElementById('saveIdentity').addEventListener('click', function(){
+        const payload = {
+            site_name: document.getElementById('site_name').value,
+            site_description: document.getElementById('site_description').value
+        };
+        fetch('{{ route('admin.settings.update') }}', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrftoken, 'Accept': 'application/json' },
+            body: JSON.stringify(payload),
+            credentials: 'same-origin'
+        }).then(r => r.json()).then(data => {
+            if (data && data.success) {
+                showAlert('Identidade salva.', 'success');
+                setTimeout(()=> location.reload(), 700);
+            } else {
+                showAlert(data.message || 'Erro ao salvar', 'danger');
+            }
+        }).catch(err => showAlert(err.message || 'Erro de rede', 'danger'));
+    });
+
+    function showAlert(msg, type){
+        const cont = document.getElementById('settings-alert');
+        cont.style.display = '';
+        cont.className = 'alert alert-' + (type === 'success' ? 'success' : (type === 'danger' ? 'danger' : 'secondary'));
+        cont.textContent = msg;
+        setTimeout(()=>{ cont.style.display = 'none'; }, 5000);
+    }
+
+    // Favicon upload
+    const favInput = document.getElementById('faviconInput');
+    favInput?.addEventListener('change', function(){
+        const file = this.files && this.files[0];
+        if (!file) return;
+        const fd = new FormData();
+        fd.append('favicon', file);
+        fetch('{{ route('admin.settings.upload-favicon') }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrftoken },
+            body: fd,
+            credentials: 'same-origin'
+        }).then(r => r.json()).then(data => {
+            if (data && data.success) {
+                const img = document.getElementById('preview_favicon');
+                img.src = data.url + '?_=' + Date.now();
+                showAlert('Favicon atualizado.', 'success');
+            } else if (data && data.errors) {
+                showAlert(Object.values(data.errors).flat().join('; '), 'danger');
+            } else {
+                showAlert(data.message || 'Erro ao enviar favicon', 'danger');
+            }
+        }).catch(e => showAlert('Erro de rede ao enviar favicon', 'danger'));
+    });
+});
+</script>
+@endpush
+
+@endsection
     @extends('admin.layouts.app')
 
 @section('title', 'Configurações')

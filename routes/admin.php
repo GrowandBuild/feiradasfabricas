@@ -124,6 +124,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
         // Upload da logo do site (via modal no painel)
         Route::post('settings/upload-logo', [SettingController::class, 'uploadLogo'])->name('settings.upload-logo');
+        // Upload do favicon do site (via painel)
+        Route::post('settings/upload-favicon', [SettingController::class, 'uploadFavicon'])->name('settings.upload-favicon');
         Route::post('settings/test-connection', [SettingController::class, 'testConnection'])->name('settings.test-connection');
     // Melhor Envio OAuth
     Route::get('settings/melhor-envio/authorize', [SettingController::class, 'melhorEnvioAuthorize'])->name('settings.melhor-envio.authorize');

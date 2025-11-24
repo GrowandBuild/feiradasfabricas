@@ -745,4 +745,37 @@ class SettingController extends Controller
             return response()->json([ 'success' => false, 'message' => 'Erro ao fazer upload da logo.' ], 500);
         }
     }
+
+    /**
+     * Upload do favicon do site via painel admin (chamada AJAX)
+     */
+    public function uploadFavicon(Request $request)
+    {
+        try {
+            $request->validate([
+                'favicon' => 'required|file|mimes:png,ico,svg,webp|dimensions:max_width=1024,max_height=1024|max:5120'
+            ]);
+
+            $file = $request->file('favicon');
+
+            $filename = 'site_favicon_' . time() . '.' . $file->getClientOriginalExtension();
+
+            // Armazenar em storage/app/public/site-logos (shared area)
+            $path = $file->storeAs('site-logos', $filename, 'public');
+
+            Setting::set('site_favicon', $path, 'string', 'general');
+
+            return response()->json([
+                'success' => true,
+                'path' => $path,
+                'url' => asset('storage/' . $path),
+                'message' => 'Favicon atualizado com sucesso.'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return response()->json([ 'success' => false, 'errors' => $ve->errors() ], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao fazer upload do favicon: ' . $e->getMessage());
+            return response()->json([ 'success' => false, 'message' => 'Erro ao fazer upload do favicon.' ], 500);
+        }
+    }
 }
