@@ -9,6 +9,21 @@
         return setting($key, $default);
     };
 @endphp
+@php
+    // Logo selection: department-specific logo -> site logo setting -> fallback asset
+    $deptLogo = $deptSlug ? \App\Models\Setting::get('dept_' . $deptSlug . '_logo') : null;
+    $siteLogoSetting = \App\Models\Setting::get('site_logo');
+    $logoSetting = $deptLogo ?: $siteLogoSetting;
+    if ($logoSetting) {
+        if (\Illuminate\Support\Str::startsWith($logoSetting, ['http', 'https'])) {
+            $logoUrl = $logoSetting;
+        } else {
+            $logoUrl = asset(\Illuminate\Support\Str::startsWith($logoSetting, 'storage/') ? $logoSetting : 'storage/' . $logoSetting);
+        }
+    } else {
+        $logoUrl = asset('logo-ofc.svg');
+    }
+@endphp
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -910,7 +925,7 @@
         <div class="container">
             <!-- Logo -->
             <a class="navbar-brand" href="{{ route('home') }}">
-                <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" class="logo-img">
+                <img src="{{ $logoUrl }}" alt="Feira das Fábricas" class="logo-img">
             </a>
 
             <!-- Navbar content (sempre aberto) -->
@@ -924,7 +939,7 @@
                 <div class="mobile-header">
                     <div class="mobile-top-bar">
                         <a class="mobile-logo" href="{{ route('home') }}">
-                            <img src="{{ asset('logo-ofc.svg') }}" alt="Feira das Fábricas" class="logo-img">
+                            <img src="{{ $logoUrl }}" alt="Feira das Fábricas" class="logo-img">
                         </a>
                         <button class="mobile-menu-button" type="button" aria-label="Abrir menu">
                             <i class="fas fa-bars"></i>

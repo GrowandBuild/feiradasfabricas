@@ -206,7 +206,22 @@ class DepartmentController extends Controller
         $data['slug'] = Str::slug($data['name']);
         $data['is_active'] = $request->has('is_active');
 
+        // Atualizar atributos básicos
         $department->update($data);
+
+        // Se veio arquivo de logo, validar e armazenar em storage/public/department-logos
+        if ($request->hasFile('logo')) {
+            $request->validate([
+                'logo' => 'image|mimes:png,jpg,jpeg,svg,webp|max:10240'
+            ]);
+
+            $file = $request->file('logo');
+            $filename = 'dept_logo_' . $department->slug . '_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('department-logos', $filename, 'public');
+
+            // Salvar via Setting para manter consistência com outras chaves por departamento
+            \App\Models\Setting::set('dept_' . $department->slug . '_logo', $path);
+        }
 
         return redirect()->route('admin.departments.index')
             ->with('success', 'Departamento atualizado com sucesso!');

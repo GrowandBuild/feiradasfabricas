@@ -16,7 +16,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('admin.departments.update', $department) }}" method="POST">
+                <form action="{{ route('admin.departments.update', $department) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
                     
@@ -64,6 +64,27 @@
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                                 <small class="form-text text-muted">Use classes do FontAwesome (ex: fas fa-tshirt, fas fa-laptop)</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="logo" class="form-label">Logo do Departamento</label>
+                                @php
+                                    $deptLogo = \App\Models\Setting::get('dept_' . $department->slug . '_logo');
+                                    $deptLogoUrl = $deptLogo ? (\Illuminate\Support\Str::startsWith($deptLogo, ['http','https']) ? $deptLogo : asset(\Illuminate\Support\Str::startsWith($deptLogo, 'storage/') ? $deptLogo : 'storage/' . $deptLogo)) : null;
+                                @endphp
+                                <input type="file" class="form-control" id="logo" name="logo" accept="image/*">
+                                @if($deptLogoUrl)
+                                    <div class="mt-2">
+                                        <small class="text-muted">Logo atual:</small>
+                                        <div class="mt-1"><img id="deptLogoPreview" src="{{ $deptLogoUrl }}" alt="Logo do departamento" style="max-width: 160px; max-height: 80px; object-fit: contain; border:1px solid #e2e8f0; padding:4px; background:#fff;"></div>
+                                    </div>
+                                @else
+                                    <div class="mt-2">
+                                        <small class="text-muted">Nenhuma logo definida</small>
+                                        <div class="mt-1"><img id="deptLogoPreview" src="{{ asset('images/no-image.svg') }}" alt="Sem logo" style="max-width: 160px; max-height: 80px; object-fit: contain; border:1px solid #e2e8f0; padding:4px; background:#fff;"></div>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                         <div class="col-md-6">
@@ -307,6 +328,17 @@ document.getElementById('restoreThemeColors').onclick = function() {
         document.getElementById('themeColorsMsg').innerHTML = 'Cores restauradas!';
     });
 };
+
+// Preview para logo do departamento
+document.getElementById('logo') && document.getElementById('logo').addEventListener('change', function(e){
+    const file = this.files && this.files[0];
+    const preview = document.getElementById('deptLogoPreview');
+    if (!preview) return;
+    if (!file) { preview.src = '{{ asset('images/no-image.svg') }}'; return; }
+    const reader = new FileReader();
+    reader.onload = function(ev){ preview.src = ev.target.result; };
+    reader.readAsDataURL(file);
+});
 </script>
 @endpush
 
