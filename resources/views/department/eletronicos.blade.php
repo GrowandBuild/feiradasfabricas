@@ -1230,52 +1230,6 @@
     @include('components.homepage_section_products', ['section' => $section])
 @endforeach
 
-@auth('admin')
-    @php
-        $deptId = $department->id ?? null;
-        $debugSections = \App\Models\HomepageSection::where(function($q) use ($deptId){
-            $q->whereNull('department_id');
-            if ($deptId) $q->orWhere('department_id', $deptId);
-        })->orderBy('position')->get();
-    @endphp
-
-    <div style="margin:18px auto; max-width:1100px;">
-        <div style="background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); padding:12px 16px; border-radius:8px; color: #fff; position: relative;">
-            <strong>DEBUG Admin: Homepage Sections (visível apenas para admins)</strong>
-            <div style="font-size:13px; margin-top:8px;">
-                @if($debugSections->isEmpty())
-                    <div style="color:#ffdede">Nenhuma sessão encontrada para este departamento (incluindo seções globais).</div>
-                @else
-                    <ul style="margin:6px 0 0 18px;">
-                        @foreach($debugSections as $s)
-                            @php $prods = $s->getProducts(); @endphp
-                            <li style="margin-bottom:6px;">
-                                <strong>#{{ $s->id }}:</strong> {{ $s->title }}
-                                <span style="color:#cbd5e1; font-weight:600; margin-left:8px;">(enabled: {{ $s->enabled ? 'yes' : 'no' }})</span>
-                                <div style="margin-left:8px; font-size:13px; color:#e6edf3">Produtos retornados: {{ $prods->count() }} -
-                                    <a href="{{ route('admin.homepage-sections.edit', $s) }}" style="color:#ffcc99; margin-left:8px;">Editar sessão</a>
-                                </div>
-                                @if($prods->count() > 0)
-                                    <ul style="margin:6px 0 0 14px; color:#dbeafe;">
-                                        @foreach($prods as $p)
-                                            <li>
-                                                [#{{ $p->id }}] {{ $p->name }} — active: {{ $p->is_active ? 'yes' : 'no' }}, in_stock: {{ $p->in_stock ? 'yes' : 'no' }}
-                                                <a href="{{ route('admin.products.edit', $p) }}" style="color:#99ffcc; margin-left:8px;">editar produto</a>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                @else
-                                    <div style="margin-left:8px; color:#ffdede">(nenhum produto retornado pela sessão)</div>
-                                @endif
-                            </li>
-                        @endforeach
-                    </ul>
-                @endif
-            </div>
-        </div>
-    </div>
-@endauth
-
 <!-- Selos de Marcas (Department Badges) -->
 @if($departmentBadges && $departmentBadges->count() > 0)
 <section class="section-elegant" style="padding: 30px 0; background: var(--elegant-white);">

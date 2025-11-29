@@ -23,6 +23,11 @@
     } else {
         $logoUrl = asset('logo-ofc.svg');
     }
+    // logo size settings (admin configurable)
+    $logoMaxHeight = \App\Models\Setting::get('site_logo_max_height');
+    $logoMaxWidth = \App\Models\Setting::get('site_logo_max_width');
+    // per-user override stored in session (px)
+    $userLogoSize = session('user_logo_size');
 @endphp
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -70,6 +75,25 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
+        /* Logo-size icon: hidden by default, revealed when hovering/focusing the logo for a discreet UI */
+        #logoSizeBtn { display: none; opacity: 0; transition: opacity .18s ease, transform .18s ease; transform: translateY(-2px); }
+        #adminLogoSizeBtn { display: none; opacity: 0; transition: opacity .18s ease, transform .18s ease; transform: translateY(-2px); }
+        /* Show when hovering or focusing the brand (desktop) */
+        .navbar-brand:hover + .navbar-content .header-icons #logoSizeBtn,
+        .navbar-brand:focus-within + .navbar-content .header-icons #logoSizeBtn,
+        .navbar-brand:hover #adminLogoSizeBtn,
+        .navbar-brand:focus-within #adminLogoSizeBtn {
+            display: inline-flex !important; opacity: 1; transform: translateY(0);
+        }
+        /* Mobile: show when hovering/tapping the mobile top-bar */
+        .mobile-top-bar:hover #mobileLogoSizeBtn,
+        .mobile-top-bar:focus-within #mobileLogoSizeBtn,
+        .mobile-top-bar:hover #adminMobileLogoSizeBtn,
+        .mobile-top-bar:focus-within #adminMobileLogoSizeBtn {
+            display: inline-flex !important; opacity: 1; transform: translateY(0);
+        }
+        /* Ensure header-icons layout doesn't collapse when hidden (keep spacing) */
+        .header-icons #logoSizeBtn { min-width: 36px; min-height: 36px; }
         
         :root {
             --primary-color: {{ $sessionTheme['theme_primary'] ?? $dept_setting('theme_primary', '#0f172a') }};
@@ -114,7 +138,8 @@
             }
 
             .logo-img {
-                height: 30px !important;
+                max-height: none;
+                height: auto;
             }
 
             /* Search bar smaller */
@@ -965,7 +990,12 @@
         <div class="container">
             <!-- Logo -->
             <a class="navbar-brand" href="{{ route('home') }}">
-                <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img">
+                <img id="siteLogoImage" src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="height:auto !important; width:auto !important; {{ ($userLogoSize ?? null) ? 'max-height:'.($userLogoSize).'px !important; max-width:'.($userLogoSize).'px !important;' : ($logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '') . ' ' . ($logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '') }}">
+                @auth('admin')
+                    <button id="adminLogoSizeBtn" title="Ajustar tamanho da logo (admin)" class="btn btn-sm" style="border:0;background:transparent;padding:6px;vertical-align:middle;margin-left:6px;color:var(--secondary-color);">
+                        <i class="bi bi-aspect-ratio" style="font-size:18px;color:inherit"></i>
+                    </button>
+                @endauth
             </a>
 
             <!-- Navbar content (sempre aberto) -->
@@ -979,8 +1009,18 @@
                 <div class="mobile-header">
                     <div class="mobile-top-bar">
                         <a class="mobile-logo" href="{{ route('home') }}">
-                            <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img">
+                            <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="{{ $logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '' }} {{ $logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '' }}">
                         </a>
+                        @if(!\Illuminate\Support\Facades\Auth::guard('admin')->check())
+                            <button id="mobileLogoSizeBtn" title="Ajustar tamanho da logo" class="btn btn-sm" style="border:0;background:transparent;padding:6px;vertical-align:middle;margin-left:6px;color:white;">
+                                <i class="bi bi-aspect-ratio" style="font-size:18px;color:inherit"></i>
+                            </button>
+                        @endif
+                        @auth('admin')
+                            <button id="adminMobileLogoSizeBtn" title="Ajustar tamanho da logo (admin)" class="btn btn-sm" style="border:0;background:transparent;padding:6px;vertical-align:middle;margin-left:6px;color:var(--secondary-color);">
+                                <i class="bi bi-aspect-ratio" style="font-size:18px;color:inherit"></i>
+                            </button>
+                        @endauth
                         <button class="mobile-menu-button" type="button" aria-label="Abrir menu">
                             <i class="fas fa-bars"></i>
                         </button>
@@ -1034,6 +1074,11 @@
                     <a href="#" class="header-icon" id="departmentsDropdownBtn" title="Departamentos" onclick="toggleDepartmentsDropdown(); return false;">
                         <i class="fas fa-th-large"></i>
                     </a>
+                    @if(!\Illuminate\Support\Facades\Auth::guard('admin')->check())
+                        <a href="#" class="header-icon" id="logoSizeBtn" title="Ajustar tamanho da logo">
+                            <i class="bi bi-aspect-ratio"></i>
+                        </a>
+                    @endif
                     <div id="departmentsDropdown" class="departments-dropdown" style="display:none;">
                         <div class="departments-dropdown-header">
                             <span>Departamentos</span>
@@ -1364,6 +1409,95 @@
         });
     </script>
     
+    <style>
+        .logo-size-picker{
+            position: absolute;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 8px 30px rgba(2,6,23,0.12);
+            padding: 6px;
+            border-radius: 8px;
+            z-index: 120000;
+            display: flex;
+            gap: 6px;
+            min-width: 220px;
+            align-items: center;
+        }
+        .logo-size-picker button{ padding:6px 10px; border-radius:6px; border:1px solid rgba(0,0,0,0.06); background:transparent; cursor:pointer }
+        .logo-size-picker button.active{ background:var(--secondary-color); color:#fff; border-color:transparent }
+    </style>
+
+    <script>
+        (function(){
+            var btns = document.querySelectorAll('#logoSizeBtn, #mobileLogoSizeBtn, #adminLogoSizeBtn, #adminMobileLogoSizeBtn');
+            var img = document.getElementById('siteLogoImage');
+            if(!btns || btns.length === 0 || !img) return;
+
+            var picker = document.createElement('div');
+            picker.className = 'logo-size-picker';
+            picker.style.display = 'none';
+            picker.innerHTML = `
+                <div style="font-weight:600;margin-right:6px;color:var(--text-dark)">Tamanho</div>
+                <button data-size="small">Pequena</button>
+                <button data-size="medium">Média</button>
+                <button data-size="large">Grande</button>
+                <button data-size="xlarge">Muito grande</button>
+            `;
+            document.body.appendChild(picker);
+
+            var activeTrigger = null;
+
+            function positionPicker(trigger){
+                if(!trigger) return;
+                var r = trigger.getBoundingClientRect();
+                var left = r.left + window.scrollX;
+                var top = r.bottom + 8 + window.scrollY;
+                if(left + picker.offsetWidth > window.innerWidth - 8){ left = window.innerWidth - picker.offsetWidth - 8; }
+                if(left < 8) left = 8;
+                picker.style.left = left + 'px';
+                picker.style.top = top + 'px';
+            }
+
+            function showPicker(trigger){ activeTrigger = trigger; positionPicker(trigger); picker.style.display = 'flex'; setTimeout(function(){ picker.classList.add('show'); }, 10); }
+            function hidePicker(){ activeTrigger = null; picker.style.display = 'none'; picker.classList.remove('show'); }
+
+            btns.forEach(function(b){ b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); if(picker.style.display === 'none' || activeTrigger !== b) showPicker(b); else hidePicker(); }); });
+
+            // click outside closes
+            document.addEventListener('click', function(e){ if(!picker.contains(e.target) && !Array.from(btns).some(function(bt){ return bt === e.target || bt.contains(e.target); })) hidePicker(); });
+            window.addEventListener('resize', function(){ if(picker.style.display !== 'none' && activeTrigger) positionPicker(activeTrigger); });
+
+            // Handle selection
+            picker.addEventListener('click', function(e){
+                var b = e.target.closest('button[data-size]');
+                if(!b) return;
+                var size = b.getAttribute('data-size');
+                var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                fetch('{{ route("logo.size") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ size: size })
+                }).then(function(r){ return r.json(); }).then(function(json){
+                    if(json && json.success && json.size){
+                        img.style.height = 'auto';
+                        img.style.width = 'auto';
+                        img.style.maxHeight = json.size + 'px';
+                        img.style.maxWidth = json.size + 'px';
+                        Array.from(picker.querySelectorAll('button[data-size]')).forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-size') === size); });
+                        setTimeout(hidePicker, 180);
+                    } else {
+                        alert((json && json.message) ? json.message : 'Erro ao ajustar tamanho');
+                    }
+                }).catch(function(err){ console.error('Erro logo.size', err); alert('Erro ao ajustar tamanho'); });
+            });
+        })();
+    </script>
+
     @yield('scripts')
     @stack('scripts')
     

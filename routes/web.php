@@ -209,3 +209,20 @@ Route::post('/shipping/quote-cart', [ShippingController::class, 'quoteCart'])->n
 Route::post('/shipping/select', [ShippingController::class, 'select'])->name('shipping.select');
 Route::get('/shipping/current', [ShippingController::class, 'current'])->name('shipping.current');
 Route::delete('/shipping/selection', [ShippingController::class, 'clear'])->name('shipping.clear');
+
+// Public endpoint to persist per-session logo size preference (small/medium/large/xlarge)
+use Illuminate\Http\Request;
+Route::post('/logo/size', function(Request $request) {
+    $size = $request->input('size');
+    $map = [
+        'small' => 24,
+        'medium' => 36,
+        'large' => 60,
+        'xlarge' => 100
+    ];
+    if (!array_key_exists($size, $map)) {
+        return response()->json(['success' => false, 'message' => 'Invalid size'], 422);
+    }
+    session(['user_logo_size' => $map[$size]]);
+    return response()->json(['success' => true, 'size' => $map[$size]]);
+})->name('logo.size');

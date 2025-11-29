@@ -24,7 +24,20 @@
                                 <button type="button" id="identityLogoUploadBtn" class="btn btn-sm btn-primary">Enviar</button>
                             </div>
                             <div class="mt-2">
-                                <img id="identityLogoPreview" src="{{ setting('site_logo') ? asset('storage/' . setting('site_logo')) : asset('logo-ofc.svg') }}" alt="Logo" style="max-height:48px;" />
+                                <img id="identityLogoPreview" src="{{ setting('site_logo') ? asset('storage/' . setting('site_logo')) : asset('logo-ofc.svg') }}" alt="Logo" style="{{ setting('site_logo_max_height') ? 'max-height:'.setting('site_logo_max_height').'px;' : '' }} {{ setting('site_logo_max_width') ? 'max-width:'.setting('site_logo_max_width').'px;' : '' }}" />
+                            </div>
+                            <div class="row mt-2 gx-2 gy-2">
+                                <div class="col-auto">
+                                    <label class="form-label small mb-1">Max Altura (px)</label>
+                                    <input type="number" min="0" id="identityLogoMaxHeight" class="form-control form-control-sm" value="{{ setting('site_logo_max_height', 48) }}">
+                                </div>
+                                <div class="col-auto">
+                                    <label class="form-label small mb-1">Max Largura (px)</label>
+                                    <input type="number" min="0" id="identityLogoMaxWidth" class="form-control form-control-sm" value="{{ setting('site_logo_max_width', '') }}">
+                                </div>
+                                <div class="col-auto align-self-end">
+                                    <button type="button" class="btn btn-sm btn-secondary" id="saveLogoSizeBtn">Salvar tamanho</button>
+                                </div>
                             </div>
                         </div>
 
@@ -259,6 +272,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 else showAlert(data.message || 'Erro ao enviar app icon.', 'danger');
             }).catch(err => { console.error(err); showAlert('Erro ao enviar app icon.', 'danger'); });
     });
+
+    // Logo size save handler
+    const saveLogoSizeBtn = document.getElementById('saveLogoSizeBtn');
+    const logoMaxH = document.getElementById('identityLogoMaxHeight');
+    const logoMaxW = document.getElementById('identityLogoMaxWidth');
+    if (saveLogoSizeBtn) {
+        saveLogoSizeBtn.addEventListener('click', function() {
+            const h = logoMaxH && logoMaxH.value ? parseInt(logoMaxH.value, 10) : null;
+            const w = logoMaxW && logoMaxW.value ? parseInt(logoMaxW.value, 10) : null;
+            const fd = new FormData();
+            fd.append('_token', token);
+            fd.append('_method', 'PUT');
+            if (h !== null) fd.append('site_logo_max_height', h);
+            if (w !== null && w !== '') fd.append('site_logo_max_width', w);
+
+            fetch('{{ route("admin.settings.update") }}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+                .then(r => r.json()).then(data => {
+                    if (data && data.success) {
+                        showAlert('Tamanho da logo salvo.', 'success');
+                        const logoPreview = document.getElementById('identityLogoPreview');
+                        if (logoPreview) {
+                            if (h) logoPreview.style.maxHeight = h + 'px'; else logoPreview.style.maxHeight = '';
+                            if (w) logoPreview.style.maxWidth = w + 'px'; else logoPreview.style.maxWidth = '';
+                        }
+                    } else {
+                        showAlert('Erro ao salvar tamanho.', 'danger');
+                    }
+                }).catch(err => { console.error(err); showAlert('Erro ao salvar tamanho.', 'danger'); });
+        });
+    }
 
     
 });
