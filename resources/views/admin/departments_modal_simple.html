@@ -1,0 +1,71 @@
+<!-- Modal Simples de Departamentos -->
+<div id="departmentsModalSimple" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.3); z-index:9999; justify-content:center; align-items:center;">
+  <div style="background:#fff; border-radius:8px; max-width:400px; width:100%; padding:2rem; box-shadow:0 8px 32px rgba(0,0,0,0.15); position:relative;">
+    <button id="closeDeptModal" style="position:absolute; top:12px; right:12px; background:none; border:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+    <h3 style="margin-bottom:1rem;">Departamentos</h3>
+    <div id="departmentsLoading" style="margin-bottom:1rem; color:#888;">Carregando...</div>
+    <ul id="departmentsList" style="list-style:none; padding:0; margin-bottom:1rem;"></ul>
+    <input id="newDeptName" type="text" placeholder="Nome do novo departamento" style="width:100%; margin-bottom:0.5rem; padding:0.5rem; border:1px solid #ddd; border-radius:4px;">
+    <button id="addDeptBtn" style="width:100%; background:#007bff; color:#fff; border:none; padding:0.7rem; border-radius:4px; font-weight:600; cursor:pointer;">Adicionar departamento</button>
+  </div>
+</div>
+<script>
+function showDepartmentsModal() {
+  document.getElementById('departmentsModalSimple').style.display = 'flex';
+  loadDepartments();
+}
+function hideDepartmentsModal() {
+  document.getElementById('departmentsModalSimple').style.display = 'none';
+}
+document.getElementById('closeDeptModal').onclick = hideDepartmentsModal;
+
+function loadDepartments() {
+  const loading = document.getElementById('departmentsLoading');
+  const list = document.getElementById('departmentsList');
+  loading.textContent = 'Carregando...';
+  list.innerHTML = '';
+  fetch('/admin/departments/json')
+    .then(r => r.json())
+    .then(depts => {
+      loading.style.display = 'none';
+      if (!depts.length) {
+        list.innerHTML = '<li class="text-muted">Nenhum departamento encontrado.</li>';
+        return;
+      }
+      depts.forEach(dept => {
+        const li = document.createElement('li');
+        li.textContent = dept.name + (dept.slug ? ` (${dept.slug})` : '');
+        li.style.padding = '0.5rem 0';
+        list.appendChild(li);
+      });
+    })
+    .catch(() => {
+      loading.textContent = 'Erro ao carregar departamentos.';
+    });
+}
+
+document.getElementById('addDeptBtn').onclick = function() {
+  const name = document.getElementById('newDeptName').value.trim();
+  if (!name) return alert('Digite o nome do departamento!');
+  fetch('/admin/departments', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+    },
+    body: JSON.stringify({ name })
+  })
+  .then(r => r.json())
+  .then(resp => {
+    if (resp.id || resp.success) {
+      document.getElementById('newDeptName').value = '';
+      loadDepartments();
+    } else {
+      alert('Erro ao adicionar departamento!');
+    }
+  })
+  .catch(() => alert('Erro ao adicionar departamento!'));
+};
+</script>
+<!-- Para abrir o modal, chame showDepartmentsModal() -->

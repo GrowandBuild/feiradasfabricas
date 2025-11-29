@@ -147,7 +147,8 @@ class ProductController extends Controller
     public function create()
     {
         $categories = Category::all();
-        return view('admin.products.create', compact('categories'));
+        $departments = Department::orderBy('name')->get(['id','name']);
+        return view('admin.products.create', compact('categories', 'departments'));
     }
 
     // brandsList removed
@@ -351,8 +352,9 @@ class ProductController extends Controller
     public function edit(Product $product)
     {
         $categories = Category::all();
+        $departments = Department::orderBy('name')->get(['id','name']);
         $productCategories = $product->categories->pluck('id')->toArray();
-        return view('admin.products.edit', compact('product', 'categories', 'productCategories'));
+        return view('admin.products.edit', compact('product', 'categories', 'productCategories', 'departments'));
     }
 
     public function update(Request $request, Product $product)

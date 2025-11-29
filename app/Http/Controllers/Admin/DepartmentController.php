@@ -3,55 +3,16 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 use App\Models\Department;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
 
 class DepartmentController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
-     */
     public function index()
     {
         $departments = Department::ordered()->paginate(10);
         return view('admin.departments.index', compact('departments'));
     }
-
-    /**
-     * Snapshot JSON para gerenciamento rápido de departamentos
-     */
-    public function inlineSnapshot()
-    {
-        $departments = Department::withCount(['products as active_products_count' => function ($query) {
-                $query->where('is_active', true);
-            }])
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get()
-            ->map(function ($department) {
-                return [
-                    'id' => $department->id,
-                    'name' => $department->name,
-                    'slug' => $department->slug,
-                    'icon' => $department->icon,
-                    'color' => $department->color,
-                    'description' => $department->description,
-                    'is_active' => $department->is_active,
-                    'products_count' => (int) $department->active_products_count,
-                    'sort_order' => $department->sort_order,
-                    'url' => route('department.index', $department->slug),
-                ];
-            });
-
-        return response()->json([
-            'success' => true,
-            'departments' => $departments,
-        ]);
-    }
+    // Adicione os outros métodos necessários aqui
 
     /**
      * Sincroniza alterações rápidas vindas do painel flutuante

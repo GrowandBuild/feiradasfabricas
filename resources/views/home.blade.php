@@ -556,61 +556,26 @@
         <p class="section-subtitle">
             Explore nossa ampla variedade de produtos organizados por departamentos especializados
         </p>
-        
+
         <div class="row">
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="department-card">
-                    <div class="department-image" style="background-image: url('{{ asset('images/eletronicos.jpg') }}'); background-size: cover; background-position: center;">
-                    </div>
-                    <div class="department-overlay">
-                        <h3 class="department-title">Eletrônicos</h3>
-                        <p class="department-description">
-                            Smartphones, tablets, notebooks, acessórios e muito mais tecnologia.
-                        </p>
-                        
-                        <a href="{{ route('department.index', 'eletronicos') }}" class="department-btn">
-                            <i class="fas fa-shopping-bag me-2"></i>
-                            Explorar Eletrônicos
-                        </a>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="department-card">
-                    <div class="department-image" style="background-image: url('{{ asset('images/vestuario feminino.jpg') }}'); background-size: cover; background-position: center;">
-                    </div>
-                    <div class="department-overlay">
-                        <h3 class="department-title">Vestuário Feminino</h3>
-                        <p class="department-description">
-                            Moda feminina com elegância e estilo. Roupas, calçados e acessórios exclusivos.
-                        </p>
-                        
-                        <a href="{{ route('department.index', 'vestuario-feminino') }}" class="department-btn">
-                            <i class="fas fa-shopping-bag me-2"></i>
-                            Explorar Feminino
-                        </a>
+            @foreach($departments as $department)
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="department-card">
+                        <div class="department-image" style="background-image: url('{{ asset($department->icon ?? 'images/no-image.svg') }}'); background-size: cover; background-position: center;">
+                        </div>
+                        <div class="department-overlay">
+                            <h3 class="department-title">{{ $department->name }}</h3>
+                            <p class="department-description">
+                                {{ $department->description ?? 'Produtos selecionados para você.' }}
+                            </p>
+                            <a href="{{ route('department.index', $department->slug) }}" class="department-btn">
+                                <i class="fas fa-shopping-bag me-2"></i>
+                                Explorar {{ $department->name }}
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <div class="col-lg-4 col-md-6 mb-4">
-                <div class="department-card">
-                    <div class="department-image" style="background-image: url('{{ asset('images/vestuario masculino.jpg') }}'); background-size: cover; background-position: center;">
-                    </div>
-                    <div class="department-overlay">
-                        <h3 class="department-title">Vestuário Masculino</h3>
-                        <p class="department-description">
-                            Estilo masculino com conforto e qualidade. Roupas, calçados e acessórios para o homem moderno.
-                        </p>
-                        
-                        <a href="{{ route('department.index', 'vestuario-masculino') }}" class="department-btn">
-                            <i class="fas fa-shopping-bag me-2"></i>
-                            Explorar Masculino
-                        </a>
-                    </div>
-                </div>
-            </div>
+            @endforeach
         </div>
     </div>
 </section>

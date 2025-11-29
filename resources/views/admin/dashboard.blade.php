@@ -1,3 +1,7 @@
+<!-- Modal de Departamentos Simples -->
+@include('admin.departments_modal_simple')
+
+<button onclick="showDepartmentsModal()" style="position:fixed;bottom:32px;right:32px;z-index:99999;background:#007bff;color:#fff;border:none;padding:1rem 1.5rem;border-radius:50px;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,0.12);cursor:pointer;">Departamentos</button>
 @extends('admin.layouts.app')
 
 @section('title', 'Dashboard')

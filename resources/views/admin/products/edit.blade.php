@@ -71,6 +71,22 @@
                         </div>
                     </div>
 
+                        <div class="mb-3">
+                            <label for="department_id" class="form-label">Departamento</label>
+                            <select class="form-select @error('department_id') is-invalid @enderror" id="department_id" name="department_id">
+                                <option value="">— Nenhum departamento selecionado —</option>
+                                @foreach($departments as $department)
+                                    <option value="{{ $department->id }}" {{ old('department_id', $product->department_id) == $department->id ? 'selected' : '' }}>
+                                        {{ $department->name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <small class="form-text text-muted">Selecione o departamento do produto (opcional)</small>
+                            @error('department_id')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                        </div>
+
                     <div class="mb-3">
                         <label for="description" class="form-label">
                             <i class="bi bi-file-text me-1"></i>Descrição *

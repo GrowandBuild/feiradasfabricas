@@ -43,211 +43,7 @@
         height: 100%;
         background-size: cover;
         background-position: center;
-        background-repeat: no-repeat;
-        position: relative;
-    }
-
-    .hero-default-bg {
-        background: linear-gradient(135deg, var(--elegant-dark) 0%, var(--elegant-blue) 50%, var(--elegant-light) 100%);
-    }
-
-    .hero-banner-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 41, 59, 0.5) 50%, rgba(51, 65, 85, 0.3) 100%);
-        display: flex;
-        align-items: center;
-    }
-
-    .hero-banner-overlay.no-overlay {
-        background: none !important;
-    }
-
-    .hero-content-row {
-        height: 50vh;
-        min-height: 350px;
-    }
-
-    .hero-banner-content {
-        color: white;
-        z-index: 2;
-        position: relative;
-    }
-
-    .hero-banner-title {
-        font-size: 2.2rem;
-        font-weight: 800;
-        margin-bottom: 0.8rem;
-        line-height: 1.1;
-        background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        @php
-            // Show global sections and sections specific to this department
-            $deptId = $department->id ?? null;
-            $homepageSections = \App\Models\HomepageSection::where('enabled', true)
-                ->where(function($q) use ($deptId) {
-                    $q->whereNull('department_id');
-                    if ($deptId) {
-                        $q->orWhere('department_id', $deptId);
-                    }
-                })
-                ->orderBy('position')
-                ->get();
-        @endphp
-
-        @foreach($homepageSections as $section)
-            @include('components.homepage_section_products', ['section' => $section])
-        @endforeach
-
-        <!-- Produtos em Destaque -->
-        @if($featuredProducts && $featuredProducts->count() > 0)
-        <section class="section-gray">
-            <div class="container">
-                <h2 class="section-title">Produtos em Destaque</h2>
-                <p class="section-subtitle">
-                    Seleção especial de produtos premium para seu negócio
-                </p>
-                <!-- Carrossel de Produtos -->
-                <div id="productsCarousel" class="carousel slide" data-bs-ride="carousel">
-                    <div class="carousel-inner">
-                        @php
-                            $products = $featuredProducts->take(12);
-                            $chunks = $products->chunk(4);
-                        @endphp
-                        @foreach($chunks as $index => $chunk)
-                            <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
-                                <div class="row">
-                                    @foreach($chunk as $product)
-                                        <div class="col-lg-3 col-md-6 col-6 mb-2">
-                                            <div class="product-card" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
-                                                <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
-                                                    @if($product->first_image)
-                                                        <img src="{{ $product->first_image }}" 
-                                                             alt="{{ $product->name }}"
-                                                             class="@auth('admin') js-change-image @endauth"
-                                                             @auth('admin') data-product-id="{{ $product->id }}" @endauth
-                                                             onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                                                    @else
-                                                        <img src="{{ asset('images/no-image.svg') }}" 
-                                                             alt="{{ $product->name }}"
-                                                             class="@auth('admin') js-change-image @endauth"
-                                                             @auth('admin') data-product-id="{{ $product->id }}" @endauth>
-                                                    @endif
-                                                    @if($product->is_featured)
-                                                        <div class="product-badge">Destaque</div>
-                                                    @endif
-                                                </div>
-                                                <div class="product-info">
-                                                    <h6 class="product-title">{{ $product->name }}</h6>
-                                                    <div class="product-price">
-                                                        R$ {{ number_format($product->price, 2, ',', '.') }}
-                                                        @if($product->b2b_price)
-                                                            <small class="text-muted d-block">B2B: R$ {{ number_format($product->b2b_price, 2, ',', '.') }}</small>
-                                                        @endif
-                                                    </div>
-                                                    <div class="d-flex gap-2">
-                                                        <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
-                                                            <i class="fas fa-shopping-cart me-2"></i>
-                                                            Ver Detalhes
-                                                        </a>
-                                                        @auth('admin')
-                                                            <a href="{{ route('admin.products.edit', $product) }}" 
-                                                               class="btn btn-outline-primary btn-sm" 
-                                                               title="Editar Produto"
-                                                               style="flex-shrink: 0; min-width: 44px;">
-                                                                <i class="fas fa-edit"></i>
-                                                            </a>
-                                                        @endauth
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                </div>
-                            </div>
-                        @endforeach
-                    </div>
-            
-                    <!-- Controles do Carrossel -->
-                    @if($chunks->count() > 1)
-                        <button class="carousel-control-prev" type="button" data-bs-target="#productsCarousel" data-bs-slide="prev">
-                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Anterior</span>
-                        </button>
-                        <button class="carousel-control-next" type="button" data-bs-target="#productsCarousel" data-bs-slide="next">
-                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                            <span class="visually-hidden">Próximo</span>
-                        </button>
-                
-                        <!-- Indicadores -->
-                        <div class="carousel-indicators">
-                            @foreach($chunks as $index => $chunk)
-                                <button type="button" data-bs-target="#productsCarousel" data-bs-slide-to="{{ $index }}" 
-                                        class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
-                                        aria-label="Slide {{ $index + 1 }}"></button>
-                            @endforeach
-                        </div>
-                    @endif
-                </div>
-            </div>
-        </section>
-
-        <!-- Botão Ver Todos os Produtos -->
-        <section class="section-elegant" style="padding: 20px 0;">
-            <div class="container">
-                <div class="text-center">
-                    <a href="{{ route('products') }}" class="btn elegant-btn">
-                        Ver Todos os Produtos
-                        <i class="fas fa-arrow-right ms-2"></i>
-                    </a>
-                </div>
-            </div>
-        </section>
-        @endif
-        .hero-banner-title {
-            font-size: 2rem;
-        }
-        
-        .hero-banner-subtitle {
-            font-size: 1rem;
-        }
-        
-        .hero-btn-primary,
-        .hero-btn-secondary {
-            padding: 12px 25px;
-            font-size: 1rem;
-        }
-        
-        .hero-control-prev,
-        .hero-control-next {
-            width: 40px;
-            height: 40px;
-        }
-        
-        .hero-control-prev {
-            left: 10px;
-        }
-        
-        .hero-control-next {
-            right: 10px;
-        }
-    }
-
-    .elegant-btn {
-        background: linear-gradient(135deg, var(--elegant-accent) 0%, color-mix(in srgb, var(--elegant-accent), white 12%) 100%);
-        color: white;
-        border: none;
-        padding: 15px 35px;
-        font-size: 1.1rem;
-        font-weight: 600;
-        border-radius: 50px;
-        transition: all 0.3s ease;
-        box-shadow: 0 8px 25px color-mix(in srgb, var(--elegant-accent), transparent 70%);
+        /* end of hero-banner-title styles */
     }
 
     .elegant-btn:hover {
@@ -280,6 +76,41 @@
         background: var(--elegant-white);
         padding: 80px 0;
         position: relative;
+    }
+
+    /* Default hero background + overlay (ensure default banner visible) */
+    .hero-default-bg {
+        background: linear-gradient(135deg, var(--elegant-dark) 0%, var(--elegant-blue) 50%, var(--elegant-light) 100%);
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+    }
+
+    .hero-banner-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(135deg, rgba(15,23,42,0.7) 0%, rgba(30,41,59,0.5) 50%, rgba(51,65,85,0.3) 100%);
+        display: flex;
+        align-items: center;
+    }
+
+    .hero-content-row { height: 50vh; min-height: 350px; }
+
+    .hero-banner-content { color: white; z-index: 2; position: relative; }
+
+    .hero-banner-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        margin-bottom: 0.8rem;
+        line-height: 1.1;
+        background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: 0 4px 8px rgba(0,0,0,0.3);
     }
 
     .banner-card {
@@ -1380,6 +1211,70 @@
         </div>
     @endif
 </div>
+
+@php
+    // Show global sections and sections specific to this department
+    $deptId = $department->id ?? null;
+    $homepageSections = \App\Models\HomepageSection::where('enabled', true)
+        ->where(function($q) use ($deptId) {
+            $q->whereNull('department_id');
+            if ($deptId) {
+                $q->orWhere('department_id', $deptId);
+            }
+        })
+        ->orderBy('position')
+        ->get();
+@endphp
+
+@foreach($homepageSections as $section)
+    @include('components.homepage_section_products', ['section' => $section])
+@endforeach
+
+@auth('admin')
+    @php
+        $deptId = $department->id ?? null;
+        $debugSections = \App\Models\HomepageSection::where(function($q) use ($deptId){
+            $q->whereNull('department_id');
+            if ($deptId) $q->orWhere('department_id', $deptId);
+        })->orderBy('position')->get();
+    @endphp
+
+    <div style="margin:18px auto; max-width:1100px;">
+        <div style="background: rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.04); padding:12px 16px; border-radius:8px; color: #fff; position: relative;">
+            <strong>DEBUG Admin: Homepage Sections (visível apenas para admins)</strong>
+            <div style="font-size:13px; margin-top:8px;">
+                @if($debugSections->isEmpty())
+                    <div style="color:#ffdede">Nenhuma sessão encontrada para este departamento (incluindo seções globais).</div>
+                @else
+                    <ul style="margin:6px 0 0 18px;">
+                        @foreach($debugSections as $s)
+                            @php $prods = $s->getProducts(); @endphp
+                            <li style="margin-bottom:6px;">
+                                <strong>#{{ $s->id }}:</strong> {{ $s->title }}
+                                <span style="color:#cbd5e1; font-weight:600; margin-left:8px;">(enabled: {{ $s->enabled ? 'yes' : 'no' }})</span>
+                                <div style="margin-left:8px; font-size:13px; color:#e6edf3">Produtos retornados: {{ $prods->count() }} -
+                                    <a href="{{ route('admin.homepage-sections.edit', $s) }}" style="color:#ffcc99; margin-left:8px;">Editar sessão</a>
+                                </div>
+                                @if($prods->count() > 0)
+                                    <ul style="margin:6px 0 0 14px; color:#dbeafe;">
+                                        @foreach($prods as $p)
+                                            <li>
+                                                [#{{ $p->id }}] {{ $p->name }} — active: {{ $p->is_active ? 'yes' : 'no' }}, in_stock: {{ $p->in_stock ? 'yes' : 'no' }}
+                                                <a href="{{ route('admin.products.edit', $p) }}" style="color:#99ffcc; margin-left:8px;">editar produto</a>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                @else
+                                    <div style="margin-left:8px; color:#ffdede">(nenhum produto retornado pela sessão)</div>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
+        </div>
+    </div>
+@endauth
 
 <!-- Selos de Marcas (Department Badges) -->
 @if($departmentBadges && $departmentBadges->count() > 0)

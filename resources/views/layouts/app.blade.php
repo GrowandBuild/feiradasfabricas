@@ -161,10 +161,6 @@
                 height: 140px !important; /* was 160px */
             }
 
-            .product-title {
-                font-size: 0.85rem !important;
-            }
-
             .product-price {
                 font-size: 1rem !important;
             }
@@ -990,7 +986,11 @@
                         </button>
                     </div>
                     <div class="mobile-search-wrapper">
-                        @include('components.live-search')
+                        {{-- mobile search uses the same component but to avoid duplicate visible search bars
+                             when desktop layout is active we keep the mobile instance inert. If you want
+                             the mobile search back for small screens, I can re-enable with proper
+                             responsive rules. --}}
+                        {{-- @include('components.live-search') --}}
                     </div>
                     <div class="mobile-quick-actions">
                         <a href="{{ route('home') }}" class="quick-action" title="Início">
@@ -1030,6 +1030,36 @@
 
                 <!-- Header Icons -->
                 <div class="header-icons ms-auto">
+                    <!-- Ícone de Departamentos -->
+                    <a href="#" class="header-icon" id="departmentsDropdownBtn" title="Departamentos" onclick="toggleDepartmentsDropdown(); return false;">
+                        <i class="fas fa-th-large"></i>
+                    </a>
+                    <div id="departmentsDropdown" class="departments-dropdown" style="display:none;">
+                        <div class="departments-dropdown-header">
+                            <span>Departamentos</span>
+                            <button type="button" class="departments-dropdown-close" onclick="toggleDepartmentsDropdown()">&times;</button>
+                        </div>
+                        <ul class="departments-dropdown-list">
+                            @foreach(\App\Models\Department::where('is_active', true)->orderBy('sort_order')->get() as $department)
+                                <li>
+                                    <a href="/departamento/{{ $department->slug }}" class="departments-dropdown-link" data-id="{{ $department->id }}" data-slug="{{ $department->slug }}">
+                                        @if($department->icon)
+                                            <img src="{{ asset($department->icon) }}" alt="{{ $department->name }}" class="departments-dropdown-icon" />
+                                        @endif
+                                        <span>{{ $department->name }}</span>
+                                    </a>
+                                </li>
+                            @endforeach
+                        </ul>
+                        @auth('admin')
+                        <div class="departments-dropdown-footer" style="padding-top:.5rem;border-top:1px solid rgba(0,0,0,0.04);margin-top:.6rem;">
+                            <a href="/admin/departments" class="departments-dropdown-manage" style="display:flex;align-items:center;gap:.6rem;text-decoration:none;color:var(--secondary-color);font-weight:600;">
+                                <i class="fas fa-cog" style="font-size:1rem;color:inherit"></i>
+                                <span>Gerenciar departamentos</span>
+                            </a>
+                        </div>
+                        @endauth
+                    </div>
                     <a href="#" class="header-icon" title="Loja">
                         <i class="fas fa-store"></i>
                     </a>
@@ -1118,6 +1148,140 @@
             </div>
         </div>
     </nav>
+    <script>
+    (function(){
+        var dropdown = document.getElementById('departmentsDropdown');
+        var btn = document.getElementById('departmentsDropdownBtn');
+
+        function isVisible(el){ return el && el.style && el.style.display === 'block'; }
+
+        function applyModalMode(enabled){
+            if(!dropdown) return;
+            if(enabled){
+                dropdown.classList.add('departments-dropdown--modal');
+                document.documentElement.classList.add('no-scroll');
+                document.body.classList.add('no-scroll');
+            } else {
+                dropdown.classList.remove('departments-dropdown--modal');
+                document.documentElement.classList.remove('no-scroll');
+                document.body.classList.remove('no-scroll');
+            }
+        }
+
+        function positionDropdown(){
+            if(!dropdown || !btn) return;
+            var small = window.innerWidth <= 768;
+            applyModalMode(small);
+            if(small){
+                // full-screen modal mode handled in CSS
+                dropdown.style.left = '';
+                dropdown.style.top = '';
+                return;
+            }
+
+            var rect = btn.getBoundingClientRect();
+            var ddW = dropdown.offsetWidth || 300;
+            var ddH = dropdown.offsetHeight || 200;
+            var left = rect.right - ddW;
+            if(left + ddW > window.innerWidth - 8) left = window.innerWidth - ddW - 8;
+            if(left < 8) left = 8;
+            var top = rect.bottom + 8;
+            if((top + ddH) > window.innerHeight - 8){
+                top = rect.top - ddH - 8;
+                if(top < 8) top = 8;
+            }
+            dropdown.style.left = left + 'px';
+            dropdown.style.top = top + 'px';
+        }
+
+        window.toggleDepartmentsDropdown = function(){
+            if(!dropdown) return;
+            if(isVisible(dropdown)){
+                dropdown.classList.remove('departments-dropdown--show');
+                setTimeout(function(){ dropdown.style.display = 'none'; applyModalMode(false); }, 220);
+            } else {
+                dropdown.style.display = 'block';
+                setTimeout(function(){ positionDropdown(); dropdown.classList.add('departments-dropdown--show'); }, 10);
+            }
+        };
+
+        // Fecha dropdown ao clicar fora
+        document.addEventListener('click', function(e){
+            if(!dropdown) return;
+            var target = e.target;
+            if(target === btn || btn.contains(target)) return; // clicked button
+            if(dropdown.contains(target)) return; // clicked inside
+            if(isVisible(dropdown)){
+                dropdown.classList.remove('departments-dropdown--show');
+                setTimeout(function(){ dropdown.style.display = 'none'; applyModalMode(false); }, 220);
+            }
+        });
+
+        // Close on Esc
+        document.addEventListener('keydown', function(e){ if(e.key === 'Escape' || e.key === 'Esc'){ if(isVisible(dropdown)){ window.toggleDepartmentsDropdown(); } } });
+
+        // Reposicionar ao redimensionar/scrollar
+        window.addEventListener('resize', function(){ if(isVisible(dropdown)) positionDropdown(); });
+        window.addEventListener('scroll', function(){ if(isVisible(dropdown)) positionDropdown(); }, true);
+
+        // Dispatch a global event when a department is clicked so other components can react
+        document.addEventListener('click', function(e){
+            var a = e.target.closest && e.target.closest('.departments-dropdown-link');
+            if(!a) return;
+            try {
+                var id = a.getAttribute('data-id') || '';
+                var slug = a.getAttribute('data-slug') || '';
+                var name = (a.querySelector('span') ? a.querySelector('span').textContent.trim() : a.textContent.trim()) || '';
+                window.dispatchEvent(new CustomEvent('department:selected', { detail: { id: id, slug: slug, name: name } }));
+            } catch(err){ console.debug && console.debug('department link click dispatch failed', err); }
+        });
+    })();
+    </script>
+    <style>
+    .departments-dropdown {
+        position: fixed;
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 6px 40px rgba(2,6,23,0.12);
+        min-width: 260px;
+        max-width: calc(100vw - 32px);
+        z-index: 99999;
+        padding: 0.8rem 0.9rem;
+        border: 1px solid rgba(0,0,0,0.06);
+        transition: opacity .22s cubic-bezier(.2,.9,.2,1), transform .22s cubic-bezier(.2,.9,.2,1);
+        opacity: 0;
+        transform-origin: top right;
+        transform: translateY(-8px) scale(0.98);
+        will-change: transform, opacity, left, top;
+        overflow: hidden;
+    }
+    .departments-dropdown--show{ opacity: 1; transform: translateY(0) scale(1); }
+    .departments-dropdown--modal{
+        left: 0 !important;
+        top: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw;
+        border-radius: 0 !important;
+        padding: 1.2rem;
+        overflow-y: auto;
+        transform-origin: center center;
+        display: block !important;
+    }
+    html.no-scroll, body.no-scroll { overflow: hidden; }
+    .departments-dropdown-header{ padding-bottom: .6rem; display:flex; align-items:center; justify-content:space-between; }
+    .departments-dropdown-close{ background:none; border:none; font-size:1.28rem; color:#666; cursor:pointer; }
+    .departments-dropdown-list{ list-style:none; margin:0; padding:0; }
+    .departments-dropdown-list li{ margin-bottom: .45rem; }
+    .departments-dropdown-link{ display:flex; align-items:center; text-decoration:none; color:#333; padding: .28rem .2rem; border-radius:6px; transition: background .12s; }
+    .departments-dropdown-link:hover{ background:#f5f7fb; color:var(--secondary-color); }
+    .departments-dropdown-icon{ width:28px; height:28px; object-fit:cover; margin-right:.7rem; border-radius:6px; background:#f3f4f6; }
+    @media (max-width: 768px){
+        .departments-dropdown{ border-radius:0; padding:1rem; }
+    }
+    </style>
 
     <!-- Main Content -->
     <main>
@@ -1471,7 +1635,7 @@
         </script>
 
         {{-- Busca Inteligente Flutuante para Admin (global) --}}
-        @include('partials.smart-search')
+            @include('partials.smart-search')
         
         @auth('admin')
             {{-- Include banner edit modal globally for admins so they can edit from front-end view --}}

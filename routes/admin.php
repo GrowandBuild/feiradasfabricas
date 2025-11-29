@@ -33,6 +33,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     // Rotas protegidas
     Route::middleware('auth:admin')->group(function () {
+        // Teste de controller
+        Route::get('test-department', [App\Http\Controllers\Admin\TestDepartmentController::class, 'index']);
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
 

@@ -1,4 +1,7 @@
- <?php
+<?php
+
+// Endpoint para retornar departamentos em JSON para o modal
+Route::get('/admin/departments/json', [App\Http\Controllers\Admin\DepartmentController::class, 'jsonList'])->name('admin.departments.json');
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;

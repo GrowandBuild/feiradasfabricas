@@ -487,7 +487,7 @@
                         <div style="display:flex; gap:8px; align-items:center; position:relative;">
                             <div style="position:relative; width:100%;">
                                 <div class="qp-dept-swatch" id="qpDeptSwatch" title="Departamento" style="display:none;"></div>
-                                <input id="qpDeptCombo" class="form-control qp-dept-combobox" type="text" placeholder="Selecione o departamento..." aria-label="Selecionar departamento" autocomplete="off" role="combobox" aria-haspopup="listbox" aria-expanded="false" aria-controls="qpDeptList" />
+                                <input id="qpDeptCombo" class="form-control qp-dept-combobox" type="text" placeholder="Abrir lista de departamentos..." aria-label="Selecionar departamento" autocomplete="off" role="button" readonly onclick="toggleDepartmentsDropdown(); return false;" />
                                 <div id="qpDeptList" class="qp-dept-list" style="display:none; position:absolute; left:0; right:0; z-index:40;" role="listbox"></div>
                             </div>
                             <select id="qpDepartment" name="department_id" class="form-select qp-dept-select visually-hidden" aria-hidden="true" style="display:none;">
@@ -3618,6 +3618,37 @@
                 safeToggle('sectionsTrigger', 'sectionsPanel');
                 safeToggle('themeTrigger', 'themePanel');
             } catch(e){ console.debug && console.debug('defensive FAB wiring failed', e); }
+        });
+    </script>
+    </script>
+    <script>
+        // When header dropdown dispatches department:selected, update quick-create / smart-search department selection
+        window.addEventListener('department:selected', function(e){
+            try {
+                var detail = (e && e.detail) ? e.detail : {};
+                var id = detail.id || detail.slug || '';
+                var name = detail.name || '';
+                var color = detail.color || '';
+
+                // If the panel has a select element, set its value and trigger change
+                var deptSel = document.getElementById('qpDepartment');
+                if (deptSel) {
+                    try { deptSel.value = id || ''; } catch(err){}
+                    try { deptSel.dispatchEvent(new Event('change', { bubbles: true })); } catch(err){}
+                }
+
+                // Update the visible combo/input used as trigger
+                var combo = document.getElementById('qpDeptCombo');
+                if (combo) {
+                    try { combo.value = name || id || ''; } catch(err){}
+                }
+
+                // If the quick-create specific selectDept function exists, call it to keep internal state
+                try { if (typeof selectDept === 'function') selectDept(id, name, color); } catch(err){}
+
+                // Try to load department attributes for the selected department
+                try { if (typeof loadDeptAttributes === 'function') loadDeptAttributes(id); } catch(err){}
+            } catch(err) { console.debug && console.debug('department:selected handler error', err); }
         });
     </script>
 @endauth
