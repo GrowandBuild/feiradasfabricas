@@ -1009,7 +1009,7 @@
                 <div class="mobile-header">
                     <div class="mobile-top-bar">
                         <a class="mobile-logo" href="{{ route('home') }}">
-                            <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="{{ $logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '' }} {{ $logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '' }}">
+                            <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="height:auto !important; width:auto !important; {{ ($userLogoSize ?? null) ? 'max-height:'.($userLogoSize).'px !important; max-width:'.($userLogoSize).'px !important;' : ($logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '') . ' ' . ($logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '') }}">
                         </a>
                         @if(!\Illuminate\Support\Facades\Auth::guard('admin')->check())
                             <button id="mobileLogoSizeBtn" title="Ajustar tamanho da logo" class="btn btn-sm" style="border:0;background:transparent;padding:6px;vertical-align:middle;margin-left:6px;color:white;">
@@ -1415,33 +1415,54 @@
             background: #fff;
             border: 1px solid rgba(0,0,0,0.08);
             box-shadow: 0 8px 30px rgba(2,6,23,0.12);
-            padding: 6px;
+            padding: 8px 10px;
             border-radius: 8px;
             z-index: 120000;
             display: flex;
-            gap: 6px;
+            gap: 8px;
             min-width: 220px;
+            max-width: 420px;
             align-items: center;
+            justify-content: flex-start;
+            flex-wrap: wrap;
         }
-        .logo-size-picker button{ padding:6px 10px; border-radius:6px; border:1px solid rgba(0,0,0,0.06); background:transparent; cursor:pointer }
+        .logo-size-picker button{ padding:8px 12px; border-radius:6px; border:1px solid rgba(0,0,0,0.06); background:transparent; cursor:pointer; white-space:nowrap }
         .logo-size-picker button.active{ background:var(--secondary-color); color:#fff; border-color:transparent }
+        /* smaller buttons on very small screens */
+        @media (max-width: 420px){
+            .logo-size-picker{ gap:6px; padding:8px; min-width: 160px; max-width: 92vw; }
+            .logo-size-picker button{ flex: 1 1 48%; padding:8px; box-sizing: border-box; }
+        }
+        /* center the picker on mobile and pin below the top bar for better accessibility */
+        @media (max-width: 768px){
+            .logo-size-picker{ position: fixed !important; left: 50% !important; transform: translateX(-50%); top: 56px !important; max-width: calc(100vw - 32px); }
+        }
     </style>
 
     <script>
         (function(){
             var btns = document.querySelectorAll('#logoSizeBtn, #mobileLogoSizeBtn, #adminLogoSizeBtn, #adminMobileLogoSizeBtn');
-            var img = document.getElementById('siteLogoImage');
-            if(!btns || btns.length === 0 || !img) return;
+            var imgs = document.querySelectorAll('#siteLogoImage, .mobile-logo img.logo-img');
+            if(!btns || btns.length === 0 || !imgs || imgs.length === 0) return;
 
             var picker = document.createElement('div');
             picker.className = 'logo-size-picker';
             picker.style.display = 'none';
+            picker.setAttribute('role', 'dialog');
+            picker.setAttribute('aria-modal', 'true');
+            picker.setAttribute('aria-hidden', 'true');
+            picker.tabIndex = -1;
             picker.innerHTML = `
-                <div style="font-weight:600;margin-right:6px;color:var(--text-dark)">Tamanho</div>
-                <button data-size="small">Pequena</button>
-                <button data-size="medium">Média</button>
-                <button data-size="large">Grande</button>
-                <button data-size="xlarge">Muito grande</button>
+                <div class="logo-size-picker-header" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding-bottom:6px;">
+                    <div style="font-weight:600;color:var(--text-dark)">Tamanho</div>
+                    <button type="button" class="logo-size-picker-close" aria-label="Fechar seletor" style="background:none;border:none;font-size:18px;cursor:pointer;color:inherit">&times;</button>
+                </div>
+                <div class="logo-size-picker-body" style="display:flex;gap:8px;flex-wrap:wrap;">
+                    <button data-size="small">Pequena</button>
+                    <button data-size="medium">Média</button>
+                    <button data-size="large">Grande</button>
+                    <button data-size="xlarge">Muito grande</button>
+                </div>
             `;
             document.body.appendChild(picker);
 
@@ -1450,16 +1471,51 @@
             function positionPicker(trigger){
                 if(!trigger) return;
                 var r = trigger.getBoundingClientRect();
+                var small = window.innerWidth <= 768;
+                if(small){
+                    // on small screens we center and pin near the top for visibility
+                    picker.style.left = '';
+                    picker.style.right = '';
+                    picker.style.transform = 'translateX(-50%)';
+                    var top = (r.bottom + 8 + window.scrollY);
+                    // clamp to not go under the header too much
+                    if(top < 44) top = 56;
+                    picker.style.top = top + 'px';
+                    picker.style.left = (window.innerWidth/2 + window.scrollX) + 'px';
+                    return;
+                }
                 var left = r.left + window.scrollX;
                 var top = r.bottom + 8 + window.scrollY;
                 if(left + picker.offsetWidth > window.innerWidth - 8){ left = window.innerWidth - picker.offsetWidth - 8; }
                 if(left < 8) left = 8;
                 picker.style.left = left + 'px';
                 picker.style.top = top + 'px';
+                picker.style.transform = '';
             }
 
-            function showPicker(trigger){ activeTrigger = trigger; positionPicker(trigger); picker.style.display = 'flex'; setTimeout(function(){ picker.classList.add('show'); }, 10); }
-            function hidePicker(){ activeTrigger = null; picker.style.display = 'none'; picker.classList.remove('show'); }
+            function showPicker(trigger){
+                activeTrigger = trigger;
+                positionPicker(trigger);
+                // aria + no-scroll handling for mobile (when picker is fixed)
+                var small = window.innerWidth <= 768;
+                if(small){
+                    document.documentElement.classList.add('no-scroll');
+                    document.body.classList.add('no-scroll');
+                }
+                picker.style.display = 'flex';
+                picker.setAttribute('aria-hidden', 'false');
+                setTimeout(function(){ picker.classList.add('show'); try{ picker.focus(); }catch(e){} }, 10);
+            }
+
+            function hidePicker(){
+                activeTrigger = null;
+                picker.setAttribute('aria-hidden', 'true');
+                picker.classList.remove('show');
+                // remove no-scroll if present
+                document.documentElement.classList.remove('no-scroll');
+                document.body.classList.remove('no-scroll');
+                setTimeout(function(){ picker.style.display = 'none'; }, 220);
+            }
 
             btns.forEach(function(b){ b.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); if(picker.style.display === 'none' || activeTrigger !== b) showPicker(b); else hidePicker(); }); });
 
@@ -1467,8 +1523,10 @@
             document.addEventListener('click', function(e){ if(!picker.contains(e.target) && !Array.from(btns).some(function(bt){ return bt === e.target || bt.contains(e.target); })) hidePicker(); });
             window.addEventListener('resize', function(){ if(picker.style.display !== 'none' && activeTrigger) positionPicker(activeTrigger); });
 
-            // Handle selection
+            // Handle selection and close button
             picker.addEventListener('click', function(e){
+                var closeBtn = e.target.closest('.logo-size-picker-close');
+                if(closeBtn){ e.preventDefault(); hidePicker(); return; }
                 var b = e.target.closest('button[data-size]');
                 if(!b) return;
                 var size = b.getAttribute('data-size');
@@ -1484,10 +1542,9 @@
                     body: JSON.stringify({ size: size })
                 }).then(function(r){ return r.json(); }).then(function(json){
                     if(json && json.success && json.size){
-                        img.style.height = 'auto';
-                        img.style.width = 'auto';
-                        img.style.maxHeight = json.size + 'px';
-                        img.style.maxWidth = json.size + 'px';
+                        imgs.forEach(function(img){
+                            try{ img.style.height = 'auto'; img.style.width = 'auto'; img.style.maxHeight = json.size + 'px'; img.style.maxWidth = json.size + 'px'; }catch(e){}
+                        });
                         Array.from(picker.querySelectorAll('button[data-size]')).forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-size') === size); });
                         setTimeout(hidePicker, 180);
                     } else {

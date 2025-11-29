@@ -517,15 +517,16 @@
 .banner-ctas.cta-layout-vertical.cta-align-right { align-items: flex-end; right: 70px; }
 .banner-ctas.cta-layout-vertical.cta-pos-bottom { bottom: calc(1.5rem + 28px); }
 .banner-ctas .btn { padding: .55rem 1rem; font-size: .95rem; }
-.banner-cta-mobile { display: none; }
+.banner-ctas .banner-cta-mobile { display: none !important; }
+.banner-cta-desktop { display: inline-block; }
  .btn-pill { border-radius: 999px; padding: .6rem 1.2rem; font-weight: 600; }
  .btn-outline-cta { background: transparent; border: 2px solid var(--secondary-color); color: var(--secondary-color); }
  .btn-outline-cta:hover { background: color-mix(in srgb, var(--secondary-color), white 12%); color: var(--text-dark); }
 /* ensure banner link doesn't visually block CTAs */
 .banner-link { background: transparent; }
 @media (max-width: 768px) {
-    .banner-cta-desktop { display: none; }
-    .banner-cta-mobile { display: inline-block; }
+    .banner-ctas .banner-cta-desktop { display: none !important; }
+    .banner-ctas .banner-cta-mobile { display: inline-block !important; }
     /* On mobile prefer center; but keep small lateral offsets if explicitly chosen */
     .banner-ctas { justify-content: center; left: 0; right: 0; }
     .banner-ctas.cta-align-left { left: .75rem; right: auto; }
