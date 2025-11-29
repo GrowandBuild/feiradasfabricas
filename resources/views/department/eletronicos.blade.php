@@ -86,111 +86,129 @@
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
-        text-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    }
+        @php
+            // Show global sections and sections specific to this department
+            $deptId = $department->id ?? null;
+            $homepageSections = \App\Models\HomepageSection::where('enabled', true)
+                ->where(function($q) use ($deptId) {
+                    $q->whereNull('department_id');
+                    if ($deptId) {
+                        $q->orWhere('department_id', $deptId);
+                    }
+                })
+                ->orderBy('position')
+                ->get();
+        @endphp
 
-    .hero-banner-subtitle {
-        font-size: 1rem;
-        margin-bottom: 1rem;
-        opacity: 0.95;
-        font-weight: 300;
-        line-height: 1.6;
-        max-width: 600px;
-    }
+        @foreach($homepageSections as $section)
+            @include('components.homepage_section_products', ['section' => $section])
+        @endforeach
 
-    .hero-banner-actions {
-        display: flex;
-        gap: 20px;
-        flex-wrap: wrap;
-    }
+        <!-- Produtos em Destaque -->
+        @if($featuredProducts && $featuredProducts->count() > 0)
+        <section class="section-gray">
+            <div class="container">
+                <h2 class="section-title">Produtos em Destaque</h2>
+                <p class="section-subtitle">
+                    Seleção especial de produtos premium para seu negócio
+                </p>
+                <!-- Carrossel de Produtos -->
+                <div id="productsCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner">
+                        @php
+                            $products = $featuredProducts->take(12);
+                            $chunks = $products->chunk(4);
+                        @endphp
+                        @foreach($chunks as $index => $chunk)
+                            <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                                <div class="row">
+                                    @foreach($chunk as $product)
+                                        <div class="col-lg-3 col-md-6 col-6 mb-2">
+                                            <div class="product-card" @auth('admin') data-product-id="{{ $product->id }}" @endauth>
+                                                <div class="product-image" @auth('admin') title="Trocar imagem (upload ou link)" style="cursor: pointer;" @endauth>
+                                                    @if($product->first_image)
+                                                        <img src="{{ $product->first_image }}" 
+                                                             alt="{{ $product->name }}"
+                                                             class="@auth('admin') js-change-image @endauth"
+                                                             @auth('admin') data-product-id="{{ $product->id }}" @endauth
+                                                             onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                    @else
+                                                        <img src="{{ asset('images/no-image.svg') }}" 
+                                                             alt="{{ $product->name }}"
+                                                             class="@auth('admin') js-change-image @endauth"
+                                                             @auth('admin') data-product-id="{{ $product->id }}" @endauth>
+                                                    @endif
+                                                    @if($product->is_featured)
+                                                        <div class="product-badge">Destaque</div>
+                                                    @endif
+                                                </div>
+                                                <div class="product-info">
+                                                    <h6 class="product-title">{{ $product->name }}</h6>
+                                                    <div class="product-price">
+                                                        R$ {{ number_format($product->price, 2, ',', '.') }}
+                                                        @if($product->b2b_price)
+                                                            <small class="text-muted d-block">B2B: R$ {{ number_format($product->b2b_price, 2, ',', '.') }}</small>
+                                                        @endif
+                                                    </div>
+                                                    <div class="d-flex gap-2">
+                                                        <a href="{{ route('product', $product->slug) }}?department={{ $department->slug }}" class="product-btn" style="flex: 1;">
+                                                            <i class="fas fa-shopping-cart me-2"></i>
+                                                            Ver Detalhes
+                                                        </a>
+                                                        @auth('admin')
+                                                            <a href="{{ route('admin.products.edit', $product) }}" 
+                                                               class="btn btn-outline-primary btn-sm" 
+                                                               title="Editar Produto"
+                                                               style="flex-shrink: 0; min-width: 44px;">
+                                                                <i class="fas fa-edit"></i>
+                                                            </a>
+                                                        @endauth
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+            
+                    <!-- Controles do Carrossel -->
+                    @if($chunks->count() > 1)
+                        <button class="carousel-control-prev" type="button" data-bs-target="#productsCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Anterior</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#productsCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Próximo</span>
+                        </button>
+                
+                        <!-- Indicadores -->
+                        <div class="carousel-indicators">
+                            @foreach($chunks as $index => $chunk)
+                                <button type="button" data-bs-target="#productsCarousel" data-bs-slide-to="{{ $index }}" 
+                                        class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
+                                        aria-label="Slide {{ $index + 1 }}"></button>
+                            @endforeach
+                        </div>
+                    @endif
+                </div>
+            </div>
+        </section>
 
-    .hero-btn-primary {
-        background: linear-gradient(135deg, var(--elegant-accent) 0%, color-mix(in srgb, var(--elegant-accent), white 12%) 100%);
-        color: white;
-        border: none;
-        padding: 18px 40px;
-        font-size: 1.2rem;
-        font-weight: 600;
-        border-radius: 50px;
-        transition: all 0.3s ease;
-        box-shadow: 0 8px 25px color-mix(in srgb, var(--elegant-accent), transparent 70%);
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .hero-btn-primary:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 12px 35px color-mix(in srgb, var(--elegant-accent), transparent 60%);
-        background: linear-gradient(135deg, color-mix(in srgb, var(--elegant-accent), white 10%) 0%, var(--elegant-accent) 100%);
-        color: white;
-    }
-
-    .hero-btn-secondary {
-        background: transparent;
-        color: white;
-        border: 2px solid white;
-        padding: 16px 38px;
-        font-size: 1.2rem;
-        font-weight: 600;
-        border-radius: 50px;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .hero-btn-secondary:hover {
-        background: white;
-        color: var(--elegant-dark);
-        border-color: white;
-        transform: translateY(-3px);
-    }
-
-    /* Hero Carousel */
-    .hero-carousel {
-        height: 50vh;
-    }
-
-    .hero-carousel .carousel-inner {
-        height: 50vh;
-    }
-
-    .hero-carousel .carousel-item {
-        height: 50vh;
-    }
-
-    /* Controles do Carousel */
-    .hero-control-prev,
-    .hero-control-next {
-        width: 60px;
-        height: 60px;
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        backdrop-filter: blur(10px);
-        transition: all 0.3s ease;
-    }
-
-    .hero-control-prev:hover,
-    .hero-control-next:hover {
-        background: rgba(255, 255, 255, 0.3);
-        @if(false)
-            {{-- Apple brand section removed per request. --}}
+        <!-- Botão Ver Todos os Produtos -->
+        <section class="section-elegant" style="padding: 20px 0;">
+            <div class="container">
+                <div class="text-center">
+                    <a href="{{ route('products') }}" class="btn elegant-btn">
+                        Ver Todos os Produtos
+                        <i class="fas fa-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </section>
         @endif
-        .hero-carousel .carousel-inner {
-            height: 35vh;
-        }
-        
-        .hero-carousel .carousel-item {
-            height: 35vh;
-        }
-        
-        .hero-content-row {
-            height: 35vh;
-            min-height: 250px;
-        }
-        
         .hero-banner-title {
             font-size: 2rem;
         }
@@ -360,6 +378,56 @@
         transition: all 0.3s ease;
         border: 1px solid color-mix(in srgb, var(--primary-color, #1e293b), transparent 88%);
         height: 100%;
+        /* Keep a sensible minimum height so cards don't collapse when most elements are hidden */
+        min-height: 150px;
+        position: relative;
+    }
+
+    /* Button positioning helpers for category cards */
+    /* Default: bottom position uses normal flow so it doesn't overlap the card content when not intended */
+    .elegant-card .btn-outline-primary { position: static; left: auto; width: 100%; z-index: 1; }
+    /* Ensure bottom-positioned cards place the button at the end of the card content */
+    .elegant-card.btn-pos-bottom { display: flex; flex-direction: column; }
+    .elegant-card.btn-pos-bottom .btn-outline-primary { margin-top: auto; position: static; }
+    /* Top: place the button as an absolute overlay at the top of the card */
+    .elegant-card.btn-pos-top .btn-outline-primary { position: absolute; left: 50%; width: calc(100% - 32px); top: 12px; z-index: 3; --btn-transform: translateX(-50%); transform: var(--btn-transform); }
+    /* Center: absolute and centered in the middle of the card */
+    .elegant-card.btn-pos-center .btn-outline-primary { position: absolute; left: 50%; width: calc(100% - 32px); top: 50%; z-index: 3; --btn-transform: translate(-50%, -50%); transform: var(--btn-transform); }
+
+    /* Improved cover handling */
+    .elegant-card.has-cover {
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+        background-color: transparent;
+        /* Covers often look better a bit taller */
+        min-height: 180px;
+    }
+
+    .elegant-card.has-cover::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.45) 60%);
+        pointer-events: none;
+        z-index: 1;
+    }
+
+    .elegant-card.has-cover .card-icon,
+    .elegant-card.has-cover .card-title,
+    .elegant-card.has-cover .card-text,
+    .elegant-card.has-cover .btn-outline-primary {
+        position: relative;
+        z-index: 2;
+        color: #fff !important;
+    }
+
+    .elegant-card .card-icon img.category-image-display {
+        width: 64px !important;
+        height: 64px !important;
+        border-radius: 50%;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.35);
+        border: 3px solid rgba(255,255,255,0.85);
     }
 
     .elegant-card:hover {
@@ -414,7 +482,7 @@
     .elegant-card .btn-outline-primary:hover {
         background: linear-gradient(135deg, var(--primary-color, var(--elegant-blue)) 0%, var(--secondary-color, var(--elegant-dark)) 100%);
         color: #fff;
-        transform: translateY(-3px);
+        transform: var(--btn-transform, translateX(0)) translateY(-3px);
     }
 
     /* Product Cards */
@@ -1170,19 +1238,24 @@
 
     .badge-circle {
         width: 100%;
-        /* enforce a square container to avoid oval images */
-        aspect-ratio: 1 / 1;
         max-width: 100px;
         border-radius: 50%;
         margin: 0 auto 10px;
         border: 2px solid rgba(30, 58, 138, 0.1);
         overflow: hidden;
         background: var(--elegant-white);
-        display: flex;
-        align-items: center;
-        justify-content: center;
         transition: all 0.3s ease;
         box-shadow: 0 2px 8px rgba(30, 58, 138, 0.08);
+        position: relative;
+    }
+
+    /* Ensure a perfect square across all browsers (fallback for older mobile browsers)
+       using the padding-top trick and absolutely positioned image. This avoids ovals
+       when aspect-ratio is not supported. */
+    .badge-circle::before {
+        content: '';
+        display: block;
+        padding-top: 100%;
     }
 
     .badge-item:hover .badge-circle {
@@ -1192,6 +1265,9 @@
     }
 
     .badge-image {
+        position: absolute;
+        top: 0;
+        left: 0;
         width: 100%;
         height: 100%;
         object-fit: cover;
@@ -1422,19 +1498,72 @@ document.addEventListener('DOMContentLoaded', function(){
         <div class="row g-2">
             @foreach($categories->take(4) as $category)
                 <div class="col-lg-3 col-md-3 col-sm-6 col-6">
-                    <div class="elegant-card">
-                        <div class="card-icon">
-                            <i class="fas fa-laptop"></i>
+                    @php
+                        $catCoverUrl = null;
+                        if (isset($category->cover) && $category->cover) {
+                            if (\Illuminate\Support\Str::startsWith($category->cover, ['http://', 'https://'])) {
+                                $catCoverUrl = $category->cover;
+                            } else {
+                                $catCoverUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($category->cover);
+                            }
+                        }
+                        // visibility flags (defaults to true when column absent)
+                        $showAvatar = $category->show_avatar ?? true;
+                        $showCover = $category->show_cover ?? true;
+                        $showTitle = $category->show_title ?? true;
+                        $showDescription = $category->show_description ?? true;
+                        $showButton = $category->show_button ?? true;
+                    @endphp
+                    <div class="elegant-card btn-pos-{{ $category->button_position ?? 'bottom' }} @if($catCoverUrl && $showCover) has-cover @endif" @if($catCoverUrl && $showCover) style="background-image: url('{{ $catCoverUrl }}'); background-size: cover; background-position: center;" data-cover-url="{{ $catCoverUrl }}" @else data-cover-url="" @endif data-button-position="{{ $category->button_position ?? 'bottom' }}">
+                        <div class="card-icon" @if(!$showAvatar) style="display:none;" @endif>
+                            @php
+                                $iconClass = $category->icon_class ?? 'fas fa-laptop';
+                                $catImageUrl = null;
+                                if ($category->image) {
+                                    if (\Illuminate\Support\Str::startsWith($category->image, ['http://', 'https://'])) {
+                                        $catImageUrl = $category->image;
+                                    } else {
+                                        $catImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($category->image);
+                                    }
+                                }
+                            @endphp
+                            @if($showAvatar && $catImageUrl)
+                                <img src="{{ $catImageUrl ?: asset('images/no-image.svg') }}" alt="{{ $category->name }}" class="category-image-display" data-category-id="{{ $category->id }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;" @auth('admin') title="Clique para editar imagem" @endauth loading="lazy" decoding="async">
+                            @endif
+                            @if($showAvatar && !$catImageUrl)
+                                <i class="category-icon-display {{ $iconClass }}" data-category-id="{{ $category->id }}" @auth('admin') title="Clique para alterar ícone" style="cursor:pointer;" @endauth></i>
+                            @else
+                                {{-- If avatar is disabled, do not show icon --}}
+                                @if(!$showAvatar)
+                                    <i class="category-icon-display {{ $iconClass }}" data-category-id="{{ $category->id }}" hidden></i>
+                                @endif
+                            @endif
                         </div>
-                        <h5 class="card-title">{{ $category->name }}</h5>
+                        @if($showTitle)
+                        <h5 class="card-title">
+                            @auth('admin')
+                                <span class="js-edit-category-title" data-category-id="{{ $category->id }}" data-current-title="{{ $category->name }}" style="cursor: pointer;">{{ $category->name }}</span>
+                            @else
+                                {{ $category->name }}
+                            @endauth
+                        </h5>
+                        @endif
+                        @if($showDescription)
                         <p class="card-text">
-                            {{ $category->description ?? 'Produtos de alta qualidade para sua empresa.' }}
+                            @auth('admin')
+                                <span class="js-edit-category-desc" data-category-id="{{ $category->id }}" data-current-desc="{{ $category->description }}" style="cursor: pointer;">{{ $category->description ?? 'Produtos de alta qualidade para sua empresa.' }}</span>
+                            @else
+                                {{ $category->description ?? 'Produtos de alta qualidade para sua empresa.' }}
+                            @endauth
                         </p>
+                        @endif
+                        @if($showButton)
                         <a href="{{ route('products') }}?category={{ $category->slug }}" 
                            class="btn btn-outline-primary w-100">
                             Explorar Categoria
                             <i class="fas fa-arrow-right ms-2"></i>
                         </a>
+                        @endif
                     </div>
                 </div>
             @endforeach
@@ -1732,6 +1861,63 @@ window.DepartmentSectionsConfig = (function(){
 window.CurrentDepartmentSlug = 'eletronicos';
 </script>
 @endpush
+@auth('admin')
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Rename category inline
+    document.addEventListener('click', function(e){
+        const el = e.target.closest('.js-edit-category-title');
+        if (!el) return;
+        e.preventDefault();
+        const id = el.getAttribute('data-category-id');
+        const current = el.getAttribute('data-current-title') || el.textContent.trim();
+        const name = prompt('Novo nome da categoria:', current);
+        if (!name || name.trim().length === 0) return;
+        fetch(`/admin/categories/${id}/quick-update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+            body: JSON.stringify({ name: name.trim() })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.message || 'Erro ao atualizar categoria');
+            el.textContent = data.category.name;
+            el.setAttribute('data-current-title', data.category.name);
+        })
+        .catch(err => alert(err.message || 'Erro'));
+    });
+
+    // Edit description inline
+    document.addEventListener('click', function(e){
+        const el = e.target.closest('.js-edit-category-desc');
+        if (!el) return;
+        e.preventDefault();
+        const id = el.getAttribute('data-category-id');
+        const current = el.getAttribute('data-current-desc') || el.textContent.trim();
+        const desc = prompt('Nova descrição da categoria (deixe vazio para remover):', current);
+        if (desc === null) return;
+        fetch(`/admin/categories/${id}/quick-update`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' },
+            body: JSON.stringify({ description: desc })
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (!data.success) throw new Error(data.message || 'Erro ao atualizar descrição');
+            el.textContent = data.category.description || 'Produtos de alta qualidade para sua empresa.';
+            el.setAttribute('data-current-desc', data.category.description || '');
+        })
+        .catch(err => alert(err.message || 'Erro'));
+    });
+
+    // Icon editing now handled via modal (opens the same modal as image)
+});
+</script>
+@endpush
+@endauth
 
 @push('scripts')
 <script>
@@ -1893,6 +2079,487 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
                 qiModal.hide();
         }
+});
+</script>
+@endpush
+@endauth
+@auth('admin')
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Build modal for categories (upload / URL / copy / remove)
+    const catModalHtml = `
+    <div class="modal fade" id="quickCategoryImageModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Editar Imagem da Categoria</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+                    <div class="modal-body">
+                        <div class="text-center mb-2">
+                                <div id="qcCoverPreview" style="width:100%;height:120px;background-size:cover;background-position:center;border-radius:8px;border:1px solid #e9ecef;overflow:hidden;"></div>
+                                <div class="mt-2"><img id="qcPreview" src="" style="width:64px;height:64px;object-fit:cover;border-radius:8px;" onerror="this.src='{{ asset('images/no-image.svg') }}'"></div>
+                        </div>
+
+                        <!-- Simple visibility toggles -->
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold">Opções de exibição</label>
+                            <div class="d-flex flex-column small">
+                                <label class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="qcShowAvatar" checked>
+                                    <span class="form-check-label">Mostrar avatar</span>
+                                </label>
+                                <label class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="qcShowCover" checked>
+                                    <span class="form-check-label">Mostrar capa</span>
+                                </label>
+                                <label class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="qcShowTitle" checked>
+                                    <span class="form-check-label">Mostrar título</span>
+                                </label>
+                                <label class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="qcShowDescription" checked>
+                                    <span class="form-check-label">Mostrar descrição</span>
+                                </label>
+                                <label class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="qcShowButton" checked>
+                                    <span class="form-check-label">Mostrar botão</span>
+                                </label>
+                                <div class="mt-2">
+                                    <label class="form-label small mb-1">Posição do botão</label>
+                                    <select id="qcButtonPosition" class="form-select form-select-sm">
+                                        <option value="top">Cima</option>
+                                        <option value="center">Meio</option>
+                                        <option value="bottom" selected>Baixo</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-2">
+                            <label class="form-label">Colar URL da imagem (avatar)</label>
+                            <input type="url" id="qcUrl" placeholder="https://..." class="form-control" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Colar URL da imagem de fundo (capa)</label>
+                            <input type="url" id="qcCoverUrl" placeholder="https://..." class="form-control" />
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Classe do ícone (ex: fas fa-laptop)</label>
+                            <input type="text" id="qcIconClass" placeholder="fas fa-laptop" class="form-control" />
+                        </div>
+                        <input type="hidden" id="qcCategoryId" />
+          </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" id="qcCopyUrl">Copiar URL</button>
+                        <button type="button" class="btn btn-danger" id="qcRemove">Remover Avatar</button>
+                        <button type="button" class="btn btn-warning" id="qcRemoveCover">Remover Fundo</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button type="button" class="btn btn-primary" id="qcSave">Salvar</button>
+                    </div>
+        </div>
+      </div>
+    </div>`;
+
+    if (!document.getElementById('quickCategoryImageModal')) {
+        document.body.insertAdjacentHTML('beforeend', catModalHtml);
+    }
+
+    const qcModalEl = document.getElementById('quickCategoryImageModal');
+    const qcModal = new bootstrap.Modal(qcModalEl);
+    const qcUrl = document.getElementById('qcUrl');
+    const qcCoverUrl = document.getElementById('qcCoverUrl');
+    const qcIconClass = document.getElementById('qcIconClass');
+    const qcPreview = document.getElementById('qcPreview');
+    const qcCategoryId = document.getElementById('qcCategoryId');
+    // New toggle controls (visibility options)
+    const qcShowAvatar = document.getElementById('qcShowAvatar');
+    const qcShowCover = document.getElementById('qcShowCover');
+    const qcShowTitle = document.getElementById('qcShowTitle');
+    const qcShowDescription = document.getElementById('qcShowDescription');
+    const qcShowButton = document.getElementById('qcShowButton');
+    const qcButtonPosition = document.getElementById('qcButtonPosition');
+
+    function prefillVisibilityTogglesFromCard(card){
+        if (!card) return;
+        // avatar present?
+        const avatar = card.querySelector('.category-image-display');
+        if (qcShowAvatar) qcShowAvatar.checked = !!avatar;
+        // cover present?
+        const cover = card.getAttribute('data-cover-url');
+        if (qcShowCover) qcShowCover.checked = !!(cover && cover.length);
+        // title: consider element absence or hidden via style
+        const titleEl = card.querySelector('.card-title');
+        if (qcShowTitle) qcShowTitle.checked = titleEl ? (getComputedStyle(titleEl).display !== 'none') : false;
+        // description: consider element absence or hidden via style
+        const descEl = card.querySelector('.card-text');
+        if (qcShowDescription) qcShowDescription.checked = descEl ? (getComputedStyle(descEl).display !== 'none') : false;
+        // button (search for primary button inside card)
+        const btnEl = card.querySelector('.btn') || card.querySelector('a.btn');
+        if (qcShowButton) qcShowButton.checked = !!(btnEl && getComputedStyle(btnEl).display !== 'none');
+        // button position (read data attribute or class)
+        if (qcButtonPosition) {
+            const pos = card.getAttribute('data-button-position') || Array.from(card.classList).find(c=>c.indexOf('btn-pos-')===0)?.replace('btn-pos-','') || 'bottom';
+            qcButtonPosition.value = pos;
+        }
+    }
+
+    // Update preview when typing/pasting a URL
+    qcUrl.addEventListener('input', function(){
+        const val = qcUrl.value.trim();
+        if (!val) return;
+        // quick sanity: only update if starts with http
+        if (/^https?:\/\//i.test(val)) {
+            qcPreview.src = val;
+        }
+    });
+
+    // Update cover preview when typing/pasting a cover URL
+    const qcCoverPreview = document.getElementById('qcCoverPreview');
+    qcCoverUrl.addEventListener('input', function(){
+        const val = qcCoverUrl.value.trim();
+        if (!val) { qcCoverPreview.style.backgroundImage = ''; return; }
+        if (/^https?:\/\//i.test(val)) {
+            qcCoverPreview.style.backgroundImage = `url('${val}')`;
+        }
+    });
+
+    // Open modal when clicking the category IMAGE only (icon click edits icon class)
+    document.addEventListener('click', function(e){
+        const el = e.target.closest('.category-image-display');
+        if (!el) return;
+        e.preventDefault();
+        const id = el.getAttribute('data-category-id');
+        qcCategoryId.value = id;
+        qcUrl.value = '';
+        qcIconClass.value = '';
+        qcCoverUrl.value = '';
+        // find current image in card
+        const card = el.closest('.elegant-card');
+        let imgSrc = '';
+        if (card) {
+            const img = card.querySelector('.category-image-display');
+            if (img) imgSrc = img.src;
+        }
+        qcPreview.src = imgSrc || '{{ asset('images/no-image.svg') }}';
+        // set cover preview from card if present
+        const cardForCover = el.closest('.elegant-card');
+        const existingCover = cardForCover ? cardForCover.getAttribute('data-cover-url') : '';
+        if (existingCover) qcCoverPreview.style.backgroundImage = `url('${existingCover}')`; else qcCoverPreview.style.backgroundImage = '';
+        // prefill toggles
+        prefillVisibilityTogglesFromCard(cardForCover || el.closest('.elegant-card'));
+        qcModal.show();
+    });
+
+    // Open modal when clicking the icon as well (so admin uses a single modal for icon/image)
+    document.addEventListener('click', function(e){
+        const el = e.target.closest('.category-icon-display');
+        if (!el) return;
+        e.preventDefault();
+        const id = el.getAttribute('data-category-id');
+        qcCategoryId.value = id;
+        qcUrl.value = '';
+        qcCoverUrl.value = '';
+        // prefill icon class from element's classes (exclude 'category-icon-display')
+        const classes = Array.from(el.classList).filter(c => c !== 'category-icon-display').join(' ');
+        qcIconClass.value = classes;
+        // preview a placeholder when editing icon
+        qcPreview.src = '{{ asset('images/no-image.svg') }}';
+        qcCoverPreview.style.backgroundImage = '';
+        // try prefilling toggles from card if available
+        const cardFromIcon = el.closest('.elegant-card');
+        prefillVisibilityTogglesFromCard(cardFromIcon);
+        qcModal.show();
+    });
+
+    // Open modal when clicking anywhere on the category card (except links/buttons)
+    document.addEventListener('click', function(e){
+        const card = e.target.closest('.elegant-card');
+        if (!card) return;
+        // ignore clicks on links or buttons inside the card (like "Explorar Categoria")
+        if (e.target.closest('a') || e.target.closest('button')) return;
+        // find an element with data-category-id inside the card
+        const inner = card.querySelector('[data-category-id]');
+        if (!inner) return;
+        e.preventDefault();
+        const id = inner.getAttribute('data-category-id');
+        qcCategoryId.value = id;
+        qcUrl.value = '';
+        qcIconClass.value = '';
+        // prefill cover url if present on the card
+        qcCoverUrl.value = card.getAttribute('data-cover-url') || '';
+        // use existing avatar image if present
+        const img = card.querySelector('.category-image-display');
+        qcPreview.src = (img && img.src) ? img.src : '{{ asset('images/no-image.svg') }}';
+        // also set cover preview
+        const cardCover = card.getAttribute('data-cover-url') || '';
+        qcCoverPreview.style.backgroundImage = cardCover ? `url('${cardCover}')` : '';
+        // prefill toggles
+        prefillVisibilityTogglesFromCard(card);
+        qcModal.show();
+    });
+
+    // Copy URL (prefer explicit URL field, fallback to preview src)
+    document.getElementById('qcCopyUrl').addEventListener('click', function(){
+        const toCopy = qcUrl.value.trim() || qcPreview.src || '';
+        if (!toCopy) return alert('Nenhuma URL para copiar');
+        navigator.clipboard.writeText(toCopy).then(()=>{
+            alert('URL copiada para a área de transferência');
+        }).catch(()=>alert('Não foi possível copiar'));
+    });
+
+    // Remove image
+    document.getElementById('qcRemove').addEventListener('click', function(){
+        const id = qcCategoryId.value;
+        if (!id) return;
+        if (!confirm('Remover imagem da categoria?')) return;
+        fetch(`/admin/categories/${id}/remove-image`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+        })
+        .then(r=>r.json())
+                .then(data=>{
+            if (!data.success) throw new Error(data.message||'Erro');
+            // update card UI: remove image element, show/hide icon and wrapper based on toggle
+            const imgEl = document.querySelector('.elegant-card .category-image-display[data-category-id="'+id+'"]') || document.querySelector('.category-image-display[data-category-id="'+id+'"]');
+            if (imgEl) imgEl.remove();
+            const icon = document.querySelector('.category-icon-display[data-category-id="'+id+'"]');
+            const wrapper = icon ? icon.closest('.card-icon') : document.querySelector('.elegant-card [data-category-id="'+id+'"]')?.closest('.elegant-card')?.querySelector('.card-icon');
+            // show or hide icon/wrapper depending on the current modal toggle (if toggle exists)
+            const shouldShowIcon = (qcShowAvatar ? qcShowAvatar.checked : true);
+            if (icon) {
+                if (shouldShowIcon) icon.removeAttribute('hidden'); else icon.setAttribute('hidden', '');
+            }
+            if (wrapper) {
+                wrapper.style.display = shouldShowIcon ? '' : 'none';
+            }
+            qcPreview.src = data.category.image_url || '{{ asset('images/no-image.svg') }}';
+        })
+        .catch(err=>alert(err.message||'Erro'));
+    });
+
+    // Remove cover (background)
+    document.getElementById('qcRemoveCover').addEventListener('click', function(){
+        const id = qcCategoryId.value;
+        if (!id) return;
+        if (!confirm('Remover imagem de fundo (capa) da categoria?')) return;
+        fetch(`/admin/categories/${id}/remove-cover`, {
+            method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }
+        })
+        .then(r=>r.json())
+        .then(data=>{
+            if (!data.success) throw new Error(data.message||'Erro');
+            // find the specific card by category id
+            const specific = Array.from(document.querySelectorAll('.elegant-card')).find(c=>{
+                const img = c.querySelector('[data-category-id]');
+                return img && img.getAttribute('data-category-id') == id;
+            });
+            if (specific) {
+                specific.style.backgroundImage = '';
+                specific.removeAttribute('data-cover-url');
+            }
+            qcCoverUrl.value = '';
+            if (typeof qcCoverPreview !== 'undefined' && qcCoverPreview) qcCoverPreview.style.backgroundImage = '';
+        })
+        .catch(err=>alert(err.message||'Erro'));
+    });
+
+    // Save (use URL or update icon class)
+    document.getElementById('qcSave').addEventListener('click', function(){
+        const id = qcCategoryId.value;
+        if (!id) return;
+        const url = qcUrl.value.trim();
+        const cover = qcCoverUrl.value.trim();
+        const iconClass = (qcIconClass && qcIconClass.value) ? qcIconClass.value.trim() : '';
+        // visibility flags from modal toggles
+        const showAvatar = (qcShowAvatar ? qcShowAvatar.checked : true);
+        const showCover = (qcShowCover ? qcShowCover.checked : true);
+        const showTitle = (qcShowTitle ? qcShowTitle.checked : true);
+        const showDescription = (qcShowDescription ? qcShowDescription.checked : true);
+        const showButton = (qcShowButton ? qcShowButton.checked : true);
+
+        function doIconUpdate(){
+            return fetch(`/admin/categories/${id}/quick-update`, {
+                method: 'POST', headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept':'application/json' },
+                body: JSON.stringify({ icon_class: iconClass || null })
+            }).then(r=>r.json());
+        }
+
+        const tasks = [];
+
+        if (url) {
+            const t = fetch(`/admin/categories/${id}/update-image`, {
+                method: 'POST', headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept':'application/json' }, body: JSON.stringify({ image_url: url })
+            }).then(r=>r.json()).then(data=>{
+                if (!data.success) throw new Error(data.message||'Erro');
+                const card = document.querySelector('.elegant-card [data-category-id="'+id+'"]')?.closest('.elegant-card');
+                if (card) {
+                    const existing = card.querySelector('.category-image-display');
+                    if (existing) existing.src = data.category.image_url;
+                    else {
+                        const img = document.createElement('img');
+                        img.src = data.category.image_url;
+                        img.alt = '';
+                        img.className = 'category-image-display';
+                        img.setAttribute('data-category-id', id);
+                        img.style.width = '40px'; img.style.height='40px'; img.style.borderRadius='50%'; img.style.objectFit='cover'; img.style.cursor='pointer';
+                        const wrapper = card.querySelector('.card-icon');
+                        if (wrapper) {
+                            const icon = wrapper.querySelector('.category-icon-display');
+                            if (icon) icon.setAttribute('hidden','');
+                            wrapper.insertAdjacentElement('afterbegin', img);
+                        }
+                    }
+                }
+                qcPreview.src = data.category.image_url;
+                return data;
+            });
+            tasks.push(t);
+        }
+
+        if (cover) {
+            const t = fetch(`/admin/categories/${id}/update-cover`, {
+                method: 'POST', headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept':'application/json' }, body: JSON.stringify({ cover_url: cover })
+            }).then(r=>r.json()).then(data=>{
+                if (!data.success) throw new Error(data.message||'Erro');
+                const card = Array.from(document.querySelectorAll('.elegant-card')).find(c=>{
+                    const img = c.querySelector('[data-category-id]');
+                    return img && img.getAttribute('data-category-id') == id;
+                });
+                const coverUrl = (data && data.cover_url) ? data.cover_url : (data && data.category && data.category.cover_url ? data.category.cover_url : null);
+                if (card && coverUrl) {
+                    card.style.backgroundImage = `url('${coverUrl}')`;
+                    card.setAttribute('data-cover-url', coverUrl);
+                }
+                if (typeof qcCoverPreview !== 'undefined' && qcCoverPreview) qcCoverPreview.style.backgroundImage = coverUrl ? `url('${coverUrl}')` : '';
+                return data;
+            });
+            tasks.push(t);
+        }
+
+        if (iconClass) {
+            tasks.push(doIconUpdate().then(iconResp=>{
+                if (!iconResp.success) throw new Error(iconResp.message||'Erro ao atualizar ícone');
+                const iconEl = document.querySelector('.category-icon-display[data-category-id="'+id+'"]');
+                const card = document.querySelector('.elegant-card [data-category-id="'+id+'"]')?.closest('.elegant-card');
+                if (iconEl) {
+                    iconEl.className = 'category-icon-display ' + (iconResp.category.icon_class || 'fas fa-laptop');
+                    if (card && card.querySelector('.category-image-display')) iconEl.setAttribute('hidden','');
+                }
+                return iconResp;
+            }));
+        }
+
+        // Visibility update: call quick-update to persist visibility flags and update DOM immediately
+        function doVisibilityUpdate(){
+            return fetch(`/admin/categories/${id}/quick-update`, {
+                method: 'POST', headers: { 'Content-Type':'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept':'application/json' },
+                body: JSON.stringify({
+                        show_avatar: !!showAvatar,
+                        show_cover: !!showCover,
+                        show_title: !!showTitle,
+                        show_description: !!showDescription,
+                        show_button: !!showButton,
+                        button_position: (qcButtonPosition ? qcButtonPosition.value : 'bottom')
+                    })
+                }).then(r=>r.json()).then(resp=>{
+                    if (!resp.success) console.warn('quick-update did not return success for visibility flags:', resp && resp.message);
+                    // prefer server-provided flags when available
+                    const flags = (resp && resp.category) ? {
+                        show_avatar: typeof resp.category.show_avatar !== 'undefined' ? !!resp.category.show_avatar : !!showAvatar,
+                        show_cover: typeof resp.category.show_cover !== 'undefined' ? !!resp.category.show_cover : !!showCover,
+                        show_title: typeof resp.category.show_title !== 'undefined' ? !!resp.category.show_title : !!showTitle,
+                        show_description: typeof resp.category.show_description !== 'undefined' ? !!resp.category.show_description : !!showDescription,
+                        show_button: typeof resp.category.show_button !== 'undefined' ? !!resp.category.show_button : !!showButton,
+                    } : {
+                        show_avatar: !!showAvatar,
+                        show_cover: !!showCover,
+                        show_title: !!showTitle,
+                        show_description: !!showDescription,
+                        show_button: !!showButton,
+                    };
+
+                    // update DOM according to flags
+                    const card = Array.from(document.querySelectorAll('.elegant-card')).find(c=>{
+                        const img = c.querySelector('[data-category-id]');
+                        return img && img.getAttribute('data-category-id') == id;
+                    });
+                    if (!card) return resp;
+
+                    // avatar/icon handling
+                    const avatarEl = card.querySelector('.category-image-display');
+                    const iconEl = card.querySelector('.category-icon-display');
+                    const wrapperEl = card.querySelector('.card-icon');
+                    if (!flags.show_avatar) {
+                        if (avatarEl) avatarEl.remove();
+                        if (iconEl) iconEl.setAttribute('hidden', '');
+                        if (wrapperEl) wrapperEl.style.display = 'none';
+                    } else {
+                        if (wrapperEl) wrapperEl.style.display = '';
+                        if (!avatarEl && qcPreview && qcPreview.src) {
+                            const img = document.createElement('img');
+                            img.src = qcPreview.src;
+                            img.alt = '';
+                            img.className = 'category-image-display';
+                            img.setAttribute('data-category-id', id);
+                            img.style.width = '40px'; img.style.height='40px'; img.style.borderRadius='50%'; img.style.objectFit='cover'; img.style.cursor='pointer';
+                            const wrapper = card.querySelector('.card-icon');
+                            if (wrapper) {
+                                if (iconEl) iconEl.setAttribute('hidden','');
+                                wrapper.insertAdjacentElement('afterbegin', img);
+                            }
+                        }
+                    }
+
+                    // cover
+                    if (!flags.show_cover) {
+                        card.style.backgroundImage = '';
+                        card.removeAttribute('data-cover-url');
+                    } else {
+                        const coverUrl = card.getAttribute('data-cover-url') || '';
+                        if (coverUrl) card.style.backgroundImage = `url('${coverUrl}')`;
+                    }
+
+                    // title
+                    const titleEl = card.querySelector('.card-title');
+                    if (titleEl) titleEl.style.display = flags.show_title ? '' : 'none';
+                    // description
+                    const descEl = card.querySelector('.card-text');
+                    if (descEl) descEl.style.display = flags.show_description ? '' : 'none';
+                    // button
+                    const btnEl = card.querySelector('a.btn') || card.querySelector('.btn');
+                    if (btnEl) btnEl.style.display = flags.show_button ? '' : 'none';
+
+                    // button position: update card class and data attribute when server returns position
+                    const serverPos = (resp && resp.category && typeof resp.category.button_position !== 'undefined') ? (resp.category.button_position || 'bottom') : (qcButtonPosition ? qcButtonPosition.value : 'bottom');
+                    // normalize
+                    const pos = ['top','center','bottom'].includes(serverPos) ? serverPos : 'bottom';
+                    // set data attribute
+                    card.setAttribute('data-button-position', pos);
+                    // update class list: remove any btn-pos-* then add desired
+                    card.classList.remove('btn-pos-top','btn-pos-center','btn-pos-bottom');
+                    card.classList.add('btn-pos-'+pos);
+                    return resp;
+                });
+        }
+
+        // Always push visibility update so UI reflects changes immediately
+        tasks.push(doVisibilityUpdate());
+
+        if (tasks.length === 0) {
+            alert('Informe a URL da imagem, a URL da capa ou altere a classe do ícone.');
+            return;
+        }
+
+        Promise.all(tasks).then(()=>{
+            qcModal.hide();
+        }).catch(err=>{
+            alert(err.message||'Erro');
+        });
+    });
 });
 </script>
 @endpush

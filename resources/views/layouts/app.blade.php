@@ -129,10 +129,31 @@
 
             /* (banner behavior restored to the original rules further below) */
 
-            /* Reduce badge sizes */
+            /* Utility: circular badge used for icon badges and image overlays */
             .badge-circle {
-                width: 80px !important;
-                height: 80px !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 56px !important;
+                height: 56px !important;
+                padding: 0 !important;
+                border-radius: 50% !important;
+                font-size: 1.05rem !important;
+                line-height: 1 !important;
+                text-align: center !important;
+                white-space: nowrap !important;
+            }
+
+            .badge-circle-sm {
+                width: 44px !important;
+                height: 44px !important;
+                font-size: .95rem !important;
+            }
+
+            .badge-circle-lg {
+                width: 76px !important;
+                height: 76px !important;
+                font-size: 1.2rem !important;
             }
 
             /* Product card compact */

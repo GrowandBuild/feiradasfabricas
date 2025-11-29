@@ -50,7 +50,7 @@
                             </div>
                         </div>
 
-                        <!-- Color system removed (not functional) -->
+
                     </div>
                 </div>
             </div>
@@ -260,7 +260,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }).catch(err => { console.error(err); showAlert('Erro ao enviar app icon.', 'danger'); });
     });
 
-    // Theme controls removed (not functional)
+    
 });
 
 // Função para salvar configurações de pagamento

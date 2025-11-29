@@ -227,7 +227,7 @@
                                                id="category_{{ $category->id }}"
                                                {{ in_array($category->id, old('categories', $productCategories)) ? 'checked' : '' }}>
                                         <label class="form-check-label d-flex align-items-center" for="category_{{ $category->id }}">
-                                            <span class="badge bg-light text-dark me-2">
+                                            <span class="badge bg-light text-dark me-2 badge-circle badge-circle-sm">
                                                 <i class="bi bi-tag"></i>
                                             </span>
                                             {{ $category->name }}
@@ -768,7 +768,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                      class="img-thumbnail" 
                                      style="width: 100%; height: 100px; object-fit: cover; cursor: pointer;"
                                      alt="Preview ${file.name}">
-                                <span class="badge bg-success position-absolute top-0 start-0">Nova</span>
+                                <span class="badge bg-success position-absolute top-0 start-0 badge-circle badge-circle-sm m-2">Nova</span>
                                 <button type="button" 
                                         class="btn btn-sm btn-danger position-absolute top-0 end-0" 
                                         onclick="removeNewImagePreview(this, '${file.name}')">

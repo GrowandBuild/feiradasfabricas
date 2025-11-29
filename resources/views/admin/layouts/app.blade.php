@@ -24,7 +24,7 @@
         @endphp
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}">
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}">
-        <link rel="mask-icon" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}" color="{{ setting('theme_secondary', '#ff9900') }}">
+        <link rel="mask-icon" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}" color="{{ setting('theme_secondary', '#495a6d') }}">
     @else
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
@@ -38,8 +38,8 @@
             --primary-color: #1e293b;
             --primary-dark: #0f172a;
             --secondary-color: #64748b;
-            --accent-color: #ff8c00;
-            --accent-dark: #e67e00;
+            --accent-color: #495a6d;
+            --accent-dark: #384858;
             --success-color: #10b981;
             --warning-color: #f59e0b;
             --danger-color: #ef4444;
@@ -57,7 +57,7 @@
         .sidebar {
             background: linear-gradient(180deg, var(--primary-dark, #0f172a) 0%, rgba(15,23,42,0.85) 100%);
             min-height: 100vh;
-            padding-top: 1rem;
+            padding-top: calc(var(--admin-header-height, 72px) + 1rem);
             color: var(--text-primary, #ffffff);
         }
 
@@ -385,7 +385,7 @@
 
         .form-control:focus, .form-select:focus {
             border-color: var(--accent-color);
-            box-shadow: 0 0 0 3px rgba(255, 140, 0, 0.1);
+            box-shadow: 0 0 0 3px rgba(73, 90, 109, 0.1);
         }
 
         .form-label {
@@ -577,7 +577,7 @@
 
         .admin-bottom-nav .nav-link.active {
             color: var(--accent-color);
-            background: rgba(255, 140, 0, 0.12);
+            background: rgba(73, 90, 109, 0.12);
         }
 
         @media (max-width: 992px) {
@@ -709,7 +709,7 @@
             background: linear-gradient(135deg, var(--accent-color) 0%, var(--accent-dark) 100%);
             color: white;
             border: none;
-            box-shadow: 0 8px 16px rgba(255, 140, 0, 0.3);
+            box-shadow: 0 8px 16px rgba(73, 90, 109, 0.3);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -720,7 +720,7 @@
 
         .smart-search-trigger:hover {
             transform: scale(1.1);
-            box-shadow: 0 12px 24px rgba(255, 140, 0, 0.4);
+            box-shadow: 0 12px 24px rgba(73, 90, 109, 0.4);
         }
 
         .smart-search-trigger:active {
@@ -812,7 +812,7 @@
         .smart-search-input-group:focus-within {
             border-color: var(--accent-color);
             background: white;
-            box-shadow: 0 0 0 4px rgba(255, 140, 0, 0.1);
+            box-shadow: 0 0 0 4px rgba(73, 90, 109, 0.1);
         }
 
         .smart-search-input-group i {
@@ -1053,6 +1053,10 @@
                             <i class="bi bi-award"></i>
                             <span>Selos</span>
                         </a>
+                        <a class="nav-link {{ request()->routeIs('admin.homepage-sections.*') ? 'active' : '' }}" href="{{ route('admin.homepage-sections.index') }}">
+                            <i class="bi bi-layout-three-columns"></i>
+                            <span>Sessões</span>
+                        </a>
                         <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                             <i class="bi bi-people"></i> 
                             <span>Usuários</span>
@@ -1066,7 +1070,7 @@
                     
                     <!-- Frases Motivacionais e Dicas de Negócio -->
                     <div class="sidebar-quotes px-3 py-4 mt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(255,140,0,0.8);">
+                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(73,90,109,0.8);">
                             <div class="d-flex align-items-start gap-2">
                                 <i class="bi bi-lightbulb-fill" style="color: #fbbf24; font-size: 1.2rem; flex-shrink: 0;"></i>
                                 <div>
@@ -1413,6 +1417,10 @@
                 <a class="nav-link {{ request()->routeIs('admin.department-badges.*') ? 'active' : '' }}" href="{{ route('admin.department-badges.index') }}">
                     <i class="bi bi-award"></i>
                     <span>Selos</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.homepage-sections.*') ? 'active' : '' }}" href="{{ route('admin.homepage-sections.index') }}">
+                    <i class="bi bi-layout-three-columns"></i>
+                    <span>Sessões</span>
                 </a>
                 <a class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">
                     <i class="bi bi-ticket-perforated"></i>

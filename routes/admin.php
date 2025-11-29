@@ -66,6 +66,13 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('categories', CategoryController::class);
         // JSON list for categories (used by quick-create modal)
         Route::get('categories/list', [CategoryController::class, 'list'])->name('categories.list');
+        // Quick inline update for categories (used by frontend when admin is logged)
+        Route::post('categories/{category}/quick-update', [CategoryController::class, 'quickUpdate'])->name('categories.quick-update');
+        Route::post('categories/{category}/update-image', [CategoryController::class, 'updateImage'])->name('categories.update-image');
+        Route::post('categories/{category}/remove-image', [CategoryController::class, 'removeImage'])->name('categories.remove-image');
+        // Cover (background) image for category cards
+        Route::post('categories/{category}/update-cover', [CategoryController::class, 'updateCover'])->name('categories.update-cover');
+        Route::post('categories/{category}/remove-cover', [CategoryController::class, 'removeCover'])->name('categories.remove-cover');
 
     // Departamentos
     Route::get('departments/inline-snapshot', [DepartmentController::class, 'inlineSnapshot'])->name('departments.inline-snapshot');
@@ -112,6 +119,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
         // Selos de Marcas (Department Badges)
         Route::resource('department-badges', DepartmentBadgeController::class);
+        // Homepage Sections (dynamic sessions on homepage)
+        Route::resource('homepage-sections', App\Http\Controllers\Admin\HomepageSectionController::class);
         Route::patch('department-badges/{departmentBadge}/toggle-active', [DepartmentBadgeController::class, 'toggleActive'])->name('department-badges.toggle-active');
     // Atalhos rápidos (JSON) para selos
     Route::post('department-badges/{departmentBadge}/update-title', [DepartmentBadgeController::class, 'updateTitle'])->name('department-badges.update-title');

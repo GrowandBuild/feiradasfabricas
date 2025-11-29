@@ -687,6 +687,27 @@
     </div>
 </section>
 
+@php
+    // Show global sections on the homepage. Additionally, include sections
+    // for the department that is used as the homepage ("eletronicos").
+    $homepageSectionsQuery = \App\Models\HomepageSection::where('enabled', true);
+    $homeDept = \App\Models\Department::where('slug', 'eletronicos')->first();
+    if ($homeDept) {
+        $homepageSectionsQuery->where(function($q) use ($homeDept) {
+            $q->whereNull('department_id')
+              ->orWhere('department_id', $homeDept->id);
+        });
+    } else {
+        $homepageSectionsQuery->whereNull('department_id');
+    }
+    $homepageSections = $homepageSectionsQuery->orderBy('position')->get();
+@endphp
+
+@foreach($homepageSections as $section)
+    @include('components.homepage_section_products', ['section' => $section])
+@endforeach
+
+
 <!-- B2B Section -->
 <section class="section section-light">
     <div class="container">

@@ -14,13 +14,27 @@ class Category extends Model
         'slug',
         'description',
         'image',
+        'icon_class',
+        'cover',
         'is_active',
         'sort_order',
         'department_id',
+        'show_avatar',
+        'show_cover',
+        'show_title',
+        'show_description',
+        'show_button',
+        'button_position',
     ];
 
     protected $casts = [
         'is_active' => 'boolean',
+        'show_avatar' => 'boolean',
+        'show_cover' => 'boolean',
+        'show_title' => 'boolean',
+        'show_description' => 'boolean',
+        'show_button' => 'boolean',
+        // button_position remains a string (top|center|bottom)
     ];
 
     /**
