@@ -63,7 +63,9 @@
                                                     $ctaSizeClass = $ctaSize === 'small' ? 'btn-sm' : ($ctaSize === 'large' ? 'btn-lg' : '');
                                                 @endphp
                                                 <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }} cta-size-{{ $banner->cta_size ?? 'medium' }} cta-layout-{{ $banner->cta_layout ?? 'horizontal' }}">
-                                                    @if($showPrimaryDesktop)
+                                                    <div class="container banner-ctas-inner">
+                                                        <div class="cta-wrapper">
+                                                        @if($showPrimaryDesktop)
                                                         @if($hasLink)
                                                             <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-desktop btn-pill">
                                                                 <i class="bi bi-lock-fill me-2"></i>
@@ -116,6 +118,7 @@
                                                             </button>
                                                         @endif
                                                     @endif
+                                                    </div>
                                                 </div>
                                             @endif
                                         </div>
@@ -305,29 +308,43 @@
     }
 }
 
-.banner-ctas { display:flex; gap: .5rem; align-items: center; position: absolute; z-index: 6; }
+    /* CTA size variants (match banner-slider sizing) */
+    .banner-ctas.cta-size-small .btn { padding: .35rem .7rem; font-size: .82rem; }
+    .banner-ctas.cta-size-medium .btn { padding: .55rem 1rem; font-size: .95rem; }
+    .banner-ctas.cta-size-large .btn { padding: .8rem 1.4rem; font-size: 1.02rem; }
+    .banner-ctas.cta-size-xlarge .btn { padding: 1.1rem 1.8rem; font-size: 1.12rem; }
+    .banner-ctas.cta-size-xxlarge .btn { padding: 1.4rem 2.0rem; font-size: 1.25rem; }
+    .banner-ctas.cta-size-xxxlarge .btn { padding: 1.8rem 2.4rem; font-size: 1.45rem; }
+
+.banner-ctas { display:block; position:absolute; left:0; right:0; z-index:6; }
+.banner-ctas-inner { display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; width:100%; max-width:var(--site-container-max-width, 1140px); margin:0 auto; padding:0 var(--site-container-padding, 1rem); box-sizing:border-box; }
+.banner-ctas-inner .cta-wrapper { grid-column: 2; display:flex; gap:.5rem; align-items:center; max-width: var(--site-container-max-width, 1140px); box-sizing: border-box; }
+.banner-ctas.cta-align-left .banner-ctas-inner .cta-wrapper { grid-column: 1; justify-self: start; margin-left: max(calc((100% - var(--site-container-max-width, 1140px)) / 2 + var(--site-container-padding, 1rem)), 0px); }
+.banner-ctas.cta-align-right .banner-ctas-inner .cta-wrapper { margin-right: max(calc((100% - var(--site-container-max-width, 1140px)) / 2 + var(--site-container-padding, 1rem)), 0px); }
+.banner-ctas.cta-align-center .banner-ctas-inner .cta-wrapper { grid-column: 2; justify-self: center; }
+.banner-ctas.cta-align-right .banner-ctas-inner .cta-wrapper { grid-column: 3; justify-self: end; }
 
 /* Size variants applied via wrapper classes to avoid Bootstrap override issues */
 .banner-ctas.cta-size-small .btn { padding: .35rem .6rem; font-size: .82rem; }
 .banner-ctas.cta-size-medium .btn { padding: .45rem .9rem; font-size: .9rem; }
 .banner-ctas.cta-size-large .btn { padding: .7rem 1.2rem; font-size: 1rem; }
 
-.banner-ctas .btn { /* fallback */ padding: .45rem .9rem; font-size: .9rem; }
+.banner-ctas .btn, .banner-ctas-inner .btn { /* fallback */ padding: .45rem .9rem; font-size: .9rem; }
 
 /* vertical position */
-.banner-ctas.cta-pos-top { top: 0.8rem; bottom: auto; transform: none; }
-.banner-ctas.cta-pos-center { top: 50%; bottom: auto; transform: translateY(-50%); }
-.banner-ctas.cta-pos-bottom { bottom: 1rem; top: auto; transform: none; }
+.banner-ctas.cta-pos-top { top: 0.8rem; bottom: auto; }
+.banner-ctas.cta-pos-center { top: 50%; bottom: auto; }
+.banner-ctas.cta-pos-bottom { bottom: 1rem; top: auto; }
 
-/* lateral alignment: avoid edge controls (use smaller safe offset for static banners) */
-.banner-ctas.cta-align-left { left: 2rem; right: auto; justify-content: flex-start; }
-.banner-ctas.cta-align-center { left: 0; right: 0; justify-content: center; }
-.banner-ctas.cta-align-right { right: 2rem; left: auto; justify-content: flex-end; }
+/* lateral alignment: align inside centered max-width container */
+.banner-ctas.cta-align-left { justify-content: flex-start; }
+.banner-ctas.cta-align-center { justify-content: center; }
+.banner-ctas.cta-align-right { justify-content: flex-end; }
 
 /* vertical layout stack for static banners */
 .banner-ctas.cta-layout-vertical { flex-direction: column; gap: .4rem; }
-.banner-ctas.cta-layout-vertical.cta-align-left { align-items: flex-start; left: 2rem; }
-.banner-ctas.cta-layout-vertical.cta-align-right { align-items: flex-end; right: 2rem; }
+.banner-ctas.cta-layout-vertical.cta-align-left { align-items: flex-start; justify-content: flex-start; }
+.banner-ctas.cta-layout-vertical.cta-align-right { align-items: flex-end; justify-content: flex-end; }
 .banner-ctas.cta-layout-vertical.cta-pos-bottom { bottom: 1rem; }
 .banner-cta-mobile { display: none; }
 .banner-link { background: transparent; }

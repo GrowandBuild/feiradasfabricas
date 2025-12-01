@@ -224,6 +224,10 @@
     .elegant-card.btn-pos-top .btn-outline-primary { position: absolute; left: 50%; width: calc(100% - 32px); top: 12px; z-index: 3; --btn-transform: translateX(-50%); transform: var(--btn-transform); }
     /* Center: absolute and centered in the middle of the card */
     .elegant-card.btn-pos-center .btn-outline-primary { position: absolute; left: 50%; width: calc(100% - 32px); top: 50%; z-index: 3; --btn-transform: translate(-50%, -50%); transform: var(--btn-transform); }
+    /* Left: pin the button to the left edge but inset to match site container */
+    .elegant-card.btn-pos-left .btn-outline-primary { position: absolute; left: 16px; width: calc(100% - 48px); top: 50%; transform: translateY(-50%); z-index: 3; }
+    /* Right: pin the button to the right edge but inset to match site container */
+    .elegant-card.btn-pos-right .btn-outline-primary { position: absolute; right: 16px; width: calc(100% - 48px); top: 50%; transform: translateY(-50%); z-index: 3; }
 
     /* Improved cover handling */
     .elegant-card.has-cover {
@@ -446,6 +450,42 @@
         text-decoration: none;
         transform: translateY(-1px);
         box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+    }
+
+    /* Align product buttons when card button position is left/right (inset by container spacing)
+       Use a CSS variable so it's easy to tweak the inset globally. */
+    :root { --card-btn-inset: 24px; }
+    .product-card.btn-pos-left .product-info { position: relative; }
+    .product-card.btn-pos-left .product-info .product-btn {
+        position: absolute;
+        left: var(--card-btn-inset);
+        width: calc(100% - (var(--card-btn-inset) * 2 + 0px));
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 3;
+    }
+
+    .product-card.btn-pos-right .product-info { position: relative; }
+    .product-card.btn-pos-right .product-info .product-btn {
+        position: absolute;
+        right: var(--card-btn-inset);
+        width: calc(100% - (var(--card-btn-inset) * 2 + 0px));
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 3;
+    }
+
+    /* On small screens keep buttons in normal flow to avoid overlap */
+    @media (max-width: 576px) {
+        .product-card.btn-pos-left .product-info .product-btn,
+        .product-card.btn-pos-right .product-info .product-btn {
+            position: static;
+            width: 100%;
+            transform: none;
+            top: auto;
+            left: auto;
+            right: auto;
+        }
     }
 
     /* Botão de Editar Admin */
@@ -1225,6 +1265,91 @@
         ->orderBy('position')
         ->get();
 @endphp
+
+<!-- Categorias (moved here so categories appear above homepage sections) -->
+@if($categories && $categories->count() > 0)
+<section class="section-elegant" style="padding: 20px 0;">
+    <div class="container">
+        <h2 class="section-title" style="font-size: 1.6rem; margin-bottom: 5px;">Nossas Categorias</h2>
+        <p class="section-subtitle" style="margin-bottom: 12px;">
+            Explore nossa ampla gama de produtos em diferentes categorias
+        </p>
+        <div class="row g-2">
+            @foreach($categories->take(4) as $category)
+                <div class="col-lg-3 col-md-3 col-sm-6 col-6">
+                    @php
+                        $catCoverUrl = null;
+                        if (isset($category->cover) && $category->cover) {
+                            if (\Illuminate\Support\Str::startsWith($category->cover, ['http://', 'https://'])) {
+                                $catCoverUrl = $category->cover;
+                            } else {
+                                $catCoverUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($category->cover);
+                            }
+                        }
+                        // visibility flags (defaults to true when column absent)
+                        $showAvatar = $category->show_avatar ?? true;
+                        $showCover = $category->show_cover ?? true;
+                        $showTitle = $category->show_title ?? true;
+                        $showDescription = $category->show_description ?? true;
+                        $showButton = $category->show_button ?? true;
+                    @endphp
+                    <div class="elegant-card btn-pos-{{ $category->button_position ?? 'bottom' }} @if($catCoverUrl && $showCover) has-cover @endif" @if($catCoverUrl && $showCover) style="background-image: url('{{ $catCoverUrl }}'); background-size: cover; background-position: center;" data-cover-url="{{ $catCoverUrl }}" @else data-cover-url="" @endif data-button-position="{{ $category->button_position ?? 'bottom' }}">
+                        <div class="card-icon" @if(!$showAvatar) style="display:none;" @endif>
+                            @php
+                                $iconClass = $category->icon_class ?? 'fas fa-laptop';
+                                $catImageUrl = null;
+                                if ($category->image) {
+                                    if (\Illuminate\Support\Str::startsWith($category->image, ['http://', 'https://'])) {
+                                        $catImageUrl = $category->image;
+                                    } else {
+                                        $catImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($category->image);
+                                    }
+                                }
+                            @endphp
+                            @if($showAvatar && $catImageUrl)
+                                <img src="{{ $catImageUrl ?: asset('images/no-image.svg') }}" alt="{{ $category->name }}" class="category-image-display" data-category-id="{{ $category->id }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;" @auth('admin') title="Clique para editar imagem" @endauth loading="lazy" decoding="async">
+                            @endif
+                            @if($showAvatar && !$catImageUrl)
+                                <i class="category-icon-display {{ $iconClass }}" data-category-id="{{ $category->id }}" @auth('admin') title="Clique para alterar ícone" style="cursor:pointer;" @endauth></i>
+                            @else
+                                {{-- If avatar is disabled, do not show icon --}}
+                                @if(!$showAvatar)
+                                    <i class="category-icon-display {{ $iconClass }}" data-category-id="{{ $category->id }}" hidden></i>
+                                @endif
+                            @endif
+                        </div>
+                        @if($showTitle)
+                        <h5 class="card-title">
+                            @auth('admin')
+                                <span class="js-edit-category-title" data-category-id="{{ $category->id }}" data-current-title="{{ $category->name }}" style="cursor: pointer;">{{ $category->name }}</span>
+                            @else
+                                {{ $category->name }}
+                            @endauth
+                        </h5>
+                        @endif
+                        @if($showDescription)
+                        <p class="card-text">
+                            @auth('admin')
+                                <span class="js-edit-category-desc" data-category-id="{{ $category->id }}" data-current-desc="{{ $category->description }}" style="cursor: pointer;">{{ $category->description ?? 'Produtos de alta qualidade para sua empresa.' }}</span>
+                            @else
+                                {{ $category->description ?? 'Produtos de alta qualidade para sua empresa.' }}
+                            @endauth
+                        </p>
+                        @endif
+                        @if($showButton)
+                        <a href="{{ route('products') }}?category={{ $category->slug }}" 
+                           class="btn btn-outline-primary w-100">
+                            Explorar Categoria
+                            <i class="fas fa-arrow-right ms-2"></i>
+                        </a>
+                        @endif
+                    </div>
+                </div>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
 
 @foreach($homepageSections as $section)
     @include('components.homepage_section_products', ['section' => $section])

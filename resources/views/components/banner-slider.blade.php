@@ -71,7 +71,10 @@
                                         $ctaSize = $banner->cta_size ?? 'medium';
                                         $ctaSizeClass = $ctaSize === 'small' ? 'btn-sm' : ($ctaSize === 'large' ? 'btn-lg' : '');
                                     @endphp
-                                    <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }} cta-size-{{ $banner->cta_size ?? 'medium' }} cta-layout-{{ $banner->cta_layout ?? 'horizontal' }}">
+                                    <div class="container banner-ctas-outer">
+                                        <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }} cta-size-{{ $banner->cta_size ?? 'medium' }} cta-layout-{{ $banner->cta_layout ?? 'horizontal' }}">
+                                            <div class="banner-ctas-inner">
+                                                <div class="cta-wrapper">
                                         @if($showPrimaryDesktop)
                                                     @if($hasLink)
                                                         <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-desktop btn-pill {{ $ctaSizeClass }}">
@@ -125,6 +128,9 @@
                                                 </button>
                                             @endif
                                         @endif
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 @endif
                 
@@ -248,6 +254,7 @@
 </div>
 
 <style>
+.banner-slider { --site-container-max-width: 1440px; --site-container-padding: 1rem; --banner-cta-offset: calc((100% - var(--site-container-max-width)) / 2 + var(--site-container-padding)); }
 .banner-slider {
     position: relative;
     width: 100%;
@@ -296,6 +303,9 @@
     object-fit: cover;
     display: block;
 }
+
+/* Make the container that wraps CTAs the positioned ancestor so CTAs align with page content */
+.banner-image-container > .banner-ctas-outer { position: absolute; inset: 0; }
 
 .mobile-image {
     display: none;
@@ -457,6 +467,13 @@
     }
 }
 
+/* Mobile: remove inner container lateral padding so CTAs can use full width
+   (fixes the 14px left/right padding the inspector shows). Keep scoped to
+   mobile so desktop spacing remains controlled by the site container variable.) */
+@media (max-width: 768px) {
+    .banner-ctas .banner-ctas-inner { padding-left: 0 !important; padding-right: 0 !important; }
+}
+
 @media (max-width: 480px) {
     .banner-slides-wrapper {
         height: 35vh;
@@ -491,30 +508,74 @@
     }
 }
 
-.banner-ctas { display:flex; gap: .6rem; align-items: center; position: absolute; z-index: 6; }
+
+.banner-ctas { display:block; position:absolute; left:0; right:0; z-index:6; }
+.banner-ctas-inner { display:grid; grid-template-columns: 1fr auto 1fr; align-items:center; width:100%; max-width:var(--site-container-max-width); margin:0 auto; padding:0 var(--site-container-padding); box-sizing:border-box; }
+
+@media (min-width: 769px) {
+    /* Remove extra lateral padding that prevents CTAs from reaching the page gutter.
+       We keep this scoped only to larger screens so mobile spacing remains unchanged. */
+    .banner-ctas.cta-align-left .banner-ctas-inner { padding-left: 0 !important; }
+    .banner-ctas.cta-align-right .banner-ctas-inner { padding-right: 0 !important; }
+}
+/* Align CTA wrapper to the container inner edge by calculating the page side gutter
+    ( (100% - max-width)/2 + container padding ). This aligns CTAs with the logo/cards.
+    Uses CSS variables so the site container can override values for global harmony. */
+.banner-ctas.cta-align-left .banner-ctas-inner .cta-wrapper { margin-left: max(calc((100% - var(--site-container-max-width)) / 2 + var(--site-container-padding)), 0px); }
+.banner-ctas.cta-align-right .banner-ctas-inner .cta-wrapper { margin-right: max(calc((100% - var(--site-container-max-width)) / 2 + var(--site-container-padding)), 0px); }
+.banner-ctas-inner .cta-wrapper { grid-column: 2; display:flex; gap:.6rem; align-items:center; max-width: var(--site-container-max-width); box-sizing: border-box; }
+.banner-ctas.cta-align-left .banner-ctas-inner .cta-wrapper { grid-column: 1; justify-self: start; }
+.banner-ctas.cta-align-center .banner-ctas-inner .cta-wrapper { grid-column: 2; justify-self: center; }
+.banner-ctas.cta-align-right .banner-ctas-inner .cta-wrapper { grid-column: 3; justify-self: end; }
 
 /* Size variants applied via wrapper classes to avoid Bootstrap override issues */
 .banner-ctas.cta-size-small .btn { padding: .35rem .7rem; font-size: .82rem; }
 .banner-ctas.cta-size-medium .btn { padding: .55rem 1rem; font-size: .95rem; }
 .banner-ctas.cta-size-large .btn { padding: .8rem 1.4rem; font-size: 1.02rem; }
 
-.banner-ctas .btn { /* fallback */ padding: .55rem 1rem; font-size: .95rem; }
+/* Extra size variants requested by admin UI: progressively larger paddings/font-size */
+.banner-ctas.cta-size-xlarge .btn { padding: 1.1rem 1.8rem; font-size: 1.12rem; }
+.banner-ctas.cta-size-xxlarge .btn { padding: 1.4rem 2.0rem; font-size: 1.25rem; }
+.banner-ctas.cta-size-xxxlarge .btn { padding: 1.8rem 2.4rem; font-size: 1.45rem; }
+
+.banner-ctas .btn, .banner-ctas-inner .btn { /* fallback */ padding: .55rem 1rem; font-size: .95rem; }
 
 /* vertical position */
-.banner-ctas.cta-pos-top { top: 1.5rem; bottom: auto; transform: none; }
-.banner-ctas.cta-pos-center { top: 50%; bottom: auto; transform: translateY(-50%); }
-.banner-ctas.cta-pos-bottom { bottom: calc(1.5rem + 28px); top: auto; transform: none; /* lift above indicators (dots ~20px + gap) */ }
+.banner-ctas.cta-pos-top { top: 1.5rem; bottom: auto; }
+.banner-ctas.cta-pos-center { top: 50%; bottom: auto; }
+.banner-ctas.cta-pos-bottom { bottom: calc(1.5rem + 28px); top: auto; }
 
-/* lateral alignment: give safe offsets so CTAs don't collide with slider arrows */
-.banner-ctas.cta-align-left { left: 70px; right: auto; justify-content: flex-start; }
-.banner-ctas.cta-align-center { left: 0; right: 0; justify-content: center; }
-.banner-ctas.cta-align-right { right: 70px; left: auto; justify-content: flex-end; }
+/* lateral alignment: use container-like centering and justify-content to align inside max-width */
+.banner-ctas.cta-align-left { justify-content: flex-start; }
+.banner-ctas.cta-align-center { justify-content: center; }
+.banner-ctas.cta-align-right { justify-content: flex-end; }
 
-/* vertical layout stack */
-.banner-ctas.cta-layout-vertical { flex-direction: column; gap: .5rem; }
-.banner-ctas.cta-layout-vertical .btn { display: inline-flex; align-items: center; }
-.banner-ctas.cta-layout-vertical.cta-align-left { align-items: flex-start; left: 70px; }
-.banner-ctas.cta-layout-vertical.cta-align-right { align-items: flex-end; right: 70px; }
+/* vertical layout: make the CTA wrapper a vertical flex column so buttons stack */
+.banner-ctas.cta-layout-vertical .banner-ctas-inner .cta-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+    align-items: flex-start; /* default; overridden below for right/center */
+}
+.banner-ctas.cta-layout-vertical .banner-ctas-inner .cta-wrapper .btn {
+    display: inline-flex;
+    width: auto;
+}
+.banner-ctas.cta-layout-vertical.cta-align-left .banner-ctas-inner .cta-wrapper {
+    align-items: flex-start;
+    grid-column: 1;
+    justify-self: start;
+}
+.banner-ctas.cta-layout-vertical.cta-align-center .banner-ctas-inner .cta-wrapper {
+    align-items: center;
+    grid-column: 2;
+    justify-self: center;
+}
+.banner-ctas.cta-layout-vertical.cta-align-right .banner-ctas-inner .cta-wrapper {
+    align-items: flex-end;
+    grid-column: 3;
+    justify-self: end;
+}
 .banner-ctas.cta-layout-vertical.cta-pos-bottom { bottom: calc(1.5rem + 28px); }
 .banner-ctas .btn { padding: .55rem 1rem; font-size: .95rem; }
 .banner-ctas .banner-cta-mobile { display: none !important; }
@@ -531,6 +592,20 @@
     .banner-ctas { justify-content: center; left: 0; right: 0; }
     .banner-ctas.cta-align-left { left: .75rem; right: auto; }
     .banner-ctas.cta-align-right { right: .75rem; left: auto; }
+}
+
+/* Fix / Debug: ensure right-aligned CTAs take the right grid column and margin
+   (higher specificity in case other CSS overrides are present). Remove or
+   simplify later if this proves sufficient in production. */
+.banner-ctas.cta-align-left .banner-ctas-inner .cta-wrapper {
+    grid-column: 1 !important;
+    justify-self: start !important;
+    margin-left: max(calc((100% - var(--site-container-max-width)) / 2 + var(--site-container-padding)), 0px) !important;
+}
+.banner-ctas.cta-align-right .banner-ctas-inner .cta-wrapper {
+    grid-column: 3 !important;
+    justify-self: end !important;
+    margin-right: max(calc((100% - var(--site-container-max-width)) / 2 + var(--site-container-padding)), 0px) !important;
 }
 </style>
 
@@ -625,3 +700,89 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endif
+
+<script>
+    // Align banner CTAs with the header logo precisely.
+    (function(){
+        function alignCtasWithLogo(){
+            var sliders = document.querySelectorAll('.banner-slider');
+            if(!sliders || sliders.length === 0) return;
+
+            sliders.forEach(function(slider){
+                var sliderRect = slider.getBoundingClientRect();
+                var banner = slider.querySelector('.banner-image-container');
+                if(!banner) return;
+
+                var ctas = slider.querySelectorAll('.banner-ctas');
+                ctas.forEach(function(ctasEl){
+                    var inner = ctasEl.querySelector('.banner-ctas-inner');
+                    var wrapper = ctasEl.querySelector('.cta-wrapper');
+                    if(!inner || !wrapper) return;
+
+                    // Reset any inline margin we set previously
+                    wrapper.style.marginLeft = '';
+                    wrapper.style.marginRight = '';
+
+                    // Read CSS variables used for container alignment and optional adjust
+                    var computed = getComputedStyle(slider);
+                    var maxW = parseFloat(computed.getPropertyValue('--site-container-max-width')) || 1140;
+                    var pad = parseFloat(computed.getPropertyValue('--site-container-padding')) || 16;
+                    var adjust = parseFloat(computed.getPropertyValue('--banner-cta-adjust')) || 8; // pixels to shift inward
+
+                    // Compute pixel offset equivalent to: calc((100% - var(--site-container-max-width)) / 2 + var(--site-container-padding))
+                    var gutter = Math.max(0, (sliderRect.width - maxW) / 2 + pad);
+
+                    // account for any inner padding the grid may have (e.g. .banner-ctas-inner { padding-left: 56px })
+                    var innerStyle = getComputedStyle(inner);
+                    var innerPadLeft = parseFloat(innerStyle.paddingLeft) || 0;
+                    var innerPadRight = parseFloat(innerStyle.paddingRight) || 0;
+
+                    // Ensure CTA wrapper does not overflow the slider (leave 8px padding)
+                    var maxAllowed = Math.max(0, sliderRect.width - wrapper.offsetWidth - 8);
+
+                    // For left-aligned CTAs: align to the page/container gutter (minus optional adjust and inner padding)
+                    if(ctasEl.classList.contains('cta-align-left')){
+                        var desiredLeft = Math.min(maxAllowed, Math.round(Math.max(0, gutter - adjust - innerPadLeft)));
+                        if(desiredLeft > 0) wrapper.style.marginLeft = desiredLeft + 'px';
+                    }
+
+                    // For right-aligned CTAs: mirror the same gutter on the right (minus optional adjust and inner padding)
+                    if(ctasEl.classList.contains('cta-align-right')){
+                        var desiredRight = Math.min(maxAllowed, Math.round(Math.max(0, gutter - adjust - innerPadRight)));
+                        if(desiredRight > 0) wrapper.style.marginRight = desiredRight + 'px';
+                    }
+                });
+            });
+        }
+
+        // Run on DOM ready and on resize (debounced)
+        document.addEventListener('DOMContentLoaded', alignCtasWithLogo);
+        var resizeTimer;
+        window.addEventListener('resize', function(){ clearTimeout(resizeTimer); resizeTimer = setTimeout(alignCtasWithLogo, 120); });
+        // Also align after images/fonts load
+        window.addEventListener('load', function(){ setTimeout(alignCtasWithLogo, 50); });
+    })();
+</script>
+
+<script>
+    // Debug helper: log any banners that have 'cta-align-right' and show computed values
+    (function(){
+        function debugCtas(){
+            var banners = document.querySelectorAll('.banner-slider');
+            banners.forEach(function(slider){
+                var ctas = slider.querySelectorAll('.banner-ctas.cta-align-right');
+                ctas.forEach(function(ctasEl, idx){
+                    var wrapper = ctasEl.querySelector('.cta-wrapper');
+                    if(!wrapper) return;
+                    var cs = window.getComputedStyle(wrapper);
+                    console.info('[banner-debug] cta-align-right found', {slider: slider, index: idx, gridColumn: cs.gridColumn, justifySelf: cs.justifySelf, marginRight: cs.marginRight, marginLeft: cs.marginLeft});
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', debugCtas);
+        window.addEventListener('load', function(){ setTimeout(debugCtas, 60); });
+        var t;
+        window.addEventListener('resize', function(){ clearTimeout(t); t = setTimeout(debugCtas, 150); });
+    })();
+</script>

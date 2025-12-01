@@ -463,6 +463,60 @@
         font-size: 1rem;
     }
 }
+
+/* Mobile bottom-nav behaviour: transform the live-search into a fixed bottom navigation
+   with centered search bubble. The results dropdown opens upward to avoid being
+   clipped by the viewport bottom. This keeps desktop behaviour unchanged. */
+@media (max-width: 768px) {
+    .live-search-wrapper {
+        position: fixed !important;
+        left: 12px;
+        right: 12px;
+        bottom: calc(12px + env(safe-area-inset-bottom));
+        max-width: none;
+        margin: 0 auto;
+        z-index: 11000;
+        pointer-events: auto;
+    }
+
+    .live-search-container {
+        width: 100%;
+    }
+
+    .live-search-form {
+        border-radius: 999px !important;
+        box-shadow: 0 10px 30px rgba(15,23,42,0.18) !important;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96));
+        padding: 6px;
+    }
+
+    /* Ensure the input stays usable inside the small bottom bar */
+    .live-search-input {
+        padding: 10px 12px;
+        font-size: 14px;
+    }
+
+    .live-search-submit {
+        padding: 10px 12px;
+        min-width: 44px;
+        box-shadow: none !important;
+    }
+
+    /* Open results above the bottom bar */
+    .live-search-results {
+        left: 50% !important;
+        right: auto !important;
+        transform: translateX(-50%) !important;
+        bottom: calc(100% + 12px) !important;
+        top: auto !important;
+        max-width: calc(100% - 32px) !important;
+        width: auto !important;
+        margin-top: 0 !important;
+    }
+
+    /* Slightly increase footer spacing so link isn't too close to edges */
+    .live-search-footer { padding: 14px 18px; }
+}
 </style>
 
 <script>

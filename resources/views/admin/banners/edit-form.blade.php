@@ -611,6 +611,9 @@
                         <option value="small" {{ old('cta_size', $banner->cta_size ?? 'medium') == 'small' ? 'selected' : '' }}>Pequeno</option>
                         <option value="medium" {{ old('cta_size', $banner->cta_size ?? 'medium') == 'medium' ? 'selected' : '' }}>Médio (padrão)</option>
                         <option value="large" {{ old('cta_size', $banner->cta_size ?? 'medium') == 'large' ? 'selected' : '' }}>Grande</option>
+                        <option value="xlarge" {{ old('cta_size', $banner->cta_size ?? 'medium') == 'xlarge' ? 'selected' : '' }}>Muito grande</option>
+                        <option value="xxlarge" {{ old('cta_size', $banner->cta_size ?? 'medium') == 'xxlarge' ? 'selected' : '' }}>Extra grande</option>
+                        <option value="xxxlarge" {{ old('cta_size', $banner->cta_size ?? 'medium') == 'xxxlarge' ? 'selected' : '' }}>Super grande</option>
                     </select>
                 </div>
                 <div class="col-md-4">

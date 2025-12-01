@@ -12,17 +12,60 @@ class HomepageSectionController extends Controller
 {
     public function index()
     {
-        $sections = HomepageSection::orderBy('position')->get();
-        return view('admin.homepage_sections.index', compact('sections'));
-    }
+        $query = HomepageSection::orderBy('position');
 
-    public function create()
-    {
-        $departments = Department::orderBy('name')->get();
-        $products = Product::orderBy('name')->limit(500)->get();
-        return view('admin.homepage_sections.form', ['section' => new HomepageSection(), 'departments' => $departments, 'products' => $products]);
-    }
+        // Optional department filter via query string (id or slug)
+        if (request()->has('department')) {
+            $dept = request()->get('department');
+            if (is_numeric($dept)) {
+                $query->where('department_id', (int)$dept);
+            } else {
+                // try resolve slug -> id
+                $d = Department::where('slug', $dept)->orWhereRaw('LOWER(slug) = LOWER(?)', [$dept])->orWhere('name', 'like', "%{$dept}%")->first();
+                if ($d) $query->where('department_id', $d->id);
+            }
+        }
 
+        $sections = $query->get();
+
+        // If JSON requested, return a lightweight JSON payload for the admin widgets
+        if (request()->wantsJson() || request()->get('as') === 'json') {
+            $payload = $sections->map(function($s){
+                return [
+                    $query = HomepageSection::orderBy('position');
+
+                    // Optional department filter via query string (id or slug)
+                    if ($request->has('department')) {
+                        $dept = $request->get('department');
+                        if (is_numeric($dept)) {
+                            $query->where('department_id', (int)$dept);
+                        } else {
+                            // try resolve slug -> id
+                            $d = Department::where('slug', $dept)->orWhereRaw('LOWER(slug) = LOWER(?)', [$dept])->orWhere('name', 'like', "%{$dept}%")->first();
+                            if ($d) $query->where('department_id', $d->id);
+                        }
+                    }
+
+                    $sections = $query->get();
+
+                    // If JSON requested, return a lightweight JSON payload for the admin widgets
+                    if ($request->wantsJson() || $request->get('as') === 'json') {
+                        $payload = $sections->map(function($s){
+                            return [
+                                'id' => $s->id,
+                                'title' => $s->title,
+                                'department_id' => $s->department_id,
+                                'product_ids' => $s->product_ids ?? [],
+                                'limit' => $s->limit,
+                                'position' => $s->position,
+                                'enabled' => (bool)($s->enabled ?? false),
+                            ];
+                        })->toArray();
+
+                        return response()->json(['success' => true, 'sections' => $payload]);
+                    }
+
+                    return view('admin.homepage_sections.index', compact('sections'));
     public function store(Request $request)
     {
         $data = $request->validate([

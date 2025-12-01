@@ -1,0 +1,13 @@
+/* Global CSS variables for site layout / container harmony
+	These allow components (like banners) to align to the same content edges.
+	You can override these in other CSS files or in a theme by redefining :root.
+*/
+:root {
+  --site-container-max-width: 1140px;
+  --site-container-padding: 1rem;
+}
+
+/* keep app.css available for other global styles (this file is intentionally minimal)
+	The build (Vite) will still bundle this file with JS entry `resources/js/app.js`.
+*/
+

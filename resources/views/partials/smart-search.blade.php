@@ -202,6 +202,90 @@
             .sections-panel .sp-body { padding: 14px; }
             .sections-panel .sp-footer { flex-wrap: wrap; justify-content: center; gap: 10px; }
         }
+
+        /* Mobile bottom-nav variant for smart-search: convert FAB to a compact bottom bar
+           and make the panel open above it. Keeps admin tools reachable while improving
+           mobile ergonomics. */
+        @media (max-width: 640px) {
+            .smart-search-fab {
+                /* center a compact pill rather than spanning full width */
+                left: 50% !important;
+                right: auto !important;
+                transform: translateX(-50%);
+                bottom: env(safe-area-inset-bottom,12px) !important;
+                display: inline-flex !important;
+                flex-direction: row !important;
+                justify-content: center;
+                align-items: center;
+                gap: 10px;
+                --ss-nav-height: 64px;
+                padding: 8px 12px;
+                background: var(--primary-color, #0f172a); /* use dynamic primary color */
+                color: var(--text-light, #fff);
+                box-shadow: 0 8px 30px rgba(2,6,23,0.18);
+                border-radius: 999px;
+                z-index: 1200;
+                max-width: calc(100% - 48px);
+            }
+            .smart-search-fab > button { margin: 0; }
+            .smart-search-trigger { width: 56px; height: 56px; border-radius: 999px; font-size: 1.2rem; }
+            .departments-trigger, .sections-trigger, .theme-trigger { display: inline-flex; width: 44px; height: 44px; border-radius: 10px; }
+            /* Place the panel above the bottom-nav and reduce width to fit mobile */
+            .smart-search-panel {
+                left: 50% !important;
+                right: auto !important;
+                transform: translateX(-50%);
+                bottom: calc(var(--ss-nav-height,56px) + env(safe-area-inset-bottom,12px) + 12px) !important;
+                width: min(920px, calc(100% - 32px)) !important;
+                max-height: 62vh !important;
+                border-radius: 12px !important;
+            }
+            /* Ensure overlays and other fixed panels don't get hidden behind nav */
+            .theme-panel, .departments-panel, .sections-panel { bottom: calc(56px + env(safe-area-inset-bottom,12px) + 14px); left: 12px; right: 12px; }
+        }
+
+        /* Desktop: center a compact bottom-nav variant so admin can use the same UX on larger screens.
+           The FAB becomes a centered pill; the panel opens above it and is constrained to a sensible max-width. */
+        @media (min-width: 641px) {
+            .smart-search-fab {
+                left: 50% !important;
+                right: auto !important;
+                transform: translateX(-50%);
+                bottom: 18px !important;
+                display: inline-flex !important;
+                flex-direction: row !important;
+                justify-content: center;
+                align-items: center;
+                gap: 12px;
+                --ss-nav-height: 64px;
+                padding: 8px 16px;
+                background: var(--primary-color, #0f172a); /* use dynamic primary color */
+                color: var(--text-light, #fff);
+                box-shadow: 0 8px 28px rgba(2,6,23,0.12);
+                border-radius: 999px;
+                z-index: 1200;
+                max-width: 920px;
+            }
+            .smart-search-fab > button { margin: 0; }
+            .smart-search-trigger { width: 56px; height: 56px; border-radius: 999px; font-size: 1.2rem; }
+            .departments-trigger, .sections-trigger, .theme-trigger { display: inline-flex; width: 44px; height: 44px; border-radius: 10px; }
+            .smart-search-panel {
+                left: 50% !important;
+                right: auto !important;
+                transform: translateX(-50%);
+                bottom: calc(var(--ss-nav-height,56px) + 18px + 12px) !important;
+                width: min(920px, calc(100% - 96px)) !important;
+                max-height: 70vh !important;
+                border-radius: 12px !important;
+            }
+            .theme-panel, .departments-panel, .sections-panel {
+                left: 50% !important;
+                right: auto !important;
+                transform: translateX(-50%);
+                bottom: calc(56px + 18px + 14px) !important;
+                width: min(980px, calc(100% - 96px));
+            }
+        }
     </style>
 
     <div class="smart-search-fab">
@@ -394,26 +478,26 @@
 
         <!-- Painel de Seções -->
         <div class="sections-panel" id="sectionsPanel">
-            <div class="sp-header">
-                <span><i class="bi bi-collection me-2"></i> Sessões</span>
-                <button class="smart-search-close" id="sectionsClose" aria-label="Fechar">
-                    <i class="bi bi-x-lg"></i>
-                </button>
+            <div class="sp-header" style="display:flex; align-items:center; gap:8px; justify-content:space-between;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <i class="bi bi-collection me-2"></i>
+                    <strong>Sessões</strong>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px;">
+                    <button class="sp-btn sp-btn-secondary" id="sectionsRefresh" title="Atualizar" style="padding:6px 10px;">⭮</button>
+                    <button class="smart-search-close" id="sectionsClose" aria-label="Fechar">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>
             </div>
             <div class="sp-body">
                 <div id="sectionsUnsupported" style="display:none; color:#64748b; font-size: 14px;">
-                    Abra este painel na página do departamento Eletrônicos para gerenciar as sessões.
+                    Abra este painel na página do departamento para ver as sessões disponíveis.
                 </div>
                 <ul class="sp-list" id="sectionsList"></ul>
-                <div class="mt-2 d-flex gap-2 align-items-stretch">
-                    <input type="text" id="spNewTitle" class="form-control" placeholder="Título da seção (opcional)">
-                    <button class="sp-btn sp-btn-secondary" id="spAdd">Adicionar</button>
+                <div id="sectionsEmpty" class="smart-search-empty" style="display:none; padding:12px; color:#64748b;">
+                    Nenhuma sessão encontrada para este departamento.
                 </div>
-                <small class="d-block mt-2" style="color:#64748b;">Dica: Use as setas para ordenar; desative para ocultar a seção. Salve para persistir.</small>
-            </div>
-            <div class="sp-footer">
-                <button class="sp-btn sp-btn-secondary" id="sectionsCancel">Cancelar</button>
-                <button class="sp-btn sp-btn-primary" id="sectionsSave">Salvar</button>
             </div>
             <!-- Quick-create de marca removido -->
             <!-- Confirmação de troca de seção -->
@@ -1756,53 +1840,53 @@
                 closeSpCreateBrand();
             });
             function renderSectionsList(){
-                const arr = getCurrentSectionsConfig();
-                // If not on a department page, show a hint but still render any available configuration
+                const arr = Array.isArray(window.DepartmentSectionsConfig) ? window.DepartmentSectionsConfig : getCurrentSectionsConfig();
+                // If not on a department page, show a hint
                 if (!onDepartmentPage()) {
                     sectionsUnsupported.style.display = 'block';
-                    sectionsUnsupported.textContent = 'Abra este painel em uma página de departamento para gerenciar as sessões.';
+                    sectionsUnsupported.textContent = 'Abra este painel em uma página de departamento para ver as sessões disponíveis.';
                 } else {
                     sectionsUnsupported.style.display = 'none';
                 }
-                // continue to render sections from available configuration even when not on-department
+
                 sectionsList.innerHTML = '';
-                const hasLookup = Array.isArray(availableBrands) && availableBrands.length > 0;
-                const sanitizedBrands = hasLookup ? availableBrands.map(b => (b ?? '').toString().trim()).filter(Boolean) : [];
-                arr.forEach((sec, idx) => {
+                const emptyEl = document.getElementById('sectionsEmpty');
+                if (!arr || !arr.length) {
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    return;
+                }
+                if (emptyEl) emptyEl.style.display = 'none';
+
+                arr.forEach((sec) => {
                     const li = document.createElement('li');
                     li.className = 'sp-item';
-                    const curr = (sec.brand || '').toString().trim();
+                    const title = sec.title || (sec.reference ? String(sec.reference) : (sec.type || 'Sessão'));
+                    const type = (sec.type || 'dynamic');
+                    const ref = sec.reference || '';
+                    const enabled = sec.enabled !== false;
+                    // Edit link: always open the homepage sections index to avoid 404s
+                    const homepageEditUrl = '/admin/homepage-sections';
+
+                    const deptSlug = detectDepartmentSlug() || '';
+                    const deptEditUrl = deptSlug ? `/admin/departments/${encodeURIComponent(deptSlug)}/edit` : '/admin/departments';
+
                     li.innerHTML = `
-                        <div class="sp-handle" title="Arrastar"><i class="bi bi-list"></i></div>
-                        <div>
-                            <div class="d-flex gap-2 align-items-center">
-                                <input type="text" class="form-control form-control-sm sp-title" value="${sec.title || ''}" placeholder="Título">
-                                <div class="sp-actions">
-                                    <button type="button" class="sp-btn sp-btn-secondary sp-up" title="Subir"><i class="bi bi-arrow-up"></i></button>
-                                    <button type="button" class="sp-btn sp-btn-secondary sp-down" title="Descer"><i class="bi bi-arrow-down"></i></button>
-                                    <button type="button" class="sp-btn sp-btn-danger sp-remove" title="Remover"><i class="bi bi-trash"></i></button>
-                                </div>
+                        <div style="display:flex; align-items:center; gap:12px; width:100%;">
+                            <div style="display:flex; align-items:center; gap:10px;">
+                                <span style="width:10px; height:10px; border-radius:999px; display:inline-block; background:${enabled? '#10b981' : '#94a3b8'}; box-shadow:0 2px 6px rgba(2,6,23,0.06);"></span>
                             </div>
-                            
+                            <div style="flex:1">
+                                <div style="font-weight:700; color: var(--text-dark);">${escapeHtml(title)}</div>
+                                <div style="font-size:12px; color:#64748b; margin-top:4px;">${escapeHtml(type)} ${ref?('&middot; ' + escapeHtml(String(ref))):''}</div>
+                            </div>
+                            <div style="display:flex; gap:8px; align-items:center;">
+                                <a href="${homepageEditUrl}" class="sp-btn sp-btn-secondary" target="_blank" rel="noopener" title="Editar sessão (Homepage)"><i class="bi bi-pencil"></i></a>
+                                <a href="${deptEditUrl}" class="sp-btn sp-btn-secondary" target="_blank" rel="noopener" title="Editar departamento"><i class="bi bi-diagram-3-fill"></i></a>
+                            </div>
                         </div>
-                        <label class="sp-toggle">
-                            <input type="checkbox" class="form-check-input sp-enabled" ${sec.enabled === false ? '' : 'checked'}> visível
-                        </label>
                     `;
                     sectionsList.appendChild(li);
                 });
-            }
-            function readSectionsList(){
-                const items = sectionsList.querySelectorAll('.sp-item');
-                const arr = [];
-                items.forEach(it => {
-                    arr.push({
-                        brand: it.querySelector('.sp-brand-select')?.value?.trim() || '',
-                        title: it.querySelector('.sp-title')?.value?.trim() || '',
-                        enabled: it.querySelector('.sp-enabled')?.checked !== false
-                    });
-                });
-                return arr; // include sections even if brand is empty (brand removed from UI)
             }
             function moveItem(el, dir){
                 if (!el) return;
@@ -1810,27 +1894,38 @@
                 if (dir > 0 && el.nextElementSibling) el.parentNode.insertBefore(el.nextElementSibling, el);
             }
             function initSectionsPanel(){
-                // Load saved sections from server for this department (no brand lookup)
                 const dept = detectDepartmentSlug() || 'eletronicos';
-                fetch(`/admin/departments/${encodeURIComponent(dept)}/sections`, { headers: { 'Accept': 'application/json' }})
+                const target = `/admin/homepage-sections?department=${encodeURIComponent(dept)}&as=json`;
+                fetch(target, { headers: { 'Accept': 'application/json' }})
                     .then(r => r.json())
                     .then(data => {
                         if (data && data.success && Array.isArray(data.sections)) {
                             window.DepartmentSectionsConfig = data.sections.map(s => ({
-                                brand: s.type === 'brand' ? (s.reference || '') : '',
-                                title: s.title || (s.reference ? ('Produtos ' + s.reference) : ''),
-                                enabled: s.enabled !== false,
-                                type: s.type,
-                                reference: s.reference,
                                 id: s.id,
+                                type: 'dynamic', // homepage sections are treated as dynamic sessions
+                                reference: s.department_id ? String(s.department_id) : null,
+                                title: s.title || '',
+                                enabled: s.enabled !== false,
+                                metadata: { homepage_section_id: s.id },
                             }));
+                        } else {
+                            window.DepartmentSectionsConfig = [];
                         }
                         renderSectionsList();
                     })
                     .catch(() => {
+                        window.DepartmentSectionsConfig = [];
                         renderSectionsList();
                     });
             }
+
+            // Wire refresh button for manual refetch
+            const sectionsRefresh = document.getElementById('sectionsRefresh');
+            sectionsRefresh?.addEventListener('click', function(){
+                try { sectionsRefresh.disabled = true; sectionsRefresh.textContent = '…'; } catch(e){}
+                initSectionsPanel();
+                setTimeout(()=>{ try { sectionsRefresh.disabled = false; sectionsRefresh.textContent = '⭮'; } catch(e){} }, 600);
+            });
             sectionsList?.addEventListener('click', function(e){
                 const item = e.target.closest('.sp-item');
                 if (!item) return;
@@ -1845,7 +1940,7 @@
                 const title = (spNewTitle?.value || '').trim();
                 const label = title || 'Nova seção';
                 const current = getCurrentSectionsConfig();
-                current.push({ brand: '', title: label, enabled: true });
+                current.push({ type: 'dynamic', reference: null, title: label, enabled: true });
                 window.DepartmentSectionsConfig = current;
                 if (spNewTitle) spNewTitle.value = '';
                 renderSectionsList();
@@ -1905,11 +2000,14 @@
                 }
                 // Ação extra: ocultar seção antiga duplicada, se existir
                 if (spActionHideOld?.checked) {
+                    // Hide any matching section by comparing type+reference (legacy brand select removed)
                     const items = sectionsList.querySelectorAll('.sp-item');
                     items.forEach(li => {
                         if (li === itemEl) return;
-                        const sel = li.querySelector('.sp-brand-select');
-                        if (sel && (sel.value||'').trim().toLowerCase() === oldBrand.toLowerCase()) {
+                        const t = (li.querySelector('.sp-type')?.value || '').trim().toLowerCase();
+                        const ref = (li.querySelector('.sp-reference')?.value || '').trim().toLowerCase();
+                        const combined = `${t}:${ref}`;
+                        if (combined === (oldBrand || '').toString().trim().toLowerCase() || ref === (oldBrand || '').toString().trim().toLowerCase()) {
                             const chk = li.querySelector('.sp-enabled');
                             if (chk) chk.checked = false;
                         }
@@ -1939,16 +2037,17 @@
                 if (!Array.isArray(cfg)) return;
                 // 1) Renomear títulos e esconder/mostrar
                 cfg.forEach(sec => {
-                    const brandKey = (sec.brand || '').trim().toLowerCase();
-                    if (!brandKey) return;
-                    const sectionEl = document.querySelector(`[data-brand-section="${brandKey}"]`);
+                    // Use reference for matching (brands are stored as reference when type === 'brand')
+                    const refKey = (sec.reference || '').trim().toLowerCase();
+                    if (!refKey) return;
+                    const sectionEl = document.querySelector(`[data-brand-section="${refKey}"]`);
                     if (!sectionEl) return;
                     // toggle visibility
                     sectionEl.style.display = (sec.enabled === false) ? 'none' : '';
                     // set title
                     const titleEl = sectionEl.querySelector('.js-section-title');
-                    if (titleEl && (sec.title || sec.brand)) {
-                        titleEl.textContent = sec.title || ('Produtos ' + sec.brand);
+                    if (titleEl && (sec.title || sec.reference)) {
+                        titleEl.textContent = sec.title || ('Produtos ' + sec.reference);
                     }
                 });
                 // 2) Reordenar DOM dentro do bloco de seções, preservando o restante da página
@@ -1979,10 +2078,10 @@
                 const dept = detectDepartmentSlug() || 'eletronicos';
                 // Normalize to server shape
                 const payload = { sections: arr.map((s, idx) => ({
-                    type: s.brand ? 'brand' : (s.type || 'brand'),
-                    reference: s.brand || s.reference || '',
-                    reference_id: s.reference_id || null,
-                    title: s.title || ('Produtos ' + (s.brand || s.reference || '')),
+                    type: s.type || 'dynamic',
+                    reference: (s.reference || '') || null,
+                    reference_id: (s.reference_id && Number.isInteger(s.reference_id)) ? s.reference_id : null,
+                    title: s.title || (s.reference ? ('Produtos ' + s.reference) : ''),
                     enabled: s.enabled !== false,
                     sort_order: idx,
                     metadata: s.metadata || null,

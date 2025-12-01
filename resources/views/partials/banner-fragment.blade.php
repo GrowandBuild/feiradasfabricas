@@ -64,7 +64,10 @@
                 $ctaSize = $banner->cta_size ?? 'medium';
                 $ctaSizeClass = $ctaSize === 'small' ? 'btn-sm' : ($ctaSize === 'large' ? 'btn-lg' : '');
             @endphp
-            <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }} cta-size-{{ $banner->cta_size ?? 'medium' }} cta-layout-{{ $banner->cta_layout ?? 'horizontal' }}">
+            <div class="container banner-ctas-outer">
+                <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }} cta-size-{{ $banner->cta_size ?? 'medium' }} cta-layout-{{ $banner->cta_layout ?? 'horizontal' }}">
+                    <div class="banner-ctas-inner">
+                        <div class="cta-wrapper">
                     @if($showPrimaryDesktop)
                     @if($hasLink)
                         <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-desktop btn-pill {{ $ctaSizeClass }}">
@@ -117,6 +120,9 @@
                         </button>
                     @endif
                 @endif
+                        </div>
+                    </div>
+                </div>
             </div>
         @endif
 
@@ -164,8 +170,9 @@
         @endphp
 
         @if($hasAnyCta)
-            <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }}">
-                @if($showPrimaryDesktop)
+            <div class="container banner-ctas-outer">
+                <div class="banner-ctas cta-pos-{{ $banner->cta_position ?? 'bottom' }} cta-align-{{ $banner->cta_align ?? 'center' }}">
+                    @if($showPrimaryDesktop)
                     <a href="{{ $ctaHref }}" class="btn btn-primary banner-cta-desktop btn-pill {{ $hasLink ? '' : 'disabled' }}" @if(!$hasLink) tabindex="-1" aria-disabled="true" @endif>
                         <i class="bi bi-lock-fill me-2"></i>
                         Ver detalhes
@@ -189,6 +196,7 @@
                         Mais
                     </a>
                 @endif
+                </div>
             </div>
         @endif
 
