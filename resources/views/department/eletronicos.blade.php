@@ -33,7 +33,7 @@
     /* Hero Banner Full */
     .hero-banner-full {
         width: 100%;
-        height: 50vh;
+        height: 100%;
         position: relative;
         overflow: hidden;
     }
@@ -45,6 +45,11 @@
         background-position: center;
         /* end of hero-banner-title styles */
     }
+
+     /* Note: removed aggressive forcing of child heights here to avoid
+         layout regressions (banner disappearing). The hero container's
+         own `min-height` controls visible height; child elements should
+         size naturally. */
 
     .elegant-btn:hover {
         transform: translateY(-3px);
@@ -339,43 +344,40 @@
         box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
     }
 
-    .product-image {
-        height: 160px;
-        background: #f8f9fa;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        overflow: hidden;
-        aspect-ratio: 1;
-        flex-shrink: 0;
-        border-radius: 12px 12px 0 0;
+    /* Force product images to be square and override other conflicting rules.
+       Use a more specific selector and !important to ensure this department's
+       styling wins when necessary. The implementation keeps object-fit:cover
+       so images are nicely cropped. */
+    .product-card .product-image {
+        width: 100% !important;
+        background: #f8f9fa !important;
+        display: block !important;
+        position: relative !important;
+        overflow: hidden !important;
+        aspect-ratio: 1 / 1 !important;
+        height: auto !important;
+        border-radius: 12px 12px 0 0 !important;
     }
 
-    .product-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: center;
-        transition: transform 0.2s ease;
-    }
-    
-    /* Efeito sutil para imagens */
-    .product-image::before {
+    /* Robust fallback for older browsers: padding-top technique */
+    .product-card .product-image::before {
         content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255,255,255,0.05);
-        z-index: 1;
-        pointer-events: none;
+        display: block;
+        padding-top: 100%;
+        width: 100%;
+        height: 0;
     }
-    
-    .product-image img {
-        position: relative;
-        z-index: 2;
+
+    .product-card .product-image img {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: center !important;
+        transition: transform 0.2s ease !important;
+        z-index: 2 !important;
     }
 
     .product-card:hover .product-image img {
@@ -1206,6 +1208,14 @@
             font-size: 0.65rem;
         }
     }
+
+     /* Remove small unwanted vertical gap that can appear between the hero/banner and
+         the first section (badges/categories) on some templates. This prevents a thin
+         white line caused by adjacent element margins or extra padding. Use a small
+         negative margin as a last-resort visual fix on problematic templates. */
+     .hero-section, .hero-banner-full, .hero-banner-section { margin-bottom: 0 !important; padding-bottom: 0 !important; }
+     .hero-section + .section-elegant { margin-top: -8px !important; padding-top: 6px !important; }
+     .badges-wrapper { padding-top: 6px; padding-bottom: 6px; }
 </style>
 @endsection
 
@@ -1265,6 +1275,46 @@
         ->orderBy('position')
         ->get();
 @endphp
+
+<!-- Selos de Marcas (Department Badges) - moved above categories so badges appear on top -->
+@if($departmentBadges && $departmentBadges->count() > 0)
+<section class="section-elegant" style="padding: 12px 0 6px; background: var(--elegant-white);">
+    <div class="container">
+        <div class="badges-wrapper">
+            <div class="badges-container">
+                @foreach($departmentBadges as $badge)
+                    <div class="badge-item text-center" data-badge-item>
+                            @if($badge->link)
+                                <a href="{{ $badge->link }}" class="badge-link" title="{{ $badge->title }}">
+                            @else
+                                <div class="badge-link" title="{{ $badge->title }}">
+                            @endif
+                                <div class="badge-circle">
+                                    <img src="{{ $badge->image_url }}" 
+                                         alt="{{ $badge->title }}" 
+                                         class="badge-image @auth('admin') js-change-badge-image @endauth"
+                                         @auth('admin') data-badge-id="{{ $badge->id }}" @endauth
+                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                </div>
+                                <p class="badge-title">
+                                    @auth('admin')
+                                        <span class="js-rename-badge" data-badge-id="{{ $badge->id }}" data-current-title="{{ $badge->title }}" style="cursor: pointer;">{{ $badge->title }}</span>
+                                    @else
+                                        {{ $badge->title }}
+                                    @endauth
+                                </p>
+                            @if($badge->link)
+                                </a>
+                            @else
+                                </div>
+                            @endif
+                        </div>
+                @endforeach
+            </div>
+        </div>
+    </div>
+</section>
+@endif
 
 <!-- Categorias (moved here so categories appear above homepage sections) -->
 @if($categories && $categories->count() > 0)
@@ -1355,45 +1405,7 @@
     @include('components.homepage_section_products', ['section' => $section])
 @endforeach
 
-<!-- Selos de Marcas (Department Badges) -->
-@if($departmentBadges && $departmentBadges->count() > 0)
-<section class="section-elegant" style="padding: 30px 0; background: var(--elegant-white);">
-    <div class="container">
-    <div class="badges-wrapper">
-            <div class="badges-container">
-                @foreach($departmentBadges as $badge)
-                    <div class="badge-item text-center" data-badge-item>
-                            @if($badge->link)
-                                <a href="{{ $badge->link }}" class="badge-link" title="{{ $badge->title }}">
-                            @else
-                                <div class="badge-link" title="{{ $badge->title }}">
-                            @endif
-                                <div class="badge-circle">
-                                    <img src="{{ $badge->image_url }}" 
-                                         alt="{{ $badge->title }}" 
-                                         class="badge-image @auth('admin') js-change-badge-image @endauth"
-                                         @auth('admin') data-badge-id="{{ $badge->id }}" @endauth
-                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                                </div>
-                                <p class="badge-title">
-                                    @auth('admin')
-                                        <span class="js-rename-badge" data-badge-id="{{ $badge->id }}" data-current-title="{{ $badge->title }}" style="cursor: pointer;">{{ $badge->title }}</span>
-                                    @else
-                                        {{ $badge->title }}
-                                    @endauth
-                                </p>
-                            @if($badge->link)
-                                </a>
-                            @else
-                                </div>
-                            @endif
-                        </div>
-                @endforeach
-            </div>
-        </div>
-    </div>
-</section>
-@endif
+
 
 @auth('admin')
 @push('scripts')
@@ -1461,90 +1473,7 @@ document.addEventListener('DOMContentLoaded', function(){
 @endpush
 @endauth
 
-<!-- Categorias -->
-@if($categories && $categories->count() > 0)
-<section class="section-elegant" style="padding: 20px 0;">
-    <div class="container">
-        <h2 class="section-title" style="font-size: 1.6rem; margin-bottom: 5px;">Nossas Categorias</h2>
-        <p class="section-subtitle" style="margin-bottom: 12px;">
-            Explore nossa ampla gama de produtos em diferentes categorias
-        </p>
-        <div class="row g-2">
-            @foreach($categories->take(4) as $category)
-                <div class="col-lg-3 col-md-3 col-sm-6 col-6">
-                    @php
-                        $catCoverUrl = null;
-                        if (isset($category->cover) && $category->cover) {
-                            if (\Illuminate\Support\Str::startsWith($category->cover, ['http://', 'https://'])) {
-                                $catCoverUrl = $category->cover;
-                            } else {
-                                $catCoverUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($category->cover);
-                            }
-                        }
-                        // visibility flags (defaults to true when column absent)
-                        $showAvatar = $category->show_avatar ?? true;
-                        $showCover = $category->show_cover ?? true;
-                        $showTitle = $category->show_title ?? true;
-                        $showDescription = $category->show_description ?? true;
-                        $showButton = $category->show_button ?? true;
-                    @endphp
-                    <div class="elegant-card btn-pos-{{ $category->button_position ?? 'bottom' }} @if($catCoverUrl && $showCover) has-cover @endif" @if($catCoverUrl && $showCover) style="background-image: url('{{ $catCoverUrl }}'); background-size: cover; background-position: center;" data-cover-url="{{ $catCoverUrl }}" @else data-cover-url="" @endif data-button-position="{{ $category->button_position ?? 'bottom' }}">
-                        <div class="card-icon" @if(!$showAvatar) style="display:none;" @endif>
-                            @php
-                                $iconClass = $category->icon_class ?? 'fas fa-laptop';
-                                $catImageUrl = null;
-                                if ($category->image) {
-                                    if (\Illuminate\Support\Str::startsWith($category->image, ['http://', 'https://'])) {
-                                        $catImageUrl = $category->image;
-                                    } else {
-                                        $catImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($category->image);
-                                    }
-                                }
-                            @endphp
-                            @if($showAvatar && $catImageUrl)
-                                <img src="{{ $catImageUrl ?: asset('images/no-image.svg') }}" alt="{{ $category->name }}" class="category-image-display" data-category-id="{{ $category->id }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;" @auth('admin') title="Clique para editar imagem" @endauth loading="lazy" decoding="async">
-                            @endif
-                            @if($showAvatar && !$catImageUrl)
-                                <i class="category-icon-display {{ $iconClass }}" data-category-id="{{ $category->id }}" @auth('admin') title="Clique para alterar ícone" style="cursor:pointer;" @endauth></i>
-                            @else
-                                {{-- If avatar is disabled, do not show icon --}}
-                                @if(!$showAvatar)
-                                    <i class="category-icon-display {{ $iconClass }}" data-category-id="{{ $category->id }}" hidden></i>
-                                @endif
-                            @endif
-                        </div>
-                        @if($showTitle)
-                        <h5 class="card-title">
-                            @auth('admin')
-                                <span class="js-edit-category-title" data-category-id="{{ $category->id }}" data-current-title="{{ $category->name }}" style="cursor: pointer;">{{ $category->name }}</span>
-                            @else
-                                {{ $category->name }}
-                            @endauth
-                        </h5>
-                        @endif
-                        @if($showDescription)
-                        <p class="card-text">
-                            @auth('admin')
-                                <span class="js-edit-category-desc" data-category-id="{{ $category->id }}" data-current-desc="{{ $category->description }}" style="cursor: pointer;">{{ $category->description ?? 'Produtos de alta qualidade para sua empresa.' }}</span>
-                            @else
-                                {{ $category->description ?? 'Produtos de alta qualidade para sua empresa.' }}
-                            @endauth
-                        </p>
-                        @endif
-                        @if($showButton)
-                        <a href="{{ route('products') }}?category={{ $category->slug }}" 
-                           class="btn btn-outline-primary w-100">
-                            Explorar Categoria
-                            <i class="fas fa-arrow-right ms-2"></i>
-                        </a>
-                        @endif
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    </div>
-</section>
-@endif
+
 
 <!-- Produtos em Destaque -->
 @if($featuredProducts && $featuredProducts->count() > 0)

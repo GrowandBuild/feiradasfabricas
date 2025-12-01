@@ -1434,6 +1434,11 @@
                     <i class="bi bi-gear"></i>
                     <span>Config.</span>
                 </a>
+                {{-- botão para abrir seletor de tamanho da logo (mobile admin) --}}
+                <a class="nav-link" href="#" id="adminBottomLogoSizeBtn" title="Ajustar tamanho da logo">
+                    <i class="bi bi-aspect-ratio"></i>
+                    <span>Logo</span>
+                </a>
             </div>
         </div>
     </nav>
@@ -1603,6 +1608,98 @@
                 
                 searchResults.innerHTML = html;
             }
+        });
+    </script>
+    <style>
+        /* Logo-size picker (admin mobile) */
+        .logo-size-picker{
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 56px;
+            background: #fff;
+            border: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 8px 30px rgba(2,6,23,0.12);
+            padding: 8px 10px;
+            border-radius: 8px;
+            z-index: 120000;
+            display: none;
+            gap: 8px;
+            min-width: 220px;
+            max-width: calc(100vw - 32px);
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .logo-size-picker button{ padding:8px 12px; border-radius:6px; border:1px solid rgba(0,0,0,0.06); background:transparent; cursor:pointer; white-space:nowrap }
+        .logo-size-picker button.active{ background:var(--secondary-color); color:#fff; border-color:transparent }
+        @media (max-width: 420px){
+            .logo-size-picker{ gap:6px; padding:8px; min-width: 160px; }
+            .logo-size-picker button{ flex: 1 1 48%; padding:8px; box-sizing: border-box; }
+        }
+    </style>
+
+    <script>
+        // Logo-size picker for admin bottom nav (mobile)
+        document.addEventListener('DOMContentLoaded', function(){
+            var trigger = document.getElementById('adminBottomLogoSizeBtn');
+            if(!trigger) return;
+            var imgs = document.querySelectorAll('#admin-site-logo, #admin-site-logo');
+
+            var picker = document.createElement('div');
+            picker.className = 'logo-size-picker';
+            picker.setAttribute('role', 'dialog');
+            picker.setAttribute('aria-hidden', 'true');
+            picker.innerHTML = `
+                <div style="font-weight:600;color:var(--text-dark);width:100%;text-align:center;padding-bottom:6px;">Tamanho</div>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;width:100%;justify-content:center;">
+                    <button data-size="small">Pequena</button>
+                    <button data-size="medium">Média</button>
+                    <button data-size="large">Grande</button>
+                    <button data-size="xlarge">Muito grande</button>
+                </div>
+            `;
+            document.body.appendChild(picker);
+
+            function showPicker(){
+                picker.style.display = 'flex';
+                picker.setAttribute('aria-hidden','false');
+                setTimeout(function(){ picker.classList.add('show'); }, 10);
+            }
+            function hidePicker(){
+                picker.setAttribute('aria-hidden','true');
+                picker.classList.remove('show');
+                setTimeout(function(){ picker.style.display = 'none'; }, 180);
+            }
+
+            trigger.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); if(picker.style.display === 'none') showPicker(); else hidePicker(); });
+
+            document.addEventListener('click', function(e){ if(!picker.contains(e.target) && e.target !== trigger && !trigger.contains(e.target)) hidePicker(); });
+
+            picker.addEventListener('click', function(e){
+                var b = e.target.closest('button[data-size]');
+                if(!b) return;
+                var size = b.getAttribute('data-size');
+                var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                fetch('{{ route("logo.size") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': token,
+                        'Accept': 'application/json'
+                    },
+                    credentials: 'same-origin',
+                    body: JSON.stringify({ size: size })
+                }).then(function(r){ return r.json(); }).then(function(json){
+                    if(json && json.success && json.size){
+                        imgs.forEach(function(img){ try{ img.style.height = 'auto'; img.style.width = 'auto'; img.style.maxHeight = json.size + 'px'; img.style.maxWidth = json.size + 'px'; }catch(e){} });
+                        Array.from(picker.querySelectorAll('button[data-size]')).forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-size') === size); });
+                        setTimeout(hidePicker, 180);
+                    } else {
+                        alert((json && json.message) ? json.message : 'Erro ao ajustar tamanho');
+                    }
+                }).catch(function(err){ console.error('Erro logo.size', err); alert('Erro ao ajustar tamanho'); });
+            });
         });
     </script>
 

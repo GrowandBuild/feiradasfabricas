@@ -307,6 +307,11 @@
         <button class="theme-trigger" id="themeTrigger" title="Cores do site">
             <i class="bi bi-palette-fill"></i>
         </button>
+        @auth('admin')
+            <button class="departments-trigger" id="adminMobileLogoSizeBtn" title="Ajustar tamanho da logo">
+                <i class="bi bi-aspect-ratio"></i>
+            </button>
+        @endauth
         <button class="smart-search-trigger" id="smartSearchTrigger" title="Buscar produto">
             <i class="bi bi-search"></i>
         </button>

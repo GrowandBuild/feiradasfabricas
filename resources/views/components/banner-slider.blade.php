@@ -254,15 +254,24 @@
 </div>
 
 <style>
-.banner-slider { --site-container-max-width: 1440px; --site-container-padding: 1rem; --banner-cta-offset: calc((100% - var(--site-container-max-width)) / 2 + var(--site-container-padding)); }
+.banner-slider { --site-container-max-width: 1440px; --site-container-padding: 1rem; --banner-cta-offset: calc((100% - var(--site-container-max-width)) / 2 + var(--site-container-padding)); --banner-cta-vertical-min: 1.25rem; }
 .banner-slider {
     position: relative;
     width: 100%;
     overflow: hidden;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-bottom: 2rem;
+    /* Ensure the slider itself has no contrasting background that can peek
+       through rounded corners on some devices. */
+    background-color: transparent !important;
+    border-radius: 0 !important;
+    /* Remove subtle framing/outline for a flat banner appearance */
+    box-shadow: none;
+    border: none;
+    /* slightly reduced global bottom spacing; hero-specific override below */
+    margin-bottom: 1.5rem;
 }
+
+/* When used inside a hero-section we don't want extra bottom spacing */
+.hero-section > .banner-slider { margin-bottom: 0 !important; }
 
 .banner-slides-wrapper {
     position: relative;
@@ -295,6 +304,10 @@
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+     /* Clip child images to the same rounded corners as the slider to avoid
+         a thin visible seam caused by subpixel rendering at the edges. */
+    overflow: hidden;
+    border-radius: 0 !important;
 }
 
 .banner-image {
@@ -302,10 +315,22 @@
     height: 100%;
     object-fit: cover;
     display: block;
+    border: none;
+    /* Remove rounding so banners render with square corners */
+    border-radius: 0 !important;
+    background-clip: padding-box;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    transform: translateZ(0) scale(1.002);
 }
 
 /* Make the container that wraps CTAs the positioned ancestor so CTAs align with page content */
 .banner-image-container > .banner-ctas-outer { position: absolute; inset: 0; }
+
+/* Keep the CTA outer as a block-level element but avoid forcing full-height
+   which caused layout regressions in some contexts. Let the positioned ancestor
+   define the visual height naturally. */
+.banner-ctas-outer { display: block; }
 
 .mobile-image {
     display: none;
@@ -540,10 +565,12 @@
 
 .banner-ctas .btn, .banner-ctas-inner .btn { /* fallback */ padding: .55rem 1rem; font-size: .95rem; }
 
-/* vertical position */
-.banner-ctas.cta-pos-top { top: 1.5rem; bottom: auto; }
-.banner-ctas.cta-pos-center { top: 50%; bottom: auto; }
-.banner-ctas.cta-pos-bottom { bottom: calc(1.5rem + 28px); top: auto; }
+/* vertical position: ensure a sensible minimum distance from top/bottom so
+    CTAs don't sit flush against the banner edges. We use a small CSS variable
+    to allow easy tuning. */
+.banner-ctas.cta-pos-top { top: max(1.5rem, var(--banner-cta-vertical-min, 1.25rem)); bottom: auto; }
+.banner-ctas.cta-pos-center { top: 50%; bottom: auto; transform: translateY(-50%); }
+.banner-ctas.cta-pos-bottom { bottom: max(calc(1.5rem + 28px), var(--banner-cta-vertical-min, 1.25rem)); top: auto; }
 
 /* lateral alignment: use container-like centering and justify-content to align inside max-width */
 .banner-ctas.cta-align-left { justify-content: flex-start; }
@@ -583,6 +610,35 @@
  .btn-pill { border-radius: 999px; padding: .6rem 1.2rem; font-weight: 600; }
  .btn-outline-cta { background: transparent; border: 2px solid var(--secondary-color); color: var(--secondary-color); }
  .btn-outline-cta:hover { background: color-mix(in srgb, var(--secondary-color), white 12%); color: var(--text-dark); }
+
+/* Make mobile outlined CTAs filled for better visibility on small screens */
+.banner-cta-mobile.btn-outline-cta {
+    background: var(--secondary-color) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+.banner-cta-mobile.btn-outline-cta i { color: rgba(255,255,255,0.95) !important; }
+/* Make desktop outlined CTAs filled as well (match mobile) */
+.banner-cta-desktop.btn-outline-cta {
+    background: var(--secondary-color) !important;
+    color: #fff !important;
+    border-color: transparent !important;
+    box-shadow: none !important;
+}
+.banner-cta-desktop.btn-outline-cta i { color: rgba(255,255,255,0.95) !important; }
+/* On hover revert to outlined appearance (transparent background + colored border) */
+.banner-cta-mobile.btn-outline-cta:hover,
+.banner-cta-desktop.btn-outline-cta:hover {
+    background: transparent !important;
+    color: var(--secondary-color) !important;
+    border-color: var(--secondary-color) !important;
+    box-shadow: none !important;
+}
+.banner-cta-mobile.btn-outline-cta:hover i,
+.banner-cta-desktop.btn-outline-cta:hover i {
+    color: var(--secondary-color) !important;
+}
 /* ensure banner link doesn't visually block CTAs */
 .banner-link { background: transparent; }
 @media (max-width: 768px) {

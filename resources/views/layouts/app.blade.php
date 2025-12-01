@@ -75,25 +75,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* Logo-size icon: hidden by default, revealed when hovering/focusing the logo for a discreet UI */
-        #logoSizeBtn { display: none; opacity: 0; transition: opacity .18s ease, transform .18s ease; transform: translateY(-2px); }
-        #adminLogoSizeBtn { display: none; opacity: 0; transition: opacity .18s ease, transform .18s ease; transform: translateY(-2px); }
-        /* Show when hovering or focusing the brand (desktop) */
-        .navbar-brand:hover + .navbar-content .header-icons #logoSizeBtn,
-        .navbar-brand:focus-within + .navbar-content .header-icons #logoSizeBtn,
-        .navbar-brand:hover #adminLogoSizeBtn,
-        .navbar-brand:focus-within #adminLogoSizeBtn {
-            display: inline-flex !important; opacity: 1; transform: translateY(0);
-        }
-        /* Mobile: show when hovering/tapping the mobile top-bar */
-        .mobile-top-bar:hover #mobileLogoSizeBtn,
-        .mobile-top-bar:focus-within #mobileLogoSizeBtn,
-        .mobile-top-bar:hover #adminMobileLogoSizeBtn,
-        .mobile-top-bar:focus-within #adminMobileLogoSizeBtn {
-            display: inline-flex !important; opacity: 1; transform: translateY(0);
-        }
-        /* Ensure header-icons layout doesn't collapse when hidden (keep spacing) */
-        .header-icons #logoSizeBtn { min-width: 36px; min-height: 36px; }
+        /* Logo-size control removed from public header — moved to admin bottom nav per request */
         
         :root {
             --primary-color: {{ $sessionTheme['theme_primary'] ?? $dept_setting('theme_primary', '#0f172a') }};
@@ -437,6 +419,11 @@
             outline: none;
             transform: translateY(-1px);
         }
+
+        /* Avatar styles: replace hamburger with user avatar on mobile */
+        .mobile-user-avatar { padding: 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .mobile-user-avatar .header-avatar { width: 100%; height: 100%; object-fit: cover; border-radius: 12px; display: block; }
+        .header-avatar-placeholder { display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; border-radius: 12px; background: rgba(255,255,255,0.06); color: #fff; font-size: 1.05rem; }
 
         .mobile-quick-actions {
             display: none;
@@ -991,11 +978,7 @@
             <!-- Logo -->
             <a class="navbar-brand" href="{{ route('home') }}">
                 <img id="siteLogoImage" src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="height:auto !important; width:auto !important; {{ ($userLogoSize ?? null) ? 'max-height:'.($userLogoSize).'px !important; max-width:'.($userLogoSize).'px !important;' : ($logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '') . ' ' . ($logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '') }}">
-                @auth('admin')
-                    <button id="adminLogoSizeBtn" title="Ajustar tamanho da logo (admin)" class="btn btn-sm" style="border:0;background:transparent;padding:6px;vertical-align:middle;margin-left:6px;color:var(--secondary-color);">
-                        <i class="bi bi-aspect-ratio" style="font-size:18px;color:inherit"></i>
-                    </button>
-                @endauth
+                {{-- logo-size controls removed from header; admin control moved to admin bottom nav --}}
             </a>
 
             <!-- Navbar content (sempre aberto) -->
@@ -1008,21 +991,18 @@
                 <!-- Mobile layout -->
                 <div class="mobile-header">
                     <div class="mobile-top-bar">
-                        <a class="mobile-logo" href="{{ route('home') }}">
+                        <a class="mobile-logo" href="{{ route('home') }}" onclick="if(window.innerWidth <= 768){ event.preventDefault(); }">
                             <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="height:auto !important; width:auto !important; {{ ($userLogoSize ?? null) ? 'max-height:'.($userLogoSize).'px !important; max-width:'.($userLogoSize).'px !important;' : ($logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '') . ' ' . ($logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '') }}">
                         </a>
-                        @if(!\Illuminate\Support\Facades\Auth::guard('admin')->check())
-                            <button id="mobileLogoSizeBtn" title="Ajustar tamanho da logo" class="btn btn-sm" style="border:0;background:transparent;padding:6px;vertical-align:middle;margin-left:6px;color:white;">
-                                <i class="bi bi-aspect-ratio" style="font-size:18px;color:inherit"></i>
-                            </button>
-                        @endif
-                        @auth('admin')
-                            <button id="adminMobileLogoSizeBtn" title="Ajustar tamanho da logo (admin)" class="btn btn-sm" style="border:0;background:transparent;padding:6px;vertical-align:middle;margin-left:6px;color:var(--secondary-color);">
-                                <i class="bi bi-aspect-ratio" style="font-size:18px;color:inherit"></i>
-                            </button>
-                        @endauth
-                        <button class="mobile-menu-button" type="button" aria-label="Abrir menu">
-                            <i class="fas fa-bars"></i>
+                        {{-- mobile logo menu removed (simplified header). Admin controls are available in the floating FAB --}}
+                        <button class="mobile-menu-button mobile-user-avatar" type="button" aria-label="Abrir menu">
+                            @if($customerUser && !empty($customerUser->avatar))
+                                <img src="{{ asset('storage/' . $customerUser->avatar) }}" 
+                                     alt="{{ $customerUser->display_name ?? $customerUser->name }}" 
+                                     class="header-avatar" />
+                            @else
+                                <span class="header-avatar-placeholder" aria-hidden="true"><i class="fas fa-user"></i></span>
+                            @endif
                         </button>
                     </div>
                     <div class="mobile-search-wrapper">
@@ -1074,11 +1054,7 @@
                     <a href="#" class="header-icon" id="departmentsDropdownBtn" title="Departamentos" onclick="toggleDepartmentsDropdown(); return false;">
                         <i class="fas fa-th-large"></i>
                     </a>
-                    @if(!\Illuminate\Support\Facades\Auth::guard('admin')->check())
-                        <a href="#" class="header-icon" id="logoSizeBtn" title="Ajustar tamanho da logo">
-                            <i class="bi bi-aspect-ratio"></i>
-                        </a>
-                    @endif
+                    {{-- logo size button removed from header; admin tools are in the floating FAB --}}
                     <div id="departmentsDropdown" class="departments-dropdown" style="display:none;">
                         <div class="departments-dropdown-header">
                             <span>Departamentos</span>
@@ -1440,10 +1416,11 @@
     </style>
 
     <script>
-        (function(){
-            var btns = document.querySelectorAll('#logoSizeBtn, #mobileLogoSizeBtn, #adminLogoSizeBtn, #adminMobileLogoSizeBtn');
+        document.addEventListener('DOMContentLoaded', function(){
+            var btns = document.querySelectorAll('#logoSizeBtn, #adminLogoSizeBtn, #adminMobileLogoSizeBtn, #mobileLogoSizeBtn');
             var imgs = document.querySelectorAll('#siteLogoImage, .mobile-logo img.logo-img');
-            if(!btns || btns.length === 0 || !imgs || imgs.length === 0) return;
+            // require at least one trigger button; imgs may be absent in some render paths
+            if(!btns || btns.length === 0) return;
 
             var picker = document.createElement('div');
             picker.className = 'logo-size-picker';
@@ -1552,8 +1529,82 @@
                     }
                 }).catch(function(err){ console.error('Erro logo.size', err); alert('Erro ao ajustar tamanho'); });
             });
-        })();
-    </script>
+        });
+        
+        </script>
+
+        <script>
+            // Mobile logo menu behavior: toggle small menu on logo tap (small screens)
+            (function(){
+                document.addEventListener('DOMContentLoaded', function(){
+                    var mobileTopBar = document.querySelector('.mobile-top-bar');
+                    if(!mobileTopBar) return;
+                    var mobileLogo = mobileTopBar.querySelector('.mobile-logo');
+                    var menu = mobileTopBar.querySelector('.mobile-logo-menu');
+                    if(!mobileLogo || !menu) return;
+
+                    mobileLogo.addEventListener('click', function(e){
+                        if(window.innerWidth <= 768){
+                            e.preventDefault();
+                            e.stopPropagation();
+                            var isOpen = menu.classList.toggle('open');
+                            menu.setAttribute('aria-hidden', isOpen ? 'false' : 'true');
+                            // Also explicitly show/hide the mobile logo size buttons to avoid CSS cascade issues
+                            var mobileBtn = document.getElementById('mobileLogoSizeBtn');
+                            var adminMobileBtn = document.getElementById('adminMobileLogoSizeBtn');
+                            if(isOpen){
+                                if(mobileBtn) { mobileBtn.style.display = 'inline-flex'; mobileBtn.style.opacity = '1'; mobileBtn.style.pointerEvents = 'auto'; }
+                                if(adminMobileBtn) { adminMobileBtn.style.display = 'inline-flex'; adminMobileBtn.style.opacity = '1'; adminMobileBtn.style.pointerEvents = 'auto'; }
+                                // if admin button exists, force-dispatch a click to open picker (reliable across CSS overrides)
+                                setTimeout(function(){
+                                    var triggerToUse = adminMobileBtn || mobileBtn || document.getElementById('adminLogoSizeBtn') || document.getElementById('logoSizeBtn');
+                                    try {
+                                        if(triggerToUse){
+                                            // ensure visible then dispatch MouseEvent
+                                            triggerToUse.style.display = triggerToUse.style.display || 'inline-flex';
+                                            triggerToUse.style.opacity = '1';
+                                            var ev = new MouseEvent('click', { bubbles: true, cancelable: true, view: window });
+                                            triggerToUse.dispatchEvent(ev);
+                                            // second attempt in case the first is missed
+                                            setTimeout(function(){ try{ triggerToUse.dispatchEvent(ev); }catch(e){} }, 120);
+                                        }
+                                    } catch(e) { console.debug && console.debug('auto-open picker failed', e); }
+                                }, 60);
+                            } else {
+                                if(mobileBtn) mobileBtn.style.display = 'none';
+                                if(adminMobileBtn) adminMobileBtn.style.display = 'none';
+                            }
+                        }
+                    });
+
+                    // close when clicking outside
+                    document.addEventListener('click', function(e){
+                        if(!e.target.closest('.mobile-top-bar')){
+                            if(menu.classList.contains('open')){
+                                menu.classList.remove('open');
+                                menu.setAttribute('aria-hidden','true');
+                                // ensure mobile buttons are hidden when menu closes
+                                var mobileBtn = document.getElementById('mobileLogoSizeBtn');
+                                var adminMobileBtn = document.getElementById('adminMobileLogoSizeBtn');
+                                if(mobileBtn) mobileBtn.style.display = 'none';
+                                if(adminMobileBtn) adminMobileBtn.style.display = 'none';
+                            }
+                        }
+                    });
+
+                    var editTrigger = document.getElementById('mobileLogoEditTrigger');
+                    if(editTrigger){
+                        editTrigger.addEventListener('click', function(e){
+                            e.preventDefault();
+                            var triggerBtn = document.getElementById('mobileLogoSizeBtn') || document.getElementById('adminMobileLogoSizeBtn') || document.getElementById('adminLogoSizeBtn');
+                            if(triggerBtn) triggerBtn.click();
+                            menu.classList.remove('open');
+                            menu.setAttribute('aria-hidden','true');
+                        });
+                    }
+                });
+            })();
+        </script>
 
     @yield('scripts')
     @stack('scripts')
