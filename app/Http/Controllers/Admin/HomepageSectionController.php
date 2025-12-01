@@ -10,18 +10,21 @@ use App\Models\Product;
 
 class HomepageSectionController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $query = HomepageSection::orderBy('position');
 
         // Optional department filter via query string (id or slug)
-        if (request()->has('department')) {
-            $dept = request()->get('department');
+        if ($request->has('department')) {
+            $dept = $request->get('department');
             if (is_numeric($dept)) {
                 $query->where('department_id', (int)$dept);
             } else {
                 // try resolve slug -> id
-                $d = Department::where('slug', $dept)->orWhereRaw('LOWER(slug) = LOWER(?)', [$dept])->orWhere('name', 'like', "%{$dept}%")->first();
+                $d = Department::where('slug', $dept)
+                    ->orWhereRaw('LOWER(slug) = LOWER(?)', [$dept])
+                    ->orWhere('name', 'like', "%{$dept}%")
+                    ->first();
                 if ($d) $query->where('department_id', $d->id);
             }
         }
@@ -29,43 +32,25 @@ class HomepageSectionController extends Controller
         $sections = $query->get();
 
         // If JSON requested, return a lightweight JSON payload for the admin widgets
-        if (request()->wantsJson() || request()->get('as') === 'json') {
-            $payload = $sections->map(function($s){
+        if ($request->wantsJson() || $request->get('as') === 'json') {
+            $payload = $sections->map(function($s) {
                 return [
-                    $query = HomepageSection::orderBy('position');
+                    'id' => $s->id,
+                    'title' => $s->title,
+                    'department_id' => $s->department_id,
+                    'product_ids' => $s->product_ids ?? [],
+                    'limit' => $s->limit,
+                    'position' => $s->position,
+                    'enabled' => (bool)($s->enabled ?? false),
+                ];
+            })->toArray();
 
-                    // Optional department filter via query string (id or slug)
-                    if ($request->has('department')) {
-                        $dept = $request->get('department');
-                        if (is_numeric($dept)) {
-                            $query->where('department_id', (int)$dept);
-                        } else {
-                            // try resolve slug -> id
-                            $d = Department::where('slug', $dept)->orWhereRaw('LOWER(slug) = LOWER(?)', [$dept])->orWhere('name', 'like', "%{$dept}%")->first();
-                            if ($d) $query->where('department_id', $d->id);
-                        }
-                    }
+            return response()->json(['success' => true, 'sections' => $payload]);
+        }
 
-                    $sections = $query->get();
+        return view('admin.homepage_sections.index', compact('sections'));
+    }
 
-                    // If JSON requested, return a lightweight JSON payload for the admin widgets
-                    if ($request->wantsJson() || $request->get('as') === 'json') {
-                        $payload = $sections->map(function($s){
-                            return [
-                                'id' => $s->id,
-                                'title' => $s->title,
-                                'department_id' => $s->department_id,
-                                'product_ids' => $s->product_ids ?? [],
-                                'limit' => $s->limit,
-                                'position' => $s->position,
-                                'enabled' => (bool)($s->enabled ?? false),
-                            ];
-                        })->toArray();
-
-                        return response()->json(['success' => true, 'sections' => $payload]);
-                    }
-
-                    return view('admin.homepage_sections.index', compact('sections'));
     public function store(Request $request)
     {
         $data = $request->validate([

@@ -512,6 +512,17 @@
                 margin-left: 0;
                 padding-bottom: 90px;
             }
+            /* Ensure sidebar width on mobile is usable and covers enough area */
+            .sidebar {
+                width: 280px;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+            }
+            .sidebar.show { transform: translateX(0); }
+
+            /* No backdrop: sidebar will slide over content without an overlay */
         }
 
         .admin-bottom-nav {
@@ -519,9 +530,12 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--card-bg);
-            border-top: 1px solid var(--border-color);
+            /* Solid accent background to improve visibility on mobile */
+            background: linear-gradient(135deg, var(--accent-color, #495a6d) 0%, var(--accent-dark, #384858) 100%);
+            color: #fff;
+            border-top: none;
             padding: 0.35rem 0;
+            box-shadow: 0 -6px 18px rgba(0,0,0,0.08);
             z-index: 999;
             display: none;
         }
@@ -558,7 +572,7 @@
         .admin-bottom-nav .nav-link {
             flex: 0 0 auto;
             text-align: center;
-            color: var(--text-secondary);
+            color: rgba(255,255,255,0.92);
             font-size: 0.7rem;
             font-weight: 600;
             padding: 0.5rem 0.75rem;
@@ -573,11 +587,12 @@
 
         .admin-bottom-nav .nav-link i {
             font-size: 1.1rem;
+            color: rgba(255,255,255,0.95);
         }
 
         .admin-bottom-nav .nav-link.active {
-            color: var(--accent-color);
-            background: rgba(73, 90, 109, 0.12);
+            color: #fff;
+            background: rgba(255,255,255,0.06);
         }
 
         @media (max-width: 992px) {
@@ -1258,6 +1273,10 @@
                                         </div>
                                     </div>
                                     <div class="admin-header-actions">
+                                        <!-- Mobile menu toggle -->
+                                        <button id="adminSidebarToggle" class="btn btn-outline-light d-md-none me-2" title="Menu" aria-label="Abrir menu">
+                                            <i class="bi bi-list"></i>
+                                        </button>
                                         @if(request()->routeIs('admin.dashboard'))
                                             <a href="{{ route('home') }}" class="btn btn-go-store">
                                                 <i class="bi bi-arrow-return-left"></i>
@@ -1453,6 +1472,25 @@
     @yield('scripts')
 
     <script>
+        // Mobile sidebar toggle: show/hide sidebar (no backdrop)
+        document.addEventListener('DOMContentLoaded', function(){
+            var sidebar = document.querySelector('.sidebar');
+            var toggle = document.getElementById('adminSidebarToggle');
+            if(!sidebar || !toggle) return;
+
+            toggle.addEventListener('click', function(e){
+                e.preventDefault();
+                sidebar.classList.toggle('show');
+            });
+
+            // close when a nav link is clicked (mobile UX)
+            sidebar.addEventListener('click', function(e){
+                var a = e.target.closest && e.target.closest('.nav-link');
+                if(a && window.innerWidth <= 768){
+                    sidebar.classList.remove('show');
+                }
+            });
+        });
         // Smart Search Flutuante
         document.addEventListener('DOMContentLoaded', function() {
             const searchTrigger = document.getElementById('smartSearchTrigger');

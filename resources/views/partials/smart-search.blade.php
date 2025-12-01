@@ -26,6 +26,10 @@
             display: none; flex-direction: column; z-index: 1100; animation: ss-slideUp .3s cubic-bezier(.4,0,.2,1);
         }
     .smart-search-panel.active { display: flex; }
+        /* Floating circular toggle placed above the FAB */
+        .fab-top-toggle { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(100% + 10px); width:48px; height:48px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-color), black 12%), var(--secondary-color)); color:#fff; box-shadow: 0 8px 22px rgba(2,6,23,0.32); }
+        .fab-top-toggle i { font-size:18px; }
+        @media (max-width:640px){ .fab-top-toggle { width:44px; height:44px; bottom: calc(100% + 8px); } }
         @keyframes ss-slideUp { from { opacity:0; transform: translateY(20px);} to { opacity:1; transform: translateY(0);} }
         .smart-search-header { padding: 20px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; display: flex; align-items: center; justify-content: space-between; }
         .smart-search-header h3 { margin: 0; font-size: 1.1rem; font-weight: 600; color: #fff; }
@@ -288,7 +292,15 @@
         }
     </style>
 
-    <div class="smart-search-fab">
+    <div id="adminFab" class="smart-search-fab admin-only {{ session('admin_view_as_user') ? 'fab-hidden' : 'fab-visible' }}">
+        {{-- Toggle flutuante acima do FAB (somente admin) --}}
+        <button type="button" class="fab-top-toggle admin-toggle-view-as-user" aria-pressed="{{ session('admin_view_as_user') ? 'true' : 'false' }}" title="Alternar ver como usuário" style="position:absolute; left:50%; transform:translateX(-50%); bottom: calc(100% + 10px); width:48px; height:48px; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; background: linear-gradient(135deg, color-mix(in srgb, var(--secondary-color), black 12%), var(--secondary-color)); color:#fff; box-shadow: 0 8px 22px rgba(2,6,23,0.32);">
+            @if(session('admin_view_as_user'))
+                <i class="fas fa-eye"></i>
+            @else
+                <i class="fas fa-eye-slash"></i>
+            @endif
+        </button>
         <!-- Botão: Gerenciador curto de Produtos (sacola) - abre criação rápida -->
         <button class="departments-trigger" id="productsManagerTrigger" title="Gerar Produto Rápido">
             <i class="bi bi-bag-fill"></i>

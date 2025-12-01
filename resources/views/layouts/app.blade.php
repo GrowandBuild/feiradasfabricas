@@ -951,7 +951,7 @@
     @yield('styles')
     @stack('head')
 </head>
-<body>
+<body class="{{ session('admin_view_as_user') ? 'view-as-user' : '' }}">
 @php
     $customerUser = \Illuminate\Support\Facades\Auth::guard('customer')->user();
     $cartItemsCollection = collect();
@@ -1004,6 +1004,15 @@
                                 <span class="header-avatar-placeholder" aria-hidden="true"><i class="fas fa-user"></i></span>
                             @endif
                         </button>
+                            @auth('admin')
+                                <button type="button" class="mobile-admin-toggle admin-toggle-view-as-user mobile-menu-button" title="Alternar ver como usuário" aria-pressed="{{ session('admin_view_as_user') ? 'true' : 'false' }}" style="margin-left:.5rem;">
+                                    @if(session('admin_view_as_user'))
+                                        <i class="fas fa-eye"></i>
+                                    @else
+                                        <i class="fas fa-eye-slash"></i>
+                                    @endif
+                                </button>
+                            @endauth
                     </div>
                     <div class="mobile-search-wrapper">
                         {{-- mobile search uses the same component but to avoid duplicate visible search bars
@@ -1030,7 +1039,7 @@
                                 <i class="fas fa-user"></i>
                             </a>
                         @elseauth('admin')
-                            <a href="{{ route('admin.dashboard') }}" class="quick-action" title="Painel Admin">
+                            <a href="{{ route('admin.dashboard') }}" class="quick-action admin-only" title="Painel Admin">
                                 <i class="fas fa-user-shield"></i>
                             </a>
                         @else
@@ -1533,6 +1542,67 @@
         
         </script>
 
+    <style>
+        /* When admin chooses to view-as-user, hide admin-only elements */
+        body.view-as-user .admin-only { display: none !important; }
+
+        /* FAB visibility helpers (smooth show/hide) */
+        .smart-search-fab, .user-fab { transition: opacity .22s ease, transform .22s ease, visibility .22s ease; }
+        .fab-hidden { opacity: 0; transform: translateY(8px) scale(.98); pointer-events: none; visibility: hidden; }
+        .fab-visible { opacity: 1; transform: none; pointer-events: auto; visibility: visible; }
+    </style>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            var btns = document.querySelectorAll('.admin-toggle-view-as-user');
+            if(!btns || btns.length === 0) return;
+            btns.forEach(function(btn){
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                    fetch('{{ route("admin.ui.toggle_view_as_user") }}', {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        credentials: 'same-origin'
+                    }).then(function(r){ return r.json(); }).then(function(json){
+                        if(!json || !json.success) return alert('Erro ao alternar visualização');
+                        var active = !!json.value; // true => view-as-user
+                        // Update body class
+                        if(active) document.body.classList.add('view-as-user'); else document.body.classList.remove('view-as-user');
+
+                        // Update all toggle buttons: support segmented controls (data-value="user|admin")
+                        btns.forEach(function(b){
+                            var val = b.getAttribute('data-value');
+                            if(val){
+                                var isUser = String(val) === 'user';
+                                var pressed = (active && isUser) || (!active && String(val) === 'admin');
+                                b.setAttribute('aria-pressed', pressed ? 'true' : 'false');
+                                b.classList.toggle('active', pressed);
+                            } else {
+                                b.setAttribute('aria-pressed', active ? 'true' : 'false');
+                                try{ if(!b.classList.contains('seg-btn')) b.innerHTML = active ? '<i class="fas fa-eye"></i>' : '<i class="fas fa-eye-slash"></i>'; }catch(e){}
+                            }
+                        });
+
+                        // Sync FAB visibility with animation classes
+                        try {
+                            var adminFabEl = document.getElementById('adminFab');
+                            var userFabEl = document.getElementById('userFab');
+                            if(adminFabEl){
+                                adminFabEl.classList.toggle('fab-hidden', active);
+                                adminFabEl.classList.toggle('fab-visible', !active);
+                            }
+                            if(userFabEl){
+                                userFabEl.classList.toggle('fab-visible', active);
+                                userFabEl.classList.toggle('fab-hidden', !active);
+                            }
+                        } catch(e) { console.debug && console.debug('FAB toggle sync failed', e); }
+                    }).catch(function(err){ console.error(err); alert('Erro ao alternar visualização'); });
+                });
+            });
+        });
+    </script>
+
         <script>
             // Mobile logo menu behavior: toggle small menu on logo tap (small screens)
             (function(){
@@ -1878,6 +1948,8 @@
 
         {{-- Busca Inteligente Flutuante para Admin (global) --}}
             @include('partials.smart-search')
+            {{-- FAB do usuário (menu inferior estilo app) --}}
+            @include('partials.user-fab')
         
         @auth('admin')
             {{-- Include banner edit modal globally for admins so they can edit from front-end view --}}

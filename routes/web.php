@@ -226,3 +226,14 @@ Route::post('/logo/size', function(Request $request) {
     session(['user_logo_size' => $map[$size]]);
     return response()->json(['success' => true, 'size' => $map[$size]]);
 })->name('logo.size');
+
+// Admin-only: toggle "view as normal user" for bottom nav (stores in session)
+Route::post('/admin/ui/toggle-view-as-user', function(Request $request) {
+    if (!auth()->guard('admin')->check()) {
+        return response()->json(['success' => false, 'message' => 'Unauthorized'], 403);
+    }
+    $current = session('admin_view_as_user', false);
+    $new = !$current;
+    session(['admin_view_as_user' => $new]);
+    return response()->json(['success' => true, 'value' => $new]);
+})->name('admin.ui.toggle_view_as_user');
