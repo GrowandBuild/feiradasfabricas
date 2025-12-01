@@ -1091,12 +1091,12 @@
     }
 
     .badge-item {
-        padding: 10px;
+        padding: 14px;
         transition: transform 0.3s ease;
         /* prevent items from stretching into non-square shapes on small screens */
         flex: 0 0 auto;
-        min-width: 80px;
-        max-width: 120px;
+        min-width: 120px;
+        max-width: 200px;
     }
 
     .badge-item:hover {
@@ -1111,9 +1111,9 @@
 
     .badge-circle {
         width: 100%;
-        max-width: 100px;
+        max-width: 180px;
         border-radius: 50%;
-        margin: 0 auto 10px;
+        margin: 0 auto 14px;
         border: 2px solid rgba(30, 58, 138, 0.1);
         overflow: hidden;
         background: var(--elegant-white);
@@ -1166,13 +1166,13 @@
             gap: 12px;
         }
         .badge-item {
-            max-width: 100px;
+            max-width: 170px;
         }
         .badge-circle {
-            max-width: 80px;
+            max-width: 140px;
         }
         .badge-title {
-            font-size: 0.75rem;
+            font-size: 0.95rem;
         }
     }
 
@@ -1184,13 +1184,13 @@
             scroll-snap-type: x mandatory;
         }
         .badge-item {
-            max-width: 90px;
+            max-width: 150px;
         }
         .badge-circle {
-            max-width: 70px;
+            max-width: 130px;
         }
         .badge-title {
-            font-size: 0.7rem;
+            font-size: 0.9rem;
         }
     }
 
@@ -1199,14 +1199,73 @@
             gap: 8px;
         }
         .badge-item {
-            max-width: 80px;
+            max-width: 130px;
         }
         .badge-circle {
-            max-width: 60px;
+            max-width: 110px;
         }
         .badge-title {
-            font-size: 0.65rem;
+            font-size: 0.85rem;
         }
+    }
+
+    /* Strong overrides to defeat the global .badge-circle rules in layout (which use !important).
+       We need higher specificity + !important so department rules take effect when rendered. */
+    .section-elegant .badges-wrapper .badge-circle,
+    .badges-wrapper .badge-circle {
+        display: block !important;
+        width: 100% !important;
+        max-width: 180px !important;
+        height: auto !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        border-radius: 50% !important;
+        overflow: hidden !important;
+    }
+
+    .section-elegant .badges-wrapper .badge-circle::before,
+    .badges-wrapper .badge-circle::before {
+        /* Keep square aspect via padding-top trick; important to win against other rules */
+        padding-top: 100% !important;
+    }
+
+    .section-elegant .badges-wrapper .badge-image,
+    .badges-wrapper .badge-image {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        border-radius: 50% !important;
+    }
+
+    .section-elegant .badges-wrapper .badge-title,
+    .badges-wrapper .badge-title {
+        /* Use px to avoid surprises from html font-size overrides */
+        font-size: 14px !important;
+        font-weight: 600 !important;
+    }
+
+    @media (max-width: 991px) {
+        .section-elegant .badges-wrapper .badge-circle,
+        .badges-wrapper .badge-circle { max-width: 140px !important; }
+        .section-elegant .badges-wrapper .badge-title,
+        .badges-wrapper .badge-title { font-size: 13px !important; }
+    }
+
+    @media (max-width: 768px) {
+        .section-elegant .badges-wrapper .badge-circle,
+        .badges-wrapper .badge-circle { max-width: 130px !important; }
+        .section-elegant .badges-wrapper .badge-title,
+        .badges-wrapper .badge-title { font-size: 13px !important; }
+    }
+
+    @media (max-width: 480px) {
+        .section-elegant .badges-wrapper .badge-circle,
+        .badges-wrapper .badge-circle { max-width: 110px !important; }
+        .section-elegant .badges-wrapper .badge-title,
+        .badges-wrapper .badge-title { font-size: 12px !important; }
     }
 
      /* Remove small unwanted vertical gap that can appear between the hero/banner and
