@@ -85,6 +85,8 @@
             --text-light: {{ $sessionTheme['theme_text_light'] ?? $dept_setting('theme_text_light', '#f8fafc') }};
             --text-dark: {{ $sessionTheme['theme_text_dark'] ?? $dept_setting('theme_text_dark', '#1e293b') }};
             --header-height: 72px; /* adjust if your header height differs */
+            /* Height reserved for mobile bottom quick-icons bar (used by live-search offset) */
+            --mobile-icons-height: 64px;
             /* map elegant variables used in department templates to theme variables */
             --elegant-accent: var(--secondary-color);
             --elegant-dark: var(--text-dark);
@@ -1004,22 +1006,11 @@
                                 <span class="header-avatar-placeholder" aria-hidden="true"><i class="fas fa-user"></i></span>
                             @endif
                         </button>
-                            @auth('admin')
-                                <button type="button" class="mobile-admin-toggle admin-toggle-view-as-user mobile-menu-button" title="Alternar ver como usuário" aria-pressed="{{ session('admin_view_as_user') ? 'true' : 'false' }}" style="margin-left:.5rem;">
-                                    @if(session('admin_view_as_user'))
-                                        <i class="fas fa-eye"></i>
-                                    @else
-                                        <i class="fas fa-eye-slash"></i>
-                                    @endif
-                                </button>
-                            @endauth
+                            {{-- admin view-as-user toggle removed from header to avoid eye icon in top bar --}}
                     </div>
                     <div class="mobile-search-wrapper">
-                        {{-- mobile search uses the same component but to avoid duplicate visible search bars
-                             when desktop layout is active we keep the mobile instance inert. If you want
-                             the mobile search back for small screens, I can re-enable with proper
-                             responsive rules. --}}
-                        {{-- @include('components.live-search') --}}
+                        {{-- Mobile live search enabled: uses the same component but adapts to bottom-bar on small screens --}}
+                        @include('components.live-search')
                     </div>
                     <div class="mobile-quick-actions">
                         <a href="{{ route('home') }}" class="quick-action" title="Início">

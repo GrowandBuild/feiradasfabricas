@@ -464,17 +464,16 @@
     }
 }
 
-/* Mobile bottom-nav behaviour: transform the live-search into a fixed bottom navigation
-   with centered search bubble. The results dropdown opens upward to avoid being
-   clipped by the viewport bottom. This keeps desktop behaviour unchanged. */
+/* Mobile: place the live-search in normal flow so it appears as the second row
+   in the mobile header (logo/avatar on first row, search on second, quick-icons on third). */
 @media (max-width: 768px) {
     .live-search-wrapper {
-        position: fixed !important;
-        left: 12px;
-        right: 12px;
-        bottom: calc(12px + env(safe-area-inset-bottom));
-        max-width: none;
-        margin: 0 auto;
+        position: relative !important;
+        left: 0;
+        right: 0;
+        bottom: auto;
+        max-width: 100%;
+        margin: 0.5rem 0 !important;
         z-index: 11000;
         pointer-events: auto;
     }
@@ -484,13 +483,13 @@
     }
 
     .live-search-form {
-        border-radius: 999px !important;
-        box-shadow: 0 10px 30px rgba(15,23,42,0.18) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 6px 18px rgba(15,23,42,0.12) !important;
         background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(255,255,255,0.96));
         padding: 6px;
     }
 
-    /* Ensure the input stays usable inside the small bottom bar */
+    /* Ensure the input stays usable in the header flow */
     .live-search-input {
         padding: 10px 12px;
         font-size: 14px;
@@ -502,14 +501,14 @@
         box-shadow: none !important;
     }
 
-    /* Open results above the bottom bar */
+    /* Open results below the search field in normal flow */
     .live-search-results {
-        left: 50% !important;
-        right: auto !important;
-        transform: translateX(-50%) !important;
-        bottom: calc(100% + 12px) !important;
-        top: auto !important;
-        max-width: calc(100% - 32px) !important;
+        left: 0 !important;
+        right: 0 !important;
+        transform: none !important;
+        top: calc(100% + 8px) !important;
+        bottom: auto !important;
+        max-width: 100% !important;
         width: auto !important;
         margin-top: 0 !important;
     }
@@ -520,7 +519,13 @@
 </style>
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+// Prevent double-initialization when component is included twice (desktop + mobile)
+if (window.__liveSearchInitialized) {
+    console.debug('Live Search já inicializado, pulando re-init');
+} else {
+    window.__liveSearchInitialized = true;
+
+    document.addEventListener('DOMContentLoaded', function() {
     console.log('🚀 Live Search inicializado');
     
     const searchInput = document.getElementById('liveSearchInput');
@@ -846,4 +851,6 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => toggleHelper(searchInput.value.trim()), 0);
     });
 });
+
+} // end guard else
 </script>
