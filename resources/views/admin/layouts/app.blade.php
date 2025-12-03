@@ -215,131 +215,54 @@
             right: 1rem;
         }
 
+        /* Prevent page-level horizontal scrolling while allowing inner table scrolls */
+        html, body { overflow-x: hidden; }
+
+        /* Admin header: fixed, high-contrast, and accessible */
         .navbar-admin {
-            /* Fixed, solid header */
-            background: var(--accent-color, #ff8c00);
+            --admin-header-bg-start: var(--accent-dark, #384858);
+            --admin-header-bg-end: var(--accent-color, #495a6d);
+            background: linear-gradient(135deg, var(--admin-header-bg-start) 0%, var(--admin-header-bg-end) 100%);
             color: #ffffff;
-            box-shadow: 0 6px 18px rgba(2,6,23,0.12);
+            box-shadow: 0 8px 30px rgba(2,6,23,0.18);
             border-bottom: none;
-            padding: 0.9rem 0;
+            padding: 0.75rem 0;
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            z-index: 1100;
+            z-index: 1200;
+            backdrop-filter: saturate(1.05) blur(2px);
+            -webkit-backdrop-filter: saturate(1.05) blur(2px);
         }
 
-        .admin-header-top {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 1rem;
-            flex-wrap: wrap;
+        .admin-header-card { padding: .8rem 1rem; border-radius: .6rem; }
+        .admin-header-card .page-icon { width:56px; height:56px; border-radius:12px; display:inline-flex; align-items:center; justify-content:center; }
+        .page-heading { margin:0; font-size:1.25rem; font-weight:700; color:#fff; }
+        .page-description { display:none; }
+
+        /* Hide empty page-actions placeholder to avoid awkward pills */
+        .page-actions:empty { display: none !important; }
+
+        .admin-user-chip { background: rgba(255,255,255,0.06); color: #fff; gap:.4rem; }
+        .admin-user-chip .avatar { width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; overflow:hidden; border-radius:50%; }
+        .admin-user-chip .avatar img { width:100%; height:100%; object-fit:cover; display:block; border-radius:50%; }
+        .admin-user-chip .admin-user-details .name { font-weight:600; color:#fff; }
+
+        /* Responsive header behavior */
+        @media (max-width: 992px) {
+            .admin-header-card { flex-wrap: wrap; align-items:flex-start; gap:.5rem; }
+            .admin-header-card .page-left { flex:1 1 100%; }
+            .admin-header-card .header-actions { flex:1 1 100%; justify-content:flex-end; margin-top:.25rem; }
+            .admin-header-card .page-icon { width:48px; height:48px; }
+            .page-heading { font-size:1.1rem; }
         }
 
-        .page-header-wrap {
-            display: flex;
-            align-items: center;
-            gap: 0.85rem;
-        }
-
-        .page-header-wrap .page-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent-color, #ff8c00) 0%, var(--accent-dark, #e67e00) 100%);
-            color: #fff;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.25rem;
-            flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(2,6,23,0.12);
-        }
-
-        .page-heading {
-            margin: 0;
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: var(--text-primary, #0f172a);
-            line-height: 1.05;
-        }
-
-        .page-description {
-            margin: 0.15rem 0 0;
-            color: var(--text-secondary, #64748b);
-            font-size: 0.9rem;
-        }
-
-        .page-meta {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .admin-header-actions {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            flex-wrap: wrap;
-            justify-content: flex-end;
-        }
-
-        .btn-go-store {
-            border: 1px solid var(--border-color);
-            background-color: transparent;
-            color: var(--text-secondary);
-            font-weight: 600;
-            padding: 0.45rem 0.9rem;
-            border-radius: 999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-            font-size: 0.9rem;
-        }
-
-        .btn-go-store:hover {
-            color: white;
-            background: var(--accent-color);
-            border-color: var(--accent-color);
-        }
-
-        .admin-user-chip {
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            padding: 0.4rem 0.75rem;
-            border-radius: 999px;
-            background: rgba(148, 163, 184, 0.12);
-        }
-
-        .admin-user-chip .avatar {
-            width: 38px;
-            height: 38px;
-            border-radius: 50%;
-            background-color: var(--accent-color);
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.1rem;
-        }
-
-        .admin-user-chip .admin-user-details {
-            line-height: 1.1;
-        }
-
-        .admin-user-chip .admin-user-details .name {
-            font-weight: 600;
-            color: var(--text-primary);
-        }
-
-        .admin-user-chip .admin-user-details .role {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
+        @media (max-width:576px) {
+            .admin-user-chip .avatar { width:36px; height:36px; }
+            .admin-user-chip .admin-user-details { display:none !important; }
+            .admin-header-card { padding:.5rem .6rem; }
+            .page-heading { font-size:1rem; }
         }
 
         .btn {
@@ -1247,74 +1170,87 @@
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10">
                 <div class="main-content">
-                    <!-- Top Navbar -->
-                    <nav class="navbar navbar-expand-lg navbar-admin">
+                    <!-- Top Navbar (refreshed design) -->
+                    <nav class="navbar navbar-expand-lg navbar-admin" role="navigation" aria-label="Admin header">
                         <div class="container-fluid px-4">
-                                <div class="d-flex flex-column gap-2 w-100">
-                                <div class="admin-header-top">
-                                    <div class="page-header-wrap">
-                                        <div class="page-icon">
-                                            <i class="@yield('page-icon', 'bi bi-speedometer2')"></i>
-                                        </div>
-                                        <div>
-                                            <div class="page-meta">
-                                                <h1 class="page-heading">@yield('page-title', 'Dashboard')</h1>
+                            <div class="admin-header-card d-flex align-items-center justify-content-between w-100 py-2 px-3">
+                                <div class="d-flex align-items-center gap-3 page-left" style="min-width:0;">
+                                    <div class="page-icon rounded-circle d-flex align-items-center justify-content-center p-2" aria-hidden="true">
+                                        <i class="@yield('page-icon', 'bi bi-speedometer2') fs-4"></i>
+                                    </div>
+
+                                    <div class="page-meta" style="min-width:0;">
+                                        <div class="d-flex align-items-start gap-2">
+                                            <div class="flex-grow-1" style="min-width:0;">
+                                                <h1 class="page-heading h5 mb-0 text-truncate">@yield('page-title', 'Dashboard')</h1>
                                                 @yield('page-breadcrumb')
                                             </div>
-                                            @php
-                                                $pageSubtitle = trim($__env->yieldContent('page-subtitle'));
-                                                $pageDescription = trim($__env->yieldContent('page-description'));
-                                            @endphp
-                                            @if(!empty($pageDescription))
-                                                <p class="page-description">{!! $pageDescription !!}</p>
-                                            @elseif(!empty($pageSubtitle))
-                                                <p class="page-description">{!! $pageSubtitle !!}</p>
-                                            @endif
-                                        </div>
-                                    </div>
-                                    <div class="admin-header-actions">
-                                        <!-- Mobile menu toggle -->
-                                        <button id="adminSidebarToggle" class="btn btn-outline-light d-md-none me-2" title="Menu" aria-label="Abrir menu">
-                                            <i class="bi bi-list"></i>
-                                        </button>
-                                        @if(request()->routeIs('admin.dashboard'))
-                                            <a href="{{ route('home') }}" class="btn btn-go-store">
-                                                <i class="bi bi-arrow-return-left"></i>
-                                                Voltar para o site
-                                            </a>
-                                        @endif
-                                        <div class="admin-user-chip">
-                                            <div class="avatar">
-                                                <i class="bi bi-person-fill"></i>
-                                            </div>
-                                            <div class="admin-user-details">
-                                                <div class="name">{{ auth('admin')->user()->name }}</div>
-                                                <div class="role">Administrador</div>
+                                            <div class="page-actions d-none d-md-block ms-2">
+                                                @yield('page-actions')
                                             </div>
                                         </div>
-                                        <form action="{{ route('admin.logout') }}" method="POST" class="d-inline">
-                                            @csrf
-                                            <button type="submit" class="btn btn-outline-danger btn-sm" title="Sair">
-                                                <i class="bi bi-box-arrow-right"></i>
-                                            </button>
-                                        </form>
+                                        {{-- page-subtitle / page-description intentionally disabled to keep header compact --}}
                                     </div>
                                 </div>
-                                @if(session('success'))
-                                    <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
-                                        <i class="bi bi-check-circle me-2"></i>
-                                        {{ session('success') }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+                                <div class="d-flex align-items-center gap-2 header-actions">
+                                    <!-- Hidden sections quick access -->
+                                    <div class="hidden-sections-wrapper d-flex align-items-center">
+                                        <button id="hiddenSectionsBtn" class="hidden-sections-btn d-flex align-items-center gap-2" title="Seções ocultas" aria-haspopup="true" aria-expanded="false">
+                                            <span class="hidden-sections-label">Seções</span>
+                                            <i class="bi bi-chevron-down" aria-hidden="true"></i>
+                                            <span id="hiddenSectionsCount" class="hidden-sections-badge badge bg-danger ms-2" style="display:none; font-size:0.65rem;">0</span>
+                                        </button>
                                     </div>
-                                @endif
-                                @if(session('error'))
-                                    <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
-                                        <i class="bi bi-exclamation-circle me-2"></i>
-                                        {{ session('error') }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+                                    @if(request()->routeIs('admin.dashboard'))
+                                        <a href="{{ route('home') }}" class="btn btn-go-store d-none d-md-inline-flex" title="Voltar ao site">
+                                            <i class="bi bi-arrow-return-left"></i>
+                                            <span class="d-none d-lg-inline">Voltar para o site</span>
+                                        </a>
+                                    @endif
+
+                                    <div class="admin-user-chip d-flex align-items-center" role="group" aria-label="Usuário">
+                                        <div class="avatar rounded-circle d-flex align-items-center justify-content-center me-2" aria-hidden="true">
+                                            @if(optional(auth('admin')->user())->avatar)
+                                                <img src="{{ auth('admin')->user()->avatar }}" alt="Avatar" />
+                                            @else
+                                                <i class="bi bi-person-fill fs-5 text-white"></i>
+                                            @endif
+                                        </div>
+                                        <div class="admin-user-details d-none d-sm-block text-end">
+                                            <div class="name small">{{ auth('admin')->user()->name }}</div>
+                                            <div class="role xsmall text-white-50">Administrador</div>
+                                        </div>
                                     </div>
-                                @endif
+
+                                    <form action="{{ route('admin.logout') }}" method="POST" class="d-inline ms-2">
+                                        @csrf
+                                        <button type="submit" class="btn btn-outline-danger btn-sm" title="Sair">
+                                            <i class="bi bi-box-arrow-right"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
+
+                            @if(session('success') || session('error'))
+                                <div class="mt-2">
+                                    @if(session('success'))
+                                        <div class="alert alert-success alert-dismissible fade show mb-0" role="alert">
+                                            <i class="bi bi-check-circle me-2"></i>
+                                            {{ session('success') }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    @endif
+                                    @if(session('error'))
+                                        <div class="alert alert-danger alert-dismissible fade show mb-0" role="alert">
+                                            <i class="bi bi-exclamation-circle me-2"></i>
+                                            {{ session('error') }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endif
                         </div>
                     </nav>
 
@@ -1675,6 +1611,40 @@
             .logo-size-picker{ gap:6px; padding:8px; min-width: 160px; }
             .logo-size-picker button{ flex: 1 1 48%; padding:8px; box-sizing: border-box; }
         }
+
+        /* Hidden sections panel and button (high-contrast, pill) */
+        .hidden-sections-btn {
+            background: #fff;
+            color: var(--accent-color, #495a6d);
+            border: 1px solid rgba(255,255,255,0.06);
+            padding: 0.35rem 0.6rem;
+            border-radius: 999px;
+            box-shadow: 0 6px 18px rgba(2,6,23,0.12);
+            font-weight: 600;
+            gap: 0.5rem;
+        }
+        .hidden-sections-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(2,6,23,0.14); }
+        .hidden-sections-btn .hidden-sections-label { font-size: 0.9rem; }
+        .hidden-sections-badge { font-size: 0.65rem; padding: 0.15rem 0.35rem; }
+
+        .hidden-sections-panel {
+            position: absolute;
+            left: 8px;
+            top: calc(var(--admin-header-height, 72px) + 48px);
+            min-width: 260px;
+            max-width: calc(100vw - 24px);
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 12px 40px rgba(2,6,23,0.16);
+            padding: 10px;
+            z-index: 1300;
+            display: none;
+        }
+
+        .hidden-sections-panel .hs-item { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:8px 6px; border-bottom:1px solid #f1f1f1 }
+        .hidden-sections-panel .hs-item:last-child { border-bottom: none }
+        .hidden-sections-panel .hs-id { font-size:0.95rem; color:#1f2937; word-break:break-word }
+        .hidden-sections-panel .hs-actions button { font-size:0.85rem }
     </style>
 
     <script>
@@ -1941,6 +1911,165 @@
                 logoUploadAlert.textContent = message;
             }
         });
+    </script>
+    <script>
+        // Ensure admin header height is exposed as a CSS variable so content isn't overlapped
+        (function(){
+            function updateAdminHeaderHeight(){
+                try{
+                    var nav = document.querySelector('.navbar-admin');
+                    if(!nav) return;
+                    var h = nav.offsetHeight || 72;
+                    document.documentElement.style.setProperty('--admin-header-height', h + 'px');
+                    var main = document.querySelector('.main-content');
+                    if(main) main.style.paddingTop = 'calc(var(--admin-header-height, ' + h + 'px) + 8px)';
+                }catch(e){ console.error(e); }
+            }
+
+            if(document.readyState === 'loading'){
+                document.addEventListener('DOMContentLoaded', function(){ updateAdminHeaderHeight(); });
+            } else { updateAdminHeaderHeight(); }
+
+            var _deb;
+            window.addEventListener('resize', function(){ clearTimeout(_deb); _deb = setTimeout(updateAdminHeaderHeight, 120); });
+
+            var headerEl = document.querySelector('.navbar-admin');
+            if(headerEl && window.MutationObserver){
+                var mo = new MutationObserver(function(){ clearTimeout(_deb); _deb = setTimeout(updateAdminHeaderHeight, 80); });
+                mo.observe(headerEl, { childList: true, subtree: true, attributes: true });
+            }
+        })();
+    </script>
+    <script>
+        // Hidden sections manager (shows any sections hidden via localStorage 'admin:section:<id>')
+        (function(){
+            function getHiddenSectionKeys(){
+                try{
+                    const keys = Object.keys(localStorage).filter(k => k.indexOf('admin:section:') === 0);
+                    return keys;
+                }catch(e){ return []; }
+            }
+
+            function renderPanel(){
+                const keys = getHiddenSectionKeys();
+                const countEl = document.getElementById('hiddenSectionsCount');
+                if(!countEl) return;
+                if(keys.length === 0){ countEl.style.display = 'none'; countEl.textContent = '0'; }
+                else { countEl.style.display = ''; countEl.textContent = String(keys.length); }
+
+                const panel = document.getElementById('hiddenSectionsPanel');
+                const list = document.getElementById('hiddenSectionsList');
+                if(!panel || !list) return;
+                list.innerHTML = '';
+                keys.forEach(k => {
+                    const id = k.replace('admin:section:', '');
+                    let title = id.replace(/[-_]/g, ' ');
+                    // prefer explicit data-section-title attribute when available
+                    try{
+                        const el = document.querySelector('[data-section-id="' + id + '"]');
+                        if(el){
+                            const t = el.getAttribute('data-section-title');
+                            if(t && t.trim().length) title = t.trim();
+                        }
+                    }catch(e){}
+                    const row = document.createElement('div');
+                    row.className = 'hs-item';
+                    row.innerHTML = `<div class="hs-id">${title}</div><div class="hs-actions"><button class="btn btn-sm btn-outline-danger" data-hs-show="${id}">Reexibir</button></div>`;
+                    list.appendChild(row);
+                });
+                // show 'none' message
+                if(keys.length === 0){ list.innerHTML = '<div class="text-muted small">Nenhuma seção oculta</div>'; }
+            }
+
+            function showPanel(show){
+                const panel = document.getElementById('hiddenSectionsPanel');
+                if(!panel) return;
+                panel.style.display = show ? 'block' : 'none';
+            }
+
+            document.addEventListener('DOMContentLoaded', function(){
+                // inject panel markup
+                const wrapper = document.createElement('div');
+                wrapper.className = 'hidden-sections-panel';
+                wrapper.id = 'hiddenSectionsPanel';
+                wrapper.innerHTML = '<div id="hiddenSectionsList"></div><div class="text-end mt-2"><button id="hiddenShowAll" class="btn btn-sm btn-danger">Reexibir tudo</button></div>';
+                document.body.appendChild(wrapper);
+
+                    const btn = document.getElementById('hiddenSectionsBtn');
+                    if(!btn) return;
+
+                    function positionHiddenPanel(){
+                        try{
+                            const panel = document.getElementById('hiddenSectionsPanel');
+                            if(!panel) return;
+                            const btnRect = btn.getBoundingClientRect();
+                            // temporarily ensure visible to measure
+                            panel.style.display = panel.style.display === 'block' ? 'block' : 'block';
+                            panel.style.visibility = 'hidden';
+                            const pRect = panel.getBoundingClientRect();
+                            let left = btnRect.left + (btnRect.width / 2) - (pRect.width / 2);
+                            left = Math.max(8, Math.min(left, window.innerWidth - pRect.width - 8));
+                            let top = btnRect.bottom + 8;
+                            panel.style.left = left + 'px';
+                            panel.style.top = top + 'px';
+                            panel.style.visibility = '';
+                            if(panel.style.display !== 'block') panel.style.display = 'none';
+                        }catch(e){ console.error('positionHiddenPanel', e); }
+                    }
+
+                    btn.addEventListener('click', function(e){
+                        e.stopPropagation();
+                        const panel = document.getElementById('hiddenSectionsPanel');
+                        if(!panel) return;
+                        const isVisible = panel.style.display === 'block';
+                        if(isVisible){
+                            showPanel(false);
+                        } else {
+                            renderPanel();
+                            showPanel(true);
+                            // position under button
+                            positionHiddenPanel();
+                        }
+                    });
+
+                    // reposition on resize/scroll while open
+                    window.addEventListener('resize', function(){ if(document.getElementById('hiddenSectionsPanel')?.style.display === 'block') positionHiddenPanel(); });
+                    window.addEventListener('scroll', function(){ if(document.getElementById('hiddenSectionsPanel')?.style.display === 'block') positionHiddenPanel(); }, true);
+
+                // click outside to close
+                document.addEventListener('click', function(e){
+                    const panel = document.getElementById('hiddenSectionsPanel');
+                    const btn = document.getElementById('hiddenSectionsBtn');
+                    if(!panel) return;
+                    if(panel.contains(e.target) || (btn && btn.contains(e.target))) return;
+                    panel.style.display = 'none';
+                });
+
+                // delegate show buttons
+                document.body.addEventListener('click', function(e){
+                    const b = e.target.closest && e.target.closest('[data-hs-show]');
+                    if(!b) return;
+                    const id = b.getAttribute('data-hs-show');
+                    if(!id) return;
+                    try{ localStorage.removeItem('admin:section:' + id); }catch(err){}
+                    const el = document.querySelector('[data-section-id="' + id + '"]');
+                    if(el) el.style.display = '';
+                    renderPanel();
+                });
+
+                // show all
+                document.body.addEventListener('click', function(e){
+                    if(e.target && e.target.id === 'hiddenShowAll'){
+                        const keys = getHiddenSectionKeys();
+                        keys.forEach(k => { try{ localStorage.removeItem(k); }catch(e){}; const id = k.replace('admin:section:',''); const el = document.querySelector('[data-section-id="' + id + '"]'); if(el) el.style.display = ''; });
+                        renderPanel();
+                    }
+                });
+
+                // initial render for badge
+                renderPanel();
+            });
+        })();
     </script>
 </body>
 </html>

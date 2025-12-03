@@ -1,7 +1,5 @@
 <!-- Modal de Departamentos Simples -->
 @include('admin.departments_modal_simple')
-
-<button onclick="showDepartmentsModal()" style="position:fixed;bottom:32px;right:32px;z-index:99999;background:#007bff;color:#fff;border:none;padding:1rem 1.5rem;border-radius:50px;font-size:1.1rem;box-shadow:0 2px 8px rgba(0,0,0,0.12);cursor:pointer;">Departamentos</button>
 @extends('admin.layouts.app')
 
 @section('title', 'Dashboard')
@@ -233,6 +231,23 @@
                                         <td>
                                             <span class="badge bg-primary">{{ $product->sales_count }}</span>
                                         </td>
+                                    /* Mobile-specific refinements for dashboard */
+                                    @media (max-width: 768px) {
+                                        /* Hide the large floating 'Departamentos' helper button on small screens */
+                                        button[onclick="showDepartmentsModal()"] {
+                                            display: none !important;
+                                        }
+
+                                        /* Make stat cards larger and readable on small devices */
+                                        .stats-number { font-size: 1.6rem !important; }
+                                        .stats-label { font-size: 0.9rem !important; }
+
+                                        /* Reduce chart heights to avoid large vertical scroll */
+                                        #salesChart, #customersChart, #ordersChart { height: 180px !important; }
+
+                                        /* Ensure cards have comfortable padding on small screens */
+                                        .card-body { padding: 0.9rem !important; }
+                                    }
                                     </tr>
                                 @endforeach
                             </tbody>

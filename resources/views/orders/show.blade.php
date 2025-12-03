@@ -221,6 +221,7 @@
 </div>
 
 <!-- Loading Modal -->
+@if(false)
 <div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-sm modal-dialog-centered">
         <div class="modal-content">
@@ -233,6 +234,7 @@
         </div>
     </div>
 </div>
+@endif
 @endsection
 
 @push('scripts')

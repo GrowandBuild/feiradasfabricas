@@ -15,51 +15,6 @@
 @if(session('error'))
     <div class="alert alert-danger">{{ session('error') }}</div>
 @endif
-
-<div class="card">
-    <div class="card-body p-0">
-        <table class="table mb-0">
-            <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Slug</th>
-                    <th>Cor</th>
-                    <th class="text-center">Ativo</th>
-                    <th class="text-center">Produtos</th>
-                    <th class="text-end">Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($departments as $dept)
-                    <tr>
-                        <td><a href="{{ route('admin.departments.show', $dept) }}">{{ $dept->name }}</a></td>
-                        <td>{{ $dept->slug }}</td>
-                        <td><span style="display:inline-block;width:24px;height:18px;background:{{ $dept->color ?? '#ddd' }};border:1px solid #ccc;border-radius:3px;"></span></td>
-                        <td class="text-center">{{ $dept->is_active ? 'Sim' : 'Não' }}</td>
-                        <td class="text-center">{{ $dept->products()->active()->count() }}</td>
-                        <td class="text-end">
-                            <a href="{{ route('admin.departments.edit', $dept) }}" class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-pencil"></i></a>
-                            <form action="{{ route('admin.departments.destroy', $dept) }}" method="POST" style="display:inline" onsubmit="return confirm('Excluir departamento?');">
-                                @csrf
-                                @method('DELETE')
-                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                            </form>
-                        </td>
-                    </tr>
-                @empty
-                    <tr>
-                        <td colspan="6" class="text-center text-muted">Nenhum departamento encontrado.</td>
-                    </tr>
-                @endforelse
-            </tbody>
-        </table>
-    </div>
-    <div class="card-footer">
-        {{ $departments->links() }}
-    </div>
-</div>
-
-@endsection
 @extends('admin.layouts.app')
 
 @section('title', 'Departamentos')
@@ -196,59 +151,44 @@
     </div>
 </div>
 
-<!-- Estatísticas dos Departamentos -->
-<div class="row mt-4">
-    <div class="col-md-3">
-        <div class="card bg-primary text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total de Departamentos</h6>
-                        <h3 class="mb-0">{{ $departments->total() }}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-building fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-success text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Departamentos Ativos</h6>
-                        <h3 class="mb-0">{{ $departments->where('is_active', true)->count() }}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-check-circle fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-warning text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Departamentos Inativos</h6>
-                        <h3 class="mb-0">{{ $departments->where('is_active', false)->count() }}</h3>
-                    </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-x-circle fa-2x"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-3">
-        <div class="card bg-info text-white">
-            <div class="card-body">
-                <div class="d-flex justify-content-between">
-                    <div>
-                        <h6 class="card-title">Total de Produtos</h6>
+@endsection
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    function handleResponseAndApply(theme){
+        if (!theme) return;
+        // Normalize keys expected by the layout listener
+        const payload = { theme: { theme_primary: theme.theme_primary || theme.primary || theme.themePrimary || theme.primary_color, theme_secondary: theme.theme_secondary || theme.secondary || theme.themeSecondary || theme.secondary_color } };
+        window.dispatchEvent(new CustomEvent('theme:updated', { detail: payload }));
+    }
+
+    document.querySelectorAll('.apply-dept-theme').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const id = this.dataset.id;
+            if (!confirm('Aplicar o tema deste departamento no painel para pré-visualização?')) return;
+            fetch(`/admin/departments/${id}/restore-theme-colors`, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (data) handleResponseAndApply(data);
+                }).catch(err => { console.error('Erro ao aplicar tema:', err); alert('Erro ao aplicar tema. Veja o console.'); });
+        });
+    });
+
+    document.querySelectorAll('.restore-dept-theme').forEach(btn => {
+        btn.addEventListener('click', function(){
+            const id = this.dataset.id;
+            if (!confirm('Restaurar cores padrão do departamento e aplicar no painel?')) return;
+            fetch(`/admin/departments/${id}/restore-theme-colors`, { headers: { 'Accept': 'application/json' } })
+                .then(r => r.json())
+                .then(data => {
+                    if (data) handleResponseAndApply(data);
+                }).catch(err => { console.error('Erro ao restaurar tema:', err); alert('Erro ao restaurar tema. Veja o console.'); });
+        });
+    });
+});
+</script>
+@endpush
                         <h3 class="mb-0">{{ $departments->sum('total_products') }}</h3>
                     </div>
                     <div class="align-self-center">

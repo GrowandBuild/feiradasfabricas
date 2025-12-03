@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Department;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 class DepartmentController extends Controller
 {
@@ -154,8 +157,17 @@ class DepartmentController extends Controller
      */
     public function update(Request $request, Department $department)
     {
+        // Debug: verify what data is coming
+        \Log::info('Department Update Request', [
+            'department_id' => $department->id,
+            'old_name' => $department->name,
+            'new_name' => $request->input('name'),
+            'all_inputs' => $request->all()
+        ]);
+
         $request->validate([
             'name' => 'required|string|max:255',
+            'slug' => 'nullable|string|max:255',
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:255',
             'color' => 'required|string|max:7',
@@ -163,12 +175,21 @@ class DepartmentController extends Controller
             'sort_order' => 'integer|min:0',
         ]);
 
-        $data = $request->all();
-        $data['slug'] = Str::slug($data['name']);
-        $data['is_active'] = $request->has('is_active');
-
-        // Atualizar atributos básicos
-        $department->update($data);
+        // Update department directly using fillable attributes
+        $department->name = $request->input('name');
+        $department->description = $request->input('description');
+        $department->icon = $request->input('icon');
+        $department->color = $request->input('color');
+        $department->is_active = $request->has('is_active');
+        $department->sort_order = $request->input('sort_order', 0);
+        
+        // Explicitly save the changes
+        $saved = $department->save();
+        
+        \Log::info('Department After Save', [
+            'saved' => $saved,
+            'new_name' => $department->name
+        ]);
 
         // Se veio arquivo de logo, validar e armazenar em storage/public/department-logos
         if ($request->hasFile('logo')) {

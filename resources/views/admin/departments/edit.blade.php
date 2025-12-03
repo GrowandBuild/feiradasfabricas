@@ -2,62 +2,6 @@
 
 @section('title', 'Editar Departamento')
 @section('page-title', 'Editar Departamento')
-
-@section('content')
-<div class="card">
-    <div class="card-body">
-        <form action="{{ route('admin.departments.update', $department) }}" method="POST" enctype="multipart/form-data">
-            @csrf
-            @method('PUT')
-
-            <div class="mb-3">
-                <label class="form-label">Nome</label>
-                <input type="text" name="name" class="form-control" required value="{{ old('name', $department->name) }}">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Slug (opcional)</label>
-                <input type="text" name="slug" class="form-control" value="{{ old('slug', $department->slug) }}">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Cor (HEX)</label>
-                <input type="text" name="color" class="form-control" value="{{ old('color', $department->color ?? '#667eea') }}">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Ícone</label>
-                <input type="text" name="icon" class="form-control" value="{{ old('icon', $department->icon) }}" placeholder="Ex: bi bi-phone">
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Descrição</label>
-                <textarea name="description" class="form-control">{{ old('description', $department->description) }}</textarea>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Logo (opcional)</label>
-                <input type="file" name="logo" class="form-control">
-            </div>
-
-            <div class="mb-3 form-check">
-                <input type="checkbox" name="is_active" class="form-check-input" id="is_active" {{ $department->is_active ? 'checked' : '' }}>
-                <label class="form-check-label" for="is_active">Ativo</label>
-            </div>
-
-            <div class="d-flex justify-content-end gap-2">
-                <a href="{{ route('admin.departments.index') }}" class="btn btn-outline-secondary">Cancelar</a>
-                <button class="btn btn-primary">Salvar alterações</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-@endsection
-@extends('admin.layouts.app')
-
-@section('title', 'Editar Departamento')
-@section('page-title', 'Editar Departamento')
 @section('page-subtitle')
     <p class="text-muted mb-0">Edite as informações do departamento</p>
 @endsection
@@ -75,6 +19,9 @@
                 <form action="{{ route('admin.departments.update', $department) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
+                    
+                    <!-- Hidden field to preserve slug -->
+                    <input type="hidden" name="slug" value="{{ $department->slug }}">
                     
                     <div class="row">
                         <div class="col-md-6">

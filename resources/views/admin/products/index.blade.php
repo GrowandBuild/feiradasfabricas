@@ -8,10 +8,10 @@
 
 @section('content')
 <!-- Header Melhorado -->
-<div class="card mb-4 border-0 shadow-sm" style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);">
+<div class="card mb-4 border-0 shadow-sm" data-section-id="products-hero" style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);">
     <div class="card-body p-4">
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+            <div class="d-flex align-items-start align-items-md-center gap-3" style="min-width:0;">
                 <div class="rounded-circle p-3 me-3" style="background-color: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);">
                     <i class="bi bi-box-seam" style="font-size: 1.8rem; color: white;"></i>
                 </div>
@@ -26,8 +26,8 @@
                             }
                         @endphp
                         <div class="mt-2">
-                            <div class="dropdown d-inline-block">
-                                <button class="btn btn-sm btn-white dropdown-toggle" type="button" id="deptDropdownButton" data-bs-toggle="dropdown" aria-expanded="false" style="font-weight:600; color:#374151; background-color: rgba(255,255,255,0.9);">
+                            <div class="dropdown d-inline-block" style="min-width:0;">
+                                <button class="btn btn-sm btn-white dropdown-toggle w-100 w-md-auto text-truncate" type="button" id="deptDropdownButton" data-bs-toggle="dropdown" aria-expanded="false" style="font-weight:600; color:#374151; background-color: rgba(255,255,255,0.9);">
                                     @if($currentDept)
                                         {{ $currentDept->name }}
                                     @else
@@ -50,11 +50,15 @@
                     </p>
                 </div>
             </div>
-            <div class="d-flex gap-2">
-                <a href="{{ route('admin.products.import') }}" class="btn btn-light shadow-sm" style="font-weight: 500;">
+            <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto justify-content-md-end">
+                <button type="button" class="btn btn-sm btn-outline-light section-toggle-btn d-flex align-items-center gap-2" data-section-target="products-hero" aria-expanded="true" title="Recolher sessão" style="font-weight:600;">
+                    <span class="section-toggle-label">Recolher</span>
+                    <i class="bi bi-chevron-up"></i>
+                </button>
+                <a href="{{ route('admin.products.import') }}" class="btn btn-light shadow-sm w-100 w-md-auto text-center" style="font-weight: 500;">
                     <i class="bi bi-upload me-1"></i> Importar
                 </a>
-                <a href="{{ route('admin.products.create') }}" class="btn btn-white shadow" style="font-weight: 600; background-color: white; color: #f97316;">
+                <a href="{{ route('admin.products.create') }}" class="btn btn-white shadow w-100 w-md-auto text-center" style="font-weight: 600; background-color: white; color: #f97316;">
                     <i class="bi bi-plus-circle me-1"></i> Novo Produto
                 </a>
             </div>
@@ -63,12 +67,20 @@
 </div>
 
 <!-- Controlador Global de Margens de Lucro - Redesenhado -->
-<div class="card mb-4 border-0 shadow-sm" style="border-left: 4px solid #f97316 !important;">
-    <div class="card-header d-flex align-items-center" style="background: linear-gradient(to right, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.2);">
-        <div class="rounded-circle p-2 me-2" style="background-color: #f97316;">
-            <i class="bi bi-sliders" style="color: white; font-size: 1rem;"></i>
+<div class="card mb-4 border-0 shadow-sm" data-section-id="global-margins" data-section-title="Controlador Global de Margens de Lucro" style="border-left: 4px solid #f97316 !important;">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(to right, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.2);">
+        <div class="d-flex align-items-center">
+            <div class="rounded-circle p-2 me-2" style="background-color: #f97316;">
+                <i class="bi bi-sliders" style="color: white; font-size: 1rem;"></i>
+            </div>
+            <h6 class="mb-0 fw-bold" style="color: #f97316;">Controlador Global de Margens de Lucro</h6>
         </div>
-        <h6 class="mb-0 fw-bold" style="color: #f97316;">Controlador Global de Margens de Lucro</h6>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-secondary section-toggle-btn d-flex align-items-center gap-2" data-section-target="global-margins" aria-expanded="true" title="Recolher sessão">
+                <span class="section-toggle-label">Recolher</span>
+                <i class="bi bi-chevron-up"></i>
+            </button>
+        </div>
     </div>
     <div class="card-body" style="background-color: #fafafa;">
         <div class="row g-3 align-items-end">
@@ -138,12 +150,20 @@
 </div>
 
 <!-- Filtros - Redesenhado -->
-<div class="card mb-4 border-0 shadow-sm">
-    <div class="card-header d-flex align-items-center" style="background: linear-gradient(to right, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.15);">
-        <div class="rounded-circle p-2 me-2" style="background-color: rgba(249, 115, 22, 0.15);">
-            <i class="bi bi-funnel" style="color: #f97316; font-size: 0.9rem;"></i>
+<div class="card mb-4 border-0 shadow-sm" data-section-id="filters" data-section-title="Filtros e Busca">
+    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(to right, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.15);">
+        <div class="d-flex align-items-center">
+            <div class="rounded-circle p-2 me-2" style="background-color: rgba(249, 115, 22, 0.15);">
+                <i class="bi bi-funnel" style="color: #f97316; font-size: 0.9rem;"></i>
+            </div>
+            <h6 class="mb-0 fw-semibold" style="color: #374151;">Filtros e Busca</h6>
         </div>
-        <h6 class="mb-0 fw-semibold" style="color: #374151;">Filtros e Busca</h6>
+        <div>
+            <button type="button" class="btn btn-sm btn-outline-secondary section-toggle-btn d-flex align-items-center gap-2" data-section-target="filters" aria-expanded="true" title="Recolher sessão">
+                <span class="section-toggle-label">Recolher</span>
+                <i class="bi bi-chevron-up"></i>
+            </button>
+        </div>
     </div>
     <div class="card-body" style="background-color: #fafafa;">
         <form method="GET" id="filterForm" class="row g-3">
@@ -665,6 +685,42 @@
     </div>
 </div>
 
+@section('styles')
+<style>
+    /* Mobile: transform product table into card-like rows, hide less important columns */
+    @media (max-width: 768px) {
+        .table-responsive thead { display: none !important; }
+        .table-responsive, .table-responsive table { display: block; width: 100%; }
+        .table-responsive tbody { display: block; }
+        .table-responsive tbody tr { display: block; margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.04); border-radius: 8px; padding: 8px; background: #fff; }
+        .table-responsive tbody tr td { display: flex; align-items: center; justify-content: space-between; padding: 8px; }
+
+        /* Keep checkbox, product and actions visible; hide detailed columns */
+        .table-responsive tbody tr td:nth-child(1),
+        .table-responsive tbody tr td:nth-child(2),
+        .table-responsive tbody tr td:last-child { display: flex; }
+
+        .table-responsive tbody tr td:nth-child(3),
+        .table-responsive tbody tr td:nth-child(4),
+        .table-responsive tbody tr td:nth-child(5),
+        .table-responsive tbody tr td:nth-child(6) { display: none !important; }
+
+        .product-thumbnail { width: 56px !important; height: 56px !important; }
+        .product-row .flex-grow-1 { min-width: 0; }
+
+        /* Actions: make touch-friendly and wrap if needed */
+        .btn-group.btn-group-sm { display: flex; gap: 6px; }
+        .btn-group.btn-group-sm .btn { padding: 8px 10px; font-size: 0.95rem; }
+
+        /* Inline variations row should remain hidden by default on mobile */
+        tr[id^="inline-variations-row-"] { display: none !important; }
+
+        /* Adjust pagination and info spacing */
+        .d-flex.flex-column.flex-md-row { gap: 12px; }
+    }
+</style>
+@endsection
+
 @push('modals')
 <!-- Incluir Modal de Variações -->
 @include('admin.products.modals.variations')
@@ -837,7 +893,7 @@ document.addEventListener('click', function(e){
 @endpush
 
 @push('modals')
-@if(empty(request()->query('department')) && isset($departments) && $departments->count() > 0)
+@if(false)
 <!-- Modal: Seleção de Departamento ao acessar a página de produtos -->
 <div class="modal fade" id="selectDepartmentModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
     <div class="modal-dialog modal-sm modal-dialog-centered">
@@ -1047,9 +1103,11 @@ document.addEventListener('click', function(e){
 
     /* Offcanvas - Lista rolável de variações */
     #quickVariationsOffcanvas .offcanvas-body { display: flex; flex-direction: column; padding-top: 0; }
-    #quick-variations-list { overflow-y: auto; max-height: calc(100vh - 180px); padding-right: 6px; }
+    /* Ensure the quick-variations list accounts for the fixed admin header height */
+    #quick-variations-list { overflow-y: auto; max-height: calc(100vh - var(--admin-header-height, 72px) - 110px); padding-right: 6px; }
     #quick-variations-list .variation-price-item { border-left: 2px solid #f97316; background: #fff; }
-    #quick-variations-filter { position: sticky; top: 0; background: #fff; z-index: 2; padding-top: 1rem; padding-bottom: .75rem; border-bottom: 1px solid #eee; }
+    /* Sticky filter should be positioned below the fixed admin header */
+    #quick-variations-filter { position: sticky; top: calc(var(--admin-header-height, 72px) + 8px); background: #fff; z-index: 2; padding-top: 1rem; padding-bottom: .75rem; border-bottom: 1px solid #eee; }
 </style>
 @endsection
 
@@ -1081,6 +1139,58 @@ document.addEventListener('click', function(e){
             console.error('❌ Checkbox "Selecionar todos" não encontrado!');
             return;
         }
+
+        // Inicializar toggles de sessão (mostrar/ocultar) que persistem em localStorage
+        (function initSectionToggles(){
+            try{
+                const toggles = document.querySelectorAll('.section-toggle-btn[data-section-target]');
+                if(!toggles || toggles.length === 0) return;
+
+                toggles.forEach(btn => {
+                    const id = btn.getAttribute('data-section-target');
+                    const selector = `[data-section-id="${id}"]`;
+                    const el = document.querySelector(selector);
+                    if(!el) return;
+
+                    const storageKey = 'admin:section:' + id;
+
+                    function applyState(state){
+                        if(state === 'hidden'){
+                            el.style.display = 'none';
+                            btn.setAttribute('aria-expanded', 'false');
+                            btn.title = 'Exibir sessão';
+                            btn.innerHTML = '<span class="section-toggle-label">Exibir</span> <i class="bi bi-chevron-down"></i>';
+                        } else {
+                            el.style.display = '';
+                            btn.setAttribute('aria-expanded', 'true');
+                            btn.title = 'Recolher sessão';
+                            btn.innerHTML = '<span class="section-toggle-label">Recolher</span> <i class="bi bi-chevron-up"></i>';
+                        }
+                    }
+
+                    // restore
+                    const saved = localStorage.getItem(storageKey);
+                    if(saved === 'hidden') {
+                        applyState('hidden');
+                    } else {
+                        applyState('visible');
+                    }
+
+                    // toggle on click
+                    btn.addEventListener('click', function(e){
+                        e.preventDefault();
+                        const isHidden = localStorage.getItem(storageKey) === 'hidden';
+                        if(!isHidden){
+                            localStorage.setItem(storageKey, 'hidden');
+                            applyState('hidden');
+                        } else {
+                            localStorage.removeItem(storageKey);
+                            applyState('visible');
+                        }
+                    });
+                });
+            }catch(err){ console.error('section toggles init error', err); }
+        })();
 
         // Função para obter todos os checkboxes visíveis na página atual
         function getVisibleCheckboxes() {
