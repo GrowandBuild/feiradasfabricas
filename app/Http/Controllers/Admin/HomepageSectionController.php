@@ -51,6 +51,14 @@ class HomepageSectionController extends Controller
         return view('admin.homepage_sections.index', compact('sections'));
     }
 
+    public function create()
+    {
+        $section = new HomepageSection();
+        $departments = Department::orderBy('name')->get();
+        $products = Product::orderBy('name')->limit(500)->get();
+        return view('admin.homepage_sections.form', compact('section', 'departments', 'products'));
+    }
+
     public function store(Request $request)
     {
         $data = $request->validate([
