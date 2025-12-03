@@ -1194,6 +1194,10 @@
                                 </div>
 
                                 <div class="d-flex align-items-center gap-2 header-actions">
+                                    <!-- Mobile-only quick link to public site (opens in new tab) -->
+                                    <a href="{{ route('home') }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-light d-md-none me-1" title="Ver site público">
+                                        <i class="bi bi-house-door-fill"></i>
+                                    </a>
                                     <!-- Hidden sections quick access -->
                                     <div class="hidden-sections-wrapper d-flex align-items-center">
                                         <button id="hiddenSectionsBtn" class="hidden-sections-btn d-flex align-items-center gap-2" title="Seções ocultas" aria-haspopup="true" aria-expanded="false">
