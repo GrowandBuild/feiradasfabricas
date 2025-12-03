@@ -962,6 +962,10 @@
                             <i class="bi bi-tag"></i> 
                             <span>Marcas</span>
                         </a>
+                        <a class="nav-link {{ request()->routeIs('admin.attributes.*') ? 'active' : '' }}" href="{{ route('admin.attributes.index') }}" style="padding-left: 2.5rem;">
+                            <i class="bi bi-list-ul"></i>
+                            <span>Atributos</span>
+                        </a>
                         <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
                             <i class="bi bi-tags"></i> 
                             <span>Categorias</span>

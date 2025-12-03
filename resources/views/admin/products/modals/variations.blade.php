@@ -298,17 +298,42 @@ function calculatePriceFromCost(cost) {
 
 document.addEventListener('DOMContentLoaded', function() {
     const variationsModal = document.getElementById('variationsModal');
-    if (variationsModal) {
+        if (variationsModal) {
         variationsModal.addEventListener('show.bs.modal', function(event) {
-            const button = event.relatedTarget;
-            const productId = button.getAttribute('data-product-id');
-            const productName = button.getAttribute('data-product-name');
-            
+            let button = event.relatedTarget;
+            // fallback: tentar encontrar o botão que abre o modal (quando aberto programaticamente)
+            if (!button) {
+                button = document.querySelector('[data-bs-target="#variationsModal"][data-product-id]') || null;
+            }
+
+            let productId = null;
+            let productName = '';
+            if (button) {
+                productId = button.getAttribute('data-product-id');
+                productName = button.getAttribute('data-product-name') || '';
+            }
+            // fallback: ler id já presente no input hidden (se houver)
+            if (!productId) {
+                const hidden = document.getElementById('variationsProductId');
+                if (hidden && hidden.value) productId = hidden.value;
+            }
+
             document.getElementById('variationsModalLabel').innerHTML = 
-                '<i class="bi bi-list-ul me-2"></i>Variações - ' + productName;
-            document.getElementById('variationsProductId').value = productId;
-            
-            loadVariations(productId);
+                '<i class="bi bi-list-ul me-2"></i>Variações' + (productName ? ' - ' + productName : '');
+            if (productId) document.getElementById('variationsProductId').value = productId;
+
+            // Coletar atributos selecionados no painel de atributos do produto
+            // (quando o usuário marcou valores antes de abrir o modal)
+            const selectedAttrCheckboxes = Array.from(document.querySelectorAll('.dept-attr-checkbox:checked'));
+            const selectedTypes = selectedAttrCheckboxes.map(cb => cb.dataset.type).filter(Boolean);
+            const uniqueTypes = Array.from(new Set(selectedTypes));
+
+            // Se houver tipos selecionados, passar como filtro para o carregamento
+            if (uniqueTypes.length > 0) {
+                loadVariations(productId, uniqueTypes);
+            } else {
+                loadVariations(productId);
+            }
         });
         
         // Limpar conteúdo ao fechar o modal
@@ -342,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-function loadVariations(productId) {
+function loadVariations(productId, onlyTypes = null) {
     fetch(`/admin/products/${productId}/variations`)
         .then(response => response.json())
         .then(data => {
@@ -352,16 +377,22 @@ function loadVariations(productId) {
                 variationColorImagesMap = data.color_images || {};
                 variationColorImagesUrlsMap = data.color_images_urls || {};
                 variationColorHexMap = data.color_hex_map || {};
+                // Add multiple lookup variants so frontend can find hex regardless of casing or small formatting differences
                 variationColorHexMap = Object.keys(variationColorHexMap).reduce((acc, key) => {
                     const value = variationColorHexMap[key];
-                    acc[key] = value;
-                    const sanitized = key.replace(/[^a-zA-Z0-9]/g, '_');
+                    const trimmed = String(key).trim();
+                    const sanitized = trimmed.replace(/[^a-zA-Z0-9]/g, '_');
+                    acc[trimmed] = value;
+                    acc[trimmed.toLowerCase()] = value;
+                    acc[trimmed.toUpperCase()] = value;
                     acc[sanitized] = value;
+                    acc[sanitized.toLowerCase()] = value;
+                    acc[sanitized.toUpperCase()] = value;
                     return acc;
                 }, {});
                 productMarginB2C = data.margins?.b2c ?? 20;
                 productMarginB2B = data.margins?.b2b ?? 10;
-                renderVariations(data);
+                renderVariations(data, onlyTypes);
                 renderStock(data);
             } else {
                 alert('Erro ao carregar variações: ' + (data.message || 'Erro desconhecido'));
@@ -373,43 +404,196 @@ function loadVariations(productId) {
         });
 }
 
-function renderVariations(data) {
-    // Renderizar cores
-    const colorsContainer = document.getElementById('colorsList');
-    colorsContainer.innerHTML = '';
-    if (data.colors && data.colors.length > 0) {
-        data.colors.forEach(color => {
-            const colorItem = createColorItem(color, data.productId);
-            colorsContainer.appendChild(colorItem);
-            applyExistingColorHex(color.name, colorItem);
-        });
-    } else {
-        colorsContainer.innerHTML = '<p class="text-muted text-center">Nenhuma cor encontrada</p>';
+function renderVariations(data, onlyTypes = null) {
+    // If backend returns attribute_groups, render tabs dynamically
+    const tabsEl = document.getElementById('variationsTabs');
+    const tabContentEl = document.getElementById('variationsTabContent');
+
+    if (!tabsEl || !tabContentEl) return;
+
+    // Build ordered keys: prefer color, ram, storage first
+    const groups = data.attribute_groups || {};
+    const preferredOrder = ['color','ram','storage'];
+    // If onlyTypes is provided, filter group keys to those selected by the user
+    let availableKeys = Object.keys(groups || {});
+    if (Array.isArray(onlyTypes) && onlyTypes.length > 0) {
+        // normalize to strings
+        const wanted = onlyTypes.map(s => String(s).toLowerCase());
+        availableKeys = availableKeys.filter(k => wanted.includes(String(k).toLowerCase()));
     }
-    
-    // Renderizar RAMs
-    const ramsContainer = document.getElementById('ramsList');
-    ramsContainer.innerHTML = '';
-    if (data.rams && data.rams.length > 0) {
-        data.rams.forEach(ram => {
-            const ramItem = createRamItem(ram, data.productId);
-            ramsContainer.appendChild(ramItem);
-        });
-    } else {
-        ramsContainer.innerHTML = '<p class="text-muted text-center">Nenhuma RAM encontrada</p>';
+
+    const keys = availableKeys.sort((a,b) => {
+        const ai = preferredOrder.indexOf(a) === -1 ? 99 : preferredOrder.indexOf(a);
+        const bi = preferredOrder.indexOf(b) === -1 ? 99 : preferredOrder.indexOf(b);
+        if (ai === bi) return a.localeCompare(b);
+        return ai - bi;
+    });
+
+    // Clear existing tabs and content
+    tabsEl.innerHTML = '';
+    tabContentEl.innerHTML = '';
+
+    // Create tabs for each attribute group
+    keys.forEach((type, idx) => {
+        const tabId = `${type}-tab`;
+        const paneId = `${type}-pane`;
+
+        // Tab button
+        const li = document.createElement('li');
+        li.className = 'nav-item';
+        li.setAttribute('role','presentation');
+        li.innerHTML = `<button class="nav-link ${idx===0? 'active':''}" id="${tabId}" data-bs-toggle="tab" data-bs-target="#${paneId}" type="button" role="tab">${type.charAt(0).toUpperCase()+type.slice(1)}</button>`;
+        tabsEl.appendChild(li);
+
+        // Pane
+        const pane = document.createElement('div');
+        pane.className = `tab-pane fade ${idx===0? 'show active':''}`;
+        pane.id = paneId;
+        pane.setAttribute('role','tabpanel');
+
+        // Add input area
+        const inputId = `new${type.charAt(0).toUpperCase() + type.slice(1)}`;
+        pane.innerHTML = `
+            <div class="mb-3">
+                <label class="form-label fw-bold">Adicionar novo ${type}</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" id="${inputId}" placeholder="Ex: valor">
+                    <button class="btn btn-primary" type="button" onclick="addNewVariationType(document.getElementById('variationsProductId').value, '${type}')">
+                        <i class="bi bi-plus-circle me-1"></i>Adicionar
+                    </button>
+                </div>
+            </div>
+            <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+                <label class="form-label fw-bold mb-3">${type.charAt(0).toUpperCase()+type.slice(1)}s Disponíveis</label>
+                <div id="${type}List">
+                    <p class="text-muted text-center">Carregando...</p>
+                </div>
+            </div>
+        `;
+
+        tabContentEl.appendChild(pane);
+    });
+
+    // Append the existing stock tab at the end (keep id stock)
+    const stockLi = document.createElement('li');
+    stockLi.className = 'nav-item';
+    stockLi.setAttribute('role','presentation');
+    stockLi.innerHTML = `<button class="nav-link" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock" type="button" role="tab"><i class="bi bi-box-seam me-1"></i>Estoque</button>`;
+    tabsEl.appendChild(stockLi);
+
+    // Ensure stock pane exists (it is defined in original markup). If not, create minimal stock pane
+    if (!document.getElementById('stock')) {
+        const stockPane = document.createElement('div');
+        stockPane.className = 'tab-pane fade';
+        stockPane.id = 'stock';
+        stockPane.setAttribute('role','tabpanel');
+        stockPane.innerHTML = `<div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;"><label class="form-label fw-bold mb-3">Variações e Estoque</label><div id="stockList"><p class="text-muted text-center">Carregando...</p></div></div>`;
+        tabContentEl.appendChild(stockPane);
     }
-    
-    // Renderizar Armazenamentos
-    const storagesContainer = document.getElementById('storagesList');
-    storagesContainer.innerHTML = '';
-    if (data.storages && data.storages.length > 0) {
-        data.storages.forEach(storage => {
-            const storageItem = createStorageItem(storage, data.productId);
-            storagesContainer.appendChild(storageItem);
+
+    // Populate each group's list
+    keys.forEach(type => {
+        const listEl = document.getElementById(`${type}List`);
+        listEl.innerHTML = '';
+        const items = (data.attribute_groups && data.attribute_groups[type]) ? data.attribute_groups[type] : [];
+        if (!items || items.length === 0) {
+            listEl.innerHTML = '<p class="text-muted text-center">Nenhum item encontrado</p>';
+            return;
+        }
+
+        items.forEach(item => {
+            let node;
+            if (type === 'color') {
+                node = createColorItem(item, data.productId);
+                // apply existing color hex if any
+                applyExistingColorHex(item.name, node);
+            } else if (type === 'ram') {
+                node = createRamItem(item, data.productId);
+            } else if (type === 'storage') {
+                node = createStorageItem(item, data.productId);
+            } else {
+                node = createAttributeItem(type, item, data.productId);
+            }
+            listEl.appendChild(node);
         });
-    } else {
-        storagesContainer.innerHTML = '<p class="text-muted text-center">Nenhum armazenamento encontrado</p>';
+    });
+}
+
+function createAttributeItem(type, item, productId) {
+    const div = document.createElement('div');
+    div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
+    const safeName = (item.name || '').replace(/'/g, "\\'");
+    // If the item provides a hex color, normalize it and render a swatch
+    let hex = null;
+    // tolerant JSON decode helper: tries several fixes for malformed/escaped JSON strings
+    function tolerantParse(jsonLike) {
+        if (!jsonLike && jsonLike !== 0) return null;
+        let s = String(jsonLike).trim();
+        if (s === '') return null;
+        // quick HTML entity fixes
+        s = s.replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+             .replace(/&#34;/g, '"').replace(/&#39;/g, "'")
+             .replace(/&amp;/g, '&');
+        // collapse repeated backslashes
+        s = s.replace(/\\+/g, '\\');
+        // try normal JSON.parse
+        try {
+            return JSON.parse(s);
+        } catch (e) {}
+        // replace single quotes with double quotes (common malformed JSON)
+        try {
+            const fixed = s.replace(/'/g, '"');
+            return JSON.parse(fixed);
+        } catch (e) {}
+        // if wrapped in quotes (double-encoded), try strip and parse inner
+        if ((s.startsWith('"') && s.endsWith('"')) || (s.startsWith("'") && s.endsWith("'"))) {
+            try {
+                const inner = s.substring(1, s.length-1);
+                return JSON.parse(inner);
+            } catch (e) {}
+        }
+        // try double-parse (string containing JSON string)
+        try {
+            const once = JSON.parse(s);
+            if (typeof once === 'string') {
+                return JSON.parse(once);
+            }
+        } catch (e) {}
+        // fallback: extract key:value pairs with regex
+        try {
+            const kv = {};
+            const re = /['"]?([a-zA-Z0-9_\-]+)['"]?\s*:\s*['"]([^'"\}\]]+)['"]/g;
+            let m;
+            while ((m = re.exec(s)) !== null) {
+                kv[m[1]] = m[2];
+            }
+            if (Object.keys(kv).length > 0) return kv;
+        } catch (e) {}
+        return null;
     }
+
+    try {
+        if (item && (item.hex || item.color_hex)) {
+            hex = (item.hex || item.color_hex || '').toString().trim();
+            if (hex !== '' && hex.indexOf('#') !== 0) hex = '#' + hex;
+        }
+    } catch (e) { hex = null; }
+
+    const swatchHtml = hex ? `<span class="me-2" style="display:inline-block;width:18px;height:14px;background:${hex};border:1px solid #ddd;vertical-align:middle;border-radius:3px;"></span>` : '';
+
+    div.innerHTML = `
+        <span class="flex-grow-1">${swatchHtml}<span>${item.name}</span></span>
+        <div class="d-flex align-items-center gap-2">
+            <span class="badge bg-${item.enabled ? 'success' : 'secondary'}">${item.count} variações</span>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="confirmDeleteVariationValue('${type}', '${safeName}', ${item.count})" title="Excluir e suas variações">
+                <i class="bi bi-trash"></i>
+            </button>
+        </div>
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" ${item.enabled ? 'checked' : ''} onchange="toggleVariationType(${productId}, '${type}', '${(item.name||'').replace(/'/g, "\\'")}', this.checked, this)">
+        </div>
+    `;
+    return div;
 }
 
 function createColorItem(color, productId) {
@@ -443,9 +627,9 @@ function createColorItem(color, productId) {
                 <i class="bi bi-trash"></i>
             </button>
         <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" 
-                   ${color.enabled ? 'checked' : ''} 
-                   onchange="toggleVariationType(${productId}, 'color', '${color.name.replace(/'/g, "\\'")}', this.checked)">
+                 <input class="form-check-input" type="checkbox" 
+                     ${color.enabled ? 'checked' : ''} 
+                     onchange="toggleVariationType(${productId}, 'color', '${color.name.replace(/'/g, "\\'")}', this.checked, this)">
             </div>
         </div>
     `;
@@ -530,26 +714,38 @@ function updateColorDot(colorKey, hex) {
         colorDot.style.background = finalHex;
     }
     if (colorPicker) {
-        colorPicker.value = hex || '#ffffff';
+        try { colorPicker.value = hex || '#ffffff'; } catch (e) {}
     }
 }
 
 function applyExistingColorHex(colorName, container) {
-    const colorKey = colorName.replace(/[^a-zA-Z0-9]/g, '_');
-    const storedHex = variationColorHexMap[colorName] || variationColorHexMap[colorName.trim()] || variationColorHexMap[colorName.toLowerCase()];
-    const colorDot = container.querySelector(`.color-dot[data-color-key="${colorKey}"]`);
-    const colorPicker = container.querySelector(`.color-picker[data-color-key="${colorKey}"]`);
+    if (!colorName || !container) return;
+    const trimmed = String(colorName).trim();
+    const sanitized = trimmed.replace(/[^a-zA-Z0-9]/g, '_');
+    const candidates = [trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), sanitized, sanitized.toLowerCase(), sanitized.toUpperCase()];
+    let storedHex = null;
+    for (const k of candidates) {
+        if (variationColorHexMap && Object.prototype.hasOwnProperty.call(variationColorHexMap, k)) {
+            storedHex = variationColorHexMap[k];
+            break;
+        }
+    }
 
+    const colorDot = container.querySelector(`.color-dot[data-color-key="${sanitized}"]`);
+    const colorPicker = container.querySelector(`.color-picker[data-color-key="${sanitized}"]`);
+
+    const finalHex = storedHex || null;
     if (colorDot) {
-        colorDot.style.background = storedHex || '#f1f5f9';
+        colorDot.style.background = finalHex || '#f1f5f9';
     }
     if (colorPicker) {
-        colorPicker.value = storedHex || '#ffffff';
+        try { colorPicker.value = finalHex || '#ffffff'; } catch (e) {}
     }
 
     if (storedHex) {
-        variationColorHexMap[colorName] = storedHex;
-        variationColorHexMap[colorKey] = storedHex;
+        variationColorHexMap[trimmed] = storedHex;
+        variationColorHexMap[trimmed.toLowerCase()] = storedHex;
+        variationColorHexMap[sanitized] = storedHex;
     }
 }
 
@@ -566,9 +762,9 @@ function createRamItem(ram, productId) {
             </button>
         </div>
         <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" 
-                   ${ram.enabled ? 'checked' : ''} 
-                   onchange="toggleVariationType(${productId}, 'ram', '${ram.name.replace(/'/g, "\\'")}', this.checked)">
+                 <input class="form-check-input" type="checkbox" 
+                     ${ram.enabled ? 'checked' : ''} 
+                     onchange="toggleVariationType(${productId}, 'ram', '${ram.name.replace(/'/g, "\\'")}', this.checked, this)">
         </div>
     `;
     return div;
@@ -587,9 +783,9 @@ function createStorageItem(storage, productId) {
             </button>
         </div>
         <div class="form-check form-switch">
-            <input class="form-check-input" type="checkbox" 
-                   ${storage.enabled ? 'checked' : ''} 
-                   onchange="toggleVariationType(${productId}, 'storage', '${storage.name.replace(/'/g, "\\'")}', this.checked)">
+                 <input class="form-check-input" type="checkbox" 
+                     ${storage.enabled ? 'checked' : ''} 
+                     onchange="toggleVariationType(${productId}, 'storage', '${storage.name.replace(/'/g, "\\'")}', this.checked, this)">
         </div>
     `;
     return div;
@@ -664,13 +860,183 @@ function createStockItem(variation, productId) {
     const div = document.createElement('div');
     div.className = 'variation-stock-card border rounded-3 mb-2';
     div.setAttribute('data-variation-id', variation.id);
+    // Try to resolve a color name from multiple possible shapes
+    let colorName = null;
+    try {
+        // If attributes is a JSON string, try to parse it
+        if (variation.attributes && typeof variation.attributes === 'string') {
+            try {
+                variation.attributes = JSON.parse(variation.attributes);
+            } catch (e) {
+                // leave as string if parse fails
+            }
+        }
+
+        if (variation.color) {
+            colorName = variation.color;
+        } else if (variation.attributes) {
+            const attrs = variation.attributes;
+            if (typeof attrs === 'object' && attrs !== null) {
+                // handle possible shapes: { color: 'Azul' } or { color: { value: 'Azul', hex: '#123' } }
+                if (attrs.color) {
+                    if (typeof attrs.color === 'string') colorName = attrs.color;
+                    else if (typeof attrs.color === 'object' && attrs.color !== null) {
+                        colorName = attrs.color.value || attrs.color.name || null;
+                        if (!colorName) {
+                            // try first primitive property inside object
+                            for (const k in attrs.color) {
+                                if (Object.prototype.hasOwnProperty.call(attrs.color, k)) {
+                                    const v = attrs.color[k];
+                                    if (typeof v === 'string' || typeof v === 'number') { colorName = String(v); break; }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    } catch (e) { colorName = null; }
+
+    // Build sanitized key candidates and find hex from the map
+    const lookupCandidates = [];
+    if (colorName) {
+        const trimmed = String(colorName).trim();
+        const sanitized = trimmed.replace(/[^a-zA-Z0-9]/g, '_');
+        lookupCandidates.push(trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), sanitized, sanitized.toLowerCase());
+    }
+    // also consider any hex stored directly on variation
+    if (variation.color_hex) {
+        lookupCandidates.push(variation.color_hex, ('#' + String(variation.color_hex).replace(/^#/, '')));
+    }
+
+    let resolvedHex = null;
+    for (const k of lookupCandidates) {
+        if (!k) continue;
+        if (variationColorHexMap && Object.prototype.hasOwnProperty.call(variationColorHexMap, k)) {
+            resolvedHex = variationColorHexMap[k];
+            break;
+        }
+    }
+    // fallback to default
+    if (!resolvedHex) resolvedHex = '#f1f5f9';
+
+    // contrast
+    function luminance(hex) {
+        if (!hex) return 1;
+        const h = String(hex).replace('#','');
+        if (h.length < 6) return 1;
+        const r = parseInt(h.substring(0,2),16)/255;
+        const g = parseInt(h.substring(2,4),16)/255;
+        const b = parseInt(h.substring(4,6),16)/255;
+        return 0.2126*r + 0.7152*g + 0.0722*b;
+    }
+    const border = luminance(resolvedHex) > 0.85 ? 'rgba(0,0,0,0.25)' : 'rgba(148,163,184,0.4)';
+
+    // Build a readable name for the variation from available attributes
+    let attrsDisplay = [];
+    try {
+        // Attempt to obtain a normalized attributes object from several possible shapes:
+        // - variation.attributes as object
+        // - variation.attributes as JSON string (object or array of objects)
+        // - variation.name containing JSON (legacy)
+        let attrs = {};
+        if (variation.attributes) {
+            if (typeof variation.attributes === 'object') {
+                attrs = variation.attributes;
+            } else if (typeof variation.attributes === 'string') {
+                const parsed = tolerantParse(variation.attributes);
+                if (parsed) {
+                    if (Array.isArray(parsed)) {
+                        parsed.forEach(item => { if (item && typeof item === 'object') Object.assign(attrs, item); });
+                    } else if (parsed && typeof parsed === 'object') {
+                        attrs = parsed;
+                    }
+                }
+            }
+        }
+
+        // If attrs is still empty, try to parse variation.name when it contains JSON-like text
+        if ((!attrs || Object.keys(attrs).length === 0) && variation.name && typeof variation.name === 'string') {
+            const parsedName = tolerantParse(variation.name);
+            if (parsedName) {
+                if (Array.isArray(parsedName)) {
+                    parsedName.forEach(item => { if (item && typeof item === 'object') Object.assign(attrs, item); });
+                } else if (parsedName && typeof parsedName === 'object') {
+                    attrs = parsedName;
+                }
+            }
+        }
+
+        // prefer color, size/tamanho, ram, storage, then any remaining keys
+        const order = ['color','cor','size','tamanho','ram','storage','memoria'];
+        const used = new Set();
+        order.forEach(k => {
+            if (attrs && Object.prototype.hasOwnProperty.call(attrs, k) && attrs[k]) {
+                const v = (typeof attrs[k] === 'object') ? (attrs[k].value || attrs[k].name || JSON.stringify(attrs[k])) : attrs[k];
+                attrsDisplay.push(String(v));
+                used.add(k);
+            }
+        });
+        // any other keys
+        if (attrs) {
+            Object.keys(attrs).forEach(k => {
+                if (used.has(k)) return;
+                const v = attrs[k];
+                if (v === null || v === undefined) return;
+                const val = (typeof v === 'object') ? (v.value || v.name || JSON.stringify(v)) : v;
+                if (String(val).trim() !== '') attrsDisplay.push(String(val));
+            });
+        }
+    } catch (e) { attrsDisplay = []; }
+
+    // DEBUG: output parsing results to console to help diagnose raw-JSON render issues
+    try {
+        console.debug('variation-debug', {
+            id: variation.id,
+            rawAttributes: variation.attributes,
+            rawName: variation.name,
+            parsedAttrs: attrsDisplay,
+            nameFromAttrs: nameFromAttrs,
+            resolvedHex: resolvedHex
+        });
+    } catch (e) {}
+
+    // If we failed to build attrsDisplay but variation.name itself is a JSON string, try to prettify it
+    let nameFromAttrs = '';
+    if (attrsDisplay.length > 0) {
+        nameFromAttrs = attrsDisplay.join(' / ');
+    } else if (variation.name && typeof variation.name === 'string') {
+        const t = variation.name.trim();
+        // if name looks like JSON, attempt to extract values
+        if (t.startsWith('{') || t.startsWith('[')) {
+            try {
+                const parsed = JSON.parse(t);
+                let tmp = [];
+                if (Array.isArray(parsed)) {
+                    parsed.forEach(item => {
+                        if (item && typeof item === 'object') {
+                            Object.keys(item).forEach(k => { if (item[k]) tmp.push(String(item[k])); });
+                        } else if (item) tmp.push(String(item));
+                    });
+                } else if (parsed && typeof parsed === 'object') {
+                    Object.keys(parsed).forEach(k => { if (parsed[k]) tmp.push(String(parsed[k])); });
+                }
+                if (tmp.length > 0) nameFromAttrs = tmp.join(' / ');
+            } catch (e) {
+                // leave nameFromAttrs empty
+            }
+        }
+    }
+
+    const displayName = (nameFromAttrs && nameFromAttrs.length > 0) ? nameFromAttrs : (variation.name || variation.sku || '');
+
     div.innerHTML = `
         <div class="variation-stock-header d-flex flex-wrap justify-content-between align-items-center">
             <div class="d-flex flex-column">
-                <span class="fw-semibold">${variation.name || variation.sku}</span>
-                <small class="text-muted">SKU: ${variation.sku}</small>
+                ${colorName ? (`<div class="mb-2 d-flex align-items-center gap-2"><span class="color-dot" style="width:20px;height:20px;border-radius:50%;background:${resolvedHex};border:1px solid ${border};display:inline-block;"></span><strong style="font-size:0.95rem;">${colorName}${resolvedHex ? ` <small class="text-muted ms-2" style="font-family:monospace;">(${resolvedHex})</small>` : ''}</strong></div>`) : ''}
+                <span class="fw-semibold">[${displayName}] ${resolvedHex ? `<small class="text-muted ms-2" style="font-family:monospace;">(${resolvedHex})</small>` : ''}</span>
+                <small class="text-muted d-block">SKU: ${variation.sku}</small>
                 <div class="d-flex flex-wrap gap-1 mt-1">
-                    ${variation.color ? `<span class="badge rounded-pill bg-secondary-subtle text-secondary">${variation.color}</span>` : ''}
                     ${variation.ram ? `<span class="badge rounded-pill bg-info-subtle text-info">${variation.ram}</span>` : ''}
                     ${variation.storage ? `<span class="badge rounded-pill bg-primary-subtle text-primary">${variation.storage}</span>` : ''}
                     ${!variation.is_active ? '<span class="badge rounded-pill bg-dark-subtle text-dark">Inativa</span>' : ''}
@@ -725,17 +1091,17 @@ function createStockItem(variation, productId) {
     return div;
 }
 
-function toggleVariationType(productId, type, value, enabled) {
+function toggleVariationType(productId, type, value, enabled, el) {
     if (!productId || !type || !value) {
         showVariationMessage('error', 'Erro: Dados inválidos');
         return;
     }
-    
-    // Desabilitar o toggle enquanto processa
-    const toggle = event.target;
-    const originalState = toggle.checked;
-    toggle.disabled = true;
-    
+
+    // Element that initiated the toggle (if provided)
+    const toggle = el || null;
+    const originalState = toggle ? toggle.checked : !enabled;
+    if (toggle) toggle.disabled = true;
+
     fetch(`/admin/products/${productId}/variations/toggle`, {
         method: 'POST',
         headers: {
@@ -751,7 +1117,7 @@ function toggleVariationType(productId, type, value, enabled) {
         return response.json();
     })
     .then(data => {
-        toggle.disabled = false;
+        if (toggle) toggle.disabled = false;
         if (data.success) {
             // Feedback visual
             const message = data.message || 'Variação atualizada com sucesso!';
@@ -760,15 +1126,15 @@ function toggleVariationType(productId, type, value, enabled) {
             loadVariations(productId);
         } else {
             // Reverter o toggle se falhou
-            toggle.checked = !enabled;
+            if (toggle) toggle.checked = !enabled;
             showVariationMessage('error', 'Erro: ' + (data.message || 'Erro desconhecido'));
         }
     })
     .catch(error => {
         console.error('Erro:', error);
-        toggle.disabled = false;
+        if (toggle) toggle.disabled = false;
         // Reverter o toggle se falhou
-        toggle.checked = !enabled;
+        if (toggle) toggle.checked = !enabled;
         showVariationMessage('error', 'Erro ao atualizar variação. Verifique sua conexão.');
     });
 }

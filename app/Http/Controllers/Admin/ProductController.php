@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use App\Models\Department;
+use App\Models\Attribute as AttributeModel;
+use App\Models\AttributeValue as AttributeValueModel;
 
 class ProductController extends Controller
 {
@@ -144,11 +146,29 @@ class ProductController extends Controller
         return view('admin.products.index', compact('products', 'categories', 'colorsFromDB', 'suppliers', 'departments'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $categories = Category::all();
         $departments = Department::orderBy('name')->get(['id','name']);
-        return view('admin.products.create', compact('categories', 'departments'));
+
+        // If image_ids are provided (from album selection), load them to prefill the form
+        $preselectedImages = [];
+        if ($request->filled('image_ids')) {
+            $ids = array_filter(array_map('intval', explode(',', $request->query('image_ids'))));
+            if (!empty($ids)) {
+                $images = \App\Models\AlbumImage::whereIn('id', $ids)->get();
+                $preselectedImages = $images->map(function($img){
+                    return [
+                        'id' => $img->id,
+                        'url' => $img->url,
+                        'path' => $img->path,
+                        'alt' => $img->alt,
+                    ];
+                })->toArray();
+            }
+        }
+
+        return view('admin.products.create', compact('categories', 'departments', 'preselectedImages'));
     }
 
     // brandsList removed
@@ -191,6 +211,8 @@ class ProductController extends Controller
             'categories.*' => 'exists:categories,id',
             'images' => 'nullable',
             'images.*' => 'nullable|file|mimes:jpeg,png,jpg,gif,webp,avif|max:10240',
+            'existing_image_ids' => 'nullable|array',
+            'existing_image_ids.*' => 'integer|exists:album_images,id',
             'specifications' => 'nullable|array',
             'brand_id' => 'nullable|exists:brands,id',
             'brand' => 'nullable|string|max:255',
@@ -228,14 +250,29 @@ class ProductController extends Controller
             $data['sku'] = $candidate;
         }
 
-        // Upload de imagens (salva no storage imediatamente)
+        // Collect any existing album images passed as ids and merge with uploaded files
+        $existingPaths = [];
+        if ($request->filled('existing_image_ids')) {
+            $ids = is_array($request->input('existing_image_ids')) ? $request->input('existing_image_ids') : explode(',', $request->input('existing_image_ids'));
+            $ids = array_map('intval', array_filter($ids));
+            if (!empty($ids)) {
+                $existingPaths = \App\Models\AlbumImage::whereIn('id', $ids)->pluck('path')->toArray();
+            }
+        }
+
+        // Upload de imagens (salva no storage imediatamente) e mesclar com imagens existentes
+        $uploadedPaths = [];
         if ($request->hasFile('images')) {
-            $imagePaths = [];
             foreach ($request->file('images') as $image) {
                 $path = $image->store('products', 'public');
-                $imagePaths[] = $path;
+                $uploadedPaths[] = $path;
             }
-            $data['images'] = $imagePaths;
+        }
+
+        // Merge existing album image paths with newly uploaded images (existing first)
+        $allImagePaths = array_values(array_filter(array_merge($existingPaths, $uploadedPaths)));
+        if (!empty($allImagePaths)) {
+            $data['images'] = $allImagePaths;
         }
 
         $variationsInput = $request->input('variations', []);
@@ -899,61 +936,145 @@ class ProductController extends Controller
      */
     public function getVariations(Product $product)
     {
+        // helper to normalize hex strings
+        $normalizeHex = function ($h) {
+            if ($h === null) return null;
+            $h = trim((string)$h);
+            if ($h === '') return null;
+            if (strpos($h, '#') !== 0) $h = '#' . $h;
+            return strtolower($h);
+        };
+
+        $normalizeKey = function ($k) {
+            $k = trim((string)$k);
+            if ($k === '') return $k;
+            return preg_replace('/[^a-z0-9_]/', '_', mb_strtolower($k));
+        };
+
         $variations = $product->variations()->get();
-        
-        // Agrupar por cores
-        $colors = $variations->whereNotNull('color')
-            ->groupBy('color')
-            ->map(function($group, $color) {
-                $activeVariations = $group->where('is_active', true);
+
+        // Build dynamic attribute groups from the variations' attributes JSON or legacy columns
+        $attributeValues = []; // ['ram' => ['8GB' => ['count'=>x,'enabled'=>y], ...], ...]
+
+        foreach ($variations as $v) {
+            // Prefer attributes JSON
+            $vals = is_array($v->attributes) ? $v->attributes : [];
+
+            // Include legacy columns as fallback
+            if (empty($vals)) {
+                if ($v->ram) $vals['ram'] = $v->ram;
+                if ($v->storage) $vals['storage'] = $v->storage;
+                if ($v->color) $vals['color'] = $v->color;
+                if ($v->color_hex) $vals['color_hex'] = $v->color_hex;
+            }
+
+            foreach ($vals as $key => $value) {
+                if ($key === 'color_hex') continue; // hex is metadata, not a variation axis
+                if ($value === null || $value === '') continue;
+
+                // Normalize value so it can be used as an array key (avoid Illegal offset type)
+                $valKey = null;
+                if (is_array($value)) {
+                    // common shapes: ['value' => 'X'], ['name' => 'X'], ['cor' => 'vermelho'], or plain array
+                    if (array_key_exists('value', $value)) {
+                        $valKey = (string) $value['value'];
+                    } elseif (array_key_exists('name', $value)) {
+                        $valKey = (string) $value['name'];
+                    } elseif (count($value) === 1) {
+                        // take the single scalar child if present
+                        $first = reset($value);
+                        if (!is_array($first) && !is_object($first)) {
+                            $valKey = (string) $first;
+                        }
+                    }
+                    if ($valKey === null) {
+                        // fallback to trying to find any string-like child
+                        foreach ($value as $maybe) {
+                            if (!is_array($maybe) && !is_object($maybe)) {
+                                $valKey = (string) $maybe;
+                                break;
+                            }
+                        }
+                    }
+                    if ($valKey === null) {
+                        $valKey = json_encode($value);
+                    }
+                } elseif (is_object($value)) {
+                    if (property_exists($value, 'value')) {
+                        $valKey = (string) $value->value;
+                    } elseif (property_exists($value, 'name')) {
+                        $valKey = (string) $value->name;
+                    } else {
+                        // try first public property
+                        $props = get_object_vars($value);
+                        if (count($props) === 1) {
+                            $first = reset($props);
+                            if (!is_array($first) && !is_object($first)) {
+                                $valKey = (string) $first;
+                            }
+                        }
+                        if ($valKey === null) {
+                            foreach ($props as $maybe) {
+                                if (!is_array($maybe) && !is_object($maybe)) {
+                                    $valKey = (string) $maybe;
+                                    break;
+                                }
+                            }
+                        }
+                        if ($valKey === null) {
+                            $valKey = json_encode($value);
+                        }
+                    }
+                } else {
+                    $valKey = (string) $value;
+                }
+
+                $attributeValues[$key][$valKey][] = $v;
+            }
+        }
+
+        $attributeGroups = [];
+        foreach ($attributeValues as $key => $map) {
+            $group = collect($map)->map(function ($items, $name) {
+                $active = collect($items)->where('is_active', true)->count() > 0;
                 return [
-                    'name' => $color,
-                    'count' => $group->count(),
-                    'enabled' => $activeVariations->count() > 0
+                    'name' => $name,
+                    'count' => count($items),
+                    'enabled' => $active,
                 ];
-            })
-            ->values();
-        
-        // Agrupar por RAM
-        $rams = $variations->whereNotNull('ram')
-            ->groupBy('ram')
-            ->map(function($group, $ram) {
-                $activeVariations = $group->where('is_active', true);
-                return [
-                    'name' => $ram,
-                    'count' => $group->count(),
-                    'enabled' => $activeVariations->count() > 0
-                ];
-            })
-            ->values();
-        
-        // Agrupar por armazenamento
-        $storages = $variations->whereNotNull('storage')
-            ->groupBy('storage')
-            ->map(function($group, $storage) {
-                $activeVariations = $group->where('is_active', true);
-                return [
-                    'name' => $storage,
-                    'count' => $group->count(),
-                    'enabled' => $activeVariations->count() > 0
-                ];
-            })
-            ->values();
-        
-        // Retornar todas as variações individuais para o estoque
+            })->values();
+
+            $attributeGroups[$key] = $group;
+        }
+
+        // Maintain compatibility: expose colors/rams/storages arrays if present
+        $colors = $attributeGroups['color'] ?? collect([]);
+        $rams = $attributeGroups['ram'] ?? collect([]);
+        $storages = $attributeGroups['storage'] ?? collect([]);
+
+        // Variations list - include attributes map for each variation
         $variationsList = $variations->map(function($variation) {
-            $parts = [];
-            if ($variation->ram) $parts[] = $variation->ram;
-            if ($variation->storage) $parts[] = $variation->storage;
-            if ($variation->color) $parts[] = $variation->color;
-            
+            $attrs = is_array($variation->attributes) ? $variation->attributes : [];
+            // fallback to legacy
+            if (empty($attrs)) {
+                $attrs = [
+                    'ram' => $variation->ram,
+                    'storage' => $variation->storage,
+                    'color' => $variation->color,
+                    'color_hex' => $variation->color_hex,
+                ];
+            }
+
+            $nameParts = [];
+            if (!empty($attrs['ram'])) $nameParts[] = $attrs['ram'];
+            if (!empty($attrs['storage'])) $nameParts[] = $attrs['storage'];
+            if (!empty($attrs['color'])) $nameParts[] = $attrs['color'];
+
             return [
                 'id' => $variation->id,
                 'sku' => $variation->sku,
-                'name' => implode(' / ', $parts) ?: $variation->sku,
-                'ram' => $variation->ram,
-                'storage' => $variation->storage,
-                'color' => $variation->color,
+                'name' => implode(' / ', $nameParts) ?: $variation->sku,
+                'attributes' => $attrs,
                 'stock_quantity' => $variation->stock_quantity,
                 'in_stock' => $variation->in_stock,
                 'is_active' => $variation->is_active,
@@ -962,10 +1083,79 @@ class ProductController extends Controller
                 'cost_price' => $variation->cost_price,
             ];
         });
-        
+
+        // Build color hex map by reading attributes or legacy column. Support structured attribute values.
+        $colorHexMap = [];
+        foreach ($variations as $v) {
+            $attrs = is_array($v->attributes) ? $v->attributes : [];
+            $rawColor = $attrs['color'] ?? ($v->color ?? null);
+            $rawHex = $attrs['color_hex'] ?? ($v->color_hex ?? null);
+
+            $colorName = null;
+            $hex = null;
+
+            if (is_array($rawColor)) {
+                if (array_key_exists('value', $rawColor)) $colorName = (string) $rawColor['value'];
+                elseif (array_key_exists('name', $rawColor)) $colorName = (string) $rawColor['name'];
+                elseif (count($rawColor) === 1) $colorName = (string) reset($rawColor);
+                else $colorName = json_encode($rawColor);
+            } elseif (is_object($rawColor)) {
+                $vars = get_object_vars($rawColor);
+                if (array_key_exists('value', $vars)) $colorName = (string) $vars['value'];
+                elseif (array_key_exists('name', $vars)) $colorName = (string) $vars['name'];
+                elseif (count($vars) === 1) $colorName = (string) reset($vars);
+                else $colorName = json_encode($rawColor);
+            } else {
+                $colorName = $rawColor;
+            }
+
+            if ($rawHex) {
+                $hex = $rawHex;
+            } elseif (is_array($rawColor) && array_key_exists('hex', $rawColor)) {
+                $hex = $rawColor['hex'];
+            } elseif (is_object($rawColor) && property_exists($rawColor, 'hex')) {
+                $hex = $rawColor->hex;
+            }
+
+            if ($colorName && $hex) {
+                $colorHexMap[$colorName] = $hex;
+            }
+        }
+
+        // Normalize hex values and produce tolerant lookup map (trim, lower, sanitized)
+        $normalizedColorMap = [];
+        foreach ($colorHexMap as $k => $v) {
+            $hex = $normalizeHex($v);
+            if (!$hex) continue;
+            $trimmed = trim((string)$k);
+            $lower = mb_strtolower($trimmed);
+            $san = $normalizeKey($trimmed);
+            $normalizedColorMap[$trimmed] = $hex;
+            $normalizedColorMap[$lower] = $hex;
+            $normalizedColorMap[strtoupper($trimmed)] = $hex;
+            $normalizedColorMap[$san] = $hex;
+            $normalizedColorMap[strtoupper($san)] = $hex;
+        }
+
+        // If attribute_groups contains a color group, attach normalized hex to each color entry
+        if (isset($attributeGroups['color'])) {
+            $attributeGroups['color'] = collect($attributeGroups['color'])->map(function ($entry) use ($normalizedColorMap) {
+                $name = $entry['name'] ?? '';
+                $candidates = [$name, mb_strtolower($name), mb_strtoupper($name), preg_replace('/[^a-z0-9_]/', '_', mb_strtolower($name))];
+                $hex = null;
+                foreach ($candidates as $k) {
+                    if ($k === null) continue;
+                    if (isset($normalizedColorMap[$k])) { $hex = $normalizedColorMap[$k]; break; }
+                }
+                $entry['hex'] = $hex;
+                return $entry;
+            })->values();
+        }
+
         return response()->json([
             'success' => true,
             'productId' => $product->id,
+            'attribute_groups' => $attributeGroups,
             'colors' => $colors,
             'rams' => $rams,
             'storages' => $storages,
@@ -974,15 +1164,7 @@ class ProductController extends Controller
             'product_images_urls' => $product->all_images,
             'color_images' => $product->variation_images ?? [],
             'color_images_urls' => $product->variation_images_urls,
-            'color_hex_map' => $product->variations()
-                ->whereNotNull('color')
-                ->select('color', 'color_hex')
-                ->get()
-                ->groupBy('color')
-                ->map(function ($group) {
-                    return optional($group->first())->color_hex;
-                })
-                ->toArray(),
+            'color_hex_map' => $normalizedColorMap ?? $colorHexMap,
             'margins' => [
                 'b2c' => $product->profit_margin_b2c ?? 20.0,
                 'b2b' => $product->profit_margin_b2b ?? 10.0,
@@ -1056,20 +1238,23 @@ class ProductController extends Controller
     public function toggleVariation(Request $request, Product $product)
     {
         $request->validate([
-            'type' => 'required|in:color,ram,storage',
+            'type' => 'required|string|max:255',
             'value' => 'required|string',
             'enabled' => 'required|boolean'
         ]);
-        
+
         $type = $request->type;
         $value = $request->value;
         $enabled = $request->enabled;
-        
-        // Atualizar todas as variações com esse tipo e valor
-        $updated = $product->variations()
-            ->where($type, $value)
-            ->update(['is_active' => $enabled]);
-        
+
+        // Update variations where attributes->type == value OR legacy column equals value
+        $query = $product->variations();
+        $updated = $query->where(function($q) use ($type, $value) {
+            // JSON attribute
+            $q->where("attributes->${type}", $value)
+              ->orWhere($type, $value);
+        })->update(['is_active' => $enabled]);
+
         return response()->json([
             'success' => true,
             'message' => $updated . ' variação(ões) atualizada(s)',
@@ -1083,98 +1268,129 @@ class ProductController extends Controller
     public function addVariation(Request $request, Product $product)
     {
         $request->validate([
-            'type' => 'required|in:color,ram,storage',
+            'type' => 'required|string|max:255',
             'value' => 'required|string|max:255'
         ]);
-        
+
         $type = $request->type;
         $value = trim($request->value);
-        
+
         if (empty($value)) {
             return response()->json([
                 'success' => false,
                 'message' => 'O valor não pode estar vazio'
             ], 400);
         }
-        
-        // Verificar se já existe variação com esse valor
-        $existingVariations = $product->variations()->where($type, $value)->get();
-        
+
+        // Check existing by JSON attribute or legacy column
+        $existingVariations = $product->variations()->where(function($q) use ($type, $value) {
+            $q->where("attributes->${type}", $value)->orWhere($type, $value);
+        })->get();
+
         if ($existingVariations->count() > 0) {
-            // Se já existe, apenas habilita todas
             $existingVariations->each(function($variation) {
                 $variation->update(['is_active' => true]);
             });
-            
+
             return response()->json([
                 'success' => true,
                 'message' => 'Variações existentes foram habilitadas',
                 'action' => 'enabled_existing'
             ]);
         }
-        
-        // Se não existe, criar novas variações combinando com as existentes
-        $existingVariations = $product->variations()->get();
-        
-        $rams = $existingVariations->whereNotNull('ram')->pluck('ram')->unique()->values();
-        $storages = $existingVariations->whereNotNull('storage')->pluck('storage')->unique()->values();
-        $colors = $existingVariations->whereNotNull('color')->pluck('color')->unique()->values();
-        
-        // Adicionar o novo valor ao tipo correspondente
+
+        // Build existing attribute value lists by scanning current variations
+        $existingAll = $product->variations()->get();
+
+        $rams = collect();
+        $storages = collect();
+        $colors = collect();
+
+        foreach ($existingAll as $ev) {
+            $attrs = is_array($ev->attributes) ? $ev->attributes : [];
+            if (!empty($attrs['ram'])) $rams->push($attrs['ram']); elseif (!empty($ev->ram)) $rams->push($ev->ram);
+            if (!empty($attrs['storage'])) $storages->push($attrs['storage']); elseif (!empty($ev->storage)) $storages->push($ev->storage);
+            if (!empty($attrs['color'])) $colors->push($attrs['color']); elseif (!empty($ev->color)) $colors->push($ev->color);
+        }
+
+        $rams = $rams->unique()->values();
+        $storages = $storages->unique()->values();
+        $colors = $colors->unique()->values();
+
+        // Add the new value to the proper list
         if ($type === 'color') {
             $colors = $colors->push($value)->unique()->values();
         } elseif ($type === 'ram') {
             $rams = $rams->push($value)->unique()->values();
         } elseif ($type === 'storage') {
             $storages = $storages->push($value)->unique()->values();
+        } else {
+            // For arbitrary attribute types, create variations pairing with existing core attributes
+            // We'll treat unknown type as another axis and pair with existing known axes
+            // Ensure lists are not empty
+            if ($rams->isEmpty()) $rams = collect(['']);
+            if ($storages->isEmpty()) $storages = collect(['']);
+            if ($colors->isEmpty()) $colors = collect(['']);
+            // We'll append the new value into a special collection keyed by $type later when creating combos
         }
-        
-        // Se não há outras variações, criar uma variação básica
-        if ($rams->isEmpty() && $storages->isEmpty() && $colors->isEmpty()) {
-            $rams = collect(['']);
-            $storages = collect(['']);
-            $colors = collect(['']);
-        }
-        
-        // Garantir que pelo menos um de cada tipo existe (ou vazio)
+
         if ($rams->isEmpty()) $rams = collect(['']);
         if ($storages->isEmpty()) $storages = collect(['']);
         if ($colors->isEmpty()) $colors = collect(['']);
-        
-        // Criar combinações
+
         $created = 0;
+
         foreach ($rams as $ram) {
             foreach ($storages as $storage) {
                 foreach ($colors as $color) {
-                    // Verificar se já existe essa combinação
+                    // Determine attribute map for this combination
+                    $attrs = [];
+                    if ($ram) $attrs['ram'] = $ram;
+                    if ($storage) $attrs['storage'] = $storage;
+                    if ($color) $attrs['color'] = $color;
+
+                    // If the new type is not one of the core ones, set it
+                    if (!in_array($type, ['ram','storage','color'])) {
+                        $attrs[$type] = $value;
+                    } else {
+                        // ensure the new value is present in the correct axis
+                        if ($type === 'ram') $attrs['ram'] = $value;
+                        if ($type === 'storage') $attrs['storage'] = $value;
+                        if ($type === 'color') $attrs['color'] = $value;
+                    }
+
+                    // Check existence by matching attributes JSON or legacy columns
                     $query = $product->variations();
-                    if ($ram) $query->where('ram', $ram);
-                    else $query->whereNull('ram');
-                    if ($storage) $query->where('storage', $storage);
-                    else $query->whereNull('storage');
-                    if ($color) $query->where('color', $color);
-                    else $query->whereNull('color');
-                    
+                    foreach ($attrs as $k => $v) {
+                        if ($v === '' || $v === null) {
+                            $query->whereNull($k)->orWhereNull("attributes->${k}");
+                        } else {
+                            $query->where(function($q) use ($k, $v) {
+                                $q->where("attributes->${k}", $v)->orWhere($k, $v);
+                            });
+                        }
+                    }
+
                     $existing = $query->first();
-                    
                     if (!$existing) {
-                        // Criar SKU
+                        // Build SKU from available parts
                         $skuParts = [$product->sku];
-                        if ($ram) $skuParts[] = str_replace('GB', '', $ram);
-                        if ($storage) $skuParts[] = str_replace('GB', '', $storage);
-                        if ($color) $skuParts[] = strtoupper(substr($color, 0, 3));
-                        $sku = implode('-', $skuParts);
-                        
-                        // Verificar se SKU já existe
+                        if (!empty($attrs['ram'])) $skuParts[] = str_replace('GB', '', $attrs['ram']);
+                        if (!empty($attrs['storage'])) $skuParts[] = str_replace('GB', '', $attrs['storage']);
+                        if (!empty($attrs['color'])) $skuParts[] = strtoupper(substr($attrs['color'], 0, 3));
+                        if (!empty($attrs[$type]) && !in_array($type, ['ram','storage','color'])) $skuParts[] = strtoupper(substr($attrs[$type], 0, 3));
+                        $sku = implode('-', array_filter($skuParts));
+
                         while (ProductVariation::where('sku', $sku)->exists()) {
                             $sku .= '-' . rand(100, 999);
                         }
-                        
+
                         ProductVariation::create([
                             'product_id' => $product->id,
-                            'ram' => $ram ?: null,
-                            'storage' => $storage ?: null,
-                            'color' => $color ?: null,
+                            'attributes' => $attrs ?: null,
+                            'ram' => $attrs['ram'] ?? null,
+                            'storage' => $attrs['storage'] ?? null,
+                            'color' => $attrs['color'] ?? null,
                             'sku' => $sku,
                             'price' => $product->price,
                             'b2b_price' => $product->b2b_price,
@@ -1189,7 +1405,7 @@ class ProductController extends Controller
                 }
             }
         }
-        
+
         return response()->json([
             'success' => true,
             'message' => $created . ' nova(s) variação(ões) criada(s)',
@@ -1205,45 +1421,52 @@ class ProductController extends Controller
     {
         $request->validate([
             'combos' => 'required|array',
-            'combos.*.ram' => 'nullable|string|max:255',
-            'combos.*.storage' => 'nullable|string|max:255',
-            'combos.*.color' => 'nullable|string|max:255',
         ]);
 
         $combos = $request->input('combos', []);
         $created = 0;
 
         foreach ($combos as $c) {
-            $ram = isset($c['ram']) && $c['ram'] !== '' ? trim($c['ram']) : null;
-            $storage = isset($c['storage']) && $c['storage'] !== '' ? trim($c['storage']) : null;
-            $color = isset($c['color']) && $c['color'] !== '' ? trim($c['color']) : null;
+            // Accept arbitrary keys in combo; normalize into attributes
+            $attrs = [];
+            foreach ($c as $k => $v) {
+                $v = is_string($v) ? trim($v) : $v;
+                if ($v === '' || $v === null) continue;
+                $attrs[$k] = $v;
+            }
 
-            // Check existing
+            // Build existence query: match on attributes JSON or legacy columns
             $query = $product->variations();
-            if ($ram) $query->where('ram', $ram); else $query->whereNull('ram');
-            if ($storage) $query->where('storage', $storage); else $query->whereNull('storage');
-            if ($color) $query->where('color', $color); else $query->whereNull('color');
+            foreach ($attrs as $k => $v) {
+                $query->where(function($q) use ($k, $v) {
+                    $q->where("attributes->${k}", $v)->orWhere($k, $v);
+                });
+            }
 
             $existing = $query->first();
             if ($existing) continue;
 
-            // Build SKU
+            // Build readable SKU: use known axes if present
             $skuParts = [$product->sku];
-            if ($ram) $skuParts[] = str_replace('GB', '', $ram);
-            if ($storage) $skuParts[] = str_replace('GB', '', $storage);
-            if ($color) $skuParts[] = strtoupper(substr($color, 0, 3));
+            if (!empty($attrs['ram'])) $skuParts[] = str_replace('GB', '', $attrs['ram']);
+            if (!empty($attrs['storage'])) $skuParts[] = str_replace('GB', '', $attrs['storage']);
+            if (!empty($attrs['color'])) $skuParts[] = strtoupper(substr($attrs['color'], 0, 3));
+            // if no known axis, add a short hash of first attribute
+            if (count($skuParts) === 1 && !empty($attrs)) {
+                $skuParts[] = strtoupper(substr(md5(json_encode($attrs)), 0, 6));
+            }
             $sku = implode('-', array_filter($skuParts));
 
-            // Ensure unique SKU
             while (ProductVariation::where('sku', $sku)->exists()) {
                 $sku .= '-' . rand(100, 999);
             }
 
             ProductVariation::create([
                 'product_id' => $product->id,
-                'ram' => $ram ?: null,
-                'storage' => $storage ?: null,
-                'color' => $color ?: null,
+                'attributes' => $attrs ?: null,
+                'ram' => $attrs['ram'] ?? null,
+                'storage' => $attrs['storage'] ?? null,
+                'color' => $attrs['color'] ?? null,
                 'sku' => $sku,
                 'price' => $product->price,
                 'b2b_price' => $product->b2b_price,
@@ -1350,7 +1573,14 @@ class ProductController extends Controller
         }
 
         foreach ($variations as $variation) {
+            // Update legacy column for compatibility
             $variation->color_hex = $hex;
+
+            // Also update JSON attributes->color_hex
+            $attrs = is_array($variation->attributes) ? $variation->attributes : [];
+            $attrs['color_hex'] = $hex;
+            $variation->attributes = $attrs;
+
             $variation->save();
         }
 
@@ -1455,7 +1685,7 @@ class ProductController extends Controller
     public function deleteVariationValue(Request $request, Product $product)
     {
         $request->validate([
-            'type' => 'required|in:color,ram,storage',
+            'type' => 'required|string|max:255',
             'value' => 'required|string'
         ]);
 
@@ -1469,7 +1699,10 @@ class ProductController extends Controller
             ], 422);
         }
 
-        $variations = $product->variations()->where($type, $value)->get();
+        // Find variations by attributes JSON or legacy column
+        $variations = $product->variations()->where(function($q) use ($type, $value) {
+            $q->where("attributes->${type}", $value)->orWhere($type, $value);
+        })->get();
 
         if ($variations->isEmpty()) {
             return response()->json([
@@ -2006,12 +2239,44 @@ class ProductController extends Controller
         }
 
         $attributes = [];
+        // Normalizer helpers
+        $normalizeHex = function ($h) {
+            if ($h === null) return null;
+            $h = trim((string)$h);
+            if ($h === '') return null;
+            if (strpos($h, '#') !== 0) $h = '#' . $h;
+            return strtolower($h);
+        };
+
+        $normalizeKey = function ($k) {
+            $k = trim((string)$k);
+            if ($k === '') return $k;
+            return preg_replace('/[^a-z0-9_]/', '_', mb_strtolower($k));
+        };
+
+        // Build a normalized color->hex lookup that includes tolerant keys (trimmed, lower, sanitized)
+        $normalizedColorMap = [];
+        foreach ($colorHexMap as $k => $v) {
+            $hex = $normalizeHex($v);
+            if (!$hex) continue;
+            $trimmed = trim((string)$k);
+            $lower = mb_strtolower($trimmed);
+            $san = $normalizeKey($trimmed);
+            $normalizedColorMap[$trimmed] = $hex;
+            $normalizedColorMap[$lower] = $hex;
+            $normalizedColorMap[strtoupper($trimmed)] = $hex;
+            $normalizedColorMap[$san] = $hex;
+            $normalizedColorMap[strtoupper($san)] = $hex;
+        }
+
         if (!empty($colors)) {
             $attributes[] = [
                 'key' => 'color',
                 'name' => 'Cor',
-                'values' => array_map(function ($c) use ($colorHexMap) {
-                    return ['value' => $c, 'hex' => $colorHexMap[$c] ?? null];
+                'values' => array_map(function ($c) use ($colorHexMap, $normalizeHex) {
+                    $hex = $colorHexMap[$c] ?? null;
+                    $hex = $normalizeHex($hex);
+                    return ['value' => $c, 'hex' => $hex];
                 }, $colors)
             ];
         }
@@ -2032,9 +2297,50 @@ class ProductController extends Controller
             ];
         }
 
+        // Additionally, include central attributes defined in `attributes` table for this department
+        $centralAttributes = AttributeModel::with('values')
+            ->where(function($q) use ($deptId) {
+                $q->where('department_id', $deptId)->orWhereNull('department_id');
+            })->where('is_active', true)->get();
+
+        foreach ($centralAttributes as $central) {
+            $key = $central->key ?: Str::slug($central->name, '_');
+
+            // Skip if we already have an attribute group with same key from variations
+            $exists = collect($attributes)->firstWhere('key', $key);
+            $values = [];
+
+            // Include central attribute values regardless of is_active so frontend can offer activation
+            foreach ($central->values as $val) {
+                $values[] = ['value' => $val->value, 'hex' => $val->hex, 'is_active' => (bool)$val->is_active, 'value_id' => $val->id];
+            }
+
+            if (!empty($values) && !$exists) {
+                $attributes[] = [
+                    'key' => $key,
+                    'name' => $central->name,
+                    'attribute_id' => $central->id,
+                    'values' => $values
+                ];
+            }
+        }
+
+        // Debug log to help trace why frontend may receive empty attributes
+        try {
+            \Log::debug('ProductController::attributesList response', [
+                'department' => ['id' => $department->id, 'slug' => $department->slug, 'name' => $department->name],
+                'attributes_count' => count($attributes),
+                'attributes' => $attributes,
+            ]);
+        } catch (\Throwable $e) {
+            // swallow logging errors to avoid breaking endpoint
+            \Log::warning('Failed to log attributesList debug info: ' . $e->getMessage());
+        }
+
         return response()->json([
             'department' => ['id' => $department->id, 'slug' => $department->slug, 'name' => $department->name],
-            'attributes' => $attributes
+            'attributes' => $attributes,
+            'color_hex_map' => $normalizedColorMap ?? []
         ]);
     }
 }

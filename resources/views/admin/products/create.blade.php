@@ -179,6 +179,22 @@
                         <label for="images" class="form-label">Imagens do Produto</label>
                         <input type="file" class="form-control @error('images') is-invalid @enderror" 
                                id="images" name="images[]" multiple accept="image/*">
+                        @if(!empty($preselectedImages ?? []))
+                            <div class="mt-2" id="preselected-images">
+                                <div class="small text-muted mb-2">Imagens selecionadas do álbum:</div>
+                                <div class="d-flex flex-wrap gap-2" id="preselected-images-list">
+                                    @foreach($preselectedImages as $img)
+                                        <div class="position-relative border rounded" data-album-image-id="{{ $img['id'] }}" style="width:100px; height:100px; overflow:hidden">
+                                            <img src="{{ $img['url'] }}" class="w-100 h-100" style="object-fit:cover;" loading="lazy">
+                                            <button type="button" class="btn btn-sm btn-outline-danger position-absolute remove-preselected" style="top:6px; right:6px; padding:4px 6px">Remover</button>
+                                            <input type="hidden" name="existing_image_ids[]" value="{{ $img['id'] }}">
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @else
+                            <div id="preselected-images" class="d-none"></div>
+                        @endif
                         <div class="form-text">Você pode selecionar múltiplas imagens. Formatos aceitos: JPG, PNG, GIF, WEBP, AVIF (máx. 10MB cada)</div>
                         @error('images')
                             <div class="invalid-feedback">{{ $message }}</div>
@@ -274,5 +290,29 @@
             </div>
         </div>
     </div>
-</div>
-@endsection
+    </div>
+    @endsection
+
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function(){
+            // remove preselected album image before form submit
+            document.querySelectorAll('.remove-preselected').forEach(function(btn){
+                btn.addEventListener('click', function(e){
+                    const wrapper = btn.closest('[data-album-image-id]');
+                    if (!wrapper) return;
+                    // remove the hidden input and the preview
+                    const input = wrapper.querySelector('input[name="existing_image_ids[]"]');
+                    if (input) input.remove();
+                    wrapper.remove();
+                    // if list becomes empty hide container
+                    const list = document.getElementById('preselected-images-list');
+                    if (list && list.children.length === 0) {
+                        const container = document.getElementById('preselected-images');
+                        if (container) container.classList.add('d-none');
+                    }
+                });
+            });
+        });
+    </script>
+    @endpush

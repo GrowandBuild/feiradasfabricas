@@ -952,6 +952,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
                     div.appendChild(input);
                     div.appendChild(label);
+                    // If this value comes from central attributes, provide a small activate/deactivate button
+                    if (v.value_id && attr.attribute_id) {
+                        const actBtn = document.createElement('button');
+                        actBtn.type = 'button';
+                        actBtn.className = 'btn btn-sm ms-2 ' + (v.is_active ? 'btn-success' : 'btn-outline-secondary');
+                        actBtn.textContent = v.is_active ? 'Ativo' : 'Inativo';
+                        actBtn.title = v.is_active ? 'Desativar valor' : 'Ativar valor';
+                        actBtn.addEventListener('click', function() {
+                            // Disable during request
+                            actBtn.disabled = true;
+                            const shouldActivate = !v.is_active;
+                            const payload = { value: v.value };
+                            if (shouldActivate) payload.is_active = true;
+                            fetch(`/admin/attributes/${attr.attribute_id}/values/${v.value_id}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'X-CSRF-TOKEN': CSRF_TOKEN,
+                                    'Accept': 'application/json'
+                                },
+                                body: JSON.stringify(payload)
+                            }).then(resp => {
+                                // Reload attributes panel to reflect change
+                                fetchAndRenderForDepartment(currentDepartment);
+                            }).catch(err => {
+                                console.error('Erro ao alternar ativo do valor:', err);
+                                fetchAndRenderForDepartment(currentDepartment);
+                            }).finally(() => { actBtn.disabled = false; });
+                        });
+                        div.appendChild(actBtn);
+                    }
                     wrap.appendChild(div);
                 });
 
@@ -1070,6 +1101,47 @@ document.addEventListener('DOMContentLoaded', function() {
                         const prodIdInput = document.getElementById('variationsProductId');
                         if (prodIdInput) loadVariations(prodIdInput.value);
                     }
+                    // Recarregar painel de atributos do departamento para sincronizar estados
+                    try {
+                        // Recarrega a lista de atributos do departamento
+                        if (typeof fetchAndRenderForDepartment === 'function') {
+                            fetchAndRenderForDepartment(currentDepartment);
+                        }
+
+                        // Além disso, buscar variações do produto para marcar valores já criados
+                        fetch(`/admin/products/${productId}/variations`, { headers: { 'Accept': 'application/json' } })
+                            .then(resp => resp.json())
+                            .then(vdata => {
+                                if (vdata && vdata.attribute_groups) {
+                                    // construir lookup de tipos->set(declared names)
+                                    const lookup = {};
+                                    Object.keys(vdata.attribute_groups).forEach(type => {
+                                        lookup[type] = new Set((vdata.attribute_groups[type] || []).map(i => (i.name || '').toString().toLowerCase()));
+                                    });
+
+                                    // Para cada checkbox do painel, se existir na lookup, adicionar classe 'variation-exists'
+                                    document.querySelectorAll('.dept-attr-checkbox').forEach(cb => {
+                                        const type = (cb.dataset.type || '').toString();
+                                        const val = (cb.dataset.value || '').toString().toLowerCase();
+                                        if (lookup[type] && lookup[type].has(val)) {
+                                                cb.classList.add('variation-exists');
+                                                // Desabilitar automaticamente para evitar cliques repetidos
+                                                try { cb.disabled = true; cb.setAttribute('aria-disabled','true'); } catch(e) {}
+                                                const label = cb.nextElementSibling || cb.closest('label') || null;
+                                                if (label && !label.querySelector('.badge-created')) {
+                                                    const badge = document.createElement('span');
+                                                    badge.className = 'badge bg-success ms-2 badge-created';
+                                                    badge.style.fontSize = '0.7em';
+                                                    const ts = (new Date()).toLocaleString();
+                                                    badge.textContent = 'Criada';
+                                                    badge.setAttribute('title', `Criada em ${ts}`);
+                                                    label.appendChild(badge);
+                                                }
+                                            }
+                                    });
+                                }
+                            }).catch(e => console.debug('Erro ao sincronizar variações:', e));
+                    } catch (e) { console.debug('Erro na pós-sincronização de atributos:', e); }
                 } else {
                     console.error('bulk-add failed', data);
                     alert('Erro ao criar variações em lote. Veja console para detalhes.');
@@ -1091,7 +1163,10 @@ document.addEventListener('DOMContentLoaded', function() {
             deptAttributesPanel.innerHTML = '<p class="text-muted">Carregando atributos do departamento...</p>';
             fetch(`/admin/attributes/list?department=${dept}`, { headers: { 'Accept': 'application/json' } })
                 .then(response => response.json())
-                .then(data => renderAttributes(data))
+                .then(data => {
+                    console.debug('DEBUG: attributesList response for department', dept, data);
+                    renderAttributes(data);
+                })
                 .catch(error => {
                     console.error('Erro ao carregar atributos do departamento:', error);
                     deptAttributesPanel.innerHTML = '<p class="text-muted text-danger">Erro ao carregar atributos. Verifique o console.</p>';

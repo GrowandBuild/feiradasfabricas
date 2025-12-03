@@ -47,6 +47,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/{product}/adjust-stock', [ProductController::class, 'adjustStock'])->name('products.adjust-stock');
         Route::get('products/{product}/variations', [ProductController::class, 'getVariations'])->name('products.variations');
         Route::get('attributes/list', [ProductController::class, 'attributesList'])->name('attributes.list');
+        // Atributos (gerenciamento centralizado)
+        Route::resource('attributes', App\Http\Controllers\Admin\AttributeController::class);
+        Route::post('attributes/{attribute}/values', [App\Http\Controllers\Admin\AttributeController::class, 'storeValue'])->name('attributes.values.store');
+        Route::patch('attributes/{attribute}/values/{value}', [App\Http\Controllers\Admin\AttributeController::class, 'updateValue'])->name('attributes.values.update');
+        Route::delete('attributes/{attribute}/values/{value}', [App\Http\Controllers\Admin\AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
         Route::post('products/{product}/variations/toggle', [ProductController::class, 'toggleVariation'])->name('products.variations.toggle');
         Route::post('products/{product}/variations/add', [ProductController::class, 'addVariation'])->name('products.variations.add');
         // Bulk add full variation combinations (expects payload { combos: [{ram, storage, color}, ...] })

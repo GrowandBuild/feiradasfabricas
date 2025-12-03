@@ -15,6 +15,7 @@ class ProductVariation extends Model
         'storage',
         'color',
         'color_hex',
+        'attributes',
         'sku',
         'price',
         'b2b_price',
@@ -32,6 +33,7 @@ class ProductVariation extends Model
         'cost_price' => 'decimal:2',
         'in_stock' => 'boolean',
         'is_active' => 'boolean',
+        'attributes' => 'array',
     ];
 
     /**
@@ -110,11 +112,27 @@ class ProductVariation extends Model
     public function getFullNameAttribute()
     {
         $parts = [];
-        if ($this->ram) $parts[] = $this->ram;
-        if ($this->storage) $parts[] = $this->storage;
-        if ($this->color) $parts[] = $this->color;
-        
-        return implode(' / ', $parts);
+        // Prefer JSON attributes when available
+        if (is_array($this->attributes) && !empty($this->attributes)) {
+            if (!empty($this->attributes['ram'])) $parts[] = $this->attributes['ram'];
+            if (!empty($this->attributes['storage'])) $parts[] = $this->attributes['storage'];
+            if (!empty($this->attributes['color'])) $parts[] = $this->attributes['color'];
+            // If there are other arbitrary attributes, append them in alphabetical order
+            $other = collect($this->attributes)->except(['ram','storage','color','color_hex'])->toArray();
+            if (!empty($other)) {
+                foreach ($other as $k => $v) {
+                    if ($v === null || $v === '') continue;
+                    $parts[] = $v;
+                }
+            }
+        } else {
+            // Fallback to legacy columns
+            if ($this->ram) $parts[] = $this->ram;
+            if ($this->storage) $parts[] = $this->storage;
+            if ($this->color) $parts[] = $this->color;
+        }
+
+        return implode(' / ', array_filter($parts));
     }
 
     /**
@@ -124,13 +142,36 @@ class ProductVariation extends Model
     {
         $base = $this->product ? $this->product->slug : 'produto';
         $segments = [];
-        if ($this->color) { $segments[] = str_replace([' /','/','  '], ' ', strtolower($this->color)); }
-        if ($this->storage) { $segments[] = strtolower(str_replace(' ', '', $this->storage)); }
-        if ($this->ram) { $segments[] = strtolower(str_replace(' ', '', $this->ram)); }
+        // Prefer attributes JSON
+        if (is_array($this->attributes) && !empty($this->attributes)) {
+            if (!empty($this->attributes['color'])) { $segments[] = str_replace([' /','/','  '], ' ', strtolower($this->attributes['color'])); }
+            if (!empty($this->attributes['storage'])) { $segments[] = strtolower(str_replace(' ', '', $this->attributes['storage'])); }
+            if (!empty($this->attributes['ram'])) { $segments[] = strtolower(str_replace(' ', '', $this->attributes['ram'])); }
+        } else {
+            if ($this->color) { $segments[] = str_replace([' /','/','  '], ' ', strtolower($this->color)); }
+            if ($this->storage) { $segments[] = strtolower(str_replace(' ', '', $this->storage)); }
+            if ($this->ram) { $segments[] = strtolower(str_replace(' ', '', $this->ram)); }
+        }
         $tail = implode('-', array_filter(array_map(function($s){
             $s = preg_replace('/[^a-z0-9]+/','-',$s); return trim($s,'-');
         }, $segments)));
         return $tail ?: $base;
+    }
+
+    /**
+     * Helper to get a variation attribute value by key, supporting legacy columns.
+     *
+     * Note: intentionally named differently from Eloquent's `getAttributeValue` to avoid
+     * colliding with the parent implementation.
+     */
+    public function getVariationAttributeValue(string $key)
+    {
+        if (is_array($this->attributes) && array_key_exists($key, $this->attributes)) {
+            return $this->attributes[$key];
+        }
+
+        // Fallback to legacy column
+        return $this->getAttribute($key);
     }
 
     protected static function booted()
