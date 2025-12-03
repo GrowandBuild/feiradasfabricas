@@ -1772,6 +1772,20 @@
                     body: JSON.stringify({ theme: theme, slug: slug })
                 }).catch(err => console.error('Erro ao persistir tema na sessão:', err));
 
+                // Update meta tags and mask-icon color immediately so mobile status bar and pinned icon respect the chosen color
+                try {
+                    if (theme.theme_secondary) {
+                        const metaTheme = document.querySelector('meta[name="theme-color"]');
+                        if (metaTheme) metaTheme.setAttribute('content', theme.theme_secondary);
+
+                        const msTile = document.querySelector('meta[name="msapplication-TileColor"]');
+                        if (msTile) msTile.setAttribute('content', theme.theme_secondary);
+
+                        const maskIcon = document.querySelector('link[rel="mask-icon"]');
+                        if (maskIcon) maskIcon.setAttribute('color', theme.theme_secondary);
+                    }
+                } catch (err) { console.warn('Erro ao atualizar meta/theme-color dinamicamente', err); }
+
             } catch (err) { console.error('Erro ao aplicar tema:', err); }
         });
     </script>

@@ -24,6 +24,39 @@ use App\Http\Controllers\AlbumPublicController;
 */
 
 // Rotas públicas
+// Dynamic manifest so theme_color can reflect admin-chosen theme in session
+Route::get('/site.webmanifest', function(Request $request) {
+    $deptSlug = session('current_department_slug');
+    $dept_setting = function($key, $default = null) use ($deptSlug) {
+        if ($deptSlug) {
+            $deptKey = 'dept_' . $deptSlug . '_' . $key;
+            $val = setting($deptKey);
+            if ($val !== null && $val !== '') return $val;
+        }
+        return setting($key, $default);
+    };
+
+    $sessionTheme = session('current_department_theme', null);
+    $themeSecondary = $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff6b35');
+
+    $manifest = [
+        'name' => setting('site_name', 'Feira das Fábricas'),
+        'short_name' => setting('site_short_name', 'Feira'),
+        'start_url' => '/',
+        'scope' => '/',
+        'display' => 'standalone',
+        'orientation' => 'portrait',
+        'theme_color' => $themeSecondary,
+        'background_color' => $dept_setting('theme_background', '#ffffff'),
+        'icons' => [
+            ['src' => '/android-chrome-192x192.png', 'sizes' => '192x192', 'type' => 'image/png'],
+            ['src' => '/android-chrome-512x512.png', 'sizes' => '512x512', 'type' => 'image/png']
+        ]
+    ];
+
+    return response()->json($manifest)->header('Content-Type', 'application/manifest+json');
+})->name('site.manifest');
+
 Route::get('/', [DepartmentController::class, 'index'])->name('home')->defaults('slug', 'eletronicos');
 Route::get('/vitrine-departamentos', [HomeController::class, 'index'])->name('landing.departments');
 Route::get('/produtos', [HomeController::class, 'products'])->name('products');
@@ -40,6 +73,17 @@ Route::post('/contato', [ContactController::class, 'send'])->name('contact.send'
 // Álbuns públicos (novo)
 Route::get('/albuns', [AlbumPublicController::class, 'index'])->name('albums.index');
 Route::get('/albuns/{slug}', [AlbumPublicController::class, 'show'])->name('albums.show');
+// Admin quick actions on public pages
+Route::post('/albuns', [AlbumPublicController::class, 'storeAlbum'])
+    ->name('albums.store')
+    ->middleware('auth:admin');
+Route::delete('/albuns/{slug}/images/{image}', [AlbumPublicController::class, 'destroyImage'])
+    ->name('albums.images.destroy')
+    ->middleware('auth:admin');
+// Upload de imagens direto na página do álbum (apenas admins autenticados)
+Route::post('/albuns/{slug}/images', [AlbumPublicController::class, 'storeImage'])
+    ->name('albums.images.store')
+    ->middleware('auth:admin');
 
 // Redireções legadas: "/galeria" e "/galerias" -> "/albuns"
 Route::get('/galeria/{any?}', function () {

@@ -1810,11 +1810,45 @@
 
             // Seções: estado e helpers (generalizado por departamento)
             function detectDepartmentSlug(){
-                if (window.CurrentDepartmentSlug) return String(window.CurrentDepartmentSlug);
+                // 1) global var set by other scripts
                 try {
-                    const m = window.location.pathname.match(/\/departamento\/([^\/?#]+)/i);
-                    return m && m[1] ? decodeURIComponent(m[1]) : null;
-                } catch(e){ return null; }
+                    if (window.CurrentDepartmentSlug) return String(window.CurrentDepartmentSlug);
+                } catch(e){}
+
+                // 2) common data attribute on body or main element
+                try {
+                    const el1 = document.querySelector('[data-department-slug]');
+                    if (el1) return String(el1.getAttribute('data-department-slug')) || null;
+                    const el2 = document.body && document.body.getAttribute && (document.body.getAttribute('data-department') || document.body.getAttribute('data-department-slug'));
+                    if (el2) return String(el2);
+                } catch(e){}
+
+                // 3) meta tag (some templates may inject)
+                try {
+                    const meta = document.querySelector('meta[name="department-slug"]') || document.querySelector('meta[property="department:slug"]');
+                    if (meta && meta.content) return String(meta.content);
+                } catch(e){}
+
+                // 4) quick-create select / visible inputs used by the theme
+                try {
+                    const sel = document.getElementById('qpDepartment') || document.getElementById('qpDeptCombo');
+                    if (sel) {
+                        const val = sel.value || sel.getAttribute('data-value') || sel.getAttribute('data-slug');
+                        if (val) return String(val);
+                    }
+                } catch(e){}
+
+                // 5) attempt to extract from URL (several common patterns)
+                try {
+                    const path = window.location.pathname || '';
+                    const patterns = [/\/departamento\/([^\/\?#]+)/i, /\/departamentos\/([^\/\?#]+)/i, /\/department\/([^\/\?#]+)/i];
+                    for (const p of patterns) {
+                        const m = path.match(p);
+                        if (m && m[1]) return decodeURIComponent(m[1]);
+                    }
+                } catch(e){}
+
+                return null;
             }
             function onDepartmentPage(){ return !!detectDepartmentSlug(); }
             function getCurrentSectionsConfig(){

@@ -5,7 +5,6 @@ const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
   '/',
-  '/site.webmanifest',
   '/android-chrome-192x192.png',
   '/android-chrome-512x512.png',
   '/favicon-32x32.png',

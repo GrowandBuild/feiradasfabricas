@@ -41,6 +41,7 @@
     <meta name="theme-color" content="{{ $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff9900') }}">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="msapplication-TileColor" content="{{ $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff9900') }}">
     @php $siteFavicon = setting('site_favicon'); $siteAppIcon = setting('site_app_icon'); @endphp
     @if($siteAppIcon)
         @php
@@ -64,7 +65,7 @@
         <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
         <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
     @endif
-    <link rel="manifest" href="{{ asset('site.webmanifest') }}">
+    <link rel="manifest" href="{{ route('site.manifest') }}">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons (para a lupa da Busca Inteligente) -->
@@ -2146,6 +2147,20 @@
                 } catch (err) { console.error('banner:updated handler error', err); }
             });
         </script>
+</script>
         @endauth
+
+    {{-- Service Worker registration for PWA (site-wide) --}}
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js').then(function(reg) {
+                    console.log('ServiceWorker registrado com sucesso:', reg.scope);
+                }).catch(function(err) {
+                    console.warn('Falha ao registrar ServiceWorker:', err);
+                });
+            });
+        }
+    </script>
 </body>
 </html>
