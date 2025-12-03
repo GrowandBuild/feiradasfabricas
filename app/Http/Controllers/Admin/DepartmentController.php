@@ -111,7 +111,7 @@ class DepartmentController extends Controller
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:255',
             'color' => 'required|string|max:7',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable',
             'sort_order' => 'integer|min:0',
         ]);
 
@@ -149,6 +149,35 @@ class DepartmentController extends Controller
     }
 
     /**
+     * Retorna um snapshot JSON dos departamentos para uso inline (painel flutuante)
+     */
+    public function inlineSnapshot()
+    {
+        $departments = Department::ordered()->get();
+
+        $results = $departments->map(function ($d) {
+            $d->loadCount(['products as active_products_count' => function ($q) { $q->where('is_active', true); }]);
+            return [
+                'id' => $d->id,
+                'name' => $d->name,
+                'slug' => $d->slug,
+                'icon' => $d->icon,
+                'color' => $d->color,
+                'description' => $d->description,
+                'is_active' => (bool) $d->is_active,
+                'products_count' => (int) ($d->active_products_count ?? 0),
+                'sort_order' => $d->sort_order,
+                'url' => \Illuminate\Support\Facades\Route::has('department') ? route('department', $d->slug) : url('/departamento/' . $d->slug),
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'departments' => $results,
+        ]);
+    }
+
+    /**
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
@@ -171,7 +200,7 @@ class DepartmentController extends Controller
             'description' => 'nullable|string',
             'icon' => 'nullable|string|max:255',
             'color' => 'required|string|max:7',
-            'is_active' => 'boolean',
+            'is_active' => 'nullable',
             'sort_order' => 'integer|min:0',
         ]);
 

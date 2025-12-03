@@ -349,32 +349,38 @@
             </div>
         </div>
         
-        <!-- Painel de Departamentos -->
-        <div class="departments-panel" id="departmentsPanel">
+        <!-- Painel de Departamentos (ANTIGO) - comentado para substituição por versão mais simples -->
+        <!--
+        <div class="departments-panel" id="departmentsPanel"> ... (OLD PANEL REMOVED) ... </div>
+        -->
+
+        <!-- Painel de Departamentos (SIMPLES) -->
+        <div class="departments-panel simple" id="departmentsPanelSimple" style="display:none;">
             <div class="dp-header">
                 <span><i class="bi bi-diagram-3 me-2"></i> Departamentos</span>
-                <button class="smart-search-close" id="departmentsClose" aria-label="Fechar">
+                <button class="smart-search-close" id="departmentsSimpleClose" aria-label="Fechar">
                     <i class="bi bi-x-lg"></i>
                 </button>
             </div>
             <div class="dp-body">
-                <div id="dpLoading">Carregando departamentos...</div>
-                <div id="dpEmpty">Nenhum departamento cadastrado ainda.</div>
-                <ul class="dp-list" id="departmentsList"></ul>
-                <div class="dp-quick-add">
-                    <input type="text" id="dpNewName" class="form-control dp-full" placeholder="Nome do novo departamento">
-                    <input type="text" id="dpNewSlug" class="form-control" placeholder="Slug (opcional)">
-                    <input type="text" id="dpNewIcon" class="form-control" placeholder="Classe do ícone (ex: fas fa-store)">
-                    <input type="color" id="dpNewColor" class="form-control form-control-color" value="#667eea" title="Cor destaque">
-                    <textarea id="dpNewDescription" class="form-control dp-full" placeholder="Descrição (opcional)" rows="2"></textarea>
-                    <button class="sp-btn sp-btn-secondary dp-full" id="dpAdd" type="button">Adicionar departamento</button>
+                <div id="dpSimpleLoading">Carregando departamentos...</div>
+                <div id="dpSimpleEmpty" style="display:none;">Nenhum departamento cadastrado.</div>
+                <ul class="dp-list" id="departmentsSimpleList" style="padding:0; margin:0; list-style:none;"></ul>
+
+                <div style="margin-top:12px; display:flex; gap:8px; flex-direction:column;">
+                    <input type="text" id="dpSimpleNewName" class="form-control" placeholder="Nome do novo departamento">
+                    <div style="display:flex; gap:8px;">
+                        <input type="text" id="dpSimpleNewSlug" class="form-control" placeholder="Slug (opcional)">
+                        <input type="color" id="dpSimpleNewColor" class="form-control" value="#667eea" title="Cor destaque" style="width:56px; padding:0;">
+                    </div>
+                    <textarea id="dpSimpleNewDescription" class="form-control" placeholder="Descrição (opcional)" rows="2"></textarea>
+                    <div style="display:flex; gap:8px;">
+                        <button class="sp-btn sp-btn-secondary" id="dpSimpleAdd" type="button" style="flex:1;">Adicionar</button>
+                        <button class="sp-btn sp-btn-primary" id="departmentsSimpleSave" type="button" style="flex:1;">Salvar</button>
+                    </div>
+                    <div id="dpSimpleMsg" style="margin-top:6px;color:#475569;font-size:13px;"></div>
                 </div>
             </div>
-            <div class="dp-footer">
-                <button class="sp-btn sp-btn-secondary" id="departmentsCancel" type="button">Fechar</button>
-                <button class="sp-btn sp-btn-primary" id="departmentsSave" type="button">Salvar alterações</button>
-            </div>
-            <!-- departments confirm overlay moved below to avoid nesting -->
         </div>
 
         <!-- Painel de Tema -->
@@ -1286,8 +1292,8 @@
                     dpLoading.textContent = 'Carregando departamentos...';
                 }
                 if (dpEmpty) dpEmpty.style.display = 'none';
-                return fetch(`/admin/departments/inline-snapshot`, { headers: { 'Accept': 'application/json' }})
-                    .then(r => r.json())
+                return fetch(`/admin/departments/inline-snapshot`, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
                     .then(data => {
                         if (!data.success) throw new Error(data.message || 'Não foi possível carregar os departamentos.');
                         departmentsData = Array.isArray(data.departments) ? data.departments : [];
@@ -1296,7 +1302,11 @@
                     })
                     .catch(err => {
                         console.error('Departamentos:', err);
-                        if (dpLoading) dpLoading.textContent = 'Erro ao carregar departamentos.';
+                        if (dpLoading) {
+                            dpLoading.textContent = 'Erro ao carregar departamentos.';
+                            dpLoading.style.display = 'none';
+                        }
+                        if (dpEmpty) dpEmpty.style.display = 'block';
                     })
                     .finally(() => {
                         if (dpLoading) {
@@ -1313,6 +1323,132 @@
                 toggleDepartmentsEmpty();
                 departmentsData = arr.slice();
             }
+
+            // ----- Simple Departments Panel (new, minimal) -----
+            function initSimpleDepartmentsPanel(){
+                const panel = document.getElementById('departmentsPanelSimple');
+                if (!panel) return Promise.resolve();
+                const loading = document.getElementById('dpSimpleLoading');
+                const empty = document.getElementById('dpSimpleEmpty');
+                const list = document.getElementById('departmentsSimpleList');
+                if (loading) { loading.style.display = 'block'; loading.textContent = 'Carregando departamentos...'; }
+                if (empty) empty.style.display = 'none';
+                if (list) list.innerHTML = '';
+
+                return fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                    .then(data => {
+                        const items = Array.isArray(data.departments) ? data.departments : [];
+                        renderSimpleDepartmentsList(items);
+                        return items;
+                    })
+                    .catch(err => {
+                        console.error('Simple Departments:', err);
+                        if (loading) { loading.textContent = 'Erro ao carregar departamentos.'; loading.style.display = 'none'; }
+                        if (empty) empty.style.display = 'block';
+                    })
+                    .finally(() => { if (loading) setTimeout(() => { loading.style.display = 'none'; }, 200); });
+            }
+
+            function renderSimpleDepartmentsList(items){
+                const list = document.getElementById('departmentsSimpleList');
+                if (!list) return;
+                list.innerHTML = '';
+                const arr = Array.isArray(items) ? items : [];
+                if (!arr.length) {
+                    const empty = document.getElementById('dpSimpleEmpty'); if (empty) empty.style.display = 'block';
+                    return;
+                }
+                arr.forEach(d => {
+                    const li = document.createElement('li');
+                    li.style.display = 'flex'; li.style.alignItems = 'center'; li.style.justifyContent = 'space-between'; li.style.padding = '8px'; li.style.borderBottom = '1px solid #eef2f6';
+                    const left = document.createElement('div'); left.style.display = 'flex'; left.style.alignItems = 'center'; left.style.gap = '10px';
+                    const sw = document.createElement('div'); sw.style.width='28px'; sw.style.height='28px'; sw.style.borderRadius='6px'; sw.style.background = d.color || '#667eea'; sw.style.flex='0 0 28px';
+                    const name = document.createElement('div'); name.style.fontWeight='600'; name.textContent = d.name || '(sem nome)';
+                    left.appendChild(sw); left.appendChild(name);
+                    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
+                    const count = document.createElement('span'); count.style.fontSize='12px'; count.style.color='#64748b'; count.textContent = (d.products_count || 0) + ' prod.';
+                    const view = document.createElement('a'); view.href = d.id ? (`/admin/departments/${d.id}/edit`) : '#'; view.className='sp-btn sp-btn-secondary'; view.textContent='Editar'; view.style.padding='6px 8px';
+                    right.appendChild(count); right.appendChild(view);
+                    li.appendChild(left); li.appendChild(right);
+                    list.appendChild(li);
+                });
+            }
+
+            // Bind simple panel toggle to the existing trigger if present
+            (function wireSimpleDepartmentsPanel(){
+                console.debug && console.debug('wireSimpleDepartmentsPanel: init');
+                const trigger = document.getElementById('departmentsTrigger');
+                const simplePanel = document.getElementById('departmentsPanelSimple');
+                const simpleClose = document.getElementById('departmentsSimpleClose');
+                const addBtn = document.getElementById('dpSimpleAdd');
+                const saveBtn = document.getElementById('departmentsSimpleSave');
+                const msgEl = document.getElementById('dpSimpleMsg');
+                if (!trigger || !simplePanel) return;
+                trigger.addEventListener('click', function(e){
+                    console.debug && console.debug('wireSimpleDepartmentsPanel: trigger clicked');
+                    e && e.stopPropagation();
+                    const willOpen = simplePanel.style.display === 'none' || !simplePanel.classList.contains('active');
+                    if (willOpen) {
+                        simplePanel.style.display = 'flex'; simplePanel.classList.add('active'); initSimpleDepartmentsPanel();
+                    } else {
+                        simplePanel.style.display = 'none'; simplePanel.classList.remove('active');
+                    }
+                });
+                if (simpleClose) simpleClose.addEventListener('click', () => { simplePanel.style.display = 'none'; simplePanel.classList.remove('active'); });
+
+                if (addBtn) addBtn.addEventListener('click', function(){
+                    const name = (document.getElementById('dpSimpleNewName')?.value || '').trim();
+                    if (!name) { if (msgEl) msgEl.textContent = 'Informe o nome do departamento.'; return; }
+                    const slug = (document.getElementById('dpSimpleNewSlug')?.value || '').trim() || slugify(name);
+                    const color = (document.getElementById('dpSimpleNewColor')?.value || '#667eea').trim();
+                    const description = (document.getElementById('dpSimpleNewDescription')?.value || '').trim();
+                    const list = document.getElementById('departmentsSimpleList');
+                    // append preview-only item
+                    const item = { id: null, name, slug, color, description, is_active: true, products_count: 0 };
+                    // add to top of list
+                    const existing = window._simpleDepartmentsCache = window._simpleDepartmentsCache || [];
+                    existing.push(item);
+                    renderSimpleDepartmentsList(existing.concat());
+                    // clear inputs
+                    document.getElementById('dpSimpleNewName').value = '';
+                    document.getElementById('dpSimpleNewSlug').value = '';
+                    document.getElementById('dpSimpleNewDescription').value = '';
+                    if (msgEl) { msgEl.textContent = 'Departamento adicionado (temporário). Clique em Salvar.'; }
+                });
+
+                if (saveBtn) saveBtn.addEventListener('click', function(){
+                    const items = [];
+                    // prefer cache if populated
+                    const cached = window._simpleDepartmentsCache || [];
+                    if (cached.length) {
+                        cached.forEach((d, idx) => {
+                            items.push({ id: d.id, name: d.name, slug: d.slug, icon: d.icon || null, color: d.color, description: d.description || null, is_active: !!d.is_active, sort_order: idx });
+                        });
+                    } else {
+                        // no cache: read list items from DOM (fallback)
+                        const list = document.getElementById('departmentsSimpleList');
+                        if (!list) return;
+                        Array.from(list.children).forEach((li, idx) => {
+                            const nameEl = li.querySelector('div > div:nth-child(2)');
+                            const name = nameEl ? nameEl.textContent.trim() : 'Departamento';
+                            items.push({ id: null, name, slug: slugify(name), icon: null, color: '#667eea', description: null, is_active: true, sort_order: idx });
+                        });
+                    }
+                    if (!items.length) { if (msgEl) msgEl.textContent = 'Nada para salvar.'; return; }
+                    msgEl && (msgEl.textContent = 'Salvando...');
+                    fetch('/admin/departments/inline-sync', { method: 'PUT', credentials: 'same-origin', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' }, body: JSON.stringify({ departments: items }) })
+                        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                        .then(data => {
+                            if (!data.success) throw new Error(data.message || 'Erro ao salvar');
+                            window._simpleDepartmentsCache = (Array.isArray(data.departments) ? data.departments : []);
+                            renderSimpleDepartmentsList(window._simpleDepartmentsCache);
+                            msgEl && (msgEl.textContent = 'Salvo com sucesso!');
+                            setTimeout(() => { document.getElementById('departmentsPanelSimple').style.display = 'none'; }, 800);
+                        })
+                        .catch(err => { console.error('Save departments', err); msgEl && (msgEl.textContent = 'Erro ao salvar: ' + (err.message || '')); });
+                });
+            })();
 
             function appendDepartmentItem(dept){
                 if (!departmentsList) return;
@@ -1592,10 +1728,11 @@
                     });
                     fetch(`/admin/departments/inline-sync`, {
                         method: 'PUT',
+                        credentials: 'same-origin',
                         headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept': 'application/json' },
                         body: JSON.stringify({ departments: cleaned })
                     })
-                    .then(r => r.json())
+                    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
                     .then(data => {
                         if (!data.success) throw new Error(data.message || 'Erro ao atualizar departamentos.');
                         departmentsData = Array.isArray(data.departments) ? data.departments : [];
@@ -1743,7 +1880,7 @@
                         }
 
                         // Fallback 1: try department by numeric id if the slug resolution failed
-                        return fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' }})
+                        return fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
                             .then(r2 => { if (!r2.ok) throw new Error('HTTP ' + r2.status); return r2.json(); })
                             .then(deptData => {
                                 const list = Array.isArray(deptData.departments) ? deptData.departments : [];
@@ -1753,10 +1890,10 @@
                                 if (found && found.id) {
                                     const tryUrl = `/admin/products/brands-list?department=${encodeURIComponent(found.id)}`;
                                     console.debug('fetchBrands: trying by id fallback', tryUrl);
-                                    return fetch(tryUrl, { headers: { 'Accept': 'application/json' }})
+                                    return fetch(tryUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
                                         .then(r3 => { if (!r3.ok) throw new Error('HTTP ' + r3.status); return r3.json(); })
                                         .then(data => {
-                                        const list = Array.isArray(data.departments) ? data.departments : (data || []).departments || [];
+                                        const list = Array.isArray(data.departments) ? data.departments : (data || {}).departments || [];
                                         // normalize list for both select and combobox
                                         departmentsForQuick = Array.isArray(list) ? list.map(d => ({
                                             id: d.id,
@@ -1765,12 +1902,16 @@
                                             color: d.color || d.theme_primary || '#667eea',
                                             products_count: d.products_count || d.productsCount || d.products || 0
                                         })) : [];
-                                            availableBrands = (bp || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
-                                            if (availableBrands && availableBrands.length) {
-                                                populateBrandsSelect();
-                                                return;
-                                            }
-                                            // else continue to next fallback
+                                        // Try to extract brands payload from this response (if present)
+                                        let bp = [];
+                                        if (Array.isArray(data.brands)) bp = data.brands;
+                                        else if (data.brands && typeof data.brands === 'object') bp = Object.values(data.brands);
+                                        availableBrands = (bp || []).map(b => (b ?? '').toString().trim()).filter(Boolean);
+                                        if (availableBrands && availableBrands.length) {
+                                            populateBrandsSelect();
+                                            return;
+                                        }
+                                        // else continue to next fallback
                                         })
                                         .catch(err => console.debug('fetchBrands id-fallback failed', err));
                                 }
@@ -3359,7 +3500,7 @@
                     // use departmentsForQuick if available, else fetch snapshot
                     let depts = (typeof departmentsForQuick !== 'undefined' && Array.isArray(departmentsForQuick) && departmentsForQuick.length) ? departmentsForQuick : [];
                     if (!depts.length) {
-                        const r = await fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' } });
+                        const r = await fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
                         if (r.ok) {
                             const data = await r.json();
                             depts = Array.isArray(data.departments) ? data.departments.map(d => ({ id: d.id, name: d.name || d.title || String(d.id), slug: d.slug || null })) : [];
