@@ -305,10 +305,8 @@
         <button class="departments-trigger" id="productsManagerTrigger" title="Gerar Produto Rápido">
             <i class="bi bi-bag-fill"></i>
         </button>
-        <!-- Botão Gerenciar Departamentos (mais alto) -->
-        <button class="departments-trigger" id="departmentsTrigger" title="Departamentos">
-            <i class="bi bi-diagram-3-fill"></i>
-        </button>
+        <!-- Botão Gerenciar Departamentos removido para evitar erros/complexidade -->
+        <!-- painel removido: id="departmentsTrigger" -->
         <!-- Botão Gerenciar Seções (acima da paleta) -->
         <button class="sections-trigger" id="sectionsTrigger" title="Sessões">
             <i class="bi bi-grid-3x3-gap-fill"></i>
@@ -354,34 +352,9 @@
         <div class="departments-panel" id="departmentsPanel"> ... (OLD PANEL REMOVED) ... </div>
         -->
 
-        <!-- Painel de Departamentos (SIMPLES) -->
-        <div class="departments-panel simple" id="departmentsPanelSimple" style="display:none;">
-            <div class="dp-header">
-                <span><i class="bi bi-diagram-3 me-2"></i> Departamentos</span>
-                <button class="smart-search-close" id="departmentsSimpleClose" aria-label="Fechar">
-                    <i class="bi bi-x-lg"></i>
-                </button>
-            </div>
-            <div class="dp-body">
-                <div id="dpSimpleLoading">Carregando departamentos...</div>
-                <div id="dpSimpleEmpty" style="display:none;">Nenhum departamento cadastrado.</div>
-                <ul class="dp-list" id="departmentsSimpleList" style="padding:0; margin:0; list-style:none;"></ul>
-
-                <div style="margin-top:12px; display:flex; gap:8px; flex-direction:column;">
-                    <input type="text" id="dpSimpleNewName" class="form-control" placeholder="Nome do novo departamento">
-                    <div style="display:flex; gap:8px;">
-                        <input type="text" id="dpSimpleNewSlug" class="form-control" placeholder="Slug (opcional)">
-                        <input type="color" id="dpSimpleNewColor" class="form-control" value="#667eea" title="Cor destaque" style="width:56px; padding:0;">
-                    </div>
-                    <textarea id="dpSimpleNewDescription" class="form-control" placeholder="Descrição (opcional)" rows="2"></textarea>
-                    <div style="display:flex; gap:8px;">
-                        <button class="sp-btn sp-btn-secondary" id="dpSimpleAdd" type="button" style="flex:1;">Adicionar</button>
-                        <button class="sp-btn sp-btn-primary" id="departmentsSimpleSave" type="button" style="flex:1;">Salvar</button>
-                    </div>
-                    <div id="dpSimpleMsg" style="margin-top:6px;color:#475569;font-size:13px;"></div>
-                </div>
-            </div>
-        </div>
+        <!-- Painel de Departamentos removido (HTML e controls) -->
+        <!-- O painel simples e seu conteúdo foram removidos para evitar erros e reduzir complexidade.
+             Se necessário, restaure a partir do histórico de commits. -->
 
         <!-- Painel de Tema -->
         <div class="theme-panel" id="themePanel">
@@ -3300,6 +3273,132 @@
                 } catch(e) { console.error('quickProductRecreate failed', e); }
             })();
         });
+    </script>
+
+    <script>
+        // Extra safety: se ocorrer um erro que interrompa outros scripts, este handler
+        // tenta reconectar os FABs importantes e permite abrir o painel manualmente.
+        (function(){
+            function safeWire() {
+                try {
+                    const wireOne = (btnId, panelId, initFn) => {
+                        const btn = document.getElementById(btnId);
+                        const panel = document.getElementById(panelId);
+                        if (!btn || !panel) return false;
+                        // prevent double-binding
+                        if (btn.__ss_wired) return true;
+                        btn.addEventListener('click', function(e){
+                            e && e.preventDefault && e.preventDefault();
+                            const willOpen = !panel.classList.contains('active');
+                            if (willOpen) {
+                                panel.classList.add('active');
+                                try { if (typeof initFn === 'function') initFn(); } catch(err) { console.debug && console.debug('initFn failed', err); }
+                            } else {
+                                panel.classList.remove('active');
+                            }
+                        });
+                        btn.__ss_wired = true;
+                        return true;
+                    };
+
+                    // Try to wire departments specifically (most important for current bug)
+                    wireOne('departmentsTrigger', 'departmentsPanel', function(){ try { if (typeof initDepartmentsPanel === 'function') initDepartmentsPanel(); } catch(e){} });
+                    wireOne('sectionsTrigger', 'sectionsPanel');
+                    wireOne('themeTrigger', 'themePanel');
+                    wireOne('smartSearchTrigger', 'smartSearchPanel');
+                } catch(err) { console.debug && console.debug('safeWire error', err); }
+            }
+
+            // Run after DOM ready
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                setTimeout(safeWire, 50);
+            } else {
+                document.addEventListener('DOMContentLoaded', function(){ setTimeout(safeWire, 50); });
+            }
+
+            // Also attempt to recover when an uncaught error occurs (so wiring still happens)
+            window.addEventListener('error', function(){ setTimeout(safeWire, 50); });
+            window.addEventListener('unhandledrejection', function(){ setTimeout(safeWire, 50); });
+        })();
+    </script>
+    <script>
+        // Ensure sections panel loads when it becomes active regardless of how it was opened
+        (function(){
+            try {
+                const panel = document.getElementById('sectionsPanel');
+                if (!panel) return;
+                // Debounce guard
+                let _t = null;
+                const ensure = () => {
+                    try {
+                        if (typeof initSectionsPanel === 'function') initSectionsPanel();
+                    } catch(e) { console.debug && console.debug('ensure initSectionsPanel failed', e); }
+                };
+                const obs = new MutationObserver((mutations) => {
+                    for (const m of mutations) {
+                        if (m.attributeName === 'class') {
+                            const has = panel.classList && panel.classList.contains('active');
+                            if (has) {
+                                if (_t) clearTimeout(_t);
+                                _t = setTimeout(() => { ensure(); _t = null; }, 80);
+                            }
+                        }
+                    }
+                });
+                obs.observe(panel, { attributes: true, attributeFilter: ['class'] });
+                // Also try once on load if panel already active
+                if (panel.classList && panel.classList.contains('active')) setTimeout(ensure, 50);
+            } catch(e) { console.debug && console.debug('sectionsPanel observer failed', e); }
+        })();
+    </script>
+    <script>
+    // Robust wiring for simple departments panel (runs even if earlier scripts errored)
+    (function(){
+        function safeWire(){
+            try{
+                console.debug && console.debug('safeWire: init');
+                const trigger = document.getElementById('departmentsTrigger');
+                const panel = document.getElementById('departmentsPanelSimple');
+                const closeBtn = document.getElementById('departmentsSimpleClose');
+                if (!trigger) { console.debug && console.debug('safeWire: no trigger element'); return; }
+                if (!panel) { console.debug && console.debug('safeWire: no panel element'); return; }
+                // prevent duplicate wiring
+                if (trigger.dataset._wiredSimple) return; trigger.dataset._wiredSimple = '1';
+                trigger.addEventListener('click', function(e){
+                    try{
+                        e && e.stopPropagation();
+                        const open = panel.classList && panel.classList.contains('active');
+                        if (open) { panel.style.display = 'none'; panel.classList && panel.classList.remove('active'); return; }
+                        panel.style.display = 'flex'; panel.classList && panel.classList.add('active');
+                        // fetch snapshot and render
+                        fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
+                            .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+                            .then(data => {
+                                const items = Array.isArray(data.departments) ? data.departments : [];
+                                // render simple list
+                                const list = document.getElementById('departmentsSimpleList'); if (!list) return;
+                                list.innerHTML = '';
+                                items.forEach(d => {
+                                    const li = document.createElement('li'); li.style.display='flex'; li.style.justifyContent='space-between'; li.style.padding='8px'; li.style.borderBottom='1px solid #eef2f6';
+                                    const left = document.createElement('div'); left.style.display='flex'; left.style.gap='10px'; left.style.alignItems='center';
+                                    const sw = document.createElement('div'); sw.style.width='28px'; sw.style.height='28px'; sw.style.borderRadius='6px'; sw.style.background = d.color || '#667eea';
+                                    const name = document.createElement('div'); name.style.fontWeight='600'; name.textContent = d.name || '(sem nome)';
+                                    left.appendChild(sw); left.appendChild(name);
+                                    const right = document.createElement('div'); right.style.display='flex'; right.style.gap='8px';
+                                    const view = document.createElement('a'); view.href = d.id ? (`/admin/departments/${d.id}/edit`) : '#'; view.className='sp-btn sp-btn-secondary'; view.textContent='Editar'; view.style.padding='6px 8px';
+                                    right.appendChild(view);
+                                    li.appendChild(left); li.appendChild(right); list.appendChild(li);
+                                });
+                            })
+                            .catch(err => { console.error('safeWire fetch error', err); const m = document.getElementById('dpSimpleMsg'); if(m) m.textContent = 'Erro ao carregar departamentos.'; });
+                    } catch(e){ console.error('trigger click error', e); }
+                });
+                if (closeBtn) closeBtn.addEventListener('click', function(){ panel.style.display='none'; panel.classList && panel.classList.remove('active'); });
+                console.debug && console.debug('safeWire: wired');
+            } catch(e){ console.error('safeWire error', e); }
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', safeWire); else safeWire();
+    })();
     </script>
     <script>
         // Final safety: ensure quick-open handlers actually open overlays.
