@@ -936,20 +936,8 @@ class ProductController extends Controller
      */
     public function getVariations(Product $product)
     {
-        // helper to normalize hex strings
-        $normalizeHex = function ($h) {
-            if ($h === null) return null;
-            $h = trim((string)$h);
-            if ($h === '') return null;
-            if (strpos($h, '#') !== 0) $h = '#' . $h;
-            return strtolower($h);
-        };
-
-        $normalizeKey = function ($k) {
-            $k = trim((string)$k);
-            if ($k === '') return $k;
-            return preg_replace('/[^a-z0-9_]/', '_', mb_strtolower($k));
-        };
+        // Use central normalizer service for hex/key normalization
+        $normalizer = app(\App\Services\VariationNormalizer::class);
 
         $variations = $product->variations()->get();
 
@@ -1122,35 +1110,9 @@ class ProductController extends Controller
             }
         }
 
-        // Normalize hex values and produce tolerant lookup map (trim, lower, sanitized)
-        $normalizedColorMap = [];
-        foreach ($colorHexMap as $k => $v) {
-            $hex = $normalizeHex($v);
-            if (!$hex) continue;
-            $trimmed = trim((string)$k);
-            $lower = mb_strtolower($trimmed);
-            $san = $normalizeKey($trimmed);
-            $normalizedColorMap[$trimmed] = $hex;
-            $normalizedColorMap[$lower] = $hex;
-            $normalizedColorMap[strtoupper($trimmed)] = $hex;
-            $normalizedColorMap[$san] = $hex;
-            $normalizedColorMap[strtoupper($san)] = $hex;
-        }
-
-        // If attribute_groups contains a color group, attach normalized hex to each color entry
-        if (isset($attributeGroups['color'])) {
-            $attributeGroups['color'] = collect($attributeGroups['color'])->map(function ($entry) use ($normalizedColorMap) {
-                $name = $entry['name'] ?? '';
-                $candidates = [$name, mb_strtolower($name), mb_strtoupper($name), preg_replace('/[^a-z0-9_]/', '_', mb_strtolower($name))];
-                $hex = null;
-                foreach ($candidates as $k) {
-                    if ($k === null) continue;
-                    if (isset($normalizedColorMap[$k])) { $hex = $normalizedColorMap[$k]; break; }
-                }
-                $entry['hex'] = $hex;
-                return $entry;
-            })->values();
-        }
+        // Build tolerant normalized color map and attach hex to color group entries
+        $normalizedColorMap = $normalizer->buildNormalizedColorMap($colorHexMap);
+        $attributeGroups = $normalizer->attachHexToColorGroup($attributeGroups, $normalizedColorMap);
 
         return response()->json([
             'success' => true,
@@ -2239,43 +2201,18 @@ class ProductController extends Controller
         }
 
         $attributes = [];
-        // Normalizer helpers
-        $normalizeHex = function ($h) {
-            if ($h === null) return null;
-            $h = trim((string)$h);
-            if ($h === '') return null;
-            if (strpos($h, '#') !== 0) $h = '#' . $h;
-            return strtolower($h);
-        };
+        // Use VariationNormalizer service for hex/key normalization
+        $normalizer = app(\App\Services\VariationNormalizer::class);
 
-        $normalizeKey = function ($k) {
-            $k = trim((string)$k);
-            if ($k === '') return $k;
-            return preg_replace('/[^a-z0-9_]/', '_', mb_strtolower($k));
-        };
-
-        // Build a normalized color->hex lookup that includes tolerant keys (trimmed, lower, sanitized)
-        $normalizedColorMap = [];
-        foreach ($colorHexMap as $k => $v) {
-            $hex = $normalizeHex($v);
-            if (!$hex) continue;
-            $trimmed = trim((string)$k);
-            $lower = mb_strtolower($trimmed);
-            $san = $normalizeKey($trimmed);
-            $normalizedColorMap[$trimmed] = $hex;
-            $normalizedColorMap[$lower] = $hex;
-            $normalizedColorMap[strtoupper($trimmed)] = $hex;
-            $normalizedColorMap[$san] = $hex;
-            $normalizedColorMap[strtoupper($san)] = $hex;
-        }
+        $normalizedColorMap = $normalizer->buildNormalizedColorMap($colorHexMap);
 
         if (!empty($colors)) {
             $attributes[] = [
                 'key' => 'color',
                 'name' => 'Cor',
-                'values' => array_map(function ($c) use ($colorHexMap, $normalizeHex) {
+                'values' => array_map(function ($c) use ($colorHexMap, $normalizer) {
                     $hex = $colorHexMap[$c] ?? null;
-                    $hex = $normalizeHex($hex);
+                    $hex = $normalizer->normalizeHex($hex);
                     return ['value' => $c, 'hex' => $hex];
                 }, $colors)
             ];

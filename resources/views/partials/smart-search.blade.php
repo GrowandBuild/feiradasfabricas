@@ -1863,7 +1863,7 @@
                 const targetUrl = `/admin/products/brands-list?department=${encodeURIComponent(dept)}`;
 
                 // Debug: log attempts so we can see what the client requested
-                console.debug('fetchBrands: trying', targetUrl);
+                console.debug && console.debug('fetchBrands: trying', targetUrl);
 
                 // Try to fetch brands scoped to the department; if empty, try fallbacks
                 return fetch(targetUrl, { headers: { 'Accept': 'application/json' }})
@@ -1872,7 +1872,7 @@
                         return r.json();
                     })
                     .then(data => {
-                        console.debug('fetchBrands response for', dept, data);
+                        console.debug && console.debug('fetchBrands response for', dept, data);
                         let brandsPayload = [];
                         if (Array.isArray(data.brands)) {
                             brandsPayload = data.brands;
@@ -1896,7 +1896,7 @@
                                 const found = list.find(d => norm(d.slug) === wanted || norm(d.name) === wanted || String(d.id) === String(dept));
                                 if (found && found.id) {
                                     const tryUrl = `/admin/products/brands-list?department=${encodeURIComponent(found.id)}`;
-                                    console.debug('fetchBrands: trying by id fallback', tryUrl);
+                                    console.debug && console.debug('fetchBrands: trying by id fallback', tryUrl);
                                     return fetch(tryUrl, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
                                         .then(r3 => { if (!r3.ok) throw new Error('HTTP ' + r3.status); return r3.json(); })
                                         .then(data => {
@@ -1920,7 +1920,7 @@
                                         }
                                         // else continue to next fallback
                                         })
-                                        .catch(err => console.debug('fetchBrands id-fallback failed', err));
+                                        .catch(err => console.debug && console.debug('fetchBrands id-fallback failed', err));
                                 }
                                 // Fallback 2: try without department param (global/all)
                                 return fetch('/admin/products/brands-list', { headers: { 'Accept': 'application/json' }})
@@ -1936,7 +1936,7 @@
                             })
                             .catch(err => {
                                 // If dept snapshot failed, still try the no-department call
-                                console.debug('fetchBrands: dept snapshot failed', err);
+                                console.debug && console.debug('fetchBrands: dept snapshot failed', err);
                                 return fetch('/admin/products/brands-list', { headers: { 'Accept': 'application/json' }})
                                     .then(r5 => { if (!r5.ok) throw new Error('HTTP ' + r5.status); return r5.json(); })
                                     .then(data5 => {
@@ -2275,10 +2275,10 @@
             searchTrigger.addEventListener('click', function(e) {
                 e.stopPropagation();
                 // debug
-                try { console.debug('handler: smartSearchTrigger clicked'); } catch(e) {}
+                try { console.debug && console.debug('handler: smartSearchTrigger clicked'); } catch(e) {}
                 searchPanel.classList.toggle('active');
                 // Ensure quick-product overlay is fully closed when opening the search
-                try { console.debug('smartSearchTrigger: closing quick product if open'); } catch(e) {}
+                try { console.debug && console.debug('smartSearchTrigger: closing quick product if open'); } catch(e) {}
                 if (typeof closeQuickProduct === 'function') {
                     try { closeQuickProduct(); } catch(err) { /* noop */ }
                 } else if (qpOverlay) {
@@ -2683,7 +2683,7 @@
             }
 
             function openQuickProduct(){
-                try { console.debug('openQuickProduct called'); } catch(e) {}
+                try { console.debug && console.debug('openQuickProduct called'); } catch(e) {}
                 if (!qpOverlay) return;
                 qpOverlay.style.display = 'flex';
                 qpOverlay.classList && qpOverlay.classList.add('active');
@@ -2751,21 +2751,21 @@
                 },60);
             }
             function closeQuickProduct(){
-                try { console.debug('closeQuickProduct called'); } catch(e) {}
+                try { console.debug && console.debug('closeQuickProduct called'); } catch(e) {}
                 if (!qpOverlay) return;
                 qpOverlay.style.display = 'none';
                 qpOverlay.classList && qpOverlay.classList.remove('active');
                 // Ensure floating actions hidden when overlay closes
                 try { const flo = document.getElementById('qpFloatingActions'); if (flo) flo.style.display = 'none'; } catch(e) {}
             }
-            productsTriggerBtn?.addEventListener('click', function(e){ e.stopPropagation(); try { console.debug('productsTrigger clicked'); } catch(e){}; openQuickProduct(); });
+            productsTriggerBtn?.addEventListener('click', function(e){ e.stopPropagation(); try { console.debug && console.debug('productsTrigger clicked'); } catch(e){}; openQuickProduct(); });
             // Fallback delegated listener: garante abertura mesmo se o listener direto não for registrado
             document.addEventListener('click', function(e){
                 try {
                     const el = e.target.closest && e.target.closest('#productsTrigger');
                     if (!el) return;
                     e.stopPropagation();
-                    try { console.debug('delegated productsTrigger clicked'); } catch(e){}
+                    try { console.debug && console.debug('delegated productsTrigger clicked'); } catch(e){}
                     openQuickProduct();
                 } catch(err) { /* silent */ }
             });

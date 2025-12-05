@@ -182,4 +182,111 @@ class ProductVariation extends Model
             }
         });
     }
+
+    /**
+     * Normalize hex helper used by accessors/mutators
+     */
+    protected static function normalizeHex($h)
+    {
+        if ($h === null) return null;
+        $h = trim((string)$h);
+        if ($h === '') return null;
+        if (strpos($h, '#') !== 0) $h = '#' . $h;
+        return strtolower($h);
+    }
+
+    /**
+     * Ensure attributes are always returned as a canonical array.
+     * This tolerantly decodes JSON strings and avoids exposing raw malformed JSON
+     * to views/controllers.
+     */
+    public function getAttributesAttribute($value)
+    {
+        if (is_array($value)) return $value;
+        if ($value === null || $value === '') return [];
+
+        // If it's already JSON, decode it
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+
+            // Try to fix common issues: HTML entities, escaped quotes, single quotes
+            $try = html_entity_decode($value);
+            $try = str_replace(['\\"', "\\'"], ['"', "'"], $try);
+            $try2 = str_replace("'", '"', $try);
+            $decoded = json_decode($try2, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                return $decoded;
+            }
+
+            // Last-resort: return empty array to avoid leaking raw malformed strings to UI
+            return [];
+        }
+
+        return (array) $value;
+    }
+
+    /**
+     * Normalize and persist attributes. Accepts arrays or JSON strings.
+     */
+    public function setAttributesAttribute($value)
+    {
+        // If string, try to decode
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $value = $decoded;
+            } else {
+                $try = html_entity_decode($value);
+                $try = str_replace("'", '"', $try);
+                $decoded = json_decode($try, true);
+                if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                    $value = $decoded;
+                } else {
+                    $value = [];
+                }
+            }
+        }
+
+        if (!is_array($value)) $value = (array) $value;
+
+        // Normalize color_hex when present
+        if (array_key_exists('color_hex', $value) && $value['color_hex'] !== null) {
+            $value['color_hex'] = static::normalizeHex($value['color_hex']);
+            // keep legacy column in sync
+            $this->attributes['color_hex'] = $value['color_hex'];
+        } elseif (!empty($this->attributes['color_hex'])) {
+            // ensure attributes contains the legacy value if present
+            $value['color_hex'] = static::normalizeHex($this->attributes['color_hex']);
+        }
+
+        $this->attributes['attributes'] = $value;
+    }
+
+    /**
+     * Always return normalized hex for color_hex attribute
+     */
+    public function getColorHexAttribute($value)
+    {
+        return static::normalizeHex($value);
+    }
+
+    /**
+     * Persist normalized hex and keep JSON attributes in sync
+     */
+    public function setColorHexAttribute($value)
+    {
+        $hex = static::normalizeHex($value);
+        $this->attributes['color_hex'] = $hex;
+
+        // keep attributes->color_hex in sync if attributes already exists or is being built
+        $attrs = [];
+        if (isset($this->attributes['attributes']) && is_array($this->attributes['attributes'])) {
+            $attrs = $this->attributes['attributes'];
+        }
+        $attrs['color_hex'] = $hex;
+        $this->attributes['attributes'] = $attrs;
+    }
 }

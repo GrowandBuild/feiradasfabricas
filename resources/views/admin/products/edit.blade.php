@@ -1140,8 +1140,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                             }
                                     });
                                 }
-                            }).catch(e => console.debug('Erro ao sincronizar variações:', e));
-                    } catch (e) { console.debug('Erro na pós-sincronização de atributos:', e); }
+                                }).catch(e => console.debug && console.debug('Erro ao sincronizar variações:', e));
+                    } catch (e) { console.debug && console.debug('Erro na pós-sincronização de atributos:', e); }
                 } else {
                     console.error('bulk-add failed', data);
                     alert('Erro ao criar variações em lote. Veja console para detalhes.');
@@ -1164,7 +1164,7 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch(`/admin/attributes/list?department=${dept}`, { headers: { 'Accept': 'application/json' } })
                 .then(response => response.json())
                 .then(data => {
-                    console.debug('DEBUG: attributesList response for department', dept, data);
+                    console.debug && console.debug('DEBUG: attributesList response for department', dept, data);
                     renderAttributes(data);
                 })
                 .catch(error => {

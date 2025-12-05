@@ -521,7 +521,7 @@
 <script>
 // Prevent double-initialization when component is included twice (desktop + mobile)
 if (window.__liveSearchInitialized) {
-    console.debug('Live Search já inicializado, pulando re-init');
+    console.debug && console.debug('Live Search já inicializado, pulando re-init');
 } else {
     window.__liveSearchInitialized = true;
 

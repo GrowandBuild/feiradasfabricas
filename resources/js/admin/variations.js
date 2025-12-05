@@ -1,230 +1,182 @@
-<!-- Modal de Gerenciamento de Variações -->
-<div class="modal fade" id="variationsModal" tabindex="-1" aria-labelledby="variationsModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-xl modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="variationsModalLabel">
-                    <i class="bi bi-list-ul me-2"></i>Gerenciar Variações
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="variationsProductId" value="">
-                
-                <!-- Abas -->
-                <ul class="nav nav-tabs mb-4" id="variationsTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="colors-tab" data-bs-toggle="tab" data-bs-target="#colors" type="button" role="tab">
-                            <i class="bi bi-palette me-1"></i>Cores
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="rams-tab" data-bs-toggle="tab" data-bs-target="#rams" type="button" role="tab">
-                            <i class="bi bi-memory me-1"></i>RAM
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="storages-tab" data-bs-toggle="tab" data-bs-target="#storages" type="button" role="tab">
-                            <i class="bi bi-hdd me-1"></i>Armazenamento
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock" type="button" role="tab">
-                            <i class="bi bi-box-seam me-1"></i>Estoque
-                        </button>
-                    </li>
-                </ul>
-                
-                <!-- Conteúdo das Abas -->
-                <div class="tab-content" id="variationsTabContent">
-                    <!-- Aba Cores -->
-                    <div class="tab-pane fade show active" id="colors" role="tabpanel">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Adicionar Nova Cor</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="newColor" placeholder="Ex: Preto, Branco, Azul">
-                                <button class="btn btn-primary" type="button" onclick="addNewVariationType(document.getElementById('variationsProductId').value, 'color')">
-                                    <i class="bi bi-plus-circle me-1"></i>Adicionar
-                                </button>
-                            </div>
-                        </div>
-                        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-                            <label class="form-label fw-bold mb-3">Cores Disponíveis</label>
-                            <div id="colorsList">
-                                <p class="text-muted text-center">Carregando...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Aba RAM -->
-                    <div class="tab-pane fade" id="rams" role="tabpanel">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Adicionar Nova RAM</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="newRam" placeholder="Ex: 4GB, 8GB, 16GB">
-                                <button class="btn btn-primary" type="button" onclick="addNewVariationType(document.getElementById('variationsProductId').value, 'ram')">
-                                    <i class="bi bi-plus-circle me-1"></i>Adicionar
-                                </button>
-                            </div>
-                        </div>
-                        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-                            <label class="form-label fw-bold mb-3">RAMs Disponíveis</label>
-                            <div id="ramsList">
-                                <p class="text-muted text-center">Carregando...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Aba Armazenamento -->
-                    <div class="tab-pane fade" id="storages" role="tabpanel">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Adicionar Novo Armazenamento</label>
-                            <div class="input-group">
-                                <input type="text" class="form-control" id="newStorage" placeholder="Ex: 128GB, 256GB, 512GB">
-                                <button class="btn btn-primary" type="button" onclick="addNewVariationType(document.getElementById('variationsProductId').value, 'storage')">
-                                    <i class="bi bi-plus-circle me-1"></i>Adicionar
-                                </button>
-                            </div>
-                        </div>
-                        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-                            <label class="form-label fw-bold mb-3">Armazenamentos Disponíveis</label>
-                            <div id="storagesList">
-                                <p class="text-muted text-center">Carregando...</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Aba Estoque -->
-                    <div class="tab-pane fade" id="stock" role="tabpanel">
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between align-items-center mb-3">
-                                <label class="form-label fw-bold mb-0">Gerenciar Estoque por Variação</label>
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteInactiveVariations()" title="Excluir todas as variações desativadas">
-                                        <i class="bi bi-trash me-1"></i>Excluir Desativadas
-                                    </button>
-                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="updateAllStock()">
-                                        <i class="bi bi-check-all me-1"></i>Salvar Todos
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="alert alert-info">
-                                <i class="bi bi-info-circle me-2"></i>
-                                Edite o estoque de cada variação abaixo. Clique em "Salvar Todos" para aplicar todas as alterações.
-                            </div>
-                        </div>
-                        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-                            <label class="form-label fw-bold mb-3">Variações e Estoque</label>
-                            <div id="stockList">
-                                <p class="text-muted text-center">Carregando...</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Cancelar
-                </button>
-                <button type="button" class="btn btn-primary" onclick="saveAndCloseModal()">
-                    <i class="bi bi-check-circle me-1"></i>Salvar e Fechar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+// Extracted from resources/views/admin/products/modals/variations.blade.php
+// This file contains the variation modal logic. It is loaded as a Vite module
+// but exposes necessary functions on `window` for compatibility with inline handlers.
 
-<!-- Modal Gerenciamento de Imagens por Cor -->
-<div class="modal fade" id="colorImagesModal" tabindex="-1" aria-labelledby="colorImagesModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="colorImagesModalLabel">
-                    <i class="bi bi-image me-2"></i>Imagens por Cor
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted small mb-3">
-                    Selecione quais imagens do produto devem aparecer quando esta cor for escolhida na loja.
-                </p>
-                <div id="colorImagesEmptyState" class="d-none"></div>
-                <div id="colorImagesGrid" class="row"></div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-                    <i class="bi bi-x-circle me-1"></i>Fechar
-                </button>
-                <button type="button" class="btn btn-primary" id="saveColorImagesBtn" onclick="saveColorImages()">
-                    <i class="bi bi-check-circle me-1"></i>Salvar
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+let variationProductImages = [];
+let variationProductImagesUrls = [];
+let variationColorImagesMap = {};
+let variationColorImagesUrlsMap = {};
+let variationColorHexMap = {};
+let currentColorBeingEdited = null;
+let productMarginB2C = 20;
+let productMarginB2B = 10;
 
-<style>
-    .variation-image-card {
-        position: relative;
-        border: 2px solid transparent;
-        transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-        cursor: pointer;
+function formatCurrencyValue(value) {
+    if (value === null || value === undefined || value === '') {
+        return '';
+    }
+    const numberValue = typeof value === 'number' ? value : parseFloat(value);
+    if (isNaN(numberValue)) {
+        return '';
+    }
+    return numberValue.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function parseCurrencyValue(value) {
+    if (!value && value !== 0) {
+        return null;
     }
 
-    .variation-image-card:hover {
-        transform: translateY(-2px);
+    let cleanValue = value.toString().trim();
+    cleanValue = cleanValue.replace(/[^0-9,.-]/g, '');
+
+    if (cleanValue === '' || cleanValue === ',' || cleanValue === '.') {
+        return null;
     }
 
-    .variation-image-card.selected {
-        border-color: #0d6efd;
-        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.25);
+    const commaCount = (cleanValue.match(/,/g) || []).length;
+    const dotCount = (cleanValue.match(/\./g) || []).length;
+
+    if (commaCount > 1 || dotCount > 1) {
+        cleanValue = cleanValue.replace(/\./g, '');
+        cleanValue = cleanValue.replace(/,/g, '.');
+    } else if (commaCount === 1 && dotCount === 0) {
+        cleanValue = cleanValue.replace(/,/g, '.');
+    } else if (dotCount === 1 && commaCount === 0) {
+        cleanValue = cleanValue.replace(/\./g, '.');
+    } else if (commaCount === 1 && dotCount === 1) {
+        const commaIndex = cleanValue.indexOf(',');
+        const dotIndex = cleanValue.indexOf('.');
+        if (commaIndex > dotIndex) {
+            cleanValue = cleanValue.replace(/\./g, '');
+            cleanValue = cleanValue.replace(/,/g, '.');
+        } else {
+            cleanValue = cleanValue.replace(/,/g, '');
+        }
+    } else {
+        cleanValue = cleanValue.replace(/\./g, '');
     }
 
-    .variation-image-card .selection-overlay {
-        position: absolute;
-        top: 8px;
-        left: 8px;
-        background: rgba(13, 110, 253, 0.9);
-        color: #fff;
-        border-radius: 999px;
-        width: 28px;
-        height: 28px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1rem;
-        opacity: 0;
-        transform: scale(0.6);
-        transition: opacity 0.15s ease, transform 0.15s ease;
-        pointer-events: none;
+    const parsed = parseFloat(cleanValue);
+    return isNaN(parsed) ? null : parsed;
+}
+
+function calculatePriceFromCost(cost) {
+    if (cost === null || cost === undefined) {
+        return {
+            price: null,
+            b2b: null
+        };
     }
 
-    .variation-image-card.selected .selection-overlay {
-        opacity: 1;
-        transform: scale(1);
+    const price = cost * (1 + (productMarginB2C / 100));
+    const b2bPrice = cost * (1 + (productMarginB2B / 100));
+
+    return {
+        price: parseFloat(price.toFixed(2)),
+        b2b: parseFloat(b2bPrice.toFixed(2))
+    };
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const variationsModal = document.getElementById('variationsModal');
+    if (variationsModal) {
+        variationsModal.addEventListener('show.bs.modal', function(event) {
+            let button = event.relatedTarget;
+            if (!button) {
+                button = document.querySelector('[data-bs-target="#variationsModal"][data-product-id]') || null;
+            }
+
+            let productId = null;
+            let productName = '';
+            if (button) {
+                productId = button.getAttribute('data-product-id');
+                productName = button.getAttribute('data-product-name') || '';
+            }
+            if (!productId) {
+                const hidden = document.getElementById('variationsProductId');
+                if (hidden && hidden.value) productId = hidden.value;
+            }
+
+            document.getElementById('variationsModalLabel').innerHTML =
+                '<i class="bi bi-list-ul me-2"></i>Variações' + (productName ? ' - ' + productName : '');
+            if (productId) document.getElementById('variationsProductId').value = productId;
+
+            const selectedAttrCheckboxes = Array.from(document.querySelectorAll('.dept-attr-checkbox:checked'));
+            const selectedTypes = selectedAttrCheckboxes.map(cb => cb.dataset.type).filter(Boolean);
+            const uniqueTypes = Array.from(new Set(selectedTypes));
+
+            if (uniqueTypes.length > 0) {
+                loadVariations(productId, uniqueTypes);
+            } else {
+                loadVariations(productId);
+            }
+        });
+
+        variationsModal.addEventListener('hidden.bs.modal', function() {
+            const colorsList = document.getElementById('colorsList');
+            const ramsList = document.getElementById('ramsList');
+            const storagesList = document.getElementById('storagesList');
+            const stockList = document.getElementById('stockList');
+
+            if (colorsList) colorsList.innerHTML = '<p class="text-muted text-center">Carregando...</p>';
+            if (ramsList) ramsList.innerHTML = '<p class="text-muted text-center">Carregando...</p>';
+            if (storagesList) storagesList.innerHTML = '<p class="text-muted text-center">Carregando...</p>';
+            if (stockList) stockList.innerHTML = '<p class="text-muted text-center">Carregando...</p>';
+
+            const newColor = document.getElementById('newColor');
+            const newRam = document.getElementById('newRam');
+            const newStorage = document.getElementById('newStorage');
+
+            if (newColor) newColor.value = '';
+            if (newRam) newRam.value = '';
+            if (newStorage) newStorage.value = '';
+
+            const firstTab = document.querySelector('#variationsTabs .nav-link');
+            if (firstTab) {
+                firstTab.click();
+            }
+        });
     }
+});
 
-    .color-dot {
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        border: 1px solid rgba(148, 163, 184, 0.6);
-        background: #f1f5f9;
-        box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.08);
-    }
-</style>
+function loadVariations(productId, onlyTypes = null) {
+    fetch(`/admin/products/${productId}/variations`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                variationProductImages = data.product_images || [];
+                variationProductImagesUrls = data.product_images_urls || [];
+                variationColorImagesMap = data.color_images || {};
+                variationColorImagesUrlsMap = data.color_images_urls || {};
+                variationColorHexMap = data.color_hex_map || {};
+                productMarginB2C = data.margins?.b2c ?? 20;
+                productMarginB2B = data.margins?.b2b ?? 10;
+                renderVariations(data, onlyTypes);
+                renderStock(data);
+            } else {
+                alert('Erro ao carregar variações: ' + (data.message || 'Erro desconhecido'));
+            }
+        })
+        .catch(error => {
+            console.error('Erro:', error);
+            alert('Erro ao carregar variações');
+        });
+}
 
-@push('scripts')
-    @vite('resources/js/admin/variations.js')
-@endpush
+function renderVariations(data, onlyTypes = null) {
+    const tabsEl = document.getElementById('variationsTabs');
+    const tabContentEl = document.getElementById('variationsTabContent');
 
-    // Build ordered keys: prefer color, ram, storage first
+    if (!tabsEl || !tabContentEl) return;
+
     const groups = data.attribute_groups || {};
     const preferredOrder = ['color','ram','storage'];
-    // If onlyTypes is provided, filter group keys to those selected by the user
     let availableKeys = Object.keys(groups || {});
     if (Array.isArray(onlyTypes) && onlyTypes.length > 0) {
-        // normalize to strings
         const wanted = onlyTypes.map(s => String(s).toLowerCase());
         availableKeys = availableKeys.filter(k => wanted.includes(String(k).toLowerCase()));
     }
@@ -236,29 +188,24 @@
         return ai - bi;
     });
 
-    // Clear existing tabs and content
     tabsEl.innerHTML = '';
     tabContentEl.innerHTML = '';
 
-    // Create tabs for each attribute group
     keys.forEach((type, idx) => {
         const tabId = `${type}-tab`;
         const paneId = `${type}-pane`;
 
-        // Tab button
         const li = document.createElement('li');
         li.className = 'nav-item';
         li.setAttribute('role','presentation');
         li.innerHTML = `<button class="nav-link ${idx===0? 'active':''}" id="${tabId}" data-bs-toggle="tab" data-bs-target="#${paneId}" type="button" role="tab">${type.charAt(0).toUpperCase()+type.slice(1)}</button>`;
         tabsEl.appendChild(li);
 
-        // Pane
         const pane = document.createElement('div');
         pane.className = `tab-pane fade ${idx===0? 'show active':''}`;
         pane.id = paneId;
         pane.setAttribute('role','tabpanel');
 
-        // Add input area
         const inputId = `new${type.charAt(0).toUpperCase() + type.slice(1)}`;
         pane.innerHTML = `
             <div class="mb-3">
@@ -281,14 +228,12 @@
         tabContentEl.appendChild(pane);
     });
 
-    // Append the existing stock tab at the end (keep id stock)
     const stockLi = document.createElement('li');
     stockLi.className = 'nav-item';
     stockLi.setAttribute('role','presentation');
     stockLi.innerHTML = `<button class="nav-link" id="stock-tab" data-bs-toggle="tab" data-bs-target="#stock" type="button" role="tab"><i class="bi bi-box-seam me-1"></i>Estoque</button>`;
     tabsEl.appendChild(stockLi);
 
-    // Ensure stock pane exists (it is defined in original markup). If not, create minimal stock pane
     if (!document.getElementById('stock')) {
         const stockPane = document.createElement('div');
         stockPane.className = 'tab-pane fade';
@@ -298,7 +243,6 @@
         tabContentEl.appendChild(stockPane);
     }
 
-    // Populate each group's list
     keys.forEach(type => {
         const listEl = document.getElementById(`${type}List`);
         listEl.innerHTML = '';
@@ -312,7 +256,6 @@
             let node;
             if (type === 'color') {
                 node = createColorItem(item, data.productId);
-                // apply existing color hex if any
                 applyExistingColorHex(item.name, node);
             } else if (type === 'ram') {
                 node = createRamItem(item, data.productId);
@@ -330,10 +273,7 @@ function createAttributeItem(type, item, productId) {
     const div = document.createElement('div');
     div.className = 'd-flex align-items-center justify-content-between mb-2 p-2 border rounded';
     const safeName = (item.name || '').replace(/'/g, "\\'");
-    // If the item provides a hex color, normalize it and render a swatch
     let hex = null;
-    // Inputs from server are normalized by the API; parse JSON only when necessary.
-
     try {
         if (item && (item.hex || item.color_hex)) {
             hex = (item.hex || item.color_hex || '').toString().trim();
@@ -622,15 +562,12 @@ function createStockItem(variation, productId) {
     const div = document.createElement('div');
     div.className = 'variation-stock-card border rounded-3 mb-2';
     div.setAttribute('data-variation-id', variation.id);
-    // Try to resolve a color name from multiple possible shapes
     let colorName = null;
     try {
-        // If attributes is a JSON string, try to parse it
         if (variation.attributes && typeof variation.attributes === 'string') {
             try {
                 variation.attributes = JSON.parse(variation.attributes);
             } catch (e) {
-                // leave as string if parse fails
             }
         }
 
@@ -639,13 +576,11 @@ function createStockItem(variation, productId) {
         } else if (variation.attributes) {
             const attrs = variation.attributes;
             if (typeof attrs === 'object' && attrs !== null) {
-                // handle possible shapes: { color: 'Azul' } or { color: { value: 'Azul', hex: '#123' } }
                 if (attrs.color) {
                     if (typeof attrs.color === 'string') colorName = attrs.color;
                     else if (typeof attrs.color === 'object' && attrs.color !== null) {
                         colorName = attrs.color.value || attrs.color.name || null;
                         if (!colorName) {
-                            // try first primitive property inside object
                             for (const k in attrs.color) {
                                 if (Object.prototype.hasOwnProperty.call(attrs.color, k)) {
                                     const v = attrs.color[k];
@@ -659,14 +594,12 @@ function createStockItem(variation, productId) {
         }
     } catch (e) { colorName = null; }
 
-    // Build sanitized key candidates and find hex from the map
     const lookupCandidates = [];
     if (colorName) {
         const trimmed = String(colorName).trim();
         const sanitized = trimmed.replace(/[^a-zA-Z0-9]/g, '_');
         lookupCandidates.push(trimmed, trimmed.toLowerCase(), trimmed.toUpperCase(), sanitized, sanitized.toLowerCase());
     }
-    // also consider any hex stored directly on variation
     if (variation.color_hex) {
         lookupCandidates.push(variation.color_hex, ('#' + String(variation.color_hex).replace(/^#/, '')));
     }
@@ -679,10 +612,8 @@ function createStockItem(variation, productId) {
             break;
         }
     }
-    // fallback to default
     if (!resolvedHex) resolvedHex = '#f1f5f9';
 
-    // contrast
     function luminance(hex) {
         if (!hex) return 1;
         const h = String(hex).replace('#','');
@@ -694,13 +625,8 @@ function createStockItem(variation, productId) {
     }
     const border = luminance(resolvedHex) > 0.85 ? 'rgba(0,0,0,0.25)' : 'rgba(148,163,184,0.4)';
 
-    // Build a readable name for the variation from available attributes
     let attrsDisplay = [];
     try {
-        // Attempt to obtain a normalized attributes object from several possible shapes:
-        // - variation.attributes as object
-        // - variation.attributes as JSON string (object or array of objects)
-        // - variation.name containing JSON (legacy)
         let attrs = {};
         if (variation.attributes) {
             if (typeof variation.attributes === 'object') {
@@ -716,12 +642,10 @@ function createStockItem(variation, productId) {
                         }
                     }
                 } catch (e) {
-                    // ignore malformed JSON; model now normalizes attributes server-side
                 }
             }
         }
 
-        // If attrs is still empty, try to parse variation.name when it contains JSON-like text
         if ((!attrs || Object.keys(attrs).length === 0) && variation.name && typeof variation.name === 'string') {
             try {
                 const parsedName = JSON.parse(variation.name);
@@ -733,11 +657,9 @@ function createStockItem(variation, productId) {
                     }
                 }
             } catch (e) {
-                // name not JSON
             }
         }
 
-        // prefer color, size/tamanho, ram, storage, then any remaining keys
         const order = ['color','cor','size','tamanho','ram','storage','memoria'];
         const used = new Set();
         order.forEach(k => {
@@ -747,7 +669,6 @@ function createStockItem(variation, productId) {
                 used.add(k);
             }
         });
-        // any other keys
         if (attrs) {
             Object.keys(attrs).forEach(k => {
                 if (used.has(k)) return;
@@ -759,15 +680,11 @@ function createStockItem(variation, productId) {
         }
     } catch (e) { attrsDisplay = []; }
 
-    // parsing debug removed: rely on server/model normalization
-
-    // If we failed to build attrsDisplay but variation.name itself is a JSON string, try to prettify it
     let nameFromAttrs = '';
     if (attrsDisplay.length > 0) {
         nameFromAttrs = attrsDisplay.join(' / ');
     } else if (variation.name && typeof variation.name === 'string') {
         const t = variation.name.trim();
-        // if name looks like JSON, attempt to extract values
         if (t.startsWith('{') || t.startsWith('[')) {
             try {
                 const parsed = JSON.parse(t);
@@ -783,7 +700,6 @@ function createStockItem(variation, productId) {
                 }
                 if (tmp.length > 0) nameFromAttrs = tmp.join(' / ');
             } catch (e) {
-                // leave nameFromAttrs empty
             }
         }
     }
@@ -857,7 +773,6 @@ function toggleVariationType(productId, type, value, enabled, el) {
         return;
     }
 
-    // Element that initiated the toggle (if provided)
     const toggle = el || null;
     const originalState = toggle ? toggle.checked : !enabled;
     if (toggle) toggle.disabled = true;
@@ -879,13 +794,10 @@ function toggleVariationType(productId, type, value, enabled, el) {
     .then(data => {
         if (toggle) toggle.disabled = false;
         if (data.success) {
-            // Feedback visual
             const message = data.message || 'Variação atualizada com sucesso!';
             showVariationMessage('success', message);
-            // Recarregar variações para atualizar o estado
             loadVariations(productId);
         } else {
-            // Reverter o toggle se falhou
             if (toggle) toggle.checked = !enabled;
             showVariationMessage('error', 'Erro: ' + (data.message || 'Erro desconhecido'));
         }
@@ -893,7 +805,6 @@ function toggleVariationType(productId, type, value, enabled, el) {
     .catch(error => {
         console.error('Erro:', error);
         if (toggle) toggle.disabled = false;
-        // Reverter o toggle se falhou
         if (toggle) toggle.checked = !enabled;
         showVariationMessage('error', 'Erro ao atualizar variação. Verifique sua conexão.');
     });
@@ -1013,7 +924,6 @@ function saveColorImages() {
 
             showVariationMessage('success', data.message || 'Imagens atualizadas com sucesso!');
 
-            // Recarregar lista de variações para exibir indicadores atualizados
             loadVariations(productId);
 
             setTimeout(() => {
@@ -1058,7 +968,6 @@ function addNewVariationType(productId, type) {
         return;
     }
     
-    // Desabilitar input e botão enquanto processa
     const addBtn = input.nextElementSibling;
     const originalBtnText = addBtn ? addBtn.innerHTML : '';
     if (addBtn) {
@@ -1091,7 +1000,6 @@ function addNewVariationType(productId, type) {
         if (data.success) {
             input.value = '';
             showVariationMessage('success', data.message || 'Variação adicionada com sucesso!');
-            // Recarregar variações para mostrar o novo item
             loadVariations(productId);
         } else {
             showVariationMessage('error', 'Erro: ' + (data.message || 'Erro desconhecido'));
@@ -1121,10 +1029,10 @@ function updateAllStock(event) {
     stockInputs.forEach(input => {
         const variationId = input.getAttribute('data-variation-id');
         const stockQuantity = parseInt(input.value) || 0;
-        const statusSelect = document.querySelector(`.stock-status[data-variation-id="${variationId}"]`);
-        const costInput = document.querySelector(`.variation-cost[data-variation-id="${variationId}"]`);
-        const priceInput = document.querySelector(`.variation-price[data-variation-id="${variationId}"]`);
-        const b2bInput = document.querySelector(`.variation-b2b[data-variation-id="${variationId}"]`);
+        const statusSelect = document.querySelector(`.stock-status[data-variation-id=\"${variationId}\"]`);
+        const costInput = document.querySelector(`.variation-cost[data-variation-id=\"${variationId}\"]`);
+        const priceInput = document.querySelector(`.variation-price[data-variation-id=\"${variationId}\"]`);
+        const b2bInput = document.querySelector(`.variation-b2b[data-variation-id=\"${variationId}\"]`);
         const inStock = statusSelect ? statusSelect.value === '1' : true;
         
         updates.push({
@@ -1144,7 +1052,6 @@ function updateAllStock(event) {
         return Promise.resolve({ success: false, message: 'Nenhuma variação para atualizar' });
     }
     
-    // Mostrar loading no botão se houver evento
     let saveBtn = null;
     let originalText = '';
     if (event && event.target) {
@@ -1154,14 +1061,13 @@ function updateAllStock(event) {
         saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Salvando...';
     }
     
-    // Timeout para evitar requisições muito longas
     const timeoutId = setTimeout(() => {
         if (saveBtn) {
             saveBtn.disabled = false;
             saveBtn.innerHTML = originalText;
         }
         showVariationMessage('error', '⏱️ A requisição está demorando muito. Verifique sua conexão.');
-    }, 60000); // 60 segundos
+    }, 60000);
     
     return fetch(`/admin/products/${productId}/variations/update-stock`, {
         method: 'POST',
@@ -1182,7 +1088,6 @@ function updateAllStock(event) {
     .then(data => {
         if (data.success) {
             showVariationMessage('success', `✅ Estoque de ${data.updated} variação(ões) atualizado(s) com sucesso!`);
-            // Recarregar variações para atualizar o estado
             loadVariations(productId);
         } else {
             showVariationMessage('error', '❌ Erro: ' + (data.message || 'Erro desconhecido'));
@@ -1205,19 +1110,14 @@ function updateAllStock(event) {
     });
 }
 
-// Função para salvar e fechar o modal
 function saveAndCloseModal() {
     const productId = document.getElementById('variationsProductId').value;
     
-    // Verificar se estamos na aba de estoque e há alterações pendentes
     const activeTab = document.querySelector('#variationsTabs .nav-link.active');
     if (activeTab && activeTab.getAttribute('data-bs-target') === '#stock') {
-        // Se estiver na aba de estoque, salvar todas as alterações primeiro
         const stockInputs = document.querySelectorAll('.stock-input[data-variation-id]');
         if (stockInputs.length > 0) {
-            // Salvar estoque e depois fechar
             updateAllStock().then(data => {
-                // Aguardar um pouco para mostrar a mensagem e depois fechar
                 setTimeout(() => {
                     const modal = bootstrap.Modal.getInstance(document.getElementById('variationsModal'));
                     if (modal) {
@@ -1226,15 +1126,12 @@ function saveAndCloseModal() {
                 }, 1500);
             });
         } else {
-            // Não há alterações, apenas fechar
             const modal = bootstrap.Modal.getInstance(document.getElementById('variationsModal'));
             if (modal) {
                 modal.hide();
             }
         }
     } else {
-        // Para outras abas, as alterações já foram salvas automaticamente
-        // Apenas fechar o modal
         const modal = bootstrap.Modal.getInstance(document.getElementById('variationsModal'));
         if (modal) {
             modal.hide();
@@ -1242,15 +1139,12 @@ function saveAndCloseModal() {
     }
 }
 
-// Função para exibir mensagens de feedback
 function showVariationMessage(type, message) {
-    // Remover mensagem anterior se existir
     const existingMessage = document.getElementById('variationMessage');
     if (existingMessage) {
         existingMessage.remove();
     }
     
-    // Criar nova mensagem
     const messageDiv = document.createElement('div');
     messageDiv.id = 'variationMessage';
     messageDiv.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
@@ -1262,7 +1156,6 @@ function showVariationMessage(type, message) {
     
     document.body.appendChild(messageDiv);
     
-    // Remover automaticamente após 5 segundos
     setTimeout(() => {
         if (messageDiv && messageDiv.parentNode) {
             messageDiv.remove();
@@ -1307,7 +1200,7 @@ function initializeVariationPriceFields(stockItem) {
             } else {
                 this.value = '';
                 if (priceInput) priceInput.value = '';
-                if (b2bInput) b2bInput.value = '';
+                if (b2bInput) priceInput.value = '';
             }
         });
     }
@@ -1344,7 +1237,6 @@ function confirmAndDeleteVariation(variationId, cardElement) {
         return;
     }
 
-    // Converter o ID para número para garantir que seja válido
     const id = parseInt(variationId, 10);
     if (isNaN(id) || id <= 0) {
         console.error('ID da variação inválido:', variationId);
@@ -1381,7 +1273,6 @@ function confirmAndDeleteVariation(variationId, cardElement) {
         const data = await response.json();
         
         if (!response.ok) {
-            // Se a resposta não foi OK, mostrar mensagem de erro
             showVariationMessage('error', data.message || 'Não foi possível remover a variação.');
             return;
         }
@@ -1443,26 +1334,22 @@ function deleteInactiveVariations() {
         showVariationMessage('error', 'Erro ao remover variações desativadas. Tente novamente.');
     });
 }
-</script>
 
-<style>
-    .variation-stock-card {
-        padding: 1rem;
-        background: #fff;
-        transition: box-shadow 0.15s ease;
+// Expose commonly-used functions to global scope for compatibility with inline handlers
+const exported = [
+    'addNewVariationType','toggleVariationType','clearColorHex','handleColorPickerChange',
+    'openColorImagesModal','saveColorImages','saveAndCloseModal','deleteInactiveVariations',
+    'confirmDeleteVariationValue','updateAllStock','loadVariations'
+];
+
+for (const name of exported) {
+    try {
+        if (typeof window !== 'undefined' && typeof eval(name) === 'function') {
+            window[name] = eval(name);
+        }
+    } catch (e) {
+        // ignore
     }
+}
 
-    .variation-stock-card:hover {
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
-    }
-
-    .variation-stock-header small {
-        font-size: 0.75rem;
-    }
-
-    .variation-stock-prices .form-control {
-        font-weight: 500;
-    }
-</style>
- 
-
+export default {};
