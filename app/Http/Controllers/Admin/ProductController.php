@@ -6,6 +6,356 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\InventoryLog;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class ProductController extends Controller
+{
+    public function index(Request $request)
+    {
+        $query = Product::query();
+
+        if ($request->filled('search')) {
+            $s = trim($request->search);
+            $query->where(function($q) use ($s) {
+                $q->where('name', 'like', "%{$s}%")
+                  ->orWhere('description', 'like', "%{$s}%");
+            });
+        }
+
+        if ($request->filled('category')) {
+            $query->whereHas('categories', function ($q) use ($request) {
+                $q->where('categories.id', $request->category);
+            });
+        }
+
+        $products = $query->orderBy('name')->paginate(20);
+        $categories = Category::all();
+
+        $suppliers = Product::query()
+            ->whereNotNull('supplier')
+            ->distinct()
+            ->orderBy('supplier')
+            ->pluck('supplier');
+
+        return view('admin.products.index', compact('products', 'categories', 'suppliers'));
+    }
+
+    public function create(Request $request)
+    {
+        $categories = Category::all();
+        return view('admin.products.create', compact('categories'));
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'sku' => 'nullable|string|unique:products,sku',
+            'price' => 'required|numeric|min:0',
+            'categories' => 'required|array|min:1',
+            'categories.*' => 'exists:categories,id',
+        ]);
+
+        $data = $request->all();
+        $data['slug'] = Str::slug($request->name);
+
+        // Handle images (simple): accept uploaded files and store paths
+        $uploadedPaths = [];
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('products', 'public');
+                if ($path) $uploadedPaths[] = $path;
+            }
+        }
+
+        if (!empty($uploadedPaths)) {
+            $data['images'] = $uploadedPaths;
+        }
+
+        $product = DB::transaction(function() use ($data, $request) {
+            $prod = Product::create($data);
+            if ($request->has('categories')) {
+                $prod->categories()->sync($request->categories);
+            }
+            InventoryLog::create([
+                'product_id' => $prod->id,
+                'admin_id' => auth('admin')->id(),
+                'type' => 'initial',
+                'quantity_before' => 0,
+                'quantity_change' => $prod->stock_quantity ?? 0,
+                'quantity_after' => $prod->stock_quantity ?? 0,
+                'reference' => 'Criação do produto',
+            ]);
+            return $prod;
+        });
+
+        return redirect()->route('admin.products.edit', $product)
+                        ->with('success', 'Produto criado com sucesso!');
+    }
+
+    public function show(Product $product)
+    {
+        $product->load('categories', 'inventoryLogs.admin', 'orderItems.order.customer');
+        return view('admin.products.show', compact('product'));
+    }
+
+    public function edit(Product $product)
+    {
+        $categories = Category::all();
+        $productCategories = $product->categories->pluck('id')->toArray();
+        return view('admin.products.edit', compact('product', 'categories', 'productCategories'));
+    }
+
+    public function update(Request $request, Product $product)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'description' => 'required|string',
+            'sku' => 'required|string|unique:products,sku,' . $product->id,
+            'price' => 'required|numeric|min:0',
+            'categories' => 'required|array|min:1',
+            'categories.*' => 'exists:categories,id',
+        ]);
+
+        $data = $request->all();
+        $data['slug'] = Str::slug($request->name);
+
+        // Simple images handling
+        $imagePaths = [];
+        if ($request->has('existing_images') && is_array($request->existing_images)) {
+            $imagePaths = array_filter($request->existing_images);
+        }
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
+                $path = $image->store('products', 'public');
+                if ($path) $imagePaths[] = $path;
+            }
+        }
+        $data['images'] = $imagePaths;
+
+        $oldStock = $product->stock_quantity;
+        $newStock = $request->stock_quantity ?? $oldStock;
+        if ($oldStock != $newStock) {
+            InventoryLog::create([
+                'product_id' => $product->id,
+                'admin_id' => auth('admin')->id(),
+                'type' => 'adjustment',
+                'quantity_before' => $oldStock,
+                'quantity_change' => $newStock - $oldStock,
+                'quantity_after' => $newStock,
+                'reference' => 'Edição do produto',
+            ]);
+        }
+
+        $product->update($data);
+        $product->categories()->sync($request->categories);
+
+        return redirect()->route('admin.products.edit', $product)
+                        ->with('success', 'Produto atualizado com sucesso!');
+    }
+
+    public function destroy(Product $product)
+    {
+        if ($product->orderItems()->count() > 0) {
+            return redirect()->back()->with('error', 'Produto possui pedidos e não pode ser excluído');
+        }
+
+        if ($product->images) {
+            foreach ($product->images as $image) {
+                // keep files — do not delete storage files automatically
+            }
+        }
+
+        $product->delete();
+
+        return redirect()->route('admin.products.index')->with('success', 'Produto excluído com sucesso!');
+    }
+
+    public function adjustStock(Request $request, Product $product)
+    {
+        $request->validate([
+            'type' => 'required|in:in,out,adjustment',
+            'quantity' => 'required|integer|min:1',
+            'notes' => 'nullable|string|max:255',
+        ]);
+
+        $oldStock = $product->stock_quantity;
+        $quantity = (int) $request->quantity;
+        $newStock = match ($request->type) {
+            'in' => $oldStock + $quantity,
+            'out' => max(0, $oldStock - $quantity),
+            'adjustment' => $quantity,
+        };
+
+        InventoryLog::create([
+            'product_id' => $product->id,
+            'admin_id' => auth('admin')->id(),
+            'type' => $request->type,
+            'quantity_before' => $oldStock,
+            'quantity_change' => $newStock - $oldStock,
+            'quantity_after' => $newStock,
+            'notes' => $request->notes,
+            'reference' => 'Ajuste manual',
+        ]);
+
+        $product->update(['stock_quantity' => $newStock, 'in_stock' => $newStock > 0]);
+
+        return response()->json(['success' => true, 'new_stock' => $newStock]);
+    }
+
+    public function bulkAction(Request $request)
+    {
+        $request->validate([
+            'action' => 'required|in:mark_unavailable,mark_available,delete',
+            'product_ids' => 'required|string',
+        ]);
+
+        $productIds = json_decode($request->product_ids, true);
+        if (!is_array($productIds) || empty($productIds)) {
+            return redirect()->back()->with('error', 'Nenhum produto válido fornecido');
+        }
+
+        $existingIds = Product::whereIn('id', $productIds)->pluck('id')->toArray();
+        $count = 0; $skipped = 0;
+
+        foreach ($existingIds as $id) {
+            $p = Product::find($id);
+            if (!$p) continue;
+            if ($request->action === 'mark_unavailable') { $p->update(['is_unavailable' => true]); $count++; }
+            elseif ($request->action === 'mark_available') { $p->update(['is_unavailable' => false]); $count++; }
+            elseif ($request->action === 'delete') {
+                if ($p->orderItems()->count() > 0) { $skipped++; continue; }
+                $p->delete(); $count++;
+            }
+        }
+
+        $message = match($request->action) {
+            'mark_unavailable' => "{$count} produto(s) marcado(s) como indisponível(is)!",
+            'mark_available' => "{$count} produto(s) marcado(s) como disponível(is)!",
+            'delete' => $skipped > 0 ? "{$count} produto(s) excluído(s). {$skipped} pulados." : "{$count} produto(s) excluído(s) com sucesso!",
+        };
+
+        return redirect()->back()->with('success', $message);
+    }
+
+    public function updateCostPrice(Request $request, Product $product)
+    {
+        $request->validate(['cost_price' => 'required|numeric|min:0']);
+        $costPrice = (float) $request->cost_price;
+        $profitMarginB2B = $product->profit_margin_b2b ?? 10.00;
+        $profitMarginB2C = $product->profit_margin_b2c ?? 20.00;
+
+        $b2bPrice = round($costPrice * (1 + $profitMarginB2B / 100), 2);
+        $b2cPrice = round($costPrice * (1 + $profitMarginB2C / 100), 2);
+
+        $product->update(['cost_price' => $costPrice, 'b2b_price' => $b2bPrice, 'price' => $b2cPrice]);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function updateProfitMargin(Request $request, Product $product)
+    {
+        $request->validate(['margin' => 'required|numeric|min:0|max:1000']);
+        $type = $request->type; $margin = (float) $request->margin;
+        if ($type === 'b2b') $product->update(['profit_margin_b2b' => $margin]);
+        else $product->update(['profit_margin_b2c' => $margin]);
+        return response()->json(['success' => true]);
+    }
+
+    public function applyGlobalMargins(Request $request)
+    {
+        $request->validate(['profit_margin_b2b' => 'required|numeric', 'profit_margin_b2c' => 'required|numeric']);
+        $b2b = (float) $request->profit_margin_b2b; $b2c = (float) $request->profit_margin_b2c;
+        $products = Product::whereNotNull('cost_price')->get();
+        foreach ($products as $p) {
+            $p->update(['profit_margin_b2b' => $b2b, 'profit_margin_b2c' => $b2c]);
+        }
+        return response()->json(['success' => true]);
+    }
+
+    public function getImages(Product $product)
+    {
+        $images = $product->all_images ?? [];
+        $featuredImage = $product->first_image ?? null;
+        $formatted = [];
+        foreach ($images as $image) {
+            if (empty($image)) continue;
+            if (strpos($image, 'http') === 0) $formatted[] = $image;
+            elseif (strpos($image, '/') === 0) $formatted[] = url(ltrim($image, '/'));
+            else $formatted[] = asset('storage/' . $image);
+        }
+        return response()->json(['success' => true, 'images' => $formatted, 'featured_image' => $featuredImage ? (strpos($featuredImage, 'http') === 0 ? $featuredImage : asset('storage/' . $featuredImage)) : null]);
+    }
+
+    public function updateImages(Request $request, Product $product)
+    {
+        $request->validate(['existing_additional_images' => 'nullable|array']);
+        $imagePaths = $product->images ?? [];
+        if ($request->has('existing_additional_images') && is_array($request->existing_additional_images)) {
+            $imagePaths = array_values(array_filter($request->existing_additional_images));
+        }
+        if ($request->hasFile('additional_images')) {
+            foreach ($request->file('additional_images') as $img) {
+                $p = $img->store('products', 'public'); if ($p) $imagePaths[] = $p;
+            }
+        }
+        $product->update(['images' => $imagePaths]);
+        return response()->json(['success' => true, 'images' => $product->all_images]);
+    }
+
+    public function removeImage(Request $request, Product $product)
+    {
+        $request->validate(['image_path' => 'required|string']);
+        $imagePath = $this->extractImagePath((string)$request->image_path);
+        if (!$imagePath) return response()->json(['message' => 'Imagem inválida'], 422);
+        $current = $product->images ?? [];
+        $updated = array_values(array_filter($current, function($i) use ($imagePath) { return $i !== $imagePath; }));
+        $product->update(['images' => $updated]);
+        return response()->json(['success' => true, 'images' => $product->all_images]);
+    }
+
+    public function updateDescription(Request $request, Product $product)
+    {
+        $request->validate(['description' => 'nullable|string|max:5000']);
+        $product->update(['description' => $request->description]);
+        return response()->json(['success' => true, 'description' => $product->description]);
+    }
+
+    public function updateName(Request $request, Product $product)
+    {
+        $request->validate(['name' => 'required|string|min:2|max:255']);
+        $newName = trim($request->name);
+        $product->update(['name' => $newName, 'slug' => Str::slug($newName)]);
+        return response()->json(['success' => true]);
+    }
+
+    private function extractImagePath($image)
+    {
+        if (empty($image)) return null;
+        if (strpos($image, 'http') !== 0 && strpos($image, '/') !== 0) return $image;
+        if (strpos($image, 'http') === 0) {
+            $parsed = parse_url($image);
+            $path = $parsed['path'] ?? '';
+            if (strpos($path, '/storage/') === 0) $path = substr($path, 9);
+            elseif (strpos($path, 'storage/') === 0) $path = substr($path, 8);
+            return !empty($path) ? ltrim($path, '/') : null;
+        }
+        if (strpos($image, '/') === 0) return substr($image, 1);
+        return $image;
+    }
+}
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Product;
+use App\Models\Category;
+use App\Models\InventoryLog;
 use App\Models\ProductVariation;
 use App\Models\Setting;
 use Illuminate\Http\Request;
