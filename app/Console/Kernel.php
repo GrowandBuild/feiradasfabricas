@@ -4,9 +4,20 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
+use App\Console\Commands\ImportExampleProducts;
 
 class Kernel extends ConsoleKernel
 {
+    /**
+     * Register custom commands.
+     *
+     * @var array
+     */
+    protected $commands = [
+        ImportExampleProducts::class,
+        \App\Console\Commands\BackfillAttributesHash::class,
+        \App\Console\Commands\ReportVariationDuplicates::class,
+    ];
     /**
      * Define the application's command schedule.
      *

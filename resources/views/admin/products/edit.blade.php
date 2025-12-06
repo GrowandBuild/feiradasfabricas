@@ -282,6 +282,26 @@
                         </div>
                     </div>
 
+                    <style>
+                        /* Visual hint for department attribute values that already exist as variations */
+                        .dept-attr-checkbox.variation-exists {
+                            opacity: 0.65;
+                            cursor: not-allowed;
+                        }
+                        .dept-attr-checkbox.variation-exists + .form-check-label .badge-created {
+                            margin-left: 0.5rem;
+                        }
+                        .dept-attr-action-badge {
+                            display: inline-block;
+                            vertical-align: middle;
+                            transition: opacity 0.12s ease, transform 0.12s ease;
+                        }
+                        .dept-attr-action-badge[aria-busy="true"] {
+                            opacity: 0.6;
+                            transform: scale(0.98);
+                        }
+                    </style>
+
                     <div class="mb-3">
                         <label for="brand_id" class="form-label">
                             <i class="bi bi-tag-fill me-1"></i>Marca do Produto
@@ -954,14 +974,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     div.appendChild(label);
                     // If this value comes from central attributes, provide a small activate/deactivate button
                     if (v.value_id && attr.attribute_id) {
-                        const actBtn = document.createElement('button');
-                        actBtn.type = 'button';
-                        actBtn.className = 'btn btn-sm ms-2 ' + (v.is_active ? 'btn-success' : 'btn-outline-secondary');
-                        actBtn.textContent = v.is_active ? 'Ativo' : 'Inativo';
-                        actBtn.title = v.is_active ? 'Desativar valor' : 'Ativar valor';
-                        actBtn.addEventListener('click', function() {
-                            // Disable during request
-                            actBtn.disabled = true;
+                        const actBadge = document.createElement('span');
+                        actBadge.setAttribute('role','button');
+                        actBadge.className = 'dept-attr-action-badge ms-2 ' + (v.is_active ? 'bg-success text-white' : 'bg-secondary text-white');
+                        actBadge.textContent = v.is_active ? 'Ativo' : 'Inativo';
+                        actBadge.title = v.is_active ? 'Desativar valor' : 'Ativar valor';
+                        actBadge.style.padding = '0.25rem 0.5rem';
+                        actBadge.style.fontSize = '0.75rem';
+                        actBadge.style.borderRadius = '0.25rem';
+                        actBadge.style.cursor = 'pointer';
+                        actBadge.addEventListener('click', function() {
+                            try { actBadge.setAttribute('aria-busy','true'); actBadge.style.opacity = '0.6'; actBadge.style.pointerEvents = 'none'; } catch(e) {}
                             const shouldActivate = !v.is_active;
                             const payload = { value: v.value };
                             if (shouldActivate) payload.is_active = true;
@@ -974,14 +997,13 @@ document.addEventListener('DOMContentLoaded', function() {
                                 },
                                 body: JSON.stringify(payload)
                             }).then(resp => {
-                                // Reload attributes panel to reflect change
                                 fetchAndRenderForDepartment(currentDepartment);
                             }).catch(err => {
                                 console.error('Erro ao alternar ativo do valor:', err);
                                 fetchAndRenderForDepartment(currentDepartment);
-                            }).finally(() => { actBtn.disabled = false; });
+                            }).finally(() => { try { actBadge.removeAttribute('aria-busy'); actBadge.style.opacity = ''; actBadge.style.pointerEvents = ''; } catch(e) {} });
                         });
-                        div.appendChild(actBtn);
+                        div.appendChild(actBadge);
                     }
                     wrap.appendChild(div);
                 });
@@ -1007,8 +1029,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 const modalEl = document.getElementById('variationsModal');
                 if (modalEl) {
                     const modal = new bootstrap.Modal(modalEl);
-                    // set product id on the button that opens modal so it triggers load
-                    const btn = document.querySelector('[data-bs-target="#variationsModal"]');
+                    // set product id on the hidden input so modal JS can detect product
+                    try {
+                        const prodIdInput = document.getElementById('variationsProductId');
+                        if (prodIdInput) prodIdInput.value = productId;
+                        const btn = document.querySelector('[data-bs-target="#variationsModal"]');
+                        if (btn) btn.setAttribute('data-product-id', productId);
+                    } catch (e) { console.debug && console.debug('could not set product id on modal opener', e); }
                     // show modal
                     modal.show();
                 }
@@ -1024,6 +1051,13 @@ document.addEventListener('DOMContentLoaded', function() {
             actions.appendChild(refreshBtn);
             actions.appendChild(openModalBtn);
             deptAttributesPanel.appendChild(actions);
+
+            // Use centralized sync function (defined in resources/js/admin/variations.js)
+            try {
+                if (window.syncDeptAttributesWithVariations && productId) {
+                    window.syncDeptAttributesWithVariations(productId);
+                }
+            } catch (e) { console.debug && console.debug('sync call failed', e); }
         }
 
         function applySelectedAttributes() {
@@ -1071,7 +1105,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     // se houver chaves duplicadas por alguma razão, última vence
                     attrs[slug] = c.value;
                 });
-                return { attributes: attrs };
+                return attrs;
             });
 
             // Para o resumo/aviso, mostrar nomes originais dos atributos
@@ -1176,6 +1210,13 @@ document.addEventListener('DOMContentLoaded', function() {
         // Inicialização: carregar para o departamento atual (se houver)
         if (deptAttributesPanel) {
             fetchAndRenderForDepartment(currentDepartment);
+            // Listen for variation updates from modal/js and re-sync panel
+            document.addEventListener('variations:updated', function(e){
+                try {
+                    const pid = (e && e.detail && e.detail.productId) ? e.detail.productId : productId;
+                    if (window.syncDeptAttributesWithVariations) window.syncDeptAttributesWithVariations(pid);
+                } catch (err) { console.debug && console.debug('variations:updated handler failed', err); }
+            });
         }
 
         // Sincronizar quando o departamento mudar. Suporta select[name="department_id"], #qpDepartment e input combobox #qpDeptCombo

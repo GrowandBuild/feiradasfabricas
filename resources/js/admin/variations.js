@@ -157,6 +157,8 @@ function loadVariations(productId, onlyTypes = null) {
                 productMarginB2B = data.margins?.b2b ?? 10;
                 renderVariations(data, onlyTypes);
                 renderStock(data);
+                // Emit event so other UI parts (dept attributes panel) can sync
+                try { emitVariationsUpdated(productId); } catch (e) {}
             } else {
                 alert('Erro ao carregar variações: ' + (data.message || 'Erro desconhecido'));
             }
@@ -166,6 +168,49 @@ function loadVariations(productId, onlyTypes = null) {
             alert('Erro ao carregar variações');
         });
 }
+
+// Emit a custom event when variations changed so other components can listen
+function emitVariationsUpdated(productId) {
+    try {
+        const ev = new CustomEvent('variations:updated', { detail: { productId: productId } });
+        document.dispatchEvent(ev);
+    } catch (e) {
+        console.debug && console.debug('emitVariationsUpdated failed', e);
+    }
+}
+window.emitVariationsUpdated = emitVariationsUpdated;
+
+// Centralized sync function to mark department attribute checkboxes
+window.syncDeptAttributesWithVariations = function(productId) {
+    if (!productId) return;
+    fetch(`/admin/products/${productId}/variations`, { headers: { 'Accept': 'application/json' } })
+        .then(resp => resp.json())
+        .then(vdata => {
+            if (vdata && vdata.attribute_groups) {
+                const lookup = {};
+                Object.keys(vdata.attribute_groups).forEach(type => {
+                    lookup[type] = new Set((vdata.attribute_groups[type] || []).map(i => (i.name || '').toString().toLowerCase()));
+                });
+
+                document.querySelectorAll('.dept-attr-checkbox').forEach(cb => {
+                    const type = (cb.dataset.type || '').toString();
+                    const val = (cb.dataset.value || '').toString().toLowerCase();
+                    if (lookup[type] && lookup[type].has(val)) {
+                        cb.classList.add('variation-exists');
+                        try { cb.disabled = true; cb.setAttribute('aria-disabled','true'); } catch(e) {}
+                        const label = cb.nextElementSibling || cb.closest('label') || null;
+                        if (label && !label.querySelector('.badge-created')) {
+                            const badge = document.createElement('span');
+                            badge.className = 'badge bg-success ms-2 badge-created';
+                            badge.style.fontSize = '0.7em';
+                            badge.textContent = 'Criada';
+                            label.appendChild(badge);
+                        }
+                    }
+                });
+            }
+        }).catch(e => console.debug && console.debug('syncDeptAttributesWithVariations failed', e));
+};
 
 function renderVariations(data, onlyTypes = null) {
     const tabsEl = document.getElementById('variationsTabs');
@@ -1335,11 +1380,141 @@ function deleteInactiveVariations() {
     });
 }
 
+// --- New UI bindings for redesigned modal ---
+function applyListFilters() {
+    const search = (document.getElementById('variationSearch') && document.getElementById('variationSearch').value || '').toString().toLowerCase().trim();
+    const filterType = (document.getElementById('filterType') && document.getElementById('filterType').value) || '';
+    const onlyActive = !!(document.getElementById('onlyActiveToggle') && document.getElementById('onlyActiveToggle').checked);
+
+    const panes = ['colors','rams','storages','stock'];
+    panes.forEach(pane => {
+        const container = document.getElementById(pane + 'List');
+        if (!container) return;
+        const children = Array.from(container.children || []);
+        children.forEach(child => {
+            const text = (child.innerText || '').toString().toLowerCase();
+            let visible = true;
+            if (search && text.indexOf(search) === -1) visible = false;
+            if (filterType && pane !== filterType) visible = false;
+            if (onlyActive) {
+                if (text.indexOf('inativa') !== -1 || text.indexOf('inativo') !== -1) visible = false;
+            }
+            child.style.display = visible ? '' : 'none';
+        });
+    });
+}
+
+function addGenericVariation() {
+    const productIdEl = document.getElementById('variationsProductId');
+    const productId = productIdEl ? productIdEl.value : null;
+    if (!productId) return showVariationMessage('error', 'Produto não identificado.');
+
+    const type = (document.getElementById('filterType') && document.getElementById('filterType').value) || '';
+    if (!type) return showVariationMessage('error', 'Selecione o tipo (Cores / RAM / Armazenamento) no filtro.');
+
+    const input = document.getElementById('newVariationValue');
+    if (!input) return showVariationMessage('error', 'Campo de entrada não encontrado.');
+
+    const value = (input.value || '').toString().trim();
+    if (!value) return showVariationMessage('error', 'Por favor, insira um valor.');
+
+    const btn = document.getElementById('addGenericBtn');
+    const original = btn ? btn.innerHTML : '';
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Adicionando...'; }
+
+    fetch(`/admin/products/${productId}/variations/add`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'Accept': 'application/json'
+        },
+        body: JSON.stringify({ type, value })
+    })
+    .then(resp => resp.json())
+    .then(data => {
+        if (btn) { btn.disabled = false; btn.innerHTML = original; }
+        if (data.success) {
+            input.value = '';
+            showVariationMessage('success', data.message || 'Valor adicionado com sucesso.');
+            loadVariations(productId);
+        } else {
+            showVariationMessage('error', data.message || 'Não foi possível adicionar o valor.');
+        }
+    })
+    .catch(err => {
+        console.error(err);
+        if (btn) { btn.disabled = false; btn.innerHTML = original; }
+        showVariationMessage('error', 'Erro ao adicionar valor.');
+    });
+}
+
+function setupModalUIBindings() {
+    document.addEventListener('click', function(e) {
+        const target = e.target;
+        if (!target) return;
+    });
+
+    const refreshBtn = document.getElementById('refreshVariationsBtn');
+    if (refreshBtn) refreshBtn.addEventListener('click', function() {
+        const pid = document.getElementById('variationsProductId').value;
+        if (pid) loadVariations(pid);
+    });
+
+    const addBtn = document.getElementById('addGenericBtn');
+    if (addBtn) addBtn.addEventListener('click', addGenericVariation);
+
+    const openMgrBtn = document.getElementById('openVariationsManagerBtn');
+    if (openMgrBtn) openMgrBtn.addEventListener('click', function() {
+        const pid = document.getElementById('variationsProductId').value;
+        if (pid) loadVariations(pid);
+        const firstTab = document.querySelector('#variationsTabs .nav-link');
+        if (firstTab) firstTab.click();
+    });
+
+    const bulkDeleteBtn = document.getElementById('bulkDeleteInactiveBtn');
+    if (bulkDeleteBtn) bulkDeleteBtn.addEventListener('click', function() { deleteInactiveVariations(); });
+
+    const bulkAddBtn = document.getElementById('bulkAddSelectedBtn');
+    if (bulkAddBtn) bulkAddBtn.addEventListener('click', function() { showVariationMessage('error', 'Adicionar em massa ainda não implementado nesta versão.'); });
+
+    const searchInput = document.getElementById('variationSearch');
+    if (searchInput) {
+        let t = null;
+        searchInput.addEventListener('input', function() {
+            if (t) clearTimeout(t);
+            t = setTimeout(() => { applyListFilters(); }, 200);
+        });
+    }
+
+    const filterSelect = document.getElementById('filterType');
+    if (filterSelect) filterSelect.addEventListener('change', function() {
+        const val = this.value;
+        if (val) {
+            const tabBtn = document.getElementById(val + '-tab');
+            if (tabBtn) tabBtn.click();
+        }
+        applyListFilters();
+    });
+
+    const onlyActive = document.getElementById('onlyActiveToggle');
+    if (onlyActive) onlyActive.addEventListener('change', applyListFilters);
+}
+
+// initialize bindings once after DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        try { setupModalUIBindings(); } catch (e) { console.debug && console.debug('setupModalUIBindings failed', e); }
+    });
+} else {
+    try { setupModalUIBindings(); } catch (e) { console.debug && console.debug('setupModalUIBindings failed', e); }
+}
+
 // Expose commonly-used functions to global scope for compatibility with inline handlers
 const exported = [
     'addNewVariationType','toggleVariationType','clearColorHex','handleColorPickerChange',
     'openColorImagesModal','saveColorImages','saveAndCloseModal','deleteInactiveVariations',
-    'confirmDeleteVariationValue','updateAllStock','loadVariations'
+    'confirmDeleteVariationValue','updateAllStock','loadVariations','addGenericVariation','applyListFilters','setupModalUIBindings'
 ];
 
 for (const name of exported) {

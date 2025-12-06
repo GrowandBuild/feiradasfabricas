@@ -1386,9 +1386,19 @@ class ProductController extends Controller
         ]);
 
         $combos = $request->input('combos', []);
+        // Temporary debug trace: log the incoming combos shape to diagnose array bindings
+        try {
+            \Log::debug('bulkAddVariations payload', ['product_id' => $product->id, 'combos_sample' => array_slice($combos, 0, 10)]);
+        } catch (\Throwable $e) {
+            // ignore logging failures
+        }
         $created = 0;
 
         foreach ($combos as $c) {
+            // Support legacy payloads where each combo may be wrapped as { attributes: { ... }, ... }
+            if (is_array($c) && isset($c['attributes']) && is_array($c['attributes'])) {
+                $c = $c['attributes'];
+            }
             // Accept arbitrary keys in combo; normalize into attributes
             $attrs = [];
             foreach ($c as $k => $v) {
@@ -1397,48 +1407,83 @@ class ProductController extends Controller
                 $attrs[$k] = $v;
             }
 
-            // Build existence query: match on attributes JSON or legacy columns
-            $query = $product->variations();
+            if (empty($attrs)) continue;
+
+            // Normalize attribute values: convert arrays/objects to JSON strings to avoid SQL binding errors
             foreach ($attrs as $k => $v) {
-                $query->where(function($q) use ($k, $v) {
-                    $q->where("attributes->${k}", $v)->orWhere($k, $v);
-                });
+                if (is_array($v) || is_object($v)) {
+                    try {
+                        $attrs[$k] = json_encode($v, JSON_UNESCAPED_UNICODE);
+                    } catch (\Throwable $e) {
+                        $attrs[$k] = (string) $v;
+                    }
+                }
+                // Trim string values
+                if (is_string($attrs[$k])) {
+                    $attrs[$k] = trim($attrs[$k]);
+                }
             }
 
-            $existing = $query->first();
-            if ($existing) continue;
-
-            // Build readable SKU: use known axes if present
-            $skuParts = [$product->sku];
-            if (!empty($attrs['ram'])) $skuParts[] = str_replace('GB', '', $attrs['ram']);
-            if (!empty($attrs['storage'])) $skuParts[] = str_replace('GB', '', $attrs['storage']);
-            if (!empty($attrs['color'])) $skuParts[] = strtoupper(substr($attrs['color'], 0, 3));
-            // if no known axis, add a short hash of first attribute
-            if (count($skuParts) === 1 && !empty($attrs)) {
-                $skuParts[] = strtoupper(substr(md5(json_encode($attrs)), 0, 6));
-            }
-            $sku = implode('-', array_filter($skuParts));
-
-            while (ProductVariation::where('sku', $sku)->exists()) {
-                $sku .= '-' . rand(100, 999);
+            // Deterministic normalized string and hash for quick existence checks
+            try {
+                // reuse model helper if available
+                $normalized = \App\Models\ProductVariation::normalizeAttributesForHash($attrs);
+                $hash = md5($normalized);
+            } catch (\Throwable $e) {
+                $hash = null;
             }
 
-            ProductVariation::create([
-                'product_id' => $product->id,
-                'attributes' => $attrs ?: null,
-                'ram' => $attrs['ram'] ?? null,
-                'storage' => $attrs['storage'] ?? null,
-                'color' => $attrs['color'] ?? null,
-                'sku' => $sku,
-                'price' => $product->price,
-                'b2b_price' => $product->b2b_price,
-                'cost_price' => $product->cost_price,
-                'stock_quantity' => 0,
-                'in_stock' => false,
-                'is_active' => true,
-                'sort_order' => 0
-            ]);
-            $created++;
+            // Use transaction per combo to reduce race window
+            DB::transaction(function() use (&$created, $product, $attrs, $hash, $normalized) {
+                // check by attributes_hash first (fast, indexable once migration applied)
+                $existsQuery = ProductVariation::where('product_id', $product->id);
+                if ($hash) {
+                    $existsQuery = $existsQuery->where('attributes_hash', $hash);
+                } else {
+                    // fallback: match on legacy columns or attributes JSON equality
+                    foreach ($attrs as $k => $v) {
+                        $existsQuery = $existsQuery->where(function($q) use ($k, $v) {
+                            $q->where("attributes->${k}", $v)->orWhere($k, $v);
+                        });
+                    }
+                }
+
+                if ($existsQuery->lockForUpdate()->exists()) {
+                    return; // already exists, skip
+                }
+
+                // Build readable SKU: use known axes if present
+                $skuParts = [$product->sku];
+                if (!empty($attrs['ram'])) $skuParts[] = str_replace('GB', '', $attrs['ram']);
+                if (!empty($attrs['storage'])) $skuParts[] = str_replace('GB', '', $attrs['storage']);
+                if (!empty($attrs['color'])) $skuParts[] = strtoupper(substr($attrs['color'], 0, 3));
+                if (count($skuParts) === 1 && !empty($attrs)) {
+                    $skuParts[] = strtoupper(substr(md5($normalized ?? json_encode($attrs)), 0, 6));
+                }
+                $sku = implode('-', array_filter($skuParts));
+
+                while (ProductVariation::where('sku', $sku)->exists()) {
+                    $sku .= '-' . rand(100, 999);
+                }
+
+                ProductVariation::create([
+                    'product_id' => $product->id,
+                    'attributes' => $attrs ?: null,
+                    'attributes_hash' => $hash,
+                    'ram' => $attrs['ram'] ?? null,
+                    'storage' => $attrs['storage'] ?? null,
+                    'color' => $attrs['color'] ?? null,
+                    'sku' => $sku,
+                    'price' => $product->price,
+                    'b2b_price' => $product->b2b_price,
+                    'cost_price' => $product->cost_price,
+                    'stock_quantity' => 0,
+                    'in_stock' => false,
+                    'is_active' => true,
+                    'sort_order' => 0
+                ]);
+                $created++;
+            });
         }
 
         return response()->json([

@@ -56,6 +56,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/{product}/variations/add', [ProductController::class, 'addVariation'])->name('products.variations.add');
         // Bulk add full variation combinations (expects payload { combos: [{ram, storage, color}, ...] })
         Route::post('products/{product}/variations/bulk-add', [ProductController::class, 'bulkAddVariations'])->name('products.variations.bulk-add');
+        // Variations generator UI
+        Route::get('variations/generator', [App\Http\Controllers\Admin\VariationController::class, 'setGenerator'])->name('variations.generator');
         Route::post('products/{product}/variations/update-stock', [ProductController::class, 'updateStock'])->name('products.variations.update-stock');
         Route::post('products/{product}/variations/color-images', [ProductController::class, 'updateColorImages'])->name('products.variations.color-images');
         Route::delete('products/{product}/variations/{variationId}', [ProductController::class, 'deleteVariation'])->name('products.variations.destroy');

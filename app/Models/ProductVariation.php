@@ -11,6 +11,7 @@ class ProductVariation extends Model
 
     protected $fillable = [
         'product_id',
+        'attributes_hash',
         'ram',
         'storage',
         'color',
@@ -34,6 +35,7 @@ class ProductVariation extends Model
         'in_stock' => 'boolean',
         'is_active' => 'boolean',
         'attributes' => 'array',
+        'attributes_hash' => 'string',
     ];
 
     /**
@@ -263,6 +265,34 @@ class ProductVariation extends Model
         }
 
         $this->attributes['attributes'] = $value;
+
+        // compute deterministic hash for attributes to enable fast uniqueness checks
+        try {
+            $normalized = static::normalizeAttributesForHash($value);
+            $this->attributes['attributes_hash'] = md5($normalized);
+        } catch (\Throwable $e) {
+            $this->attributes['attributes_hash'] = null;
+        }
+    }
+
+    /**
+     * Normalize attributes into a deterministic JSON string (sorted keys recursively)
+     * used to compute the attributes_hash.
+     */
+    public static function normalizeAttributesForHash($value)
+    {
+        if (!is_array($value)) $value = (array) $value;
+
+        $fn = function (&$arr) use (&$fn) {
+            ksort($arr);
+            foreach ($arr as $k => &$v) {
+                if (is_array($v)) $fn($v);
+                else if ($v instanceof \JsonSerializable) $v = $v->jsonSerialize();
+            }
+        };
+        $copy = $value;
+        $fn($copy);
+        return json_encode($copy, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK);
     }
 
     /**

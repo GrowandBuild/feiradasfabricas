@@ -3750,7 +3750,7 @@
                                     const slug = slugify(c.key || c.attr || '');
                                     attrs[slug] = c.value;
                                 });
-                                return { attributes: attrs };
+                                return attrs;
                             });
 
                             if (combos.length > 500) {
