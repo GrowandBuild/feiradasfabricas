@@ -55,7 +55,7 @@
 
         /* Sidebar safe-fallback: garante contraste mesmo se variáveis de tema estiverem ausentes */
         .sidebar {
-            background: linear-gradient(180deg, var(--primary-dark, #0f172a) 0%, rgba(15,23,42,0.85) 100%);
+            background: #000000; /* Preto forte */
             min-height: 100vh;
             padding-top: calc(var(--admin-header-height, 72px) + 1rem);
             color: var(--text-primary, #ffffff);
@@ -922,7 +922,31 @@
                 font-size: 1.3rem;
             }
         }
+        /* Global modern card component — compact, glassy and elevated */
+        .card-modern {
+            border-radius: 12px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.55));
+            border: 1px solid rgba(16,24,40,0.06);
+            box-shadow: 0 6px 18px rgba(2,6,23,0.06), 0 2px 6px rgba(2,6,23,0.04);
+            transition: transform .12s cubic-bezier(.2,.9,.2,1), box-shadow .12s ease, border-color .12s ease;
+            backdrop-filter: blur(6px) saturate(120%);
+            overflow: hidden;
+        }
+
+        .card-modern.card-compact { padding: 0.5rem; border-radius: 10px; }
+
+        .card-modern .card-header { background: transparent; border-bottom: none; padding: .8rem 1rem; display:flex; align-items:center; justify-content:space-between }
+
+        .card-modern .card-title { font-size: 1rem; margin:0; color: var(--text-dark, #0f172a); font-weight:700; letter-spacing:0.2px; }
+
+        .card-modern .card-body { padding: 0.8rem 1rem; }
+
+        .card-modern:hover { transform: translateY(-6px); box-shadow: 0 18px 44px rgba(2,6,23,0.12); border-color: rgba(79,70,229,0.12); }
+
+        /* small utility: header accent bar */
+        .card-modern .header-accent { height:4px; display:block; width:100%; border-radius:6px 6px 0 0; margin-bottom: 8px; background: linear-gradient(90deg, rgba(79,70,229,0.18), rgba(6,182,212,0.12)); }
     </style>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     @yield('styles')
 </head>
 <body>
@@ -1227,7 +1251,7 @@
                                             @endif
                                         </div>
                                         <div class="admin-user-details d-none d-sm-block text-end">
-                                            <div class="name small">{{ auth('admin')->user()->name }}</div>
+                                            <div class="name small">{{ optional(auth('admin')->user())->name }}</div>
                                             <div class="role xsmall text-white-50">Administrador</div>
                                         </div>
                                     </div>

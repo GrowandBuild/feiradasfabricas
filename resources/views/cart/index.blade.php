@@ -527,9 +527,18 @@
                                                     </div>
                                                     <div>
                                                         <h6 class="product-name mb-1">{{ $item->product->name }}</h6>
-                                                        <small class="sku-text">
-                                                            SKU: {{ $item->product->sku }}
-                                                        </small>
+                                                        @if($item->variation)
+                                                            <div class="variation-details mb-2" style="font-size: 0.85rem; color: #6b7280;">
+                                                                @if($item->variation->attributes)
+                                                                    @foreach($item->variation->attributes as $attribute => $value)
+                                                                        <span class="badge bg-light text-dark me-1" style="font-size: 0.75rem;">
+                                                                            <strong>{{ ucfirst($attribute) }}: {{ $value }}</strong>
+                                                                        </span>
+                                                                    @endforeach
+                                                                @endif
+                                                            </div>
+                                                        @endif
+                                                        <small class="text-muted">SKU: {{ $item->variation ? $item->variation->sku : $item->product->sku }}</small>
                                                     </div>
                                                 </div>
                                             </td>

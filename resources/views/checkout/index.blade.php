@@ -436,9 +436,23 @@
                         
                         <div class="order-summary">
                             @foreach($cartItems as $item)
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>{{ $item->product->name }} x{{ $item->quantity }}</span>
-                                    <span>R$ {{ number_format($item->total, 2, ',', '.') }}</span>
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <div>
+                                        <span style="font-weight: 500;">{{ $item->product->name }}</span>
+                                        @if($item->variation)
+                                            <div class="variation-details" style="font-size: 0.8rem; color: #6b7280;">
+                                                @if($item->variation->attributes)
+                                                    @foreach($item->variation->attributes as $attribute => $value)
+                                                        <span class="badge bg-light text-dark me-1" style="font-size: 0.7rem;">
+                                                            {{ ucfirst($attribute) }}: {{ $value }}
+                                                        </span>
+                                                    @endforeach
+                                                @endif
+                                            </div>
+                                        @endif
+                                        <small class="text-muted">x{{ $item->quantity }}</small>
+                                    </div>
+                                    <span style="font-weight: 600;">R$ {{ number_format($item->total, 2, ',', '.') }}</span>
                                 </div>
                             @endforeach
                             

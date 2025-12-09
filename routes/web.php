@@ -99,6 +99,15 @@ Route::prefix('departamento')->name('department.')->group(function () {
     Route::get('/', [App\Http\Controllers\DepartmentController::class, 'list'])->name('list');
 });
 
+// Local-only preview route: quick render admin product edit without auth (DEV ONLY)
+use App\Http\Controllers\Dev\AdminPreviewController;
+
+if (app()->environment('local') || config('app.debug')) {
+    Route::get('/dev/admin-preview/product/{id}/edit', [AdminPreviewController::class, 'productEdit'])
+        ->name('dev.admin-preview.product.edit')
+        ->middleware('auth:admin');
+}
+
 // Rota de exemplo para banners
 Route::get('/exemplos/banners', function () {
     return view('examples.banner-usage');

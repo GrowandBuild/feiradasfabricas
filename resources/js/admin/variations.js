@@ -155,6 +155,10 @@ function loadVariations(productId, onlyTypes = null) {
                 variationColorHexMap = data.color_hex_map || {};
                 productMarginB2C = data.margins?.b2c ?? 20;
                 productMarginB2B = data.margins?.b2b ?? 10;
+// Variations JS removed — placeholder to avoid build errors while subsystem is deleted.
+console.warn('Variations frontend module has been removed as part of the variations/attributes cleanup.');
+
+window.variationsRemoved = true;
                 renderVariations(data, onlyTypes);
                 renderStock(data);
                 // Emit event so other UI parts (dept attributes panel) can sync

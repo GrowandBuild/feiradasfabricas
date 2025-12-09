@@ -1,4 +1,4 @@
-@extends('admin.layouts.app')
+﻿@extends('admin.layouts.app')
 
 @section('title', 'Editar Produto')
 @section('page-title', 'Editar Produto')
@@ -7,387 +7,273 @@
 @endsection
 
 @section('content')
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card">
-            <div class="card-header d-flex align-items-center justify-content-between">
-                <div class="d-flex align-items-center">
-                    <i class="bi bi-pencil-square me-2" style="color: var(--accent-color);"></i>
-                    <h5 class="card-title mb-0">Informações do Produto</h5>
+<link rel="stylesheet" href="{{ asset('css/admin-product-edit.css') }}">
+
+@php
+    $productCategories = $product->categories->pluck('id')->toArray();
+    $initialImages = [];
+    if (!empty($product->images)) {
+        foreach ($product->images as $idx => $img) {
+            $initialImages[] = [
+                'id' => 'existing-' . $idx,
+                'path' => $img,
+                'preview' => strpos($img,'http')===0 ? $img : asset('storage/'.$img),
+                'existing' => true,
+                'isPrimary' => $idx === 0,
+                'file' => null
+            ];
+        }
+    }
+    $initialPrimaryImage = (!empty($product->images) && count($product->images) > 0) ? $product->images[0] : '';
+@endphp
+
+<style>
+/* Layout Principal - Estrutura Simples e Direta */
+.product-edit-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 24px;
+    align-items: start;
+}
+
+.product-edit-form {
+    min-width: 0;
+}
+
+.product-edit-sidebar {
+    position: sticky;
+    top: 20px;
+}
+
+@media (max-width: 1200px) {
+    .product-edit-wrapper {
+        grid-template-columns: 1fr;
+    }
+    .product-edit-sidebar {
+        position: static;
+    }
+}
+</style>
+
+<div class="product-edit-wrapper">
+    <!-- COLUNA ESQUERDA: FORMULÁRIO -->
+    <div class="product-edit-form">
+        <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+            
+            <!-- Informações Básicas -->
+            <div class="card card-modern mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-info-circle me-2"></i>Informações Básicas</h6>
                 </div>
-                <button type="button"
-                        class="btn btn-outline-primary btn-sm"
-                        data-product-id="{{ $product->id }}"
-                        data-product-name="{{ $product->name }}"
-                        data-bs-toggle="modal"
-                        data-bs-target="#variationsModal">
-                    <i class="bi bi-list-ul me-1"></i> Gerenciar Variações
-                </button>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('admin.products.update', $product) }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    @method('PUT')
-                    
-                    <!-- Informações Básicas -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h6 class="fw-semibold mb-3" style="color: var(--accent-color);">
-                                <i class="bi bi-info-circle me-2"></i>Informações Básicas
-                            </h6>
-                        </div>
-                    </div>
-                    
-                    <div class="row" id="stockFieldsRow">
+                <div class="card-body">
+                    <div class="row mb-3">
                         <div class="col-md-8">
                             <div class="mb-3">
-                                <label for="name" class="form-label">
-                                    <i class="bi bi-tag me-1"></i>Nome do Produto *
-                                </label>
+                                <label for="name" class="form-label">Nome do Produto *</label>
                                 <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                                       id="name" name="name" value="{{ old('name', $product->name) }}" 
-                                       placeholder="Digite o nome do produto" required>
+                                       id="name" name="name" value="{{ old('name', $product->name) }}" required>
                                 @error('name')
-                                    <div class="invalid-feedback">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="sku" class="form-label">
-                                    <i class="bi bi-upc-scan me-1"></i>SKU *
-                                </label>
+                                <label for="sku" class="form-label">SKU *</label>
                                 <input type="text" class="form-control @error('sku') is-invalid @enderror" 
-                                       id="sku" name="sku" value="{{ old('sku', $product->sku) }}" 
-                                       placeholder="Ex: PROD-001" required>
+                                       id="sku" name="sku" value="{{ old('sku', $product->sku) }}" required>
                                 @error('sku')
-                                    <div class="invalid-feedback">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
-                        </div>
-                    </div>
-
-                        <div class="mb-3">
-                            <label for="department_id" class="form-label">Departamento</label>
-                            <select class="form-select @error('department_id') is-invalid @enderror" id="department_id" name="department_id">
-                                <option value="">— Nenhum departamento selecionado —</option>
-                                @foreach($departments as $department)
-                                    <option value="{{ $department->id }}" {{ old('department_id', $product->department_id) == $department->id ? 'selected' : '' }}>
-                                        {{ $department->name }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <small class="form-text text-muted">Selecione o departamento do produto (opcional)</small>
-                            @error('department_id')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
-
-                    <div class="mb-3">
-                        <label for="description" class="form-label">
-                            <i class="bi bi-file-text me-1"></i>Descrição *
-                        </label>
-                        <textarea class="form-control @error('description') is-invalid @enderror" 
-                                  id="description" name="description" rows="4" 
-                                  placeholder="Descreva as características do produto" required>{{ old('description', $product->description) }}</textarea>
-                        @error('description')
-                            <div class="invalid-feedback">
-                                <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                            </div>
-                        @enderror
-                    </div>
-
-                    <!-- Preços e Estoque -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h6 class="fw-semibold mb-3" style="color: var(--accent-color);">
-                                <i class="bi bi-currency-dollar me-2"></i>Preços e Estoque
-                            </h6>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="price" class="form-label">
-                                    <i class="bi bi-cart me-1"></i>Preço (B2C) *
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text" style="background-color: var(--accent-color); color: white;">
-                                        <i class="bi bi-currency-dollar"></i>
-                                    </span>
-                                    <input type="number" step="0.01" class="form-control @error('price') is-invalid @enderror" 
-                                           id="price" name="price" value="{{ old('price', $product->price) }}" 
-                                           placeholder="0,00" required>
-                                </div>
-                                @error('price')
-                                    <div class="invalid-feedback">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="b2b_price" class="form-label">
-                                    <i class="bi bi-building me-1"></i>Preço (B2B)
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-secondary text-white">
-                                        <i class="bi bi-currency-dollar"></i>
-                                    </span>
-                                    <input type="number" step="0.01" class="form-control @error('b2b_price') is-invalid @enderror" 
-                                           id="b2b_price" name="b2b_price" value="{{ old('b2b_price', $product->b2b_price) }}"
-                                           placeholder="0,00">
-                                </div>
-                                <small class="text-muted">Preço especial para empresas</small>
-                                @error('b2b_price')
-                                    <div class="invalid-feedback">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="mb-3">
-                                <label for="cost_price" class="form-label">
-                                    <i class="bi bi-receipt me-1"></i>Preço de Custo
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text bg-info text-white">
-                                        <i class="bi bi-currency-dollar"></i>
-                                    </span>
-                                    <input type="number" step="0.01" class="form-control @error('cost_price') is-invalid @enderror" 
-                                           id="cost_price" name="cost_price" value="{{ old('cost_price', $product->cost_price) }}"
-                                           placeholder="0,00">
-                                </div>
-                                <small class="text-muted">Para controle de margem</small>
-                                @error('cost_price')
-                                    <div class="invalid-feedback">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
-                        </div>
-                        <div class="col-md-12">
-                            <div class="mb-3">
-                                <label for="product_type" class="form-label">
-                                    <i class="bi bi-box me-1"></i>Tipo de Produto
-                                </label>
-                                <select id="product_type" name="product_type" class="form-select @error('product_type') is-invalid @enderror">
-                                    <option value="physical" {{ old('product_type', $product->product_type ?? 'physical') === 'physical' ? 'selected' : '' }}>Físico</option>
-                                    <option value="service" {{ old('product_type', $product->product_type ?? 'physical') === 'service' ? 'selected' : '' }}>Serviço</option>
-                                </select>
-                                <small class="text-muted">Escolha "Serviço" para produtos que não possuem controle de estoque.</small>
-                                @error('product_type')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6">
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição *</label>
+                        <textarea class="form-control @error('description') is-invalid @enderror" 
+                                  id="description" name="description" rows="4" required>{{ old('description', $product->description) }}</textarea>
+                        @error('description')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preços e Estoque -->
+            <div class="card card-modern mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>Preços e Estoque</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="stock_quantity" class="form-label">
-                                    <i class="bi bi-boxes me-1"></i>Quantidade em Estoque *
-                                </label>
-                                <input type="number" class="form-control @error('stock_quantity') is-invalid @enderror" 
-                                       id="stock_quantity" name="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" 
-                                       placeholder="0" required>
-                                @error('stock_quantity')
-                                    <div class="invalid-feedback">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
+                                <label for="price" class="form-label">Preço (B2C) *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" step="0.01" class="form-control @error('price') is-invalid @enderror" 
+                                           id="price" name="price" value="{{ old('price', $product->price) }}" required>
+                                </div>
+                                @error('price')
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="min_stock" class="form-label">
-                                    <i class="bi bi-exclamation-triangle me-1"></i>Estoque Mínimo *
-                                </label>
-                                <input type="number" class="form-control @error('min_stock') is-invalid @enderror" 
-                                       id="min_stock" name="min_stock" value="{{ old('min_stock', $product->min_stock) }}" 
-                                       placeholder="0" required>
-                                <small class="text-muted">Alerta quando estoque estiver baixo</small>
-                                @error('min_stock')
-                                    <div class="invalid-feedback">
-                                        <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                                    </div>
+                                <label for="b2b_price" class="form-label">Preço (B2B)</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" step="0.01" class="form-control @error('b2b_price') is-invalid @enderror" 
+                                           id="b2b_price" name="b2b_price" value="{{ old('b2b_price', $product->b2b_price) }}">
+                                </div>
+                                @error('b2b_price')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="cost_price" class="form-label">Preço de Custo</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">R$</span>
+                                    <input type="number" step="0.01" class="form-control @error('cost_price') is-invalid @enderror" 
+                                           id="cost_price" name="cost_price" value="{{ old('cost_price', $product->cost_price) }}">
+                                </div>
+                                @error('cost_price')
+                                    <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
                             </div>
                         </div>
                     </div>
 
-                    <!-- Categorias -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h6 class="fw-semibold mb-3" style="color: var(--accent-color);">
-                                <i class="bi bi-tags me-2"></i>Categorias *
-                            </h6>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="stock_quantity" class="form-label">Quantidade em Estoque *</label>
+                                <input type="number" class="form-control @error('stock_quantity') is-invalid @enderror" 
+                                       id="stock_quantity" name="stock_quantity" value="{{ old('stock_quantity', $product->stock_quantity) }}" required>
+                                @error('stock_quantity')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="min_stock" class="form-label">Estoque Mínimo *</label>
+                                <input type="number" class="form-control @error('min_stock') is-invalid @enderror" 
+                                       id="min_stock" name="min_stock" value="{{ old('min_stock', $product->min_stock ?? 10) }}" required>
+                                @error('min_stock')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+                            </div>
                         </div>
                     </div>
-                    
+                </div>
+            </div>
+
+            <!-- Categorias e Departamento -->
+            <div class="card card-modern mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-tags me-2"></i>Categorias e Departamento</h6>
+                </div>
+                <div class="card-body">
                     <div class="mb-3">
+                        <label class="form-label">Categorias *</label>
                         <div class="row">
-                            @foreach($categories as $category)
-                                <div class="col-md-4 col-lg-3 mb-2">
-                                    <div class="form-check form-check-card">
+                            @foreach($categories ?? [] as $category)
+                                <div class="col-md-4">
+                                    <div class="form-check">
                                         <input class="form-check-input" type="checkbox" 
                                                name="categories[]" value="{{ $category->id }}" 
                                                id="category_{{ $category->id }}"
                                                {{ in_array($category->id, old('categories', $productCategories)) ? 'checked' : '' }}>
-                                        <label class="form-check-label d-flex align-items-center" for="category_{{ $category->id }}">
-                                            <span class="badge bg-light text-dark me-2 badge-circle badge-circle-sm">
-                                                <i class="bi bi-tag"></i>
-                                            </span>
+                                        <label class="form-check-label" for="category_{{ $category->id }}">
                                             {{ $category->name }}
                                         </label>
                                     </div>
                                 </div>
                             @endforeach
                         </div>
-                        <small class="text-muted">Selecione pelo menos uma categoria</small>
                         @error('categories')
-                            <div class="text-danger small mt-2">
-                                <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                            </div>
+                            <div class="text-danger small">{{ $message }}</div>
                         @enderror
                     </div>
 
-                    <!-- Marca -->
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h6 class="fw-semibold mb-3" style="color: var(--accent-color);">
-                                <i class="bi bi-tag me-2"></i>Marca
-                            </h6>
-                        </div>
-                    </div>
-                    <!-- Sugestões de Atributos (pelo Departamento) -->
-                    <div class="row mb-4" id="dept-attributes-section">
-                        <div class="col-12">
-                            <h6 class="fw-semibold mb-3" style="color: var(--accent-color);">
-                                <i class="bi bi-list-ul me-2"></i>Sugestões de Atributos (pelo Departamento)
-                            </h6>
-                        </div>
-                        <div class="col-12">
-                            <div class="border rounded p-3" id="deptAttributesPanel">
-                                <p class="text-muted" id="deptAttributesLoading">Carregando atributos do departamento...</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <style>
-                        /* Visual hint for department attribute values that already exist as variations */
-                        .dept-attr-checkbox.variation-exists {
-                            opacity: 0.65;
-                            cursor: not-allowed;
-                        }
-                        .dept-attr-checkbox.variation-exists + .form-check-label .badge-created {
-                            margin-left: 0.5rem;
-                        }
-                        .dept-attr-action-badge {
-                            display: inline-block;
-                            vertical-align: middle;
-                            transition: opacity 0.12s ease, transform 0.12s ease;
-                        }
-                        .dept-attr-action-badge[aria-busy="true"] {
-                            opacity: 0.6;
-                            transform: scale(0.98);
-                        }
-                    </style>
-
                     <div class="mb-3">
-                        <label for="brand_id" class="form-label">
-                            <i class="bi bi-tag-fill me-1"></i>Marca do Produto
-                        </label>
-                        <select class="form-select @error('brand_id') is-invalid @enderror"
-                                id="brand_id" name="brand_id">
-                            <option value="">— Nenhuma marca selecionada —</option>
-                            @php
-                                $brands = \App\Models\Brand::active()->orderBy('sort_order')->orderBy('name')->get();
-                            @endphp
-                            @foreach($brands as $brand)
-                                <option value="{{ $brand->id }}"
-                                        {{ old('brand_id', $product->brand_id) == $brand->id ? 'selected' : '' }}>
-                                    {{ $brand->name }}
+                        <label for="department_id" class="form-label">Departamento</label>
+                        <select class="form-select @error('department_id') is-invalid @enderror" id="department_id" name="department_id">
+                            <option value="">— Nenhum departamento selecionado —</option>
+                            @foreach($departments ?? [] as $department)
+                                <option value="{{ $department->id }}" {{ old('department_id', $product->department_id) == $department->id ? 'selected' : '' }}>
+                                    {{ $department->name }}
                                 </option>
                             @endforeach
                         </select>
-                        <small class="form-text text-muted">Selecione a marca do produto (opcional)</small>
-                        @error('brand_id')
-                            <div class="invalid-feedback">
-                                <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                            </div>
+                        <small class="form-text text-muted">Selecione o departamento do produto (opcional)</small>
+                        @error('department_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
-                    <div class="row mb-4">
-                        <div class="col-12">
-                            <h6 class="fw-semibold mb-3" style="color: var(--accent-color);">
-                                <i class="bi bi-images me-2"></i>Imagens do Produto
-                            </h6>
-                        </div>
-                    </div>
-                    
+                </div>
+            </div>
+
+            <!-- Imagens -->
+            <div class="card card-modern mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-images me-2"></i>Imagens do Produto</h6>
+                </div>
+                <div class="card-body">
                     <div class="mb-3">
-                        <label for="images" class="form-label">
-                            <i class="bi bi-cloud-upload me-1"></i>Adicionar Novas Imagens
-                        </label>
-                        <div class="dropzone p-2 rounded" id="images-dropzone">
-                            <input type="file" class="form-control @error('images') is-invalid @enderror" 
-                                   id="images" name="images[]" multiple accept="image/*">
-                            <div class="form-text mt-2">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Você pode selecionar múltiplas imagens. Formatos aceitos: JPG, PNG, GIF, WEBP, AVIF (máx. 10MB cada)
-                            </div>
-                        </div>
+                        <label for="images" class="form-label">Adicionar Imagens</label>
+                        <input type="file" class="form-control @error('images') is-invalid @enderror" 
+                               id="images" name="images[]" multiple accept="image/*">
+                        <div class="form-text">Formatos: JPG, PNG, GIF, WEBP, AVIF (máx. 10MB cada)</div>
                         @error('images')
-                            <div class="invalid-feedback">
-                                <i class="bi bi-exclamation-circle me-1"></i>{{ $message }}
-                            </div>
+                            <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
-                        
-                        <!-- Container de Imagens -->
-                        <div class="mt-3">
-                            <label class="form-label">Imagens do Produto</label>
-                            <div class="row" id="images-container">
-                                @if($product->images && count($product->images) > 0)
-                                    @foreach($product->images as $index => $image)
-                                        <div class="col-md-3 mb-2 image-item" data-image="{{ $image }}">
-                                            <div class="position-relative">
-                                                <img src="{{ asset('storage/' . $image) }}" 
-                                                     class="img-thumbnail" 
-                                                     style="width: 100%; height: 100px; object-fit: cover;">
-                                                <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" 
-                                                        onclick="removeExistingImage(this, '{{ $image }}')">
-                                                    <i class="bi bi-x"></i>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    @endforeach
-                                @endif
-                            </div>
-                            
-                            <!-- Campos hidden para manter as imagens existentes -->
-                            <div id="existing-images-inputs">
-                                @if($product->images && count($product->images) > 0)
-                                    @foreach($product->images as $image)
-                                        <input type="hidden" name="existing_images[]" value="{{ $image }}" class="existing-image-input">
-                                    @endforeach
-                                @endif
-                            </div>
-                            <!-- Campo para indicar quando todas as imagens foram removidas -->
-                            <input type="hidden" name="all_images_removed" value="0" id="all-images-removed">
-                        </div>
                     </div>
 
-                    <!-- Informações Adicionais (Marca removida) -->
-                    <div class="row">
+                    @if($product->images && count($product->images) > 0)
+                        <div class="mb-3">
+                            <label class="form-label">Imagens Atuais</label>
+                            <div class="row g-2" id="existing-images-container">
+                                @foreach($product->images as $idx => $img)
+                                    <div class="col-md-3 existing-image-item" data-image-path="{{ $img }}">
+                                        <div class="position-relative">
+                                            <img src="{{ strpos($img,'http')===0 ? $img : asset('storage/'.$img) }}" 
+                                                 class="img-thumbnail w-100" 
+                                                 style="height: 100px; object-fit: cover;">
+                                            <button type="button" 
+                                                    class="btn btn-sm btn-danger position-absolute top-0 end-0 remove-existing-image" 
+                                                    data-image-path="{{ $img }}">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                            @if($idx === 0)
+                                                <span class="badge bg-primary position-absolute top-0 start-0 m-1">Principal</span>
+                                            @endif
+                                        </div>
+                                        <input type="hidden" name="existing_images[]" value="{{ $img }}">
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="row g-2" id="images-container"></div>
+                </div>
+            </div>
+
+            <!-- Dimensões e Modelo -->
+            <div class="card card-modern mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-rulers me-2"></i>Dimensões e Modelo</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label for="model" class="form-label">Modelo</label>
@@ -400,7 +286,6 @@
                         </div>
                     </div>
 
-                    <!-- Dimensões -->
                     <div class="row">
                         <div class="col-md-3">
                             <div class="mb-3">
@@ -443,134 +328,206 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Status -->
+            <!-- Status -->
+            <div class="card card-modern mb-4">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="bi bi-toggle-on me-2"></i>Status</h6>
+                </div>
+                <div class="card-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" 
-                                           id="is_active" name="is_active" value="1"
-                                           {{ old('is_active', $product->is_active) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="is_active">
-                                        Produto Ativo
-                                    </label>
-                                </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="is_active" name="is_active" value="1"
+                                       {{ old('is_active', $product->is_active) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="is_active">
+                                    Produto Ativo
+                                </label>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-3">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" 
-                                           id="is_featured" name="is_featured" value="1"
-                                           {{ old('is_featured', $product->is_featured) ? 'checked' : '' }}>
-                                    <label class="form-check-label" for="is_featured">
-                                        Produto em Destaque
-                                    </label>
-                                </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" 
+                                       id="is_featured" name="is_featured" value="1"
+                                       {{ old('is_featured', $product->is_featured) ? 'checked' : '' }}>
+                                <label class="form-check-label" for="is_featured">
+                                    Produto em Destaque
+                                </label>
                             </div>
                         </div>
                     </div>
-
-                    <hr class="my-4">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="text-muted">
-                            <i class="bi bi-info-circle me-1"></i>
-                            Campos marcados com * são obrigatórios
-                        </div>
-                        <div class="d-flex gap-2">
-                            <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left me-1"></i> Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-check-circle me-1"></i> Atualizar Produto
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                </div>
             </div>
-        </div>
+
+            <!-- Botões de Ação -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div class="text-muted">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Campos marcados com * são obrigatórios
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-accent">
+                        <i class="bi bi-check-circle me-1"></i> Atualizar Produto
+                    </button>
+                </div>
+            </div>
+        </form>
     </div>
 
-    <div class="col-lg-4">
-        <div class="card">
-            <div class="card-header d-flex align-items-center">
-                <i class="bi bi-info-square me-2" style="color: var(--accent-color);"></i>
-                <h5 class="card-title mb-0">Informações do Produto</h5>
-            </div>
-            <div class="card-body">
-                <div class="mb-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-upc-scan text-muted me-2"></i>
-                        <div>
-                            <small class="text-muted">SKU</small>
-                            <div class="fw-semibold">{{ $product->sku }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-calendar-plus text-muted me-2"></i>
-                        <div>
-                            <small class="text-muted">Criado em</small>
-                            <div class="fw-semibold">{{ $product->created_at->format('d/m/Y H:i') }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-calendar-check text-muted me-2"></i>
-                        <div>
-                            <small class="text-muted">Última atualização</small>
-                            <div class="fw-semibold">{{ $product->updated_at->format('d/m/Y H:i') }}</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <div class="d-flex align-items-center">
-                        <i class="bi bi-toggle-on text-muted me-2"></i>
-                        <div>
-                            <small class="text-muted">Status</small>
-                            <div>
-                                <span class="badge {{ $product->is_active ? 'bg-success' : 'bg-danger' }}">
-                                    <i class="bi bi-{{ $product->is_active ? 'check-circle' : 'x-circle' }} me-1"></i>
-                                    {{ $product->is_active ? 'Ativo' : 'Inativo' }}
-                                </span>
+    <!-- COLUNA DIREITA: PREVIEW E AÇÕES -->
+    <div class="product-edit-sidebar">
+        <!-- Preview do Produto -->
+        <div class="card card-modern mb-3">
+            <div class="card-body p-3 text-center">
+                <div id="productCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-inner rounded" style="overflow:hidden;">
+                        @php $first = true; @endphp
+                        @if($product->images && count($product->images) > 0)
+                            @foreach($product->images as $img)
+                                <div class="carousel-item {{ $first ? 'active' : '' }}">
+                                    <img src="{{ strpos($img,'http')===0 ? $img : asset('storage/'.$img) }}" 
+                                         class="d-block w-100" 
+                                         style="height:180px; object-fit:cover;">
+                                </div>
+                                @php $first = false; @endphp
+                            @endforeach
+                        @else
+                            <div class="carousel-item active">
+                                <img src="{{ asset('images/no-image.svg') }}" 
+                                     class="d-block w-100" 
+                                     style="height:180px; object-fit:contain; background:#f8fafc; padding:12px;">
                             </div>
-                        </div>
+                        @endif
                     </div>
+                    @if($product->images && count($product->images) > 1)
+                        <button class="carousel-control-prev" type="button" data-bs-target="#productCarousel" data-bs-slide="prev">
+                            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Anterior</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#productCarousel" data-bs-slide="next">
+                            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                            <span class="visually-hidden">Próximo</span>
+                        </button>
+                    @endif
                 </div>
-                @if($product->is_featured)
-                    <div class="mb-3">
-                        <div class="d-flex align-items-center">
-                            <i class="bi bi-star text-muted me-2"></i>
-                            <div>
-                                <span class="badge bg-warning">
-                                    <i class="bi bi-star-fill me-1"></i>Produto em Destaque
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                @endif
+                <h5 class="mt-3 mb-0">{{ $product->name }}</h5>
+                <p class="text-muted small mb-0">SKU: {{ $product->sku }} • ID: {{ $product->id }}</p>
             </div>
         </div>
 
-        <div class="card mt-3">
-            <div class="card-header d-flex align-items-center">
-                <i class="bi bi-lightbulb text-warning me-2"></i>
-                <h5 class="card-title mb-0">Dicas</h5>
+        <!-- Preview de Preço -->
+        <div class="card card-modern mb-3" id="pricePreviewCard" x-data="pricePreview()">
+            <div class="card-body p-3">
+                <h6 class="fw-semibold mb-2">Pré-visualização de Preço</h6>
+                <div class="small text-muted mb-3">Valores ao vivo com base nos campos</div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="text-muted">Custo</div>
+                    <div class="fw-semibold" x-text="formatCurrency(cost)"></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="text-muted">Preço</div>
+                    <div class="fw-semibold" x-text="formatCurrency(price)"></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="text-muted">Lucro (R$)</div>
+                    <div class="fw-semibold" x-text="formatCurrency(profit)"></div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="text-muted">Margem</div>
+                    <div class="fw-semibold" x-text="margin + '%'"></div>
+                </div>
+                <div class="d-grid gap-2">
+                    <button @click="applyMarkup(30)" type="button" class="btn btn-sm btn-outline-info">Aplicar Markup 30%</button>
+                    <button @click="applyMarkup(50)" type="button" class="btn btn-sm btn-outline-secondary">Aplicar Markup 50%</button>
+                </div>
             </div>
-            <div class="card-body">
-                <div class="alert alert-info border-0">
-                    <h6 class="alert-heading">
-                        <i class="bi bi-info-circle me-1"></i>Informações Importantes
-                    </h6>
-                    <ul class="mb-0 small">
-                        <li class="mb-1">O SKU deve ser único para cada produto</li>
-                        <li class="mb-1">Selecione pelo menos uma categoria</li>
-                        <li class="mb-1">O preço B2B é opcional</li>
-                        <li class="mb-1">As imagens devem ter boa qualidade</li>
-                    </ul>
+            <script>
+            function pricePreview() {
+                return {
+                    cost: @json($product->cost_price ?? 0),
+                    price: @json($product->price ?? 0),
+                    get profit() { return this.price - this.cost; },
+                    get margin() {
+                        if (this.cost === 0) return 0;
+                        return ((this.profit / this.cost) * 100).toFixed(1);
+                    },
+                    formatCurrency(value) {
+                        return value ? 'R$ ' + value.toLocaleString('pt-BR', {minimumFractionDigits: 2}) : '-';
+                    },
+                    applyMarkup(percent) {
+                        if (this.cost > 0) {
+                            const newPrice = this.cost * (1 + percent / 100);
+                            document.getElementById('price').value = newPrice.toFixed(2);
+                            this.price = newPrice;
+                        }
+                    },
+                    init() {
+                        const costInput = document.getElementById('cost_price');
+                        const priceInput = document.getElementById('price');
+                        if (costInput) {
+                            costInput.addEventListener('input', (e) => {
+                                this.cost = parseFloat(e.target.value) || 0;
+                            });
+                        }
+                        if (priceInput) {
+                            priceInput.addEventListener('input', (e) => {
+                                this.price = parseFloat(e.target.value) || 0;
+                            });
+                        }
+                    }
+                }
+            }
+            </script>
+        </div>
+
+        <!-- Status e Estoque -->
+        <div class="card card-modern mb-3">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <small class="text-muted d-block">Status</small>
+                        <span id="statusBadge" class="badge {{ $product->is_active ? 'bg-success' : 'bg-danger' }}">
+                            {{ $product->is_active ? 'Ativo' : 'Inativo' }}
+                        </span>
+                    </div>
+                    <button id="quickToggleActive" class="btn btn-sm btn-outline-primary">
+                        {{ $product->is_active ? 'Desativar' : 'Ativar' }}
+                    </button>
+                </div>
+                <div class="row text-center">
+                    <div class="col-6 border-end">
+                        <small class="text-muted d-block">Estoque</small>
+                        <div class="fw-semibold mt-1">{{ $product->stock_quantity }}</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted d-block">Min. Alerta</small>
+                        <div class="fw-semibold mt-1">{{ $product->min_stock ?? '-' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ações Rápidas -->
+        <div class="card card-modern">
+            <div class="card-body p-3">
+                <h6 class="mb-2">Ações Rápidas</h6>
+                <div class="d-grid gap-2">
+                    <button id="openVariationsManager" type="button" class="btn btn-outline-secondary" 
+                            data-bs-toggle="modal" data-bs-target="#variationsModal" data-product-id="{{ $product->id }}">
+                        <i class="bi bi-list-ul me-2"></i> Gerenciar Variações
+                    </button>
+                    <a href="{{ route('admin.products.clone', $product) }}" class="btn btn-outline-info">
+                        <i class="bi bi-files me-2"></i> Clonar Produto
+                    </a>
+                    <a href="{{ route('admin.products.index') }}" class="btn btn-light">
+                        <i class="bi bi-arrow-left me-2"></i> Voltar à lista
+                    </a>
                 </div>
             </div>
         </div>
@@ -578,702 +535,175 @@
 </div>
 
 @push('modals')
-    @include('admin.products.modals.variations')
+    @include('admin.products.modals.variations-shopify')
 @endpush
 
- 
+@push('scripts')
+<script src="{{ asset('js/admin/simple-variations.js') }}"></script>
+
+<!-- Script de Diagnóstico Automatizado -->
 <script>
-// Aguardar o DOM carregar
+console.log('=== INÍCIO DO DIAGNÓSTICO AUTOMATIZADO ===');
+
+// Função para verificar o estado das funções
+function verificarEstado() {
+    console.log('VERIFICAÇÃO DE ESTADO:', {
+        timestamp: new Date().toISOString(),
+        url: window.location.href,
+        readyState: document.readyState,
+        addAttributeDisponivel: typeof window.addAttribute !== 'undefined',
+        removeAttributeDisponivel: typeof window.removeAttribute !== 'undefined',
+        modalExiste: !!document.getElementById('variationsModal'),
+        containerExiste: !!document.getElementById('attributesContainer'),
+        botaoAdicionarExiste: !!document.querySelector('button[onclick*="addAttribute"]'),
+        simpleGeneratorExiste: !!window.simpleGenerator
+    });
+}
+
+// Verificar imediatamente
+verificarEstado();
+
+// Verificar quando o DOM estiver pronto
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOMContentLoaded executado');
+        verificarEstado();
+        
+        // Verificar após um pequeno delay
+        setTimeout(verificarEstado, 100);
+        setTimeout(verificarEstado, 500);
+        setTimeout(verificarEstado, 1000);
+    });
+} else {
+    console.log('DOM já estava pronto');
+    verificarEstado();
+    setTimeout(verificarEstado, 100);
+    setTimeout(verificarEstado, 500);
+    setTimeout(verificarEstado, 1000);
+}
+
+// Verificar quando o modal for aberto
+document.addEventListener('shown.bs.modal', function(e) {
+    if (e.target.id === 'variationsModal') {
+        console.log('Modal variationsModal foi aberto');
+        verificarEstado();
+        
+        // Testar o clique no botão após 100ms
+        setTimeout(() => {
+            const botao = document.querySelector('button[onclick*="addAttribute"]');
+            if (botao) {
+                console.log('Botão encontrado, testando clique...');
+                try {
+                    botao.click();
+                    console.log('Clique executado com sucesso');
+                } catch (error) {
+                    console.error('ERRO AO CLICAR NO BOTÃO:', error);
+                }
+            } else {
+                console.error('Botão addAttribute não encontrado no modal');
+            }
+        }, 100);
+    }
+});
+
+// Verificar quando o script simple-variations for carregado
+window.addEventListener('load', function() {
+    console.log('Window.load executado');
+    verificarEstado();
+});
+
+// Monitorar mudanças no DOM
+const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+        if (mutation.type === 'childList') {
+            mutation.addedNodes.forEach(function(node) {
+                if (node.nodeType === 1) {
+                    if (node.id === 'variationsModal' || (node.querySelector && node.querySelector('#variationsModal'))) {
+                        console.log('Modal detectado no DOM via MutationObserver');
+                        verificarEstado();
+                    }
+                }
+            });
+        }
+    });
+});
+
+observer.observe(document.body, {
+    childList: true,
+    subtree: true
+});
+
+console.log('Diagnóstico automatizado iniciado');
+</script>
+@endpush
+
+<script src="{{ asset('js/admin-product-edit.js') }}"></script>
+<script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Script de imagens e preços carregado');
-    
-    const productId = @json($product->id ?? null);
-    const CSRF_TOKEN = (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
-    
-    // ========== FUNCIONALIDADE DE CÁLCULO DE PREÇOS EM TEMPO REAL ==========
-    
-    // Elementos dos campos de preço
-    const priceInput = document.getElementById('price');
-    const b2bPriceInput = document.getElementById('b2b_price');
-    const costPriceInput = document.getElementById('cost_price');
-    
-    function normalizePrice(value) {
-        if (!value && value !== 0) {
-            return null;
-        }
-
-        let cleanValue = value.toString().trim();
-        cleanValue = cleanValue.replace(/[^0-9,.-]/g, '');
-        cleanValue = cleanValue.replace('\u00a0', '').replace('\u00a0', '');
-
-        if (cleanValue === '' || cleanValue === ',') {
-            return null;
-        }
-
-        const commaCount = (cleanValue.match(/,/g) || []).length;
-        const dotCount = (cleanValue.match(/\./g) || []).length;
-
-        if (commaCount > 1 || dotCount > 1) {
-            cleanValue = cleanValue.replace(/\./g, '');
-            cleanValue = cleanValue.replace(/,/g, '.');
-        } else if (commaCount === 1 && dotCount === 0) {
-            cleanValue = cleanValue.replace(/,/g, '.');
-        } else if (dotCount === 1 && commaCount === 0) {
-            cleanValue = cleanValue.replace(/\./g, '.');
-        } else if (commaCount === 1 && dotCount === 1) {
-            const commaIndex = cleanValue.indexOf(',');
-            const dotIndex = cleanValue.indexOf('.');
-            if (commaIndex > dotIndex) {
-                cleanValue = cleanValue.replace(/\./g, '');
-                cleanValue = cleanValue.replace(/,/g, '.');
-            } else {
-                cleanValue = cleanValue.replace(/,/g, '');
-            }
-        } else {
-            cleanValue = cleanValue.replace(/\./g, '');
-        }
-
-        const parsed = parseFloat(cleanValue);
-        return isNaN(parsed) ? null : parsed;
-    }
-    
-    // Função para formatar valores monetários
-    function formatCurrency(value) {
-        if (value === null || value === undefined || value === '') {
-            return '';
-        }
-        const numberValue = typeof value === 'number' ? value : parseFloat(value);
-        if (isNaN(numberValue)) {
-            return '';
-        }
-        return numberValue.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    }
-    
-    // Função para atualizar preço baseado no custo
-    function updateCostPriceFromServer(costPrice) {
-        if (!productId || !costPrice || costPrice <= 0) {
-            return;
-        }
-
-        const loaderClass = 'is-loading';
-        costPriceInput.classList.add(loaderClass);
-        costPriceInput.disabled = true;
-
-        fetch(`/admin/products/${productId}/update-cost-price`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': CSRF_TOKEN,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-                cost_price: costPrice
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success && data.product) {
-                const { cost_price, b2c_price, b2b_price } = data.product;
-                if (costPriceInput) {
-                    costPriceInput.value = cost_price ?? formatCurrency(costPrice);
-                }
-                if (priceInput && b2c_price) {
-                    priceInput.value = b2c_price;
-                }
-                if (b2bPriceInput && b2b_price) {
-                    b2bPriceInput.value = b2b_price;
-                }
-                costPriceInput.classList.add('border-success');
-                setTimeout(() => costPriceInput.classList.remove('border-success'), 2000);
-            } else {
-                throw new Error(data.message || 'Erro ao atualizar preços');
-            }
-        })
-        .catch(error => {
-            console.error('Erro ao atualizar custo:', error);
-            alert('Erro ao atualizar preços com base no custo. Tente novamente.');
-        })
-        .finally(() => {
-            costPriceInput.disabled = false;
-            costPriceInput.classList.remove(loaderClass);
-        });
-    }
-    
-    // Função para atualizar preço B2B automaticamente local
-    function updateB2BPrice() {
-        if (priceInput && b2bPriceInput && priceInput.value) {
-            const normalized = normalizePrice(priceInput.value);
-            if (normalized !== null) {
-                const newB2BPrice = normalized * 0.9;
-                b2bPriceInput.value = formatCurrency(newB2BPrice);
-            }
-        }
-    }
-    
-    // Função para calcular preço baseado no custo e markup padrão
-    function calculatePriceFromCost() {
-        const normalizedCost = normalizePrice(costPriceInput.value);
-        if (normalizedCost !== null) {
-            updateCostPriceFromServer(normalizedCost);
-        }
-    }
-    
-    if (priceInput) {
-        priceInput.addEventListener('blur', function() {
-            this.value = formatCurrency(normalizePrice(this.value));
-            updateB2BPrice();
-        });
-    }
-    
-    if (costPriceInput) {
-        costPriceInput.addEventListener('blur', function() {
-            const normalizedCost = normalizePrice(this.value);
-            if (normalizedCost !== null && normalizedCost > 0) {
-                this.value = formatCurrency(normalizedCost);
-                updateCostPriceFromServer(normalizedCost);
-            } else {
-                this.value = '';
-            }
-        });
-    }
-    
-    if (b2bPriceInput) {
-        b2bPriceInput.addEventListener('blur', function() {
-            this.value = formatCurrency(normalizePrice(this.value));
-        });
-    }
-    
-    // Botão para calcular preço baseado no custo
-    const calculatePriceBtn = document.createElement('button');
-    calculatePriceBtn.type = 'button';
-    calculatePriceBtn.className = 'btn btn-outline-info btn-sm mt-2';
-    calculatePriceBtn.innerHTML = '<i class="bi bi-calculator me-1"></i>Calcular Preço (30% markup)';
-    calculatePriceBtn.onclick = calculatePriceFromCost;
-    
-    // Adicionar botão após o campo de preço de custo
-    if (costPriceInput && costPriceInput.parentNode) {
-        costPriceInput.parentNode.appendChild(calculatePriceBtn);
-    }
-    
-    // ========== FUNCIONALIDADE DE IMAGENS ==========
-    // Seguindo a mesma lógica simples dos selos de categorias
-    
+    // Preview de imagens
     const imageInput = document.getElementById('images');
     const container = document.getElementById('images-container');
     
     if (imageInput && container) {
-        console.log('✅ Campo de imagens e container encontrados');
-        
-        // Armazenar referência aos arquivos selecionados
-        let selectedFiles = [];
-        
-        // Adicionar preview das novas imagens selecionadas
         imageInput.addEventListener('change', function(e) {
             const files = e.target.files;
+            if (!files || files.length === 0) return;
             
-            if (!files || files.length === 0) {
-                return;
-            }
-            
-            console.log('📸 Arquivos selecionados:', files.length);
-            
-            // Limpar previews anteriores de novas imagens
-            const newImagePreviews = container.querySelectorAll('.new-image-preview');
-            newImagePreviews.forEach(preview => preview.remove());
-            
-            // Adicionar novos arquivos à lista
-            selectedFiles = Array.from(files);
-            
-            // Adicionar preview das novas imagens
-            selectedFiles.forEach((file, index) => {
-                console.log(`📷 Processando arquivo ${index + 1}:`, file.name);
-                
-                if (file.type.startsWith('image/') || file.name.toLowerCase().endsWith('.avif')) {
+            container.innerHTML = '';
+            Array.from(files).forEach((file, index) => {
+                if (file.type.startsWith('image/')) {
                     const reader = new FileReader();
-                    
                     reader.onload = function(e) {
                         const col = document.createElement('div');
-                        col.className = 'col-md-3 mb-2 new-image-preview';
-                        col.setAttribute('data-file-name', file.name);
+                        col.className = 'col-md-3 mb-2';
                         col.innerHTML = `
                             <div class="position-relative">
-                                <img src="${e.target.result}" 
-                                     class="img-thumbnail" 
-                                     style="width: 100%; height: 100px; object-fit: cover; cursor: pointer;"
-                                     alt="Preview ${file.name}">
-                                <span class="badge bg-success position-absolute top-0 start-0 badge-circle badge-circle-sm m-2">Nova</span>
-                                <button type="button" 
-                                        class="btn btn-sm btn-danger position-absolute top-0 end-0" 
-                                        onclick="removeNewImagePreview(this, '${file.name}')">
-                                    <i class="bi bi-x"></i>
-                                </button>
+                                <img src="${e.target.result}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;">
+                                <span class="badge bg-success position-absolute top-0 start-0 m-1">Nova</span>
                             </div>
                         `;
                         container.appendChild(col);
-                        console.log('✅ Preview adicionado para:', file.name);
                     };
-                    
-                    reader.onerror = function() {
-                        console.error('❌ Erro ao ler arquivo:', file.name);
-                    };
-                    
                     reader.readAsDataURL(file);
-                } else {
-                    console.warn('⚠️ Arquivo não é uma imagem:', file.name);
-                    alert(`O arquivo "${file.name}" não é uma imagem válida.`);
                 }
             });
         });
-    } else {
-        if (!imageInput) {
-            console.error('❌ Campo de imagens não encontrado!');
-        }
-        if (!container) {
-            console.error('❌ Container de imagens não encontrado!');
-        }
     }
-    
-    // Função para remover preview de nova imagem
-    window.removeNewImagePreview = function(button, fileName) {
-        if (confirm('Tem certeza que deseja remover esta imagem do upload?')) {
-            const preview = button.closest('.new-image-preview');
-            if (preview) {
-                preview.remove();
-                
-                // Remover o arquivo do input usando DataTransfer
-                const imageInput = document.getElementById('images');
-                if (imageInput && imageInput.files) {
-                    const dt = new DataTransfer();
-                    const files = Array.from(imageInput.files);
-                    
-                    // Remover o arquivo pelo nome
-                    const filteredFiles = files.filter(file => file.name !== fileName);
-                    
-                    // Adicionar os arquivos restantes ao DataTransfer
-                    filteredFiles.forEach(file => dt.items.add(file));
-                    
-                    // Atualizar o input
-                    imageInput.files = dt.files;
-                    
-                    console.log('🗑️ Imagem removida do upload. Arquivos restantes:', dt.files.length);
-                }
-            }
-        }
-    };
-    
-    console.log('✅ Funcionalidades de preços e imagens inicializadas!');
-});
 
-function removeExistingImage(button, imagePath) {
-    if (confirm('Tem certeza que deseja remover esta imagem?')) {
-        // Remove o elemento visual
-        const imageItem = button.closest('.image-item');
-        imageItem.remove();
-        
-        // Remove o input hidden correspondente
-        const existingInputs = document.querySelectorAll('.existing-image-input');
-        existingInputs.forEach(input => {
-            if (input.value === imagePath) {
-                input.remove();
-            }
-        });
-        
-        // Verificar se todas as imagens foram removidas
-        const remainingInputs = document.querySelectorAll('.existing-image-input');
-        if (remainingInputs.length === 0) {
-            document.getElementById('all-images-removed').value = '1';
-        }
-        
-        // Debug: verificar se o input foi removido
-        console.log('Imagem removida:', imagePath);
-        console.log('Inputs restantes:', remainingInputs.length);
-    }
-}
-
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-    try {
-        const pt = document.getElementById('product_type');
-        const stockRow = document.getElementById('stockFieldsRow');
-        const stockQty = document.getElementById('stock_quantity');
-        const minStock = document.getElementById('min_stock');
-        const apply = function(){
-            if (!pt || !stockRow) return;
-            if ((pt.value || 'physical') === 'service') {
-                stockRow.style.display = 'none';
-                if (stockQty) { stockQty.required = false; stockQty.value = '' }
-                if (minStock) { minStock.required = false; minStock.value = '' }
-            } else {
-                stockRow.style.display = '';
-                if (stockQty) stockQty.required = true;
-                if (minStock) minStock.required = true;
-            }
-        };
-        pt && pt.addEventListener('change', apply);
-        apply();
-    } catch(e) { console.debug && console.debug('product_type toggle failed', e); }
-});
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Carregar atributos do departamento do produto e renderizar painel
-    try {
-        const deptAttributesPanel = document.getElementById('deptAttributesPanel');
-        const deptAttributesLoading = document.getElementById('deptAttributesLoading');
-        const productId = @json($product->id ?? null);
-        const CSRF_TOKEN = (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '');
-        let currentDepartment = @json($product->department_id ?? null);
-
-        function renderAttributes(data) {
-            if (!deptAttributesPanel) return;
-            deptAttributesPanel.innerHTML = '';
-
-            if (!data || !data.attributes || data.attributes.length === 0) {
-                deptAttributesPanel.innerHTML = '<p class="text-muted">Nenhum atributo encontrado para este departamento.</p>';
-                return;
-            }
-
-            data.attributes.forEach(attr => {
-                const group = document.createElement('div');
-                group.className = 'mb-3';
-                const title = document.createElement('label');
-                title.className = 'form-label fw-semibold';
-                title.textContent = attr.name || attr.key;
-                group.appendChild(title);
-
-                const wrap = document.createElement('div');
-                wrap.className = 'd-flex flex-wrap gap-2';
-
-                attr.values.forEach(v => {
-                    const id = `dept-attr-${attr.key}-${v.value}`.replace(/[^a-zA-Z0-9-_]/g, '_');
-                    const div = document.createElement('div');
-                    div.className = 'form-check';
-                    div.style.minWidth = '160px';
-
-                    const input = document.createElement('input');
-                    input.type = 'checkbox';
-                    input.className = 'form-check-input dept-attr-checkbox';
-                    input.id = id;
-                    input.dataset.type = attr.key;
-                    input.dataset.value = v.value;
-
-                    const label = document.createElement('label');
-                    label.className = 'form-check-label';
-                    label.htmlFor = id;
-                    if (attr.key === 'color' && v.hex) {
-                        label.innerHTML = `<span class="me-2" style="display:inline-block;width:18px;height:14px;background:${v.hex};border:1px solid #ddd;vertical-align:middle;"></span> ${v.value}`;
-                    } else {
-                        label.textContent = v.value;
-                    }
-
-                    div.appendChild(input);
-                    div.appendChild(label);
-                    // If this value comes from central attributes, provide a small activate/deactivate button
-                    if (v.value_id && attr.attribute_id) {
-                        const actBadge = document.createElement('span');
-                        actBadge.setAttribute('role','button');
-                        actBadge.className = 'dept-attr-action-badge ms-2 ' + (v.is_active ? 'bg-success text-white' : 'bg-secondary text-white');
-                        actBadge.textContent = v.is_active ? 'Ativo' : 'Inativo';
-                        actBadge.title = v.is_active ? 'Desativar valor' : 'Ativar valor';
-                        actBadge.style.padding = '0.25rem 0.5rem';
-                        actBadge.style.fontSize = '0.75rem';
-                        actBadge.style.borderRadius = '0.25rem';
-                        actBadge.style.cursor = 'pointer';
-                        actBadge.addEventListener('click', function() {
-                            try { actBadge.setAttribute('aria-busy','true'); actBadge.style.opacity = '0.6'; actBadge.style.pointerEvents = 'none'; } catch(e) {}
-                            const shouldActivate = !v.is_active;
-                            const payload = { value: v.value };
-                            if (shouldActivate) payload.is_active = true;
-                            fetch(`/admin/attributes/${attr.attribute_id}/values/${v.value_id}`, {
-                                method: 'PATCH',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                    'X-CSRF-TOKEN': CSRF_TOKEN,
-                                    'Accept': 'application/json'
-                                },
-                                body: JSON.stringify(payload)
-                            }).then(resp => {
-                                fetchAndRenderForDepartment(currentDepartment);
-                            }).catch(err => {
-                                console.error('Erro ao alternar ativo do valor:', err);
-                                fetchAndRenderForDepartment(currentDepartment);
-                            }).finally(() => { try { actBadge.removeAttribute('aria-busy'); actBadge.style.opacity = ''; actBadge.style.pointerEvents = ''; } catch(e) {} });
-                        });
-                        div.appendChild(actBadge);
-                    }
-                    wrap.appendChild(div);
-                });
-
-                group.appendChild(wrap);
-                deptAttributesPanel.appendChild(group);
-            });
-
-            // Botões de ação
-            const actions = document.createElement('div');
-            actions.className = 'd-flex gap-2 mt-2';
-            const addBtn = document.createElement('button');
-            addBtn.type = 'button';
-            addBtn.className = 'btn btn-sm btn-primary';
-            addBtn.textContent = 'Adicionar valores selecionados como variações';
-            addBtn.addEventListener('click', applySelectedAttributes);
-
-            const openModalBtn = document.createElement('button');
-            openModalBtn.type = 'button';
-            openModalBtn.className = 'btn btn-sm btn-outline-secondary';
-            openModalBtn.textContent = 'Abrir Gerenciador de Variações';
-            openModalBtn.addEventListener('click', function() {
-                const modalEl = document.getElementById('variationsModal');
-                if (modalEl) {
-                    const modal = new bootstrap.Modal(modalEl);
-                    // set product id on the hidden input so modal JS can detect product
-                    try {
-                        const prodIdInput = document.getElementById('variationsProductId');
-                        if (prodIdInput) prodIdInput.value = productId;
-                        const btn = document.querySelector('[data-bs-target="#variationsModal"]');
-                        if (btn) btn.setAttribute('data-product-id', productId);
-                    } catch (e) { console.debug && console.debug('could not set product id on modal opener', e); }
-                    // show modal
-                    modal.show();
-                }
-            });
-
-            const refreshBtn = document.createElement('button');
-            refreshBtn.type = 'button';
-            refreshBtn.className = 'btn btn-sm btn-outline-info';
-            refreshBtn.textContent = 'Atualizar atributos';
-            refreshBtn.addEventListener('click', function(){ fetchAndRenderForDepartment(currentDepartment); });
-
-            actions.appendChild(addBtn);
-            actions.appendChild(refreshBtn);
-            actions.appendChild(openModalBtn);
-            deptAttributesPanel.appendChild(actions);
-
-            // Use centralized sync function (defined in resources/js/admin/variations.js)
-            try {
-                if (window.syncDeptAttributesWithVariations && productId) {
-                    window.syncDeptAttributesWithVariations(productId);
-                }
-            } catch (e) { console.debug && console.debug('sync call failed', e); }
-        }
-
-        function applySelectedAttributes() {
-            const checkboxes = Array.from(document.querySelectorAll('.dept-attr-checkbox')).filter(cb => cb.checked);
-            if (checkboxes.length === 0) {
-                alert('Selecione ao menos um valor para adicionar.');
-                return;
-            }
-
-            if (!confirm(`Adicionar ${checkboxes.length} valor(es) selecionado(s) como variações deste produto?`)) {
-                return;
-            }
-            // Group selected values by attribute type
-            const groups = {};
-            checkboxes.forEach(cb => {
-                const type = cb.dataset.type;
-                const value = cb.dataset.value;
-                if (!groups[type]) groups[type] = [];
-                groups[type].push(value);
-            });
-
-            // Build arrays for cartesian product
-            const keys = Object.keys(groups);
-            const arrays = keys.map(k => groups[k].map(v => ({ key: k, value: v })));
-
-            function cartesianProduct(arr) {
-                return arr.reduce((a, b) => a.flatMap(d => b.map(e => d.concat([e]))), [[]]);
-            }
-
-            // Normaliza uma chave para um slug seguro (ex: "Armazenamento" -> "armazenamento")
-            function slugify(str) {
-                return String(str || '')
-                    .toLowerCase()
-                    .normalize('NFD').replace(/[^\w\s-]/g, '')
-                    .replace(/\s+/g, '_')
-                    .replace(/[^a-z0-9_-]/g, '')
-                    .replace(/^_+|_+$/g, '');
-            }
-
-            // Gerar combos mantendo a relação atributo->valor de forma genérica
-            const combos = cartesianProduct(arrays).map(combo => {
-                const attrs = {};
-                combo.forEach(c => {
-                    const slug = slugify(c.key);
-                    // se houver chaves duplicadas por alguma razão, última vence
-                    attrs[slug] = c.value;
-                });
-                return attrs;
-            });
-
-            // Para o resumo/aviso, mostrar nomes originais dos atributos
-            const attributeNames = keys.map(k => k);
-
-            // Warn if too many
-            if (combos.length > 300) {
-                if (!confirm(`Serão criadas ${combos.length} variações. Continuar?`)) return;
-            }
-
-            // Post combos to bulk endpoint
-            const csrf = CSRF_TOKEN;
-            fetch(`/admin/products/${productId}/variations/bulk-add`, {
+    // Quick toggle active
+    const quickToggle = document.getElementById('quickToggleActive');
+    if (quickToggle) {
+        quickToggle.addEventListener('click', function() {
+            const newState = {{ $product->is_active ? '0' : '1' }};
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            quickToggle.disabled = true;
+            quickToggle.textContent = 'Aguarde...';
+            
+            fetch(`/admin/products/{{ $product->id }}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'X-CSRF-TOKEN': csrf,
                     'Accept': 'application/json'
                 },
-                body: JSON.stringify({ combos })
-            }).then(r => r.json())
+                body: JSON.stringify({ _method: 'PUT', is_active: newState })
+            })
+            .then(r => r.json())
             .then(data => {
                 if (data && data.success) {
-                    alert(`Operação concluída. ${data.created} nova(s) variação(ões) criada(s).`);
-                    const variationsModalEl = document.getElementById('variationsModal');
-                    if (variationsModalEl && bootstrap.Modal.getInstance(variationsModalEl)) {
-                        const prodIdInput = document.getElementById('variationsProductId');
-                        if (prodIdInput) loadVariations(prodIdInput.value);
+                    const badge = document.getElementById('statusBadge');
+                    if (badge) {
+                        badge.className = newState == '1' ? 'badge bg-success' : 'badge bg-danger';
+                        badge.textContent = newState == '1' ? 'Ativo' : 'Inativo';
                     }
-                    // Recarregar painel de atributos do departamento para sincronizar estados
-                    try {
-                        // Recarrega a lista de atributos do departamento
-                        if (typeof fetchAndRenderForDepartment === 'function') {
-                            fetchAndRenderForDepartment(currentDepartment);
-                        }
-
-                        // Além disso, buscar variações do produto para marcar valores já criados
-                        fetch(`/admin/products/${productId}/variations`, { headers: { 'Accept': 'application/json' } })
-                            .then(resp => resp.json())
-                            .then(vdata => {
-                                if (vdata && vdata.attribute_groups) {
-                                    // construir lookup de tipos->set(declared names)
-                                    const lookup = {};
-                                    Object.keys(vdata.attribute_groups).forEach(type => {
-                                        lookup[type] = new Set((vdata.attribute_groups[type] || []).map(i => (i.name || '').toString().toLowerCase()));
-                                    });
-
-                                    // Para cada checkbox do painel, se existir na lookup, adicionar classe 'variation-exists'
-                                    document.querySelectorAll('.dept-attr-checkbox').forEach(cb => {
-                                        const type = (cb.dataset.type || '').toString();
-                                        const val = (cb.dataset.value || '').toString().toLowerCase();
-                                        if (lookup[type] && lookup[type].has(val)) {
-                                                cb.classList.add('variation-exists');
-                                                // Desabilitar automaticamente para evitar cliques repetidos
-                                                try { cb.disabled = true; cb.setAttribute('aria-disabled','true'); } catch(e) {}
-                                                const label = cb.nextElementSibling || cb.closest('label') || null;
-                                                if (label && !label.querySelector('.badge-created')) {
-                                                    const badge = document.createElement('span');
-                                                    badge.className = 'badge bg-success ms-2 badge-created';
-                                                    badge.style.fontSize = '0.7em';
-                                                    const ts = (new Date()).toLocaleString();
-                                                    badge.textContent = 'Criada';
-                                                    badge.setAttribute('title', `Criada em ${ts}`);
-                                                    label.appendChild(badge);
-                                                }
-                                            }
-                                    });
-                                }
-                                }).catch(e => console.debug && console.debug('Erro ao sincronizar variações:', e));
-                    } catch (e) { console.debug && console.debug('Erro na pós-sincronização de atributos:', e); }
-                } else {
-                    console.error('bulk-add failed', data);
-                    alert('Erro ao criar variações em lote. Veja console para detalhes.');
+                    quickToggle.textContent = newState == '1' ? 'Desativar' : 'Ativar';
                 }
-            }).catch(err => {
-                console.error(err);
-                alert('Erro ao criar variações. Veja console para detalhes.');
-            });
-        }
-
-        if (!deptAttributesPanel) return;
-
-        function fetchAndRenderForDepartment(dept) {
-            if (!dept) {
-                deptAttributesPanel.innerHTML = '<p class="text-muted">Produto sem departamento definido. Atribua um departamento para obter sugestões.</p>';
-                return;
-            }
-
-            deptAttributesPanel.innerHTML = '<p class="text-muted">Carregando atributos do departamento...</p>';
-            fetch(`/admin/attributes/list?department=${dept}`, { headers: { 'Accept': 'application/json' } })
-                .then(response => response.json())
-                .then(data => {
-                    console.debug && console.debug('DEBUG: attributesList response for department', dept, data);
-                    renderAttributes(data);
-                })
-                .catch(error => {
-                    console.error('Erro ao carregar atributos do departamento:', error);
-                    deptAttributesPanel.innerHTML = '<p class="text-muted text-danger">Erro ao carregar atributos. Verifique o console.</p>';
-                });
-        }
-
-        // Inicialização: carregar para o departamento atual (se houver)
-        if (deptAttributesPanel) {
-            fetchAndRenderForDepartment(currentDepartment);
-            // Listen for variation updates from modal/js and re-sync panel
-            document.addEventListener('variations:updated', function(e){
-                try {
-                    const pid = (e && e.detail && e.detail.productId) ? e.detail.productId : productId;
-                    if (window.syncDeptAttributesWithVariations) window.syncDeptAttributesWithVariations(pid);
-                } catch (err) { console.debug && console.debug('variations:updated handler failed', err); }
-            });
-        }
-
-        // Sincronizar quando o departamento mudar. Suporta select[name="department_id"], #qpDepartment e input combobox #qpDeptCombo
-        function bindDepartmentChange() {
-            const selectors = [document.querySelector('select[name="department_id"]'), document.getElementById('qpDepartment'), document.getElementById('qpDeptCombo'), document.getElementById('department_id')];
-            selectors.forEach(el => {
-                if (!el) return;
-                // For text combobox we listen input+change; for select just change
-                const handler = function(e) {
-                    let val = el.value || null;
-                    // qpDeptCombo might contain text; try to find linked select value
-                    if (el.id === 'qpDeptCombo') {
-                        const sel = document.getElementById('qpDepartment');
-                        if (sel && sel.value) val = sel.value;
-                    }
-                    if (val === null || val === '') {
-                        currentDepartment = null;
-                        fetchAndRenderForDepartment(null);
-                        return;
-                    }
-                    if (val == currentDepartment) return; // sem mudança
-                    currentDepartment = val;
-                    fetchAndRenderForDepartment(currentDepartment);
-                };
-
-                el.addEventListener('change', handler);
-                el.addEventListener('input', handler);
-            });
-        }
-
-        bindDepartmentChange();
-
-        // Fallback: polling rápido para detectar mudanças em componentes customizados
-        (function startDeptPoll(){
-            let last = currentDepartment;
-            setInterval(function(){
-                const candidates = [document.querySelector('select[name="department_id"]'), document.getElementById('qpDepartment'), document.getElementById('qpDeptCombo'), document.getElementById('department_id')];
-                let found = null;
-                for (const el of candidates) {
-                    if (!el) continue;
-                    let v = el.value || null;
-                    if (el.id === 'qpDeptCombo') {
-                        const sel = document.getElementById('qpDepartment');
-                        if (sel && sel.value) v = sel.value;
-                    }
-                    if (v) { found = v; break; }
-                }
-                if ((found || null) !== last) {
-                    last = found || null;
-                    currentDepartment = last;
-                    fetchAndRenderForDepartment(currentDepartment);
-                }
-            }, 800);
-        })();
-    } catch (e) {
-        console.error('Erro no módulo de atributos do departamento:', e);
+            })
+            .catch(err => console.error(err))
+            .finally(() => { quickToggle.disabled = false; });
+        });
     }
 });
 </script>
+
 @endsection

@@ -4,32 +4,19 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use App\Models\Product;
-use App\Models\ProductVariation;
 
+/**
+ * ProductVariationController removed — kept as graceful stub to return 410 for all endpoints.
+ */
 class ProductVariationController extends Controller
 {
-    public function index(Product $product)
+    private function gone()
     {
-        $variations = $product->variations()->get();
-        return view('admin.products.variations.index', compact('product','variations'));
+        return response()->json(['message' => 'Product variations subsystem removed'], 410);
     }
 
-    public function store(Request $request, Product $product)
-    {
-        // create single variation for product
-        return back()->with('success','Variação adicionada');
-    }
-
-    public function update(Request $request, Product $product, ProductVariation $variation)
-    {
-        // update
-        return back()->with('success','Variação atualizada');
-    }
-
-    public function destroy(Product $product, ProductVariation $variation)
-    {
-        $variation->delete();
-        return back()->with('success','Variação excluída');
-    }
+    public function index(...$args) { return $this->gone(); }
+    public function store(...$args) { return $this->gone(); }
+    public function update(...$args) { return $this->gone(); }
+    public function destroy(...$args) { return $this->gone(); }
 }

@@ -56,8 +56,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/{product}/variations/add', [ProductController::class, 'addVariation'])->name('products.variations.add');
         // Bulk add full variation combinations (expects payload { combos: [{ram, storage, color}, ...] })
         Route::post('products/{product}/variations/bulk-add', [ProductController::class, 'bulkAddVariations'])->name('products.variations.bulk-add');
-        // Variations generator UI
-        Route::get('variations/generator', [App\Http\Controllers\Admin\VariationController::class, 'setGenerator'])->name('variations.generator');
+        // Variations generator UI (simple test UI)
+        Route::get('variations/generator', [App\Http\Controllers\Admin\ProductVariationGeneratorController::class, 'create'])->name('variations.generator');
+        Route::post('products/{product}/variations/generate', [App\Http\Controllers\Admin\ProductVariationGeneratorController::class, 'store'])->name('products.variations.generate');
         Route::post('products/{product}/variations/update-stock', [ProductController::class, 'updateStock'])->name('products.variations.update-stock');
         Route::post('products/{product}/variations/color-images', [ProductController::class, 'updateColorImages'])->name('products.variations.color-images');
         Route::delete('products/{product}/variations/{variationId}', [ProductController::class, 'deleteVariation'])->name('products.variations.destroy');
@@ -65,6 +66,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('products/{product}/variations/inactive/delete-all', [ProductController::class, 'deleteInactiveVariations'])->name('products.variations.delete-inactive');
         Route::post('products/{product}/variations/color-hex', [ProductController::class, 'updateColorHex'])->name('products.variations.color-hex');
         Route::post('products/variations/{variation}/update-price', [ProductController::class, 'updateVariationPrice'])->name('products.variations.update-price');
+        // Inline field update for a variation (AJAX)
+        Route::put('products/{product}/variations/{variation}', [ProductController::class, 'updateVariationField'])->name('products.variations.update-field');
         Route::post('products/{product}/update-description', [ProductController::class, 'updateDescription'])->name('products.update-description');
     Route::post('products/{product}/update-name', [ProductController::class, 'updateName'])->name('products.update-name');
         Route::get('products/{product}/images', [ProductController::class, 'getImages'])->name('products.images');

@@ -70,6 +70,17 @@
                                             @endif
                                             <div>
                                                 <strong>{{ $item->product_name }}</strong>
+                                                @if($item->product_variation)
+                                                    <div class="mt-1">
+                                                        @if($item->product_variation->attributes)
+                                                            @foreach($item->product_variation->attributes as $attribute => $value)
+                                                                <span class="badge bg-light text-dark me-1" style="font-size: 0.7rem;">
+                                                                    {{ ucfirst($attribute) }}: {{ $value }}
+                                                                </span>
+                                                            @endforeach
+                                                        @endif
+                                                    </div>
+                                                @endif
                                             </div>
                                         </div>
                                     </td>

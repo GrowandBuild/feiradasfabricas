@@ -6,17 +6,21 @@
     <p class="text-muted mb-0">Gerencie todos os produtos da loja</p>
 @endsection
 
+@section('styles')
+<link rel="stylesheet" href="{{ asset('css/admin-products-index.css') }}">
+@endsection
+
 @section('content')
 <!-- Header Melhorado -->
-<div class="card mb-4 border-0 shadow-sm" data-section-id="products-hero" style="background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);">
+<div class="products-hero modern-card" data-section-id="products-hero">
     <div class="card-body p-4">
         <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
             <div class="d-flex align-items-start align-items-md-center gap-3" style="min-width:0;">
-                <div class="rounded-circle p-3 me-3" style="background-color: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);">
-                    <i class="bi bi-box-seam" style="font-size: 1.8rem; color: white;"></i>
+                <div class="hero-icon">
+                    <i class="bi bi-box-seam"></i>
                 </div>
                 <div>
-                    <h3 class="mb-1 text-white fw-bold">Gerenciar Produtos</h3>
+                    <h3 class="hero-title">Gerenciar Produtos</h3>
                     @if(isset($departments) && $departments->count() > 0)
                         @php
                             $deptParam = request()->query('department');
@@ -44,21 +48,21 @@
                             </div>
                         </div>
                     @endif
-                    <p class="mb-0 text-white" style="opacity: 0.9;">
+                    <p class="hero-subtitle">
                         <i class="bi bi-database me-1"></i>
                         <strong>{{ $products->total() }}</strong> produtos cadastrados
                     </p>
                 </div>
             </div>
             <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto justify-content-md-end">
-                <button type="button" class="btn btn-sm btn-outline-light section-toggle-btn d-flex align-items-center gap-2" data-section-target="products-hero" aria-expanded="true" title="Recolher sessão" style="font-weight:600;">
+                <button type="button" class="btn btn-sm hero-btn-outline section-toggle-btn d-flex align-items-center gap-2" data-section-target="products-hero" aria-expanded="true" title="Recolher sessão">
                     <span class="section-toggle-label">Recolher</span>
                     <i class="bi bi-chevron-up"></i>
                 </button>
-                <a href="{{ route('admin.products.import') }}" class="btn btn-light shadow-sm w-100 w-md-auto text-center" style="font-weight: 500;">
+                <a href="{{ route('admin.products.import') }}" class="hero-btn-outline w-100 w-md-auto text-center">
                     <i class="bi bi-upload me-1"></i> Importar
                 </a>
-                <a href="{{ route('admin.products.create') }}" class="btn btn-white shadow w-100 w-md-auto text-center" style="font-weight: 600; background-color: white; color: #f97316;">
+                <a href="{{ route('admin.products.create') }}" class="hero-btn w-100 w-md-auto text-center">
                     <i class="bi bi-plus-circle me-1"></i> Novo Produto
                 </a>
             </div>
@@ -67,13 +71,13 @@
 </div>
 
 <!-- Controlador Global de Margens de Lucro - Redesenhado -->
-<div class="card mb-4 border-0 shadow-sm" data-section-id="global-margins" data-section-title="Controlador Global de Margens de Lucro" style="border-left: 4px solid #f97316 !important;">
-    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(to right, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.2);">
+<div class="modern-card" data-section-id="global-margins" data-section-title="Controlador Global de Margens de Lucro" style="border-left: 4px solid #f97316 !important;">
+    <div class="modern-card-header">
         <div class="d-flex align-items-center">
-            <div class="rounded-circle p-2 me-2" style="background-color: #f97316;">
-                <i class="bi bi-sliders" style="color: white; font-size: 1rem;"></i>
+            <div class="modern-card-header-icon">
+                <i class="bi bi-sliders"></i>
             </div>
-            <h6 class="mb-0 fw-bold" style="color: #f97316;">Controlador Global de Margens de Lucro</h6>
+            <h6 class="modern-card-title">Controlador Global de Margens de Lucro</h6>
         </div>
         <div>
             <button type="button" class="btn btn-sm btn-outline-secondary section-toggle-btn d-flex align-items-center gap-2" data-section-target="global-margins" aria-expanded="true" title="Recolher sessão">
@@ -82,7 +86,7 @@
             </button>
         </div>
     </div>
-    <div class="card-body" style="background-color: #fafafa;">
+    <div class="modern-card-body">
         <div class="row g-3 align-items-end">
             <div class="col-md-3">
                 <label class="form-label fw-semibold">
@@ -90,33 +94,31 @@
                 </label>
                 <div class="input-group">
                     <input type="text" 
-                           class="form-control" 
+                           class="form-control modern-form-control" 
                            id="global-profit-b2b" 
                            value="" 
-                           placeholder="Ex: 10"
-                           style="font-size: 1rem;">
+                           placeholder="Ex: 10">
                     <span class="input-group-text">%</span>
                 </div>
                 <small class="text-muted">Margem para clientes B2B</small>
             </div>
             <div class="col-md-3">
-                <label class="form-label fw-semibold">
-                    <i class="bi bi-percent me-1"></i>Margem de Lucro B2C (%)
+                <label class="modern-form-label">
+                    <i class="bi bi-percent"></i>Margem de Lucro B2C (%)
                 </label>
                 <div class="input-group">
                     <input type="text" 
-                           class="form-control" 
+                           class="form-control modern-form-control" 
                            id="global-profit-b2c" 
                            value="" 
-                           placeholder="Ex: 20"
-                           style="font-size: 1rem;">
+                           placeholder="Ex: 20">
                     <span class="input-group-text">%</span>
                 </div>
                 <small class="text-muted">Margem para clientes B2C</small>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-semibold">
-                    <i class="bi bi-info-circle me-1"></i>Opções de Aplicação
+                <label class="modern-form-label">
+                    <i class="bi bi-info-circle"></i>Opções de Aplicação
                 </label>
                 <div class="form-check mb-2">
                     <input class="form-check-input" type="checkbox" id="apply-to-all-products" checked>
@@ -133,9 +135,9 @@
             </div>
             <div class="col-md-2">
                 <button type="button" 
-                        class="btn w-100 fw-bold shadow-sm" 
+                        class="btn w-100 modern-btn modern-btn-primary" 
                         id="apply-global-margins"
-                        style="height: 38px; background-color: #f97316; border-color: #f97316; color: white;">
+                        style="height: 38px;">
                     <i class="bi bi-arrow-repeat me-1"></i>
                     Aplicar
                 </button>
@@ -150,13 +152,13 @@
 </div>
 
 <!-- Filtros - Redesenhado -->
-<div class="card mb-4 border-0 shadow-sm" data-section-id="filters" data-section-title="Filtros e Busca">
-    <div class="card-header d-flex justify-content-between align-items-center" style="background: linear-gradient(to right, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.15);">
+<div class="modern-card" data-section-id="filters" data-section-title="Filtros e Busca">
+    <div class="modern-card-header">
         <div class="d-flex align-items-center">
-            <div class="rounded-circle p-2 me-2" style="background-color: rgba(249, 115, 22, 0.15);">
-                <i class="bi bi-funnel" style="color: #f97316; font-size: 0.9rem;"></i>
+            <div class="modern-card-header-icon" style="background-color: rgba(249, 115, 22, 0.15); color: #f97316;">
+                <i class="bi bi-funnel"></i>
             </div>
-            <h6 class="mb-0 fw-semibold" style="color: #374151;">Filtros e Busca</h6>
+            <h6 class="modern-card-title">Filtros e Busca</h6>
         </div>
         <div>
             <button type="button" class="btn btn-sm btn-outline-secondary section-toggle-btn d-flex align-items-center gap-2" data-section-target="filters" aria-expanded="true" title="Recolher sessão">
@@ -165,13 +167,13 @@
             </button>
         </div>
     </div>
-    <div class="card-body" style="background-color: #fafafa;">
+    <div class="modern-card-body">
         <form method="GET" id="filterForm" class="row g-3">
             <div class="col-md-3">
-                <label class="form-label">
-                    <i class="bi bi-search me-1"></i>Buscar
+                <label class="modern-form-label">
+                    <i class="bi bi-search"></i>Buscar
                 </label>
-                <input type="text" class="form-control filter-input" name="search" value="{{ request('search') }}" 
+                <input type="text" class="form-control modern-form-control filter-input" name="search" value="{{ request('search') }}" 
                        placeholder="Nome, SKU ou descrição">
             </div>
             <!-- Marca filter removed per request -->
@@ -232,19 +234,19 @@
                 </select>
             </div>
             <div class="col-md-1 d-flex align-items-end">
-                <button type="submit" class="btn w-100 shadow-sm" title="Filtrar" style="background-color: #f97316; border-color: #f97316; color: white; font-weight: 500;">
+                <button type="submit" class="btn w-100 modern-btn modern-btn-primary" title="Filtrar">
                     <i class="bi bi-search"></i>
                 </button>
             </div>
         </form>
         
         @if(request()->hasAny(['search', 'category', 'status', 'stock_status', 'supplier']))
-            <div class="mt-3 p-2 d-flex align-items-center justify-content-between" style="background-color: white; border-radius: 6px; border-left: 3px solid #f97316;">
+            <div class="filter-tags">
                 <span class="text-muted me-2" style="font-size: 0.85rem;">
                     <i class="bi bi-funnel-fill me-1" style="color: #f97316;"></i>
                     <strong>Filtros ativos</strong>
                 </span>
-                <a href="{{ route('admin.products.index') }}" class="btn btn-sm shadow-sm" style="background-color: #f97316; border-color: #f97316; color: white; font-weight: 500;">
+                <a href="{{ route('admin.products.index') }}" class="btn btn-sm modern-btn modern-btn-primary">
                     <i class="bi bi-x-circle me-1"></i>Limpar filtros
                 </a>
             </div>
@@ -253,34 +255,34 @@
 </div>
 
 <!-- Lista de Produtos -->
-<div class="card border-0 shadow-sm">
+<div class="modern-card">
     <div class="card-body p-0">
         @if($products->count() > 0)
             <!-- Barra de Ações em Massa - Redesenhada -->
-            <div id="bulkActionsBar" class="m-3 p-3 rounded d-none" style="background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%); border-left: 4px solid #f97316;">
+            <div id="bulkActionsBar" class="bulk-actions-bar d-none">
                 <form id="bulkActionForm" action="{{ route('admin.products.bulk-availability') }}" method="POST">
                     @csrf
                     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
                         <div class="d-flex align-items-center">
-                            <div class="rounded-circle p-2 me-2" style="background-color: #f97316;">
-                                <i class="bi bi-check2-square" style="color: white; font-size: 1rem;"></i>
+                            <div class="modern-card-header-icon me-3">
+                                <i class="bi bi-check2-square"></i>
                             </div>
                             <div>
-                                <span id="selectedCount" class="fw-bold" style="font-size: 1.5rem; color: #f97316;">0</span>
+                                <span id="selectedCount" class="bulk-actions-count">0</span>
                                 <span class="text-muted ms-1">produto(s) selecionado(s)</span>
                             </div>
                         </div>
                         <div class="d-flex gap-2 flex-wrap">
-                            <button type="button" onclick="submitBulkAction('mark_unavailable')" class="btn btn-sm shadow-sm" style="background-color: #fbbf24; border-color: #fbbf24; color: white; font-weight: 500;">
+                            <button type="button" onclick="submitBulkAction('mark_unavailable')" class="btn btn-sm modern-btn" style="background-color: #fbbf24; border-color: #fbbf24; color: white;">
                                 <i class="bi bi-x-circle me-1"></i>Indisponível
                             </button>
-                            <button type="button" onclick="submitBulkAction('mark_available')" class="btn btn-success btn-sm shadow-sm" style="font-weight: 500;">
+                            <button type="button" onclick="submitBulkAction('mark_available')" class="btn btn-sm modern-btn badge-success">
                                 <i class="bi bi-check-circle me-1"></i>Disponível
                             </button>
-                            <button type="button" onclick="submitBulkAction('delete')" class="btn btn-danger btn-sm shadow-sm" style="font-weight: 500;">
+                            <button type="button" onclick="submitBulkAction('delete')" class="btn btn-sm modern-btn badge-danger">
                                 <i class="bi bi-trash me-1"></i>Excluir
                             </button>
-                            <button type="button" id="clearSelection" class="btn btn-outline-secondary btn-sm">
+                            <button type="button" id="clearSelection" class="btn btn-outline-secondary btn-sm modern-btn-sm">
                                 <i class="bi bi-x me-1"></i>Limpar
                             </button>
                         </div>
@@ -290,22 +292,23 @@
                 </form>
             </div>
 
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" style="font-size: 0.95rem;">
-                    <thead style="background: linear-gradient(to right, rgba(249, 115, 22, 0.08) 0%, rgba(249, 115, 22, 0.03) 100%); border-bottom: 2px solid rgba(249, 115, 22, 0.2);">
-                        <tr>
-                            <th class="text-center" style="width: 40px; padding: 16px 8px;">
-                                <input type="checkbox" id="selectAll" class="form-check-input" title="Selecionar todos" style="cursor: pointer; width: 20px; height: 20px;">
-                            </th>
-                            <th style="width: 320px; padding: 16px; font-weight: 600; color: #374151; font-size: 0.95rem;">Produto</th>
-                            <!-- Marca column removed -->
-                            <th style="width: 240px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Preço e Margens</th>
-                            <th class="text-center" style="width: 90px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Estoque</th>
-                            <th class="text-center" style="width: 120px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Variações</th>
-                            <th class="text-center" style="width: 120px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Status</th>
-                            <th class="text-center" style="width: 110px; padding: 16px 8px; font-weight: 600; color: #374151; font-size: 0.95rem;">Ações</th>
-                        </tr>
-                    </thead>
+            <div class="products-table-wrapper">
+                <div class="table-responsive">
+                    <table class="table products-table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 40px;">
+                                    <input type="checkbox" id="selectAll" class="form-check-input" title="Selecionar todos" style="cursor: pointer; width: 20px; height: 20px;">
+                                </th>
+                                <th style="width: 320px;">Produto</th>
+                                <!-- Marca column removed -->
+                                <th style="width: 240px;">Preço e Margens</th>
+                                <th class="text-center" style="width: 90px;">Estoque</th>
+                                <th class="text-center" style="width: 120px;">Variações</th>
+                                <th class="text-center" style="width: 120px;">Status</th>
+                                <th class="text-center" style="width: 110px;">Ações</th>
+                            </tr>
+                        </thead>
                     <tbody>
                         @foreach($products as $product)
                             <tr class="product-row {{ $product->is_unavailable ? 'table-secondary opacity-75' : '' }}" 
@@ -328,26 +331,21 @@
                                             @if($product->first_image)
                                                 <img src="{{ $product->first_image }}" 
                                                      alt="{{ $product->name }}" 
-                                                     class="rounded product-thumbnail" 
-                                                     style="width: 70px; height: 70px; object-fit: cover; cursor: pointer; transition: transform 0.2s;"
+                                                     class="product-thumbnail" 
                                                      data-product-id="{{ $product->id }}"
                                                      data-product-name="{{ $product->name }}"
                                                      data-bs-toggle="modal" 
                                                      data-bs-target="#imagesModal"
-                                                     onmouseover="this.style.transform='scale(1.1)'"
-                                                     onmouseout="this.style.transform='scale(1)'"
                                                      onerror="this.onerror=null; this.src='{{ asset('images/no-image.svg') }}';"
                                                      loading="lazy" decoding="async"
                                                      title="Clique para editar imagens">
                                             @else
-                                                <div class="d-flex align-items-center justify-content-center product-thumbnail rounded" 
-                                                     style="width: 70px; height: 70px; background-color: #f3f4f6; cursor: pointer; transition: transform 0.2s;"
+                                                <div class="d-flex align-items-center justify-content-center product-thumbnail" 
+                                                     style="background-color: #f3f4f6; cursor: pointer;"
                                                      data-product-id="{{ $product->id }}"
                                                      data-product-name="{{ $product->name }}"
                                                      data-bs-toggle="modal" 
                                                      data-bs-target="#imagesModal"
-                                                     onmouseover="this.style.transform='scale(1.1)'"
-                                                     onmouseout="this.style.transform='scale(1)'"
                                                      title="Clique para adicionar imagens">
                                                     <i class="bi bi-image" style="font-size: 1.2rem; color: #d1d5db;"></i>
                                                 </div>
@@ -358,12 +356,12 @@
                                         <div class="flex-grow-1" style="min-width: 0;">
                                             <!-- Título e Badge -->
                                             <div class="d-flex align-items-center gap-2 mb-2">
-                                                <div class="fw-semibold" style="font-size: 1rem; color: #1f2937; line-height: 1.3;">
+                                                <div class="product-name">
                                                     {{ Str::limit($product->name, 40) }}
                                                 </div>
                                                 @if($product->is_featured)
-                                                    <span class="badge bg-warning" style="font-size: 0.75rem; padding: 3px 7px;">
-                                                        <i class="bi bi-star-fill" style="font-size: 0.7rem;"></i>
+                                                    <span class="modern-badge badge-warning">
+                                                        <i class="bi bi-star-fill"></i>
                                                     </span>
                                                 @endif
                                             </div>
@@ -380,7 +378,7 @@
                                                  onmouseout="this.style.backgroundColor='transparent'"
                                                  title="Clique para editar descrição completa">
                                                 @if($product->description)
-                                                    <div class="description-preview" style="font-size: 0.85rem; color: #6b7280; line-height: 1.5; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 4px;">
+                                                    <div class="product-description" style="overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; margin-bottom: 4px;">
                                                         {{ $product->description }}
                                                     </div>
                                                     <small class="d-flex align-items-center" style="font-size: 0.75rem;">
@@ -531,7 +529,7 @@
                                     @endif
                                 </td>
                                 <td class="text-center" style="padding: 8px 4px;">
-                                    <div style="line-height: 1.2; cursor: pointer; transition: transform 0.2s;"
+                                    <div style="line-height: 1.2; cursor: pointer; transition: var(--transition);"
                                          class="stock-trigger"
                                          data-product-id="{{ $product->id }}"
                                          data-product-name="{{ $product->name }}"
@@ -544,15 +542,15 @@
                                          title="Clique para ajustar estoque">
                                         <span class="fw-semibold" style="font-size: 0.875rem;">{{ $product->stock_quantity }}</span>
                                         @if($product->stock_quantity <= ($product->min_stock ?? 0))
-                                            <span class="badge bg-danger d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
+                                            <span class="modern-badge badge-danger d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
                                                 <i class="bi bi-exclamation-triangle" style="font-size: 0.7rem;"></i>
                                             </span>
                                         @elseif($product->stock_quantity == 0)
-                                            <span class="badge bg-secondary d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
+                                            <span class="modern-badge badge-secondary d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
                                                 <i class="bi bi-x-circle" style="font-size: 0.7rem;"></i>
                                             </span>
                                         @else
-                                            <span class="badge bg-success d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
+                                            <span class="modern-badge badge-success d-block mt-1" style="font-size: 0.7rem; padding: 2px 4px;">
                                                 <i class="bi bi-check-circle" style="font-size: 0.7rem;"></i>
                                             </span>
                                         @endif
@@ -574,24 +572,24 @@
                                 </td>
                                 <td class="text-center" style="padding: 12px 8px;">
                                     <div style="line-height: 1.4;">
-                                        <span class="badge bg-{{ $product->is_active ? 'success' : 'danger' }} d-block" style="font-size: 0.8rem; padding: 4px 8px; margin-bottom: 4px;">
+                                        <span class="modern-badge badge-{{ $product->is_active ? 'success' : 'danger' }} d-block" style="font-size: 0.8rem; padding: 4px 8px; margin-bottom: 4px;">
                                             <i class="bi bi-{{ $product->is_active ? 'check-circle' : 'x-circle' }}" style="font-size: 0.8rem;"></i>
                                         </span>
                                         @if($product->is_unavailable)
-                                            <span class="badge bg-warning d-block" style="font-size: 0.8rem; padding: 4px 8px;">
+                                            <span class="modern-badge badge-warning d-block" style="font-size: 0.8rem; padding: 4px 8px;">
                                                 <i class="bi bi-exclamation-triangle" style="font-size: 0.8rem;"></i>
                                             </span>
                                         @endif
                                     </div>
                                 </td>
                                 <td class="text-center" style="padding: 12px 8px;">
-                                    <div class="btn-group btn-group-sm" role="group" onclick="event.stopPropagation();">
+                                    <div class="action-btn-group" onclick="event.stopPropagation();">
                                         <a href="{{ route('admin.products.show', $product) }}" 
-                                           class="btn btn-outline-info" title="Visualizar" style="padding: 6px 10px; font-size: 0.9rem;">
+                                           class="action-btn action-btn-info" title="Visualizar">
                                             <i class="bi bi-eye"></i>
                                         </a>
                                         <a href="{{ route('admin.products.edit', $product) }}" 
-                                           class="btn btn-outline-primary" title="Editar" style="padding: 6px 10px; font-size: 0.9rem;">
+                                           class="action-btn action-btn-primary" title="Editar">
                                             <i class="bi bi-pencil"></i>
                                         </a>
                                         <form action="{{ route('admin.products.destroy', $product) }}" 
@@ -599,7 +597,7 @@
                                               onsubmit="return confirm('Tem certeza que deseja excluir este produto?')">
                                             @csrf
                                             @method('DELETE')
-                                            <button type="submit" class="btn btn-outline-danger" title="Excluir" style="padding: 6px 10px; font-size: 0.9rem;">
+                                            <button type="submit" class="action-btn action-btn-danger" title="Excluir">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </form>
@@ -638,16 +636,17 @@
                         @endforeach
                     </tbody>
                 </table>
+                </div>
             </div>
 
             <!-- Paginação Melhorada -->
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-center p-4" style="background-color: #fafafa; border-top: 2px solid rgba(249, 115, 22, 0.1);">
+            <div class="modern-pagination d-flex flex-column flex-md-row justify-content-between align-items-center">
                 <div class="mb-3 mb-md-0">
-                    <p class="mb-0" style="color: #6b7280; font-size: 0.95rem;">
+                    <p class="pagination-info mb-0">
                         Mostrando 
-                        <span class="fw-bold" style="color: #f97316;">{{ $products->firstItem() ?? 0 }}</span> a 
-                        <span class="fw-bold" style="color: #f97316;">{{ $products->lastItem() ?? 0 }}</span> de 
-                        <span class="fw-bold" style="color: #f97316;">{{ $products->total() }}</span> resultados
+                        <strong>{{ $products->firstItem() ?? 0 }}</strong> a 
+                        <strong>{{ $products->lastItem() ?? 0 }}</strong> de 
+                        <strong>{{ $products->total() }}</strong> resultados
                     </p>
                 </div>
                 <div>
@@ -655,14 +654,13 @@
                 </div>
             </div>
         @else
-            <div class="text-center py-5 m-4">
-                <div class="rounded-circle d-inline-flex align-items-center justify-content-center mb-4" 
-                     style="width: 120px; height: 120px; background: linear-gradient(135deg, rgba(249, 115, 22, 0.1) 0%, rgba(249, 115, 22, 0.05) 100%);">
-                    <i class="bi bi-box" style="font-size: 3.5rem; color: #f97316;"></i>
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="bi bi-box"></i>
                 </div>
-                <h4 class="mb-3" style="color: #374151; font-weight: 600;">Nenhum produto encontrado</h4>
-                <p class="text-muted mb-4" style="font-size: 1rem;">
-                                @if(request()->hasAny(['search', 'category', 'status', 'stock_status', 'supplier']))
+                <h4 class="empty-state-title">Nenhum produto encontrado</h4>
+                <p class="empty-state-text">
+                    @if(request()->hasAny(['search', 'category', 'status', 'stock_status', 'supplier']))
                         <i class="bi bi-funnel me-1"></i>
                         Nenhum produto corresponde aos filtros aplicados.
                     @else
@@ -672,11 +670,11 @@
                 </p>
                 <div class="d-flex gap-2 justify-content-center">
                     @if(request()->hasAny(['search', 'category', 'status', 'stock_status', 'supplier']))
-                        <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary shadow-sm">
+                        <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary shadow-sm modern-btn">
                             <i class="bi bi-arrow-left me-1"></i> Limpar Filtros
                         </a>
                     @endif
-                    <a href="{{ route('admin.products.create') }}" class="btn shadow" style="background-color: #f97316; border-color: #f97316; color: white; font-weight: 500;">
+                    <a href="{{ route('admin.products.create') }}" class="btn modern-btn modern-btn-primary">
                         <i class="bi bi-plus-circle me-1"></i> Criar Produto
                     </a>
                 </div>
@@ -723,7 +721,7 @@
 
 @push('modals')
 <!-- Incluir Modal de Variações -->
-@include('admin.products.modals.variations')
+@include('admin.products.modals.variations-shopify')
 
 <!-- Incluir Modal de Imagens -->
 @include('admin.products.modals.images')

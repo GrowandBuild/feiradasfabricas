@@ -3,24 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
 
 class ProductAttributeController extends Controller
 {
-    public function index($productId)
+    private function gone()
     {
-        return view('admin.products.attributes', compact('productId'));
+        return response()->json(['message' => 'Product attributes removed'], 410);
     }
 
-    public function attach(Request $request, $productId)
-    {
-        // attach attribute value to product
-        return back()->with('success','Atributo associado ao produto');
-    }
-
-    public function detach(Request $request, $productId)
-    {
-        // detach
-        return back()->with('success','Atributo removido do produto');
-    }
+    public function index(...$args) { return $this->gone(); }
+    public function attach(...$args) { return $this->gone(); }
+    public function detach(...$args) { return $this->gone(); }
 }

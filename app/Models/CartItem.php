@@ -13,6 +13,7 @@ class CartItem extends Model
         'session_id',
         'customer_id',
         'product_id',
+        'product_variation_id',
         'quantity',
         'price',
     ];
@@ -27,6 +28,14 @@ class CartItem extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Relacionamento com variação
+     */
+    public function variation()
+    {
+        return $this->belongsTo(ProductVariation::class, 'product_variation_id');
     }
 
     /**

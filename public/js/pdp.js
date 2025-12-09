@@ -1,633 +1,912 @@
-/* PDP standalone initializer - resilient to interference */
-(function(){
-  'use strict';
+/**
+ * PDP Professional - Sistema de Variações Impecável
+ * Arquitetura moderna, performance otimizada e UX excepcional
+ * 
+ * @author Professional Developer
+ * @version 2.0.0
+ */
 
-  const BOOT = { started: true, galleryInit: false, variationInit: false, errors: [] };
-  try { window.__PDP_BOOT = BOOT; } catch(e) {}
-  try { console.log('[PDP] external script boot start'); } catch(e) {}
+(function() {
+    'use strict';
 
-  function getConfig(){
-    const el = document.getElementById('pdp-config');
-    if(!el) { console.error('[PDP] Missing #pdp-config'); return {}; }
-    try { return JSON.parse(el.textContent || '{}'); } catch(e){ console.error('[PDP] Invalid config JSON', e); return {}; }
-  }
-
-  const CONFIG = getConfig();
-  const FALLBACK_IMAGE = CONFIG.imageFallback || '/images/no-image.svg';
-
-  // Data
-  const baseProductImages = Array.isArray(CONFIG.images) ? CONFIG.images : [];
-  const variationColorImages = CONFIG.variationColorImages || {};
-  const activeVariationsData = Array.isArray(CONFIG.variationData) ? CONFIG.variationData : [];
-  const hasVariations = !!CONFIG.hasVariations;
-
-  // Build color -> hex map
-  const colorHexMap = activeVariationsData.reduce((acc, variation) => {
-    if (variation.color && variation.color_hex) {
-      acc[variation.color] = variation.color_hex;
-      const key = variation.color.replace(/[^a-zA-Z0-9]/g, '_');
-      acc[key] = variation.color_hex;
-    }
-    return acc;
-  }, {});
-
-  // Gallery state
-  let productImages = baseProductImages.length ? baseProductImages.slice() : [FALLBACK_IMAGE];
-  let totalImages = productImages.length;
-  let currentImageIndex = 0;
-
-  function updateImageCounter(current, total) {
-    const counter = document.getElementById('imageCounter');
-    const totalSpan = document.getElementById('total-images');
-    const currentSpan = document.getElementById('current-image');
-    const navButtons = document.querySelectorAll('.gallery-nav');
-
-    if (totalSpan) totalSpan.textContent = String(total);
-    if (currentSpan) currentSpan.textContent = String(current);
-
-    const shouldShowControls = total > 1;
-    if (counter) counter.classList.toggle('d-none', !shouldShowControls);
-    navButtons.forEach(btn => btn.classList.toggle('d-none', !shouldShowControls));
-  }
-
-  function setMainImage(imageSrc, imageNumber = 1) {
-    const mainImage = document.getElementById('main-product-image');
-    const currentImageSpan = document.getElementById('current-image');
-    const thumbnails = document.querySelectorAll('.thumbnail-img');
-
-    if (mainImage) {
-      mainImage.src = imageSrc;
-      // Remove artificial fade to make updates instantaneous
-      // If you want a subtle effect, use CSS transition only (no JS timeout)
-    }
-
-    currentImageIndex = Math.max(0, Math.min(productImages.length - 1, imageNumber - 1));
-
-    if (currentImageSpan) currentImageSpan.textContent = String(imageNumber);
-
-    thumbnails.forEach((thumb, index) => {
-      thumb.classList.toggle('active', index === currentImageIndex);
-    });
-
-    updateImageCounter(imageNumber, totalImages);
-  }
-  window.setMainImage = setMainImage; // required by inline handlers
-
-  function scrollToActiveThumbnail() {
-    const activeThumbnail = document.querySelector('.thumbnail-img.active');
-    if (!activeThumbnail) return;
-    activeThumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-  }
-
-  function changeImage(direction) {
-    if (totalImages <= 1) return;
-    currentImageIndex += direction;
-    if (currentImageIndex >= totalImages) currentImageIndex = 0;
-    else if (currentImageIndex < 0) currentImageIndex = totalImages - 1;
-    setMainImage(productImages[currentImageIndex], currentImageIndex + 1);
-    scrollToActiveThumbnail();
-  }
-  window.changeImage = changeImage; // required by inline handlers
-
-  function renderThumbnails(images) {
-    const wrapper = document.getElementById('thumbnailsWrapper');
-    if (!wrapper) return;
-
-    if (!Array.isArray(images) || images.length === 0) {
-      wrapper.innerHTML = '<div class="bg-light rounded d-flex align-items-center justify-content-center w-100" style="height: 80px;"><i class="fas fa-image text-muted"></i></div>';
-      productImages = [FALLBACK_IMAGE];
-      totalImages = 1;
-      setMainImage(FALLBACK_IMAGE, 1);
-      BOOT.galleryInit = true;
-      return;
-    }
-
-    productImages = images.slice();
-    totalImages = productImages.length;
-    currentImageIndex = 0;
-
-    const safeName = (CONFIG.product && CONFIG.product.name) || 'Produto';
-    let html = '';
-    for (let i=0;i<productImages.length;i++) {
-      const img = productImages[i];
-      const altTxt = (safeName + ' - Imagem ' + (i+1)).replace(/"/g, '&quot;');
-      html += '<div class="thumbnail-item">'
-        + '<img src="' + img + '" alt="' + altTxt + '"'
-        + ' class="thumbnail-img rounded border ' + (i===0? 'active':'') + '"'
-        + ' data-index="' + i + '"'
-        + '>'
-        + '</div>';
-    }
-    wrapper.innerHTML = html;
-
-    setMainImage(productImages[0], 1);
-
-    const delegate = function(e){
-      const target = e.target.closest('.thumbnail-img'); if(!target) return;
-      const idx = parseInt(target.getAttribute('data-index'),10) || 0;
-      window.setMainImage(productImages[idx], idx+1);
-    };
-    wrapper.addEventListener('click', delegate);
-    wrapper.addEventListener('mouseenter', delegate, true);
-
-    BOOT.galleryInit = true;
-  }
-
-  function applyColorImages(color) {
-    const normalizedColor = color || '';
-    let imagesToRender = baseProductImages;
-    if (normalizedColor && Array.isArray(variationColorImages[normalizedColor]) && variationColorImages[normalizedColor].length > 0) {
-      imagesToRender = variationColorImages[normalizedColor];
-    }
-    if (!Array.isArray(imagesToRender) || imagesToRender.length === 0) {
-      imagesToRender = [FALLBACK_IMAGE];
-    }
-    renderThumbnails(imagesToRender);
-  }
-
-  // Shipping
-  function showFreteMessage(message, type) {
-    const resultBox = document.getElementById('frete-resultado');
-    if (!resultBox) return;
-    resultBox.innerHTML = '<div class="alert alert-'+type+'"><i class="bi bi-info-circle me-2"></i>'+ message +'</div>';
-    resultBox.style.display = 'block';
-  }
-
-  function formatArrival(days) {
-    if (!Number.isFinite(days)) return '';
-    const d = new Date(); d.setDate(d.getDate() + days);
-    return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'2-digit' });
-  }
-
-  async function calcularFrete(cep, qty) {
-    const btn = document.getElementById('btn-calc-frete');
-    const resultBox = document.getElementById('frete-resultado');
-    if (!btn || !resultBox) return;
-
-    btn.disabled = true;
-    btn.querySelector('.label-default')?.classList.add('d-none');
-    btn.querySelector('.label-loading')?.classList.remove('d-none');
-    resultBox.style.display = 'none';
-    resultBox.innerHTML = '';
-
-    try {
-      const resp = await fetch(CONFIG.routes.shippingQuote, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': CONFIG.csrf,
-          'Accept': 'application/json'
+    /**
+     * Configuration e Constants
+     */
+    const CONFIG = {
+        // Cache selectors para performance
+        SELECTORS: {
+            mainImage: '#main-product-image',
+            imageCounter: '#imageCounter',
+            currentImage: '#current-image',
+            totalImages: '#total-images',
+            thumbnailsWrapper: '#thumbnailsWrapper',
+            priceDisplay: '#product-price-display',
+            skuDisplay: '#variation-sku-display',
+            skuValue: '#selected-variation-sku',
+            stockDisplay: '#variation-stock-display',
+            stockBadge: '#variation-stock-badge',
+            unavailableMessage: '#variation-unavailable-message',
+            addToCartBtn: '.btn-add-to-cart-ml',
+            variationOptions: '.variation-option-ml',
+            variationInputs: '.variation-option-ml input',
+            pdpConfig: '#pdp-config'
         },
-        body: JSON.stringify({
-          product_id: CONFIG.product.id,
-          cep: cep,
-          quantity: qty
-        })
-      });
-      const data = await resp.json();
-      if (!resp.ok || !data.success) {
-        const msg = data.message || ('Erro ao calcular frete (HTTP '+resp.status+')');
-        showFreteMessage(msg, 'danger');
-        return;
-      }
-      renderQuotes(data.quotes || []);
-      if (data.debug) renderDebug(data.debug);
-    } catch (err) {
-      showFreteMessage('Falha na conexão. Tente novamente.', 'danger');
-    } finally {
-      btn.disabled = false;
-      btn.querySelector('.label-default')?.classList.remove('d-none');
-      btn.querySelector('.label-loading')?.classList.add('d-none');
-    }
-  }
-
-  function renderDebug(d) {
-    const panel = document.getElementById('frete-debug-panel');
-    if (!panel) return;
-    panel.innerHTML = '<div class="border rounded p-2 bg-light">'
-      + '<div><strong>Modo declarado:</strong> ' + d.declared_mode + '</div>'
-      + '<div><strong>Valor declarado:</strong> R$ ' + Number(d.declared_value).toFixed(2).replace('.',',') + (d.declared_mode==='cap' ? ' (teto R$ ' + Number(d.declared_cap).toFixed(2).replace('.',',') + ')' : '') + '</div>'
-      + '<div><strong>Peso real total:</strong> ' + d.weight_real_kg_total + ' kg</div>'
-      + '<div><strong>Peso volumétrico:</strong> ' + d.weight_volumetric_kg_total + ' kg</div>'
-      + '<div><strong>Peso usado:</strong> ' + d.weight_used_kg + ' kg</div>'
-      + '<div><strong>Dimensões (cm):</strong> ' + d.dimensions_cm.length + ' × ' + d.dimensions_cm.width + ' × ' + d.dimensions_cm.height + '</div>'
-      + '<div><strong>Camadas empilhadas:</strong> ' + d.stack_layers + '</div>'
-      + '<div><strong>Quantidade:</strong> ' + d.quantity + '</div>'
-      + '<div><strong>Ambiente:</strong> ' + d.environment + '</div>'
-      + '</div>';
-  }
-
-  function attachShippingOptionEvents() {
-    document.querySelectorAll('.shipping-option').forEach(opt => {
-      opt.addEventListener('click', () => selectShippingOption(opt));
-      opt.addEventListener('keydown', e => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectShippingOption(opt); }
-      });
-    });
-    document.getElementById('sort-price')?.addEventListener('click', () => sortShipping('price'));
-    document.getElementById('sort-speed')?.addEventListener('click', () => sortShipping('speed'));
-  }
-
-  function renderQuotes(quotes) {
-    const resultBox = document.getElementById('frete-resultado');
-    if (!resultBox) return;
-    const withPrice = Array.isArray(quotes) ? quotes.filter(q => typeof q.price === 'number') : [];
-    if (withPrice.length === 0) { showFreteMessage('Nenhuma opção de frete disponível para o CEP informado.', 'warning'); return; }
-
-    const cheapest = withPrice.reduce((acc, q) => acc && acc.price <= q.price ? acc : q, withPrice[0]);
-    const withDays = withPrice.filter(q => typeof q.delivery_days === 'number');
-    const fastest = withDays.reduce((acc, q) => acc && acc.delivery_days <= q.delivery_days ? acc : q, withDays[0]);
-    const maxPrice = withPrice.reduce((acc, q) => q.price > acc ? q.price : acc, 0);
-    const econEl = document.getElementById('economy-hint');
-    if (econEl && maxPrice && cheapest) econEl.textContent = 'Economize até R$ ' + (maxPrice - cheapest.price).toFixed(2).replace('.',',');
-    const actions = document.getElementById('frete-actions'); if (actions) actions.style.display = 'flex';
-
-    const itens = withPrice.map((q, idx) => {
-      const preco = typeof q.price === 'number' ? q.price : null;
-      const precoFmt = preco !== null ? 'R$ ' + preco.toFixed(2).replace('.', ',') : '—';
-      const prazo = (q.delivery_days != null) ? (q.delivery_days + ' dia(s) úteis') : '';
-      let service = q.service || 'Serviço';
-      if (service.startsWith('.')) service = 'Jadlog ' + service;
-      const isCheapest = cheapest && q === cheapest;
-      const isFastest = fastest && q === fastest;
-      const arrivalDate = (q.delivery_days != null) ? formatArrival(q.delivery_days) : '';
-      const badges = (isCheapest?'<span class="badge bg-success me-1">Mais barato</span>':'') + (isFastest?'<span class="badge bg-info text-dark me-1">Mais rápido</span>':'');
-      return (
-        '<div class="shipping-option list-group-item '+(isCheapest?'option-cheapest':'')+' '+(isFastest?'option-fastest':'')+'" role="radio" aria-checked="'+(idx===0?'true':'false')+'" tabindex="0" data-index="'+idx+'">'
-        + '<div class="d-flex justify-content-between align-items-start w-100">'
-        +   '<div class="flex-grow-1 me-2">'
-        +     '<div class="d-flex align-items-center mb-1">'
-        +       '<input type="radio" name="shipping_service" class="form-check-input me-2" '+(idx===0?'checked':'')+' value="'+service+'" data-price="'+(preco ?? '')+'" data-days="'+(q.delivery_days ?? '')+'" data-service-id="'+(q.service_id ?? '')+'" data-company="'+(q.company ?? '')+'">'
-        +       '<span class="fw-semibold service-name">'+service+'</span>'
-        +     '</div>'
-        +     '<div class="small text-muted">'+prazo + (arrivalDate ? ' • Chegada estimada ' + arrivalDate : '') + '</div>'
-        +     '<div class="mt-1">'+badges+'</div>'
-        +   '</div>'
-        +   '<div class="text-end"><div class="fw-bold price-display">'+precoFmt+'</div></div>'
-        + '</div>'
-        + '</div>'
-      );
-    }).join('');
-
-    resultBox.innerHTML = '<div class="list-group list-group-flush border rounded">'+itens+'</div>';
-    resultBox.style.display = 'block';
-    attachShippingOptionEvents();
-    updateSelectedSummary();
-  }
-
-  async function selectShippingOption(opt) {
-    const radio = opt.querySelector('input[type="radio"]');
-    if (!radio) return;
-    radio.checked = true;
-    document.querySelectorAll('.shipping-option').forEach(o => o.setAttribute('aria-checked','false'));
-    opt.setAttribute('aria-checked','true');
-    updateSelectedSummary();
-    const cep = (document.getElementById('cep-destino')?.value || '').replace(/\D/g, '');
-    const qty = parseInt(document.getElementById('qty-shipping')?.value || '1', 10) || 1;
-    try {
-      await fetch(CONFIG.routes.shippingSelect, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': CONFIG.csrf,
-          'Accept': 'application/json'
+        
+        // Estados da aplicação
+        STATE: {
+            currentVariation: null,
+            selectedOptions: {},
+            isLoading: false,
+            images: [],
+            variations: [],
+            colorImages: {}
         },
-        body: JSON.stringify({
-          service: radio.value,
-          price: parseFloat(radio.getAttribute('data-price') || '0') || 0,
-          delivery_days: parseInt(radio.getAttribute('data-days') || '0', 10) || null,
-          service_id: parseInt(radio.getAttribute('data-service-id') || '0', 10) || null,
-          company: radio.getAttribute('data-company') || null,
-          cep: cep,
-          product_id: CONFIG.product.id,
-          quantity: qty
-        })
-      });
-    } catch (e) {
-      console.warn('Falha ao salvar seleção de frete.', e);
-    }
-  }
-
-  async function updateSelectedSummary() {
-    const selectedRadio = document.querySelector('input[name="shipping_service"]:checked');
-    const summaryBox = document.getElementById('frete-selecionado');
-    if (!selectedRadio || !summaryBox) return;
-    const service = selectedRadio.value;
-    const price = selectedRadio.getAttribute('data-price');
-    const days = selectedRadio.getAttribute('data-days');
-    if (!service) { summaryBox.style.display='none'; return; }
-    summaryBox.innerHTML = (
-      '<div class="alert alert-primary d-flex align-items-center justify-content-between py-2 px-3">'
-      + '<div>'
-      +   '<strong>'+service+'</strong> — ' + (price?('R$ '+Number(price).toFixed(2).replace('.',',')):'Preço indisponível')
-      +   (days?('<small class="ms-2 text-muted">'+days+' dia(s)</small>'):'')
-      + '</div>'
-      + '<button type="button" class="btn btn-sm btn-outline-primary" id="btn-alterar-frete">Alterar</button>'
-      + '</div>'
-    );
-    summaryBox.style.display = 'block';
-    document.getElementById('btn-alterar-frete')?.addEventListener('click', () => {
-      document.getElementById('frete-resultado')?.scrollIntoView({behavior:'smooth'});
-    });
-
-    const cep = (document.getElementById('cep-destino')?.value || '').replace(/\D/g, '');
-    const qty = parseInt(document.getElementById('qty-shipping')?.value || '1', 10) || 1;
-    try {
-      await fetch(CONFIG.routes.shippingSelect, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-CSRF-TOKEN': CONFIG.csrf,
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          service: service,
-          price: parseFloat(price || '0') || 0,
-          delivery_days: parseInt(days || '0', 10) || null,
-          service_id: parseInt(selectedRadio.getAttribute('data-service-id') || '0', 10) || null,
-          company: selectedRadio.getAttribute('data-company') || null,
-          cep: cep,
-          product_id: CONFIG.product.id,
-          quantity: qty
-        })
-      });
-    } catch (e) {
-      console.warn('Falha ao salvar seleção de frete.', e);
-    }
-  }
-
-  function sortShipping(mode) {
-    const resultBox = document.getElementById('frete-resultado');
-    if (!resultBox) return;
-    const options = Array.from(resultBox.querySelectorAll('.shipping-option'));
-    options.sort((a,b) => {
-      const ra = a.querySelector('input');
-      const rb = b.querySelector('input');
-      if (!ra || !rb) return 0;
-      if (mode==='price') return (parseFloat(ra.getAttribute('data-price')||'99999') - parseFloat(rb.getAttribute('data-price')||'99999'));
-      return (parseInt(ra.getAttribute('data-days')||'999') - parseInt(rb.getAttribute('data-days')||'999'));
-    });
-    const container = resultBox.querySelector('.list-group');
-    if (container) options.forEach(o => container.appendChild(o));
-    const btnPrice = document.getElementById('sort-price');
-    const btnSpeed = document.getElementById('sort-speed');
-    if (mode==='price') {
-      btnPrice?.classList.add('active'); btnSpeed?.classList.remove('active');
-      btnPrice?.setAttribute('aria-pressed','true'); btnSpeed?.setAttribute('aria-pressed','false');
-    } else {
-      btnSpeed?.classList.add('active'); btnPrice?.classList.remove('active');
-      btnSpeed?.setAttribute('aria-pressed','true'); btnPrice?.setAttribute('aria-pressed','false');
-    }
-  }
-
-  // Variations
-  function getSelectedValue(type) {
-    const input = document.querySelector('input[name="'+type+'"]:checked');
-    return input ? input.value : '';
-  }
-
-  function refreshActiveVariationOptions() {
-    document.querySelectorAll('.variation-option').forEach(option => {
-      const input = option.querySelector('input');
-      option.classList.toggle('active', !!(input && input.checked && !input.disabled));
-    });
-  }
-
-  function setOptionSelected(type, value) {
-    if (!value) return;
-    document.querySelectorAll('input[name="'+type+'"]').forEach(input => {
-      if (input.value === value && !input.disabled) input.checked = true;
-    });
-  }
-
-  function isCombinationAvailable(ram, storage, color) {
-    return activeVariationsData.some(variation => {
-      if (!variation.in_stock || variation.stock_quantity <= 0) return false;
-      const matchesRam = !ram || variation.ram === ram;
-      const matchesStorage = !storage || variation.storage === storage;
-      const matchesColor = !color || variation.color === color;
-      return matchesRam && matchesStorage && matchesColor;
-    });
-  }
-
-  function applyColorSwatches() {
-    document.querySelectorAll('.variation-option[data-variation-type="color"]').forEach(option => {
-      const value = option.getAttribute('data-value') || '';
-      const key = value.replace(/[^a-zA-Z0-9]/g, '_');
-      const swatch = option.querySelector('.swatch'); if (!swatch) return;
-      const hex = colorHexMap[value] || colorHexMap[key] || '#f1f5f9';
-      swatch.style.background = hex;
-    });
-  }
-
-  function syncVariationOptionAvailability() {
-    const selected = {
-      ram: getSelectedValue('ram') || null,
-      storage: getSelectedValue('storage') || null,
-      color: getSelectedValue('color') || null,
+        
+        // Performance thresholds
+        THROTTLE_DELAY: 16, // 60fps
+        DEBOUNCE_DELAY: 300,
+        
+        // Animation durations
+        ANIMATION: {
+            fast: 150,
+            normal: 300,
+            slow: 500
+        }
     };
 
-    ['storage', 'color', 'ram'].forEach(type => {
-      const options = Array.from(document.querySelectorAll('label[data-variation-type="'+type+'"]'));
-      if (!options.length) return;
-      let firstAvailable = null;
-
-      options.forEach(option => {
-        const input = option.querySelector('input');
-        const value = input.value;
-        const available = isCombinationAvailable(
-          type === 'ram' ? value : selected.ram,
-          type === 'storage' ? value : selected.storage,
-          type === 'color' ? value : selected.color
-        );
-        input.disabled = !available;
-        option.classList.toggle('disabled', !available);
-        if (available && !firstAvailable) firstAvailable = input;
-        if (!available && input.checked) input.checked = false;
-      });
-
-      const hasChecked = options.some(option => { const input = option.querySelector('input'); return input.checked && !input.disabled; });
-      if (!hasChecked && firstAvailable) { firstAvailable.checked = true; selected[type] = firstAvailable.value; }
-    });
-
-    refreshActiveVariationOptions();
-    applyColorSwatches();
-  }
-
-  function setAddToCartDisabled(disabled) {
-    const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
-    const addToCartComponent = document.querySelector('.add-to-cart-component');
-    if (addToCartBtn) {
-      if (typeof addToCartBtn.disabled !== 'undefined') addToCartBtn.disabled = disabled;
-      addToCartBtn.classList.toggle('disabled', disabled);
-      addToCartBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
-    }
-    if (addToCartComponent && disabled) addToCartComponent.setAttribute('data-variation-id', '');
-  }
-
-  function updateVariation() {
-    const ram = getSelectedValue('ram');
-    const storage = getSelectedValue('storage');
-    const color = getSelectedValue('color');
-    const unavailableMessage = document.getElementById('variation-unavailable-message');
-
-    const combinationExists = isCombinationAvailable(ram, storage, color);
-    applyColorImages(color);
-
-    if (!combinationExists) {
-      if (unavailableMessage) unavailableMessage.style.display = 'flex';
-      setAddToCartDisabled(true);
-      const priceDisplay = document.getElementById('product-price-display');
-      if (priceDisplay && CONFIG.product && CONFIG.product.price_fmt) priceDisplay.textContent = 'R$ ' + CONFIG.product.price_fmt;
-      const skuDisplay = document.getElementById('variation-sku-display'); if (skuDisplay) skuDisplay.style.display = 'none';
-      const stockDisplay = document.getElementById('variation-stock-display'); if (stockDisplay) stockDisplay.style.display = 'none';
-      return;
-    }
-
-    if (unavailableMessage) unavailableMessage.style.display = 'none';
-
-    const url = new URL(CONFIG.routes.productVariation, window.location.origin);
-    if (ram) url.searchParams.append('ram', ram);
-    if (storage) url.searchParams.append('storage', storage);
-    if (color) url.searchParams.append('color', color);
-
-    fetch(url.toString())
-      .then(response => response.json())
-      .then(data => {
-        if (data.success && data.variation) {
-          const priceDisplay = document.getElementById('product-price-display');
-          if (priceDisplay && data.variation.price) priceDisplay.textContent = 'R$ ' + data.variation.price;
-
-          const skuDisplay = document.getElementById('variation-sku-display');
-          const skuSpan = document.getElementById('selected-variation-sku');
-          if (skuDisplay && skuSpan) { skuSpan.textContent = data.variation.sku; skuDisplay.style.display = 'block'; }
-
-          const stockDisplay = document.getElementById('variation-stock-display');
-          const stockBadge = document.getElementById('variation-stock-badge');
-          if (stockDisplay && stockBadge) {
-            if (data.variation.in_stock && data.variation.stock_quantity > 0) {
-              stockBadge.className = 'badge bg-success';
-              stockBadge.innerHTML = '<i class="fas fa-check-circle me-1"></i> Em estoque (' + data.variation.stock_quantity + ' unidades)';
-              stockDisplay.style.display = 'block';
-              setAddToCartDisabled(false);
-            } else {
-              stockBadge.className = 'badge bg-danger';
-              stockBadge.innerHTML = '<i class="fas fa-times-circle me-1"></i> Fora de estoque';
-              stockDisplay.style.display = 'block';
-              setAddToCartDisabled(true);
-              if (unavailableMessage) unavailableMessage.style.display = 'flex';
+    /**
+     * Utility Functions Impecáveis
+     */
+    const Utils = {
+        /**
+         * Safe query selector com null check
+         */
+        $(selector, context = document) {
+            const element = context.querySelector(selector);
+            if (!element && process.env.NODE_ENV === 'development') {
+                console.warn(`Element not found: ${selector}`);
             }
-          }
+            return element;
+        },
 
-          const addToCartBtn = document.querySelector('.add-to-cart-component [data-product-id]');
-          if (addToCartBtn) {
-            addToCartBtn.setAttribute('data-variation-id', data.variation.id);
-            const addToCartComponent = document.querySelector('.add-to-cart-component');
-            if (addToCartComponent) addToCartComponent.setAttribute('data-variation-id', data.variation.id);
-          }
+        /**
+         * Safe query selector all
+         */
+        $$(selector, context = document) {
+            return Array.from(context.querySelectorAll(selector));
+        },
 
-          try {
-            const cepInput = document.getElementById('cep-destino');
-            const qtyShipping = document.getElementById('qty-shipping');
-            const cep = (cepInput?.value || '').replace(/\D/g, '').slice(0,8);
-            const qty = parseInt(qtyShipping?.value || '1', 10) || 1;
-            if (cep && cep.length === 8) calcularFrete(cep, qty);
-          } catch (e) { console.warn('Não foi possível recalcular o frete após mudar a variação.', e); }
-        } else {
-          setAddToCartDisabled(true);
+        /**
+         * Formatador de moeda brasileiro
+         */
+        formatCurrency(value) {
+            if (value == null || value === '') return '';
+            const number = typeof value === 'number' ? value : parseFloat(value);
+            if (isNaN(number)) return '';
+            return number.toLocaleString('pt-BR', { 
+                minimumFractionDigits: 2, 
+                maximumFractionDigits: 2 
+            });
+        },
+
+        /**
+         * Debounce profissional
+         */
+        debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func.apply(this, args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        },
+
+        /**
+         * Throttle para animações suaves
+         */
+        throttle(func, limit) {
+            let inThrottle;
+            return function executedFunction(...args) {
+                if (!inThrottle) {
+                    func.apply(this, args);
+                    inThrottle = true;
+                    setTimeout(() => inThrottle = false, limit);
+                }
+            };
+        },
+
+        /**
+         * Animação suave com CSS transitions
+         */
+        animate(element, properties, duration = CONFIG.ANIMATION.normal) {
+            if (!element) return Promise.resolve();
+            
+            return new Promise(resolve => {
+                const originalTransition = element.style.transition;
+                element.style.transition = `all ${duration}ms cubic-bezier(0.4, 0, 0.2, 1)`;
+                
+                Object.assign(element.style, properties);
+                
+                setTimeout(() => {
+                    element.style.transition = originalTransition;
+                    resolve();
+                }, duration);
+            });
         }
-      })
-      .catch(error => { console.error('Erro ao buscar variação:', error); });
-  }
+    };
 
-  function initVariationSelectors() {
-    // Click on inputs
-    document.querySelectorAll('.variation-option input').forEach(input => {
-      input.addEventListener('change', () => {
-        syncVariationOptionAvailability();
-        applyColorImages(getSelectedValue('color'));
-        updateVariation();
-      });
-    });
+    /**
+     * Image Gallery Professional
+     */
+    const ImageGallery = {
+        currentIndex: 0,
+        images: [],
+        isZoomed: false,
 
-    // Click on whole label
-    document.querySelectorAll('label.variation-option').forEach(label => {
-      label.addEventListener('click', () => {
-        const input = label.querySelector('input');
-        if (!input || input.disabled) return;
-        if (!input.checked) {
-          input.checked = true;
-          input.dispatchEvent(new Event('change', { bubbles: true }));
+        init() {
+            this.loadConfiguration();
+            this.setupEventListeners();
+            this.render();
+        },
+
+        loadConfiguration() {
+            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+            if (!configEl) return;
+
+            try {
+                const config = JSON.parse(configEl.textContent || '{}');
+                this.images = Array.isArray(config.images) ? config.images : [];
+                CONFIG.STATE.colorImages = config.variationColorImages || {};
+            } catch (error) {
+                console.error('Invalid PDP configuration:', error);
+                this.images = [];
+            }
+        },
+
+        setupEventListeners() {
+            // Keyboard navigation
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowLeft') this.navigate(-1);
+                if (e.key === 'ArrowRight') this.navigate(1);
+            });
+
+            // Touch gestures para mobile
+            const mainImage = Utils.$(CONFIG.SELECTORS.mainImage);
+            if (mainImage) {
+                this.setupTouchGestures(mainImage);
+                this.setupZoom(mainImage);
+            }
+        },
+
+        setupTouchGestures(element) {
+            let startX = 0;
+            let currentX = 0;
+            let isDragging = false;
+
+            element.addEventListener('touchstart', (e) => {
+                startX = e.touches[0].clientX;
+                isDragging = true;
+            });
+
+            element.addEventListener('touchmove', (e) => {
+                if (!isDragging) return;
+                currentX = e.touches[0].clientX;
+            });
+
+            element.addEventListener('touchend', () => {
+                if (!isDragging) return;
+                const diff = startX - currentX;
+                
+                if (Math.abs(diff) > 50) {
+                    this.navigate(diff > 0 ? 1 : -1);
+                }
+                
+                isDragging = false;
+            });
+        },
+
+        setupZoom(element) {
+            element.addEventListener('dblclick', () => {
+                this.isZoomed = !this.isZoomed;
+                Utils.animate(element, {
+                    transform: this.isZoomed ? 'scale(2)' : 'scale(1)',
+                    cursor: this.isZoomed ? 'zoom-out' : 'zoom-in'
+                });
+            });
+        },
+
+        render() {
+            this.renderThumbnails();
+            this.setMainImage(0);
+            this.updateCounter();
+        },
+
+        renderThumbnails() {
+            const wrapper = Utils.$(CONFIG.SELECTORS.thumbnailsWrapper);
+            if (!wrapper) return;
+
+            if (this.images.length === 0) {
+                wrapper.innerHTML = this.getEmptyStateHTML();
+                return;
+            }
+
+            const html = this.images.map((src, index) => `
+                <div class="thumbnail-item ${index === 0 ? 'active' : ''}" 
+                     data-index="${index}">
+                    <img src="${src}" 
+                         alt="Produto - Imagem ${index + 1}"
+                         class="thumbnail-img"
+                         onerror="this.src='/images/no-image.svg'">
+                </div>
+            `).join('');
+
+            wrapper.innerHTML = html;
+            this.attachThumbnailEvents();
+        },
+
+        attachThumbnailEvents() {
+            const wrapper = Utils.$(CONFIG.SELECTORS.thumbnailsWrapper);
+            if (!wrapper) return;
+
+            wrapper.addEventListener('click', (e) => {
+                const thumbnail = e.target.closest('.thumbnail-item');
+                if (thumbnail) {
+                    const index = parseInt(thumbnail.dataset.index);
+                    this.setMainImage(index);
+                }
+            });
+        },
+
+        setMainImage(index) {
+            if (index < 0 || index >= this.images.length) return;
+            
+            this.currentIndex = index;
+            const mainImage = Utils.$(CONFIG.SELECTORS.mainImage);
+            
+            if (mainImage && this.images[index]) {
+                // Smooth transition
+                Utils.animate(mainImage, { opacity: 0.7 }, CONFIG.ANIMATION.fast)
+                    .then(() => {
+                        mainImage.src = this.images[index];
+                        return Utils.animate(mainImage, { opacity: 1 }, CONFIG.ANIMATION.fast);
+                    });
+            }
+
+            this.updateActiveThumbnail();
+            this.updateCounter();
+        },
+
+        updateActiveThumbnail() {
+            Utils.$$('.thumbnail-item').forEach((thumb, index) => {
+                thumb.classList.toggle('active', index === this.currentIndex);
+            });
+
+            // Scroll to active thumbnail
+            const activeThumb = Utils.$('.thumbnail-item.active');
+            if (activeThumb) {
+                activeThumb.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'nearest', 
+                    inline: 'center' 
+                });
+            }
+        },
+
+        updateCounter() {
+            const currentSpan = Utils.$(CONFIG.SELECTORS.currentImage);
+            const totalSpan = Utils.$(CONFIG.SELECTORS.totalImages);
+            const counter = Utils.$(CONFIG.SELECTORS.imageCounter);
+
+            if (currentSpan) currentSpan.textContent = this.currentIndex + 1;
+            if (totalSpan) totalSpan.textContent = this.images.length;
+            
+            if (counter) {
+                const shouldShow = this.images.length > 1;
+                counter.style.display = shouldShow ? 'block' : 'none';
+            }
+        },
+
+        navigate(direction) {
+            if (this.images.length <= 1) return;
+            
+            let newIndex = this.currentIndex + direction;
+            if (newIndex >= this.images.length) newIndex = 0;
+            if (newIndex < 0) newIndex = this.images.length - 1;
+            
+            this.setMainImage(newIndex);
+        },
+
+        applyColorImages(color) {
+            if (!color || !CONFIG.STATE.colorImages[color]) {
+                this.images = this.getOriginalImages();
+            } else {
+                this.images = CONFIG.STATE.colorImages[color];
+            }
+            
+            this.render();
+        },
+
+        getOriginalImages() {
+            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+            if (!configEl) return [];
+            
+            try {
+                const config = JSON.parse(configEl.textContent || '{}');
+                return Array.isArray(config.images) ? config.images : [];
+            } catch {
+                return [];
+            }
+        },
+
+        getEmptyStateHTML() {
+            return `
+                <div class="text-center p-4">
+                    <i class="fas fa-image fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Nenhuma imagem disponível</p>
+                </div>
+            `;
         }
-      });
-    });
+    };
 
-    syncVariationOptionAvailability();
-    applyColorImages(getSelectedValue('color'));
-    updateVariation();
-  }
+    /**
+     * Variation System Professional
+     */
+    const VariationSystem = {
+        init() {
+            this.loadConfiguration();
+            this.setupEventListeners();
+            this.initializeSelections();
+        },
 
-  function boot() {
-    try { console.info('[PDP] template ts:', document.querySelector('#pdp-config') ? 'config ok' : 'missing'); } catch(e){}
-    // Gallery
-    try { renderThumbnails(productImages); } catch(err){ BOOT.errors.push('gallery:'+err.message); console.error('[PDP] gallery init error', err); }
+        loadConfiguration() {
+            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+            if (!configEl) return;
 
-    // Keyboard nav
-    document.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowLeft') changeImage(-1);
-      else if (e.key === 'ArrowRight') changeImage(1);
-    });
+            try {
+                const config = JSON.parse(configEl.textContent || '{}');
+                CONFIG.STATE.variations = Array.isArray(config.variationData) 
+                    ? config.variationData 
+                    : [];
+            } catch (error) {
+                console.error('Invalid variations configuration:', error);
+                CONFIG.STATE.variations = [];
+            }
+        },
 
-    // Double click zoom
-    const mainImageElement = document.getElementById('main-product-image');
-    if (mainImageElement) {
-      mainImageElement.addEventListener('dblclick', function() {
-        if (this.style.transform === 'scale(2)') { this.style.transform = 'scale(1)'; this.style.cursor = 'pointer'; }
-        else { this.style.transform = 'scale(2)'; this.style.cursor = 'zoom-out'; }
-      });
+        setupEventListeners() {
+            // Delegated events para performance
+            document.addEventListener('change', (e) => {
+                if (e.target.matches(CONFIG.SELECTORS.variationInputs)) {
+                    this.handleOptionChange(e.target);
+                }
+            });
+
+            document.addEventListener('click', (e) => {
+                if (e.target.closest(CONFIG.SELECTORS.variationOptions)) {
+                    this.handleOptionClick(e.target.closest(CONFIG.SELECTORS.variationOptions));
+                }
+            });
+        },
+
+        handleOptionChange(input) {
+            const type = input.getAttribute('name');
+            const value = input.value;
+            
+            CONFIG.STATE.selectedOptions[type] = value;
+            this.updateAvailability();
+            this.updateVariation();
+        },
+
+        handleOptionClick(option) {
+            const input = option.querySelector('input');
+            if (input && !input.disabled && !input.checked) {
+                input.checked = true;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+        },
+
+        initializeSelections() {
+            Utils.$$(CONFIG.SELECTORS.variationInputs).forEach(input => {
+                if (input.checked) {
+                    CONFIG.STATE.selectedOptions[input.name] = input.value;
+                }
+            });
+
+            this.updateAvailability();
+        },
+
+        updateAvailability() {
+            const selected = CONFIG.STATE.selectedOptions;
+            
+            ['ram', 'storage', 'color'].forEach(type => {
+                const options = Utils.$$(`label[data-variation-type="${type}"]`);
+                
+                options.forEach(option => {
+                    const input = option.querySelector('input');
+                    if (!input) return;
+
+                    const value = input.value;
+                    const isAvailable = this.isCombinationAvailable(
+                        type === 'ram' ? value : selected.ram,
+                        type === 'storage' ? value : selected.storage,
+                        type === 'color' ? value : selected.color
+                    );
+
+                    input.disabled = !isAvailable;
+                    option.classList.toggle('disabled', !isAvailable);
+
+                    // Auto-select primeira opção disponível
+                    if (!input.checked && isAvailable && !options.some(o => o.querySelector('input:checked'))) {
+                        input.checked = true;
+                        CONFIG.STATE.selectedOptions[type] = value;
+                    }
+                });
+            });
+
+            this.updateVisualStates();
+        },
+
+        updateVisualStates() {
+            Utils.$$(CONFIG.SELECTORS.variationOptions).forEach(option => {
+                const input = option.querySelector('input');
+                const isActive = input && input.checked && !input.disabled;
+                option.classList.toggle('active', isActive);
+            });
+
+            this.applyColorSwatches();
+        },
+
+        applyColorSwatches() {
+            Utils.$$('.variation-option-ml[data-variation-type="color"]').forEach(option => {
+                const value = option.getAttribute('data-value');
+                const swatch = option.querySelector('.swatch-ml');
+                
+                if (swatch && value) {
+                    const variation = CONFIG.STATE.variations.find(v => v.color === value);
+                    const hex = variation?.color_hex || '#f1f5f9';
+                    swatch.style.background = hex;
+                }
+            });
+        },
+
+        isCombinationAvailable(ram, storage, color) {
+            return CONFIG.STATE.variations.some(variation => {
+                if (!variation.in_stock || variation.stock_quantity <= 0) return false;
+                
+                const matchesRam = !ram || variation.ram === ram;
+                const matchesStorage = !storage || variation.storage === storage;
+                const matchesColor = !color || variation.color === color;
+                
+                return matchesRam && matchesStorage && matchesColor;
+            });
+        },
+
+        async updateVariation() {
+            const selected = CONFIG.STATE.selectedOptions;
+            const hasCompleteSelection = Object.values(selected).filter(v => v).length >= 2;
+            
+            if (!hasCompleteSelection) {
+                this.hideUnavailableMessage();
+                return;
+            }
+
+            const isAvailable = this.isCombinationAvailable(
+                selected.ram, 
+                selected.storage, 
+                selected.color
+            );
+
+            if (!isAvailable) {
+                this.showUnavailableMessage();
+                this.disableAddToCart();
+                return;
+            }
+
+            this.hideUnavailableMessage();
+            await this.fetchVariationDetails();
+        },
+
+        async fetchVariationDetails() {
+            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+            if (!configEl) return;
+
+            try {
+                const config = JSON.parse(configEl.textContent || '{}');
+                const url = new URL(config.routes?.productVariation || '/produto/{slug}/variacao', window.location.origin);
+                
+                // Adicionar parâmetros
+                Object.entries(CONFIG.STATE.selectedOptions).forEach(([key, value]) => {
+                    if (value) url.searchParams.append(key, value);
+                });
+
+                CONFIG.STATE.isLoading = true;
+                const response = await fetch(url.toString());
+                const data = await response.json();
+
+                if (data.success && data.variation) {
+                    this.updateVariationDisplay(data.variation);
+                    this.enableAddToCart(data.variation.id);
+                    ImageGallery.applyColorImages(CONFIG.STATE.selectedOptions.color);
+                } else {
+                    this.showUnavailableMessage();
+                    this.disableAddToCart();
+                }
+            } catch (error) {
+                console.error('Error fetching variation:', error);
+                this.showUnavailableMessage();
+                this.disableAddToCart();
+            } finally {
+                CONFIG.STATE.isLoading = false;
+            }
+        },
+
+        updateVariationDisplay(variation) {
+            // Update price
+            const priceDisplay = Utils.$(CONFIG.SELECTORS.priceDisplay);
+            if (priceDisplay && variation.price) {
+                priceDisplay.textContent = `R$ ${variation.price}`;
+            }
+
+            // Update SKU
+            const skuDisplay = Utils.$(CONFIG.SELECTORS.skuDisplay);
+            const skuValue = Utils.$(CONFIG.SELECTORS.skuValue);
+            if (skuDisplay && skuValue && variation.sku) {
+                skuValue.textContent = variation.sku;
+                skuDisplay.style.display = 'block';
+            }
+
+            // Update stock
+            this.updateStockDisplay(variation);
+        },
+
+        updateStockDisplay(variation) {
+            const stockDisplay = Utils.$(CONFIG.SELECTORS.stockDisplay);
+            const stockBadge = Utils.$(CONFIG.SELECTORS.stockBadge);
+            
+            if (!stockDisplay || !stockBadge) return;
+
+            const inStock = variation.in_stock && variation.stock_quantity > 0;
+            
+            if (inStock) {
+                stockBadge.className = 'badge bg-success';
+                stockBadge.innerHTML = `
+                    <i class="fas fa-check-circle me-1"></i>
+                    Em estoque (${variation.stock_quantity} unidades)
+                `;
+                this.enableAddToCart();
+            } else {
+                stockBadge.className = 'badge bg-danger';
+                stockBadge.innerHTML = `
+                    <i class="fas fa-times-circle me-1"></i>
+                    Fora de estoque
+                `;
+                this.disableAddToCart();
+            }
+            
+            stockDisplay.style.display = 'block';
+        },
+
+        showUnavailableMessage() {
+            const message = Utils.$(CONFIG.SELECTORS.unavailableMessage);
+            if (message) {
+                message.style.display = 'flex';
+            }
+        },
+
+        hideUnavailableMessage() {
+            const message = Utils.$(CONFIG.SELECTORS.unavailableMessage);
+            if (message) {
+                message.style.display = 'none';
+            }
+        },
+
+        enableAddToCart(variationId) {
+            const btn = Utils.$(CONFIG.SELECTORS.addToCartBtn);
+            if (btn) {
+                btn.disabled = false;
+                btn.classList.remove('disabled');
+                if (variationId) {
+                    btn.setAttribute('data-variation-id', variationId);
+                }
+            }
+        },
+
+        disableAddToCart() {
+            const btn = Utils.$(CONFIG.SELECTORS.addToCartBtn);
+            if (btn) {
+                btn.disabled = true;
+                btn.classList.add('disabled');
+                btn.removeAttribute('data-variation-id');
+            }
+        }
+    };
+
+    /**
+     * Shipping System Professional
+     */
+    const ShippingSystem = {
+        init() {
+            this.setupEventListeners();
+        },
+
+        setupEventListeners() {
+            const cepInput = Utils.$('#cep-destino');
+            const calcBtn = Utils.$('#btn-calc-frete');
+            
+            if (cepInput) {
+                cepInput.addEventListener('input', this.handleCEPInput.bind(this));
+            }
+            
+            if (calcBtn) {
+                calcBtn.addEventListener('click', this.calculateShipping.bind(this));
+            }
+        },
+
+        handleCEPInput(e) {
+            let value = e.target.value.replace(/\D/g, '').slice(0, 8);
+            if (value.length > 5) {
+                value = value.slice(0, 5) + '-' + value.slice(5);
+            }
+            e.target.value = value;
+        },
+
+        async calculateShipping() {
+            const cepInput = Utils.$('#cep-destino');
+            const qtyInput = Utils.$('#qty-shipping');
+            const btn = Utils.$('#btn-calc-frete');
+            const resultBox = Utils.$('#frete-resultado');
+
+            if (!cepInput || !btn || !resultBox) return;
+
+            const cep = cepInput.value.replace(/\D/g, '');
+            const qty = parseInt(qtyInput?.value || '1', 10) || 1;
+
+            if (cep.length !== 8) {
+                this.showShippingMessage('Informe um CEP válido com 8 dígitos.', 'warning');
+                return;
+            }
+
+            // Loading state
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Calculando...';
+            resultBox.style.display = 'none';
+
+            try {
+                const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+                const config = JSON.parse(configEl?.textContent || '{}');
+                
+                const response = await fetch(config.routes?.shippingQuote || '/frete/calcular', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrf || '',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        product_id: config.product?.id,
+                        cep: cep,
+                        quantity: qty
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    this.renderShippingQuotes(data.quotes || []);
+                } else {
+                    this.showShippingMessage(data.message || 'Erro ao calcular frete', 'danger');
+                }
+            } catch (error) {
+                console.error('Shipping calculation error:', error);
+                this.showShippingMessage('Falha na conexão. Tente novamente.', 'danger');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-truck me-2"></i> Calcular Frete';
+            }
+        },
+
+        renderShippingQuotes(quotes) {
+            const resultBox = Utils.$('#frete-resultado');
+            if (!resultBox) return;
+
+            if (quotes.length === 0) {
+                this.showShippingMessage('Nenhuma opção de frete disponível.', 'warning');
+                return;
+            }
+
+            const html = quotes.map((quote, index) => `
+                <div class="shipping-option ${index === 0 ? 'option-cheapest' : ''}" data-index="${index}">
+                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center mb-2">
+                                <input type="radio" name="shipping_service" class="form-check-input me-2" 
+                                       ${index === 0 ? 'checked' : ''} value="${quote.service}">
+                                <span class="fw-semibold">${quote.service}</span>
+                            </div>
+                            <div class="small text-muted">
+                                ${quote.delivery_days ? `${quote.delivery_days} dia(s) úteis` : ''}
+                            </div>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold text-primary">
+                                R$ ${quote.price.toFixed(2).replace('.', ',')}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            resultBox.innerHTML = `<div class="border rounded">${html}</div>`;
+            resultBox.style.display = 'block';
+        },
+
+        showShippingMessage(message, type) {
+            const resultBox = Utils.$('#frete-resultado');
+            if (!resultBox) return;
+
+            resultBox.innerHTML = `
+                <div class="alert alert-${type} m-3">
+                    <i class="fas fa-info-circle me-2"></i>
+                    ${message}
+                </div>
+            `;
+            resultBox.style.display = 'block';
+        }
+    };
+
+    /**
+     * Quantity Control Professional
+     */
+    const QuantityControl = {
+        init() {
+            this.setupEventListeners();
+            this.syncQuantities();
+        },
+
+        setupEventListeners() {
+            document.addEventListener('click', (e) => {
+                if (e.target.matches('.quantity-btn-ml[data-action="decrease"]')) {
+                    this.decreaseQuantity(e.target);
+                } else if (e.target.matches('.quantity-btn-ml[data-action="increase"]')) {
+                    this.increaseQuantity(e.target);
+                }
+            });
+
+            document.addEventListener('change', (e) => {
+                if (e.target.matches('.quantity-input-ml')) {
+                    this.validateQuantity(e.target);
+                }
+            });
+        },
+
+        decreaseQuantity(btn) {
+            const input = this.getSiblingInput(btn);
+            if (input) {
+                const current = parseInt(input.value) || 1;
+                const min = parseInt(input.min) || 1;
+                const newValue = Math.max(min, current - 1);
+                input.value = newValue;
+                this.syncQuantities();
+            }
+        },
+
+        increaseQuantity(btn) {
+            const input = this.getSiblingInput(btn);
+            if (input) {
+                const current = parseInt(input.value) || 1;
+                const max = parseInt(input.max) || 999;
+                const newValue = Math.min(max, current + 1);
+                input.value = newValue;
+                this.syncQuantities();
+            }
+        },
+
+        validateQuantity(input) {
+            const value = parseInt(input.value) || 1;
+            const min = parseInt(input.min) || 1;
+            const max = parseInt(input.max) || 999;
+            
+            input.value = Math.max(min, Math.min(max, value));
+            this.syncQuantities();
+        },
+
+        getSiblingInput(btn) {
+            const parent = btn.closest('.quantity-input-group');
+            return parent ? parent.querySelector('.quantity-input-ml') : null;
+        },
+
+        syncQuantities() {
+            const mainInput = Utils.$('.quantity-input-ml');
+            const shippingInput = Utils.$('#qty-shipping');
+            
+            if (mainInput && shippingInput) {
+                shippingInput.value = mainInput.value || '1';
+            }
+        }
+    };
+
+    /**
+     * Application Bootstrap
+     */
+    const App = {
+        init() {
+            // Verificar se estamos na página de produto
+            if (!Utils.$(CONFIG.SELECTORS.pdpConfig)) {
+                return;
+            }
+
+            try {
+                // Inicializar módulos
+                ImageGallery.init();
+                VariationSystem.init();
+                ShippingSystem.init();
+                QuantityControl.init();
+
+                // Setup global error handling
+                window.addEventListener('error', this.handleGlobalError.bind(this));
+                
+                // Performance monitoring
+                this.trackPerformance();
+
+            } catch (error) {
+                console.error('PDP initialization error:', error);
+                this.handleInitializationError(error);
+            }
+        },
+
+        handleGlobalError(error) {
+            console.error('PDP Global Error:', error);
+            // Aqui você poderia enviar para um serviço de monitoramento
+        },
+
+        handleInitializationError(error) {
+            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+            if (configEl) {
+                configEl.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Erro ao inicializar a página. Por favor, recarregue.
+                    </div>
+                `;
+            }
+        },
+
+        trackPerformance() {
+            if ('performance' in window) {
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        const perfData = performance.getEntriesByType('navigation')[0];
+                        if (perfData) {
+                            console.log(`PDP Load Time: ${perfData.loadEventEnd - perfData.fetchStart}ms`);
+                        }
+                    }, 0);
+                });
+            }
+        }
+    };
+
+    /**
+     * Initialize quando DOM estiver pronto
+     */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => App.init());
+    } else {
+        App.init();
     }
 
-    // Qty sync with main cart input
-    const qtyInput = document.getElementById('quantity-' + (CONFIG.product?.id ?? ''));
-    const qtyShipping = document.getElementById('qty-shipping');
-    if (qtyInput && qtyShipping) {
-      qtyShipping.value = qtyInput.value || '1';
-      qtyInput.addEventListener('change', () => { qtyShipping.value = qtyInput.value || '1'; });
+    // Expor utilidades globalmente para debugging
+    if (process.env.NODE_ENV === 'development') {
+        window.PDP = {
+            Utils,
+            ImageGallery,
+            VariationSystem,
+            ShippingSystem,
+            QuantityControl,
+            CONFIG
+        };
     }
-
-    // CEP mask
-    const cepInput = document.getElementById('cep-destino');
-    if (cepInput) {
-      cepInput.addEventListener('input', (e) => {
-        let v = (e.target.value || '').replace(/\D/g, '').slice(0,8);
-        if (v.length > 5) v = v.slice(0,5) + '-' + v.slice(5);
-        e.target.value = v;
-      });
-    }
-
-    // Calc button
-    const btnCalc = document.getElementById('btn-calc-frete');
-    const resultBox = document.getElementById('frete-resultado');
-    if (btnCalc && resultBox) {
-      btnCalc.addEventListener('click', async () => {
-        const cep = (cepInput?.value || '').replace(/\D/g, '');
-        const qty = parseInt(qtyShipping?.value || '1', 10) || 1;
-        if (cep.length !== 8) { showFreteMessage('Informe um CEP válido com 8 dígitos.', 'warning'); return; }
-        await calcularFrete(cep, qty);
-      });
-    }
-
-    // Toggle debug panel details
-    document.getElementById('toggle-frete-debug')?.addEventListener('click', () => {
-      const panel = document.getElementById('frete-debug-panel'); if (!panel) return;
-      panel.style.display = (panel.style.display === 'none' || !panel.style.display) ? 'block' : 'none';
-    });
-
-    // Variations
-    if (hasVariations) { try { initVariationSelectors(); BOOT.variationInit = true; } catch(err){ BOOT.errors.push('variation:'+err.message); console.error('[PDP] variation init error', err); } }
-  }
-
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
-  else try { boot(); } catch(e){ console.error('[PDP] boot error', e); }
 
 })();

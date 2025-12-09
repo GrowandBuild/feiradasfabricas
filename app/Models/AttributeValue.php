@@ -10,12 +10,17 @@ class AttributeValue extends Model
     use HasFactory;
 
     protected $fillable = [
-        'attribute_id', 'value', 'hex', 'sort_order', 'is_active', 'meta'
+        'attribute_id',
+        'value',
+        'hex',
+        'sort_order',
+        'is_active',
+        'meta',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
         'meta' => 'array',
+        'is_active' => 'boolean',
     ];
 
     public function attribute()

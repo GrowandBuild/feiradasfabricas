@@ -10,18 +10,18 @@ class Attribute extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'key', 'department_id', 'sort_order', 'is_active', 'meta'
+        'name',
+        'key',
+        'department_id',
+        'sort_order',
+        'is_active',
+        'meta',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
         'meta' => 'array',
+        'is_active' => 'boolean',
     ];
-
-    public function department()
-    {
-        return $this->belongsTo(Department::class);
-    }
 
     public function values()
     {
