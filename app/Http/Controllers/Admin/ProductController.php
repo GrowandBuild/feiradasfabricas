@@ -441,7 +441,7 @@ class ProductController extends Controller
      */
     public function uploadVariationImage(Request $request, ProductVariation $variation)
     {
-        // Validar: ou image (upload) ou album_image_id (do álbum)
+        // Validar: ou image (upload), album_image_id (do álbum) ou product_image_path (do produto)
         if ($request->hasFile('image')) {
             $request->validate([
                 'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
@@ -450,10 +450,14 @@ class ProductController extends Controller
             $request->validate([
                 'album_image_id' => 'required|exists:album_images,id'
             ]);
+        } elseif ($request->has('product_image_path')) {
+            $request->validate([
+                'product_image_path' => 'required|string'
+            ]);
         } else {
             return response()->json([
                 'success' => false,
-                'message' => 'Envie uma imagem ou selecione uma do álbum'
+                'message' => 'Envie uma imagem, selecione uma do álbum ou do produto'
             ], 422);
         }
 
@@ -484,6 +488,39 @@ class ProductController extends Controller
                             $path = $sourcePath;
                         }
                     }
+                }
+            }
+            // Se é imagem do produto principal
+            elseif ($request->has('product_image_path')) {
+                $productImagePath = $request->product_image_path;
+                $product = $variation->product;
+                
+                // Verificar se a imagem pertence ao produto
+                if ($product && $product->images && in_array($productImagePath, $product->images)) {
+                    // Copiar imagem do produto para a pasta de variações
+                    $sourcePath = $productImagePath;
+                    $destinationPath = 'products/variations/' . basename($sourcePath);
+                    
+                    // Se o arquivo existe, copiar
+                    if (Storage::disk('public')->exists($sourcePath)) {
+                        $copied = Storage::disk('public')->copy($sourcePath, $destinationPath);
+                        if ($copied) {
+                            $path = $destinationPath;
+                        }
+                    } else {
+                        // Se não existe localmente, pode ser URL externa - usar diretamente
+                        if (strpos($sourcePath, 'http') === 0) {
+                            $path = $sourcePath;
+                        } else {
+                            // Usar o caminho original se não conseguir copiar
+                            $path = $sourcePath;
+                        }
+                    }
+                } else {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'Imagem não pertence a este produto'
+                    ], 422);
                 }
             }
             

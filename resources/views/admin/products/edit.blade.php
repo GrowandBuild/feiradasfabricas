@@ -860,12 +860,15 @@
                                        name="image" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
                                 <small class="text-muted">Formatos aceitos: JPEG, PNG, GIF, WebP. Máximo: 5MB</small>
                             </div>
-                            <div class="d-flex gap-2">
+                            <div class="d-flex gap-2 flex-wrap">
                                 <button type="submit" class="btn btn-primary btn-sm" id="upload-variation-image-btn">
                                     <i class="bi bi-upload me-1"></i> Fazer Upload
                                 </button>
                                 <button type="button" class="btn btn-secondary btn-sm" id="select-from-album-btn">
                                     <i class="bi bi-images me-1"></i> Do Álbum
+                                </button>
+                                <button type="button" class="btn btn-info btn-sm" id="select-from-product-btn">
+                                    <i class="bi bi-box-seam me-1"></i> Do Produto
                                 </button>
                             </div>
                         </form>
@@ -2283,6 +2286,112 @@ document.addEventListener('DOMContentLoaded', function() {
     window.viewFullImage = function(url) {
         window.open(url, '_blank');
     };
+    
+    // Botão para selecionar imagem do produto principal
+    document.getElementById('select-from-product-btn')?.addEventListener('click', async function() {
+        const variationId = document.getElementById('variation_images_id').value;
+        
+        // Carregar imagens da variação para pegar as imagens do produto
+        try {
+            const response = await fetch(`/admin/products/variations/${variationId}/images`);
+            const data = await response.json();
+            
+            if (data.success && data.product_images && data.product_images.length > 0) {
+                // Criar modal simples para selecionar imagem do produto
+                const modalHtml = `
+                    <div class="modal fade" id="productImagesSelectModal" tabindex="-1">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Selecionar Imagem do Produto Principal</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p class="text-muted mb-3">Clique em uma imagem para adicioná-la à variação:</p>
+                                    <div class="row g-3">
+                                        ${data.product_images.map(img => `
+                                            <div class="col-4 col-md-3">
+                                                <div class="position-relative border rounded p-2 product-image-select" 
+                                                     data-image-path="${img.path}"
+                                                     style="cursor: pointer; transition: all 0.2s;">
+                                                    <img src="${img.url}" class="w-100" style="height: 120px; object-fit: cover; border-radius: 4px;">
+                                                    <div class="position-absolute top-0 end-0 m-1">
+                                                        <span class="badge bg-primary d-none selected-badge">
+                                                            <i class="bi bi-check-circle"></i>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Remover modal anterior se existir
+                const existingModal = document.getElementById('productImagesSelectModal');
+                if (existingModal) {
+                    existingModal.remove();
+                }
+                
+                // Adicionar modal ao body
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                
+                // Mostrar modal
+                const modal = new bootstrap.Modal(document.getElementById('productImagesSelectModal'));
+                modal.show();
+                
+                // Adicionar event listeners para seleção
+                document.querySelectorAll('.product-image-select').forEach(el => {
+                    el.addEventListener('click', function() {
+                        const imagePath = this.dataset.imagePath;
+                        
+                        // Adicionar imagem à variação
+                        fetch(`/admin/products/variations/${variationId}/images`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ product_image_path: imagePath })
+                        })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                bootstrap.Modal.getInstance(document.getElementById('productImagesSelectModal'))?.hide();
+                                loadVariationImages(variationId);
+                                updateVariationThumbnail(variationId, data.images);
+                            } else {
+                                alert(data.message || 'Erro ao adicionar imagem');
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Erro:', err);
+                            alert('Erro ao adicionar imagem do produto');
+                        });
+                    });
+                    
+                    el.addEventListener('mouseenter', function() {
+                        this.style.transform = 'scale(1.05)';
+                        this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                    });
+                    
+                    el.addEventListener('mouseleave', function() {
+                        this.style.transform = 'scale(1)';
+                        this.style.boxShadow = 'none';
+                    });
+                });
+            } else {
+                alert('O produto principal não possui imagens para selecionar');
+            }
+        } catch (error) {
+            console.error('Erro ao carregar imagens do produto:', error);
+            alert('Erro ao carregar imagens do produto');
+        }
+    });
 });
 </script>
 
