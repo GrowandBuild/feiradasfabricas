@@ -14,9 +14,11 @@ return new class extends Migration
     public function up()
     {
         Schema::table('order_items', function (Blueprint $table) {
-            $table->foreignId('variation_id')->nullable()->after('product_id')
-                  ->constrained('product_variations')->onDelete('set null');
-            $table->index('variation_id');
+            if (!Schema::hasColumn('order_items', 'variation_id')) {
+                $table->foreignId('variation_id')->nullable()->after('product_id')
+                      ->constrained('product_variations')->onDelete('set null');
+                $table->index('variation_id');
+            }
         });
     }
 

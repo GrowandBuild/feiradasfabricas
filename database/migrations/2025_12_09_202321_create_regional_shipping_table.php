@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('regional_shipping', function (Blueprint $table) {
+        if (!Schema::hasTable('regional_shipping')) {
+            Schema::create('regional_shipping', function (Blueprint $table) {
             $table->id();
             $table->string('name'); // Nome da região (ex: "Centro", "Zona Norte", "Região Metropolitana")
             $table->text('description')->nullable(); // Descrição opcional
@@ -38,6 +39,7 @@ return new class extends Migration
             $table->index('cep_start');
             $table->index('cep_end');
         });
+        }
     }
 
     /**

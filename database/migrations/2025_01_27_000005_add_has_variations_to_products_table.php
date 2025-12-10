@@ -13,22 +13,25 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('products', function (Blueprint $table) {
-            if (!Schema::hasColumn('products', 'has_variations')) {
-                $table->boolean('has_variations')->default(false)->after('is_featured');
-            }
-        });
-        
-        // Adicionar índice separadamente se a coluna existe
-        if (Schema::hasColumn('products', 'has_variations')) {
+        // Adicionar coluna se não existir
+        if (!Schema::hasColumn('products', 'has_variations')) {
             Schema::table('products', function (Blueprint $table) {
-                // Verificar se o índice já existe antes de criar
-                $sm = Schema::getConnection()->getDoctrineSchemaManager();
-                $indexesFound = $sm->listTableIndexes('products');
-                if (!isset($indexesFound['products_has_variations_index'])) {
-                    $table->index('has_variations');
-                }
+                $table->boolean('has_variations')->default(false)->after('is_featured');
+                $table->index('has_variations');
             });
+        } else {
+            // Coluna já existe, tentar adicionar índice apenas se não existir
+            try {
+                Schema::table('products', function (Blueprint $table) {
+                    $table->index('has_variations');
+                });
+            } catch (\Illuminate\Database\QueryException $e) {
+                // Se o erro for de índice duplicado, ignorar (código 1061 ou mensagem contém "Duplicate key")
+                if (strpos($e->getMessage(), 'Duplicate key') === false && strpos($e->getMessage(), '1061') === false) {
+                    throw $e; // Relançar se for outro tipo de erro
+                }
+                // Índice já existe, continuar normalmente
+            }
         }
     }
 

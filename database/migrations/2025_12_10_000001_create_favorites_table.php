@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('favorites', function (Blueprint $table) {
+        if (!Schema::hasTable('favorites')) {
+            Schema::create('favorites', function (Blueprint $table) {
             $table->id();
             $table->foreignId('customer_id')->nullable()->constrained()->onDelete('cascade');
             $table->foreignId('admin_id')->nullable()->constrained()->onDelete('cascade');
@@ -25,6 +26,7 @@ return new class extends Migration
             $table->index('admin_id');
             $table->index('product_id');
         });
+        }
     }
 
     /**
