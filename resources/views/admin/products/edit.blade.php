@@ -1243,10 +1243,10 @@ document.addEventListener('DOMContentLoaded', function() {
                         container.appendChild(attrDiv);
                     });
                     
-                    // Mostrar botão de gerar combinações se houver mais de um atributo
+                    // Mostrar botão de gerar combinações se houver atributos
                     const attributeSelects = container.querySelectorAll('.attribute-select');
                     const generateBtn = document.getElementById('generate-all-combinations-btn');
-                    if (attributeSelects.length > 1 && generateBtn) {
+                    if (attributeSelects.length > 0 && generateBtn) {
                         generateBtn.style.display = 'block';
                         // Atualizar preview quando seleções mudarem
                         attributeSelects.forEach(select => {
@@ -1640,8 +1640,18 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        if (attributeValues.length < 2) {
-            alert('Selecione valores em pelo menos 2 atributos para gerar combinações');
+        // Verificar se há pelo menos um atributo com valores selecionados
+        const hasMultipleValues = attributeValues.some(arr => arr.length > 1);
+        const totalAttributes = attributeValues.length;
+        
+        if (totalAttributes === 0) {
+            alert('Selecione pelo menos um atributo com valores para gerar combinações');
+            return;
+        }
+        
+        // Se há apenas um atributo, deve ter múltiplos valores para gerar combinações
+        if (totalAttributes === 1 && !hasMultipleValues) {
+            alert('Para gerar combinações com um único atributo, selecione múltiplos valores desse atributo.\n\nExemplo: Selecione P, M e G no atributo Tamanho para criar 3 variações.');
             return;
         }
         
@@ -1847,7 +1857,18 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (attributesWithMultipleValues.length > 0) {
                 const attrNames = attributesWithMultipleValues.map(a => `${a.name} (${a.count} valores)`).join('\n');
-                alert(`ERRO: Você selecionou múltiplos valores do mesmo atributo:\n\n${attrNames}\n\nUma variação só pode ter UM valor por atributo.\n\nPara criar múltiplas variações com diferentes valores, use o botão "Gerar Combinações" que criará uma variação para cada combinação possível.`);
+                const generateBtn = document.getElementById('generate-all-combinations-btn');
+                const btnVisible = generateBtn && generateBtn.style.display !== 'none';
+                
+                let message = `ERRO: Você selecionou múltiplos valores do mesmo atributo:\n\n${attrNames}\n\nUma variação só pode ter UM valor por atributo.`;
+                
+                if (btnVisible) {
+                    message += `\n\nPara criar múltiplas variações automaticamente, use o botão "Gerar Combinações" acima que criará uma variação para cada combinação possível.`;
+                } else {
+                    message += `\n\nPor favor, selecione apenas um valor por atributo ou use o botão "Gerar Combinações" se disponível.`;
+                }
+                
+                alert(message);
                 return;
             }
             

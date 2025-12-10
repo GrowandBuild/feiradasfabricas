@@ -1243,12 +1243,10 @@
                                         </button>
                                     </div>
 
-                                    @if(request()->routeIs('admin.dashboard'))
-                                        <a href="{{ route('home') }}" class="btn btn-go-store d-none d-md-inline-flex" title="Voltar ao site">
-                                            <i class="bi bi-arrow-return-left"></i>
-                                            <span class="d-none d-lg-inline">Voltar para o site</span>
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('home') }}" class="btn btn-go-store d-none d-md-inline-flex" title="Voltar ao site">
+                                        <i class="bi bi-arrow-return-left"></i>
+                                        <span class="d-none d-lg-inline">Voltar para o site</span>
+                                    </a>
 
                                     <div class="admin-user-chip d-flex align-items-center" role="group" aria-label="Usuário">
                                         <div class="avatar rounded-circle d-flex align-items-center justify-content-center me-2" aria-hidden="true">
