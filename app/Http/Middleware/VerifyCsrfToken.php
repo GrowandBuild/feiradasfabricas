@@ -12,6 +12,9 @@ class VerifyCsrfToken extends Middleware
      * @var array<int, string>
      */
     protected $except = [
-        //
+        // Excluir webhooks de provedores de pagamento
+        'payment/stripe/webhook',
+        'payment/mercadopago/notification',
+        'payment/pagseguro/notification',
     ];
 }

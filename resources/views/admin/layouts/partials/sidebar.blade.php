@@ -82,6 +82,10 @@
                     <i class="bi bi-ticket-perforated"></i> 
                     <span>Cupons</span>
                 </a>
+                <a class="nav-link {{ request()->routeIs('admin.promotional-badges.*') ? 'active' : '' }}" href="{{ route('admin.promotional-badges.index') }}">
+                    <i class="bi bi-tag-fill"></i>
+                    <span>Badges Promocionais</span>
+                </a>
             </div>
 
             <!-- Entregas Regionais - Link direto na lista principal -->
@@ -89,18 +93,6 @@
                 <i class="bi bi-truck"></i> 
                 <span>Entregas Regionais</span>
             </a>
-
-            <div class="nav-section">
-                <div class="nav-section-title">Operação</div>
-                <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">
-                    <i class="bi bi-cart-check"></i> 
-                    <span>Pedidos</span>
-                </a>
-                <a class="nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}">
-                    <i class="bi bi-people"></i> 
-                    <span>Clientes</span>
-                </a>
-            </div>
 
             <div class="nav-section">
                 <div class="nav-section-title">Sistema</div>

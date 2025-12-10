@@ -83,6 +83,25 @@
             gap: 0.75rem;
         }
 
+        .sidebar .nav-link span {
+            white-space: nowrap;
+            overflow: visible;
+            text-overflow: clip;
+            display: inline-block;
+        }
+
+        /* Garantir que o link seja clicável mesmo quando o sidebar está colapsado */
+        .sidebar-collapsed .nav-link {
+            pointer-events: auto;
+            cursor: pointer;
+        }
+
+        .sidebar-collapsed .nav-link span {
+            display: inline-block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
         .sidebar .nav-link:hover {
             color: white;
             background-color: rgba(255,255,255,0.15);
@@ -99,6 +118,44 @@
             font-size: 1.1rem;
             width: 20px;
             text-align: center;
+        }
+
+        /* Submenu do sidebar */
+        .sidebar .nav-item {
+            position: relative;
+        }
+
+        .sidebar .nav-item .submenu {
+            list-style: none !important;
+            padding: 0 !important;
+            margin: 0.25rem 0 0.25rem 1.5rem !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+        }
+
+        .sidebar .nav-item .submenu li {
+            margin: 0;
+            display: block !important;
+        }
+
+        .sidebar .nav-item .submenu .nav-link {
+            padding: 0.625rem 1rem !important;
+            margin: 0.125rem 0.5rem !important;
+            font-size: 0.9rem !important;
+            opacity: 0.85;
+            display: flex !important;
+            visibility: visible !important;
+        }
+
+        .sidebar .nav-item .submenu .nav-link:hover {
+            opacity: 1;
+            background-color: rgba(255,255,255,0.12);
+        }
+
+        .sidebar .nav-item .submenu .nav-link.active {
+            opacity: 1;
+            background-color: rgba(255,255,255,0.18);
         }
 
         .sidebar-header {
@@ -517,6 +574,8 @@
             color: #fff;
             background: rgba(255,255,255,0.06);
         }
+
+        /* Submenu no nav bottom mobile */
 
         @media (max-width: 992px) {
             .page-heading {
@@ -953,255 +1012,7 @@
     <div class="container-fluid">
         <div class="row">
             <!-- Sidebar -->
-            <div class="col-md-3 col-lg-2 px-0">
-                <div class="sidebar">
-                    <div class="sidebar-header">
-                        @php
-                            $siteLogo = setting('site_logo') ?: 'logo-ofc.svg';
-                            if (\Illuminate\Support\Str::startsWith($siteLogo, ['http', 'https'])) {
-                                $siteLogoUrl = $siteLogo;
-                            } else {
-                                $siteLogoUrl = asset(\Illuminate\Support\Str::startsWith($siteLogo, 'storage/') ? $siteLogo : 'storage/' . $siteLogo);
-                            }
-                        @endphp
-                        <a href="{{ route('admin.dashboard') }}" class="sidebar-brand" id="admin-logo-link">
-                            <img id="admin-site-logo" src="{{ $siteLogoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" 
-                                 style="height: 40px; width: auto; cursor: pointer;">
-                        </a>
-                    </div>
-                    <nav class="nav flex-column px-3">
-                        <a class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}" href="{{ route('admin.dashboard') }}">
-                            <i class="bi bi-speedometer2"></i> 
-                            <span>Dashboard</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.departments.*') ? 'active' : '' }}" href="{{ route('admin.departments.index') }}">
-                            <i class="bi bi-grid-3x3-gap-fill"></i>
-                            <span>Departamentos</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
-                            <i class="bi bi-box-seam"></i> 
-                            <span>Produtos</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.brands.*') ? 'active' : '' }}" href="{{ route('admin.brands.index') }}" style="padding-left: 2.5rem;">
-                            <i class="bi bi-tag"></i> 
-                            <span>Marcas</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
-                            <i class="bi bi-tags"></i> 
-                            <span>Categorias</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.attributes.*') ? 'active' : '' }}" href="{{ route('admin.attributes.index') }}">
-                            <i class="bi bi-sliders"></i> 
-                            <span>Atributos</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">
-                            <i class="bi bi-cart-check"></i> 
-                            <span>Pedidos</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}">
-                            <i class="bi bi-people"></i> 
-                            <span>Clientes</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">
-                            <i class="bi bi-ticket-perforated"></i> 
-                            <span>Cupons</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.regional-shipping.*') ? 'active' : '' }}" href="{{ route('admin.regional-shipping.index') }}">
-                            <i class="bi bi-truck"></i>
-                            <span>Entregas Regionais</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}" href="{{ route('admin.banners.index') }}">
-                            <i class="bi bi-image"></i>
-                            <span>Banners</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.albums.*') ? 'active' : '' }}" href="{{ route('admin.albums.index') }}">
-                            <i class="bi bi-images"></i>
-                            <span>Álbuns</span>
-                        </a>
-                        <!-- Galerias removidas -->
-                        <a class="nav-link {{ request()->routeIs('admin.department-badges.*') ? 'active' : '' }}" href="{{ route('admin.department-badges.index') }}">
-                            <i class="bi bi-award"></i>
-                            <span>Selos</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.homepage-sections.*') ? 'active' : '' }}" href="{{ route('admin.homepage-sections.index') }}">
-                            <i class="bi bi-layout-three-columns"></i>
-                            <span>Sessões</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
-                            <i class="bi bi-people"></i> 
-                            <span>Usuários</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}" href="{{ route('admin.settings.index') }}">
-                            <i class="bi bi-gear"></i> 
-                            <span>Configurações</span>
-                        </a>
-                        <a class="nav-link {{ request()->routeIs('admin.hover-effects.*') ? 'active' : '' }}" href="{{ route('admin.hover-effects.index') }}">
-                            <i class="bi bi-cursor-fill"></i> 
-                            <span>Efeitos Hover</span>
-                        </a>
-                        {{-- Links de frete removidos --}}
-                    </nav>
-                    
-                    <!-- Frases Motivacionais e Dicas de Negócio -->
-                    <div class="sidebar-quotes px-3 py-4 mt-4" style="border-top: 1px solid rgba(255,255,255,0.1);">
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(73,90,109,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-lightbulb-fill" style="color: #fbbf24; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #fbbf24;">Diversidade paga:</strong> Ofereça múltiplas opções e variações. Clientes adoram escolhas!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(16,185,129,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-graph-up-arrow" style="color: #10b981; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #10b981;">Margem inteligente:</strong> Ajuste suas margens B2B e B2C para maximizar lucros sem perder competitividade.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(59,130,246,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-box-seam" style="color: #3b82f6; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #3b82f6;">Estoque = Fluxo:</strong> Monitore constantemente. Produto parado é dinheiro parado!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(168,85,247,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-images" style="color: #a855f7; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #a855f7;">Imagem vende:</strong> Fotos de qualidade aumentam conversões em até 300%. Invista nisso!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(236,72,153,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-people-fill" style="color: #ec4899; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #ec4899;">Cliente B2B é ouro:</strong> Eles compram volume. Ofereça condições especiais e fidelize!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(20,184,166,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-chat-dots-fill" style="color: #14b8a6; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #14b8a6;">Descrições claras:</strong> Especificações técnicas detalhadas reduzem devoluções e aumentam confiança.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(251,146,60,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-tags-fill" style="color: #fb923c; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #fb923c;">Categorias organizadas:</strong> Facilite a busca. Cliente que encontra rápido, compra mais!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(34,197,94,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-trophy-fill" style="color: #22c55e; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                        <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #22c55e;">Fornecedores de confiança:</strong> Nomes fortes atraem e convertem!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(147,51,234,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-phone-fill" style="color: #9333ea; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #9333ea;">Smartphones lideram:</strong> Foco em celulares de qualidade. É o produto mais vendido no setor!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(234,179,8,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-cart-check-fill" style="color: #eab308; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #eab308;">Acompanhe pedidos:</strong> Gestão eficiente = clientes satisfeitos = recompra garantida!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(6,182,212,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-cpu-fill" style="color: #06b6d4; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #06b6d4;">Tecnologia atualizada:</strong> Lançamentos recentes geram buzz e atraem early adopters!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(245,158,11,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-star-fill" style="color: #f59e0b; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #f59e0b;">Destaque produtos:</strong> Use badges e banners para promover itens estratégicos!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item mb-3 p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(99,102,241,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-percent" style="color: #6366f1; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #6366f1;">Cupons estratégicos:</strong> Descontos bem planejados impulsionam vendas em momentos certos!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="quote-item p-3" style="background: rgba(255,255,255,0.08); border-radius: 0.75rem; border-left: 3px solid rgba(139,92,246,0.8);">
-                            <div class="d-flex align-items-start gap-2">
-                                <i class="bi bi-rocket-takeoff-fill" style="color: #8b5cf6; font-size: 1.2rem; flex-shrink: 0;"></i>
-                                <div>
-                                    <p class="mb-0" style="color: rgba(255,255,255,0.95); font-size: 0.85rem; line-height: 1.5; font-weight: 500;">
-                                        <strong style="color: #8b5cf6;">Sucesso é constância:</strong> Atualize diariamente, analise métricas e otimize sempre!
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            @include('admin.layouts.partials.sidebar')
 
             <!-- Main Content -->
             <div class="col-md-9 col-lg-10">
@@ -1422,6 +1233,10 @@
                 <a class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">
                     <i class="bi bi-ticket-perforated"></i>
                     <span>Cupons</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.promotional-badges.*') ? 'active' : '' }}" href="{{ route('admin.promotional-badges.index') }}" style="padding-left: 2.5rem; font-size: 0.85rem;">
+                    <i class="bi bi-tag-fill"></i>
+                    <span>Badges</span>
                 </a>
                 <a class="nav-link {{ request()->routeIs('admin.users.*') ? 'active' : '' }}" href="{{ route('admin.users.index') }}">
                     <i class="bi bi-person-badge"></i>

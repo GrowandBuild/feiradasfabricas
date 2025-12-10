@@ -84,11 +84,26 @@ class SettingController extends Controller
             }
 
             foreach ($settings as $key => $value) {
+                // Pular chaves vazias
+                if (empty($key)) {
+                    continue;
+                }
+                
                 // Converter valores booleanos em boolean
                 if (in_array($value, ['true', 'false', '1', '0'], true)) {
                     $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
                 }
-                Setting::set($key, $value);
+                
+                try {
+                    Setting::set($key, $value);
+                } catch (\Exception $e) {
+                    \Log::error('Error saving setting', [
+                        'key' => $key,
+                        'value' => $value,
+                        'error' => $e->getMessage()
+                    ]);
+                    // Continuar com os outros settings mesmo se um falhar
+                }
             }
 
             // If site identity related settings changed, regenerate web manifest
@@ -833,6 +848,7 @@ class SettingController extends Controller
             return response()->json([ 'success' => false, 'message' => 'Erro ao fazer upload da logo.' ], 500);
         }
     }
+
 
     /**
      * Upload do favicon do site via painel admin (chamada AJAX)

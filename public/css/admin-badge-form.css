@@ -1,0 +1,78 @@
+/**
+ * Admin Badge Form Styles
+ * Professional styling for badge creation/editing interface
+ */
+
+.size-template-card, .position-option-card {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+    user-select: none;
+}
+
+.size-template-card:hover, .position-option-card:hover {
+    border-color: var(--bs-primary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.size-template-card.active, .position-option-card.active {
+    border-color: var(--bs-primary);
+    background-color: rgba(var(--bs-primary-rgb), 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--bs-primary-rgb), 0.2);
+}
+
+.badge-preview-container {
+    min-height: 200px;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    padding: 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.badge-preview-container::before {
+    content: 'Preview';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 10px;
+    color: #6c757d;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.badge-preview-content {
+    max-width: 100%;
+    background: white;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.badge-preview-content img {
+    display: block;
+    margin: 0 auto 8px;
+}
+
+[data-bs-toggle="tooltip"] {
+    cursor: help;
+}
+
+.card-header.bg-primary,
+.card-header.bg-success {
+    border-bottom: none;
+}
+
+.form-control-color {
+    height: 38px;
+    cursor: pointer;
+}
+

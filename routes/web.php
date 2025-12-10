@@ -42,19 +42,44 @@ Route::get('/site.webmanifest', function(Request $request) {
     $manifest = [
         'name' => setting('site_name', 'Feira das Fábricas'),
         'short_name' => setting('site_short_name', 'Feira'),
-        'start_url' => '/',
+        'description' => setting('site_description', 'Sua Loja Online Completa'),
+        'start_url' => '/?source=pwa',
         'scope' => '/',
         'display' => 'standalone',
         'orientation' => 'portrait',
         'theme_color' => $themeSecondary,
         'background_color' => $dept_setting('theme_background', '#ffffff'),
         'icons' => [
-            ['src' => '/android-chrome-192x192.png', 'sizes' => '192x192', 'type' => 'image/png'],
-            ['src' => '/android-chrome-512x512.png', 'sizes' => '512x512', 'type' => 'image/png']
+            [
+                'src' => asset('android-chrome-192x192.png'),
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any'
+            ],
+            [
+                'src' => asset('android-chrome-192x192.png'),
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'maskable'
+            ],
+            [
+                'src' => asset('android-chrome-512x512.png'),
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any'
+            ],
+            [
+                'src' => asset('android-chrome-512x512.png'),
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'maskable'
+            ]
         ]
     ];
 
-    return response()->json($manifest)->header('Content-Type', 'application/manifest+json');
+    return response()->json($manifest)
+        ->header('Content-Type', 'application/manifest+json')
+        ->header('Cache-Control', 'public, max-age=3600');
 })->name('site.manifest');
 
 Route::get('/', [DepartmentController::class, 'index'])->name('home')->defaults('slug', 'eletronicos');
@@ -120,19 +145,19 @@ Route::get('/exemplos/banners', function () {
 // Rotas de pagamento
 Route::prefix('payment')->name('payment.')->group(function () {
     // Notificação do Mercado Pago
-    Route::post('/mercadopago/notification', [App\Http\Controllers\PaymentController::class, 'handleMercadoPagoNotification'])->name('mercadopago.notification');
-    
+    Route::post('/mercadopago/notification', [App\Http\Controllers\PaymentController::class, 'handleMercadoPagoNotification'])
+        ->middleware(['verify.webhook', 'throttle:60,1'])
+        ->name('mercadopago.notification');
+
     // Webhook do Stripe
-    Route::post('/stripe/webhook', function () {
-        \Log::info('Webhook do Stripe recebido', request()->all());
-        return response()->json(['status' => 'ok']);
-    })->name('stripe.webhook');
-    
+    Route::post('/stripe/webhook', [App\Http\Controllers\WebhookController::class, 'stripe'])
+        ->middleware(['verify.webhook', 'throttle:60,1'])
+        ->name('stripe.webhook');
+
     // Notificação do PagSeguro
-    Route::post('/pagseguro/notification', function () {
-        \Log::info('Notificação do PagSeguro recebida', request()->all());
-        return response()->json(['status' => 'ok']);
-    })->name('pagseguro.notification');
+    Route::post('/pagseguro/notification', [App\Http\Controllers\WebhookController::class, 'pagSeguro'])
+        ->middleware(['verify.webhook', 'throttle:60,1'])
+        ->name('pagseguro.notification');
 });
 
 // Rotas de autenticação (B2C e B2B)
@@ -163,13 +188,19 @@ Route::prefix('carrinho')->name('cart.')->group(function () {
     
     // Rota para Server-Sent Events (tempo real)
     Route::get('/stream', function() {
+        // Segurança: SSE público pode esgotar processos.
+        // Habilita apenas em ambiente local ou quando APP_DEBUG=true.
+        if (!(app()->environment('local') || config('app.debug'))) {
+            return response()->json(['error' => 'SSE disabled in production'], 403);
+        }
+
         return response()->stream(function() {
             // Configurar headers para SSE
             echo "data: " . json_encode(['type' => 'connected']) . "\n\n";
-            
-            // Manter conexão viva
-            while (true) {
-                echo "data: " . json_encode(['type' => 'ping']) . "\n\n";
+
+            // Limitar a quantidade de pings para evitar loops infinitos em dev
+            for ($i = 0; $i < 20; $i++) {
+                echo "data: " . json_encode(['type' => 'ping', 'count' => $i]) . "\n\n";
                 ob_flush();
                 flush();
                 sleep(30);

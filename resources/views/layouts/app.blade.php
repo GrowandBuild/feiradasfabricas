@@ -1055,6 +1055,7 @@
     </style>
     
     @yield('styles')
+    @stack('styles')
     @stack('head')
 </head>
 <body class="{{ session('admin_view_as_user') ? 'view-as-user' : '' }}">
@@ -1942,6 +1943,13 @@
         </script>
 
     @yield('scripts')
+    
+    {{-- Badge Promocional --}}
+    <x-promotional-badge />
+    
+    {{-- PWA Install Prompt --}}
+    <x-pwa-install-prompt />
+    
     @stack('scripts')
     
         @auth('admin')
@@ -2426,14 +2434,27 @@
     {{-- Service Worker registration for PWA (site-wide) --}}
     <script>
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-                navigator.serviceWorker.register('/service-worker.js').then(function(reg) {
-                    console.log('ServiceWorker registrado com sucesso:', reg.scope);
-                }).catch(function(err) {
-                    console.warn('Falha ao registrar ServiceWorker:', err);
+            // Registrar imediatamente, não esperar pelo load
+            navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                .then(function(reg) {
+                    console.log('✅ ServiceWorker registrado com sucesso:', reg.scope);
+                    console.log('📱 PWA Status:', {
+                        installing: reg.installing,
+                        waiting: reg.waiting,
+                        active: reg.active
+                    });
+                    // Verificar atualizações
+                    reg.addEventListener('updatefound', function() {
+                        console.log('🔄 Nova versão do Service Worker encontrada');
+                    });
+                })
+                .catch(function(err) {
+                    console.error('❌ Falha ao registrar ServiceWorker:', err);
                 });
-            });
+        } else {
+            console.warn('⚠️ Service Worker não suportado neste navegador');
         }
     </script>
+    
 </body>
 </html>

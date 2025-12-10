@@ -118,6 +118,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('coupons', CouponController::class);
         Route::patch('coupons/{coupon}/toggle-active', [CouponController::class, 'toggleActive'])->name('coupons.toggle-active');
 
+        // Badges Promocionais
+        Route::resource('promotional-badges', \App\Http\Controllers\Admin\PromotionalBadgeController::class);
+
         // Banners
         Route::resource('banners', BannerController::class);
     // Fragment endpoint to return a single banner HTML fragment (used by AJAX front-end updates)
@@ -164,7 +167,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('settings/melhor-envio/authorize', [SettingController::class, 'melhorEnvioAuthorize'])->name('settings.melhor-envio.authorize');
     Route::get('settings/melhor-envio/callback', [SettingController::class, 'melhorEnvioCallback'])->name('settings.melhor-envio.callback');
     Route::delete('settings/melhor-envio/token', [SettingController::class, 'melhorEnvioRevoke'])->name('settings.melhor-envio.revoke');
-        Route::delete('settings/{setting}', [SettingController::class, 'destroy'])->name('settings.destroy');
+        Route::delete('settings/{setting}', [SettingController::class, 'destroy'])
+            ->where('setting', '^(?!.*\.blade\.php).*$')
+            ->name('settings.destroy');
 
     // Rotas de frete removidas (Melhor Envio / Providers)
 

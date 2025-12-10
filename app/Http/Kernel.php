@@ -66,5 +66,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'migrate.cart' => \App\Http\Middleware\MigrateCart::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
+        'verify.webhook' => \App\Http\Middleware\VerifyWebhookSignature::class,
     ];
 }

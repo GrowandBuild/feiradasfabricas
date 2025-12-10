@@ -75,12 +75,20 @@ class Setting extends Model
             $setting->save();
         } else {
             // Se não existe, criar novo
-            $setting = static::create([
-                'key' => $key,
+            // Garantir que key não está vazio
+            if (empty($key)) {
+                throw new \InvalidArgumentException('Setting key cannot be empty');
+            }
+            
+            // Usar create com todos os campos explícitos, desabilitando validação
+            $setting = new static();
+            $setting->fill([
+                'key' => (string) $key,
                 'value' => $valueToStore,
-                'type' => $type,
-                'group' => $group,
+                'type' => $type ?? 'string',
+                'group' => $group ?? 'general',
             ]);
+            $setting->save();
         }
 
         // Recarregar do banco para garantir que está atualizado
