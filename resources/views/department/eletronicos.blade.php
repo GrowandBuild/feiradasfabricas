@@ -309,20 +309,52 @@
     /* Botão compacto para cards de categoria - agora preenchido com a cor primaria */
     .elegant-card .btn-outline-primary {
         padding: 8px 16px;
-        font-size: 0.85rem;
-        border-radius: 6px;
-        border: none;
-        background: var(--primary-color);
+        font-size: 0.875rem;
+        border-radius: 8px;
+        border: 1.5px solid rgba(255, 255, 255, 0.3);
+        background: rgba(255, 255, 255, 0.15);
         color: #fff;
-        font-weight: 600;
-        transition: all 0.22s ease;
-        box-shadow: 0 6px 18px color-mix(in srgb, var(--primary-color, #1e293b), transparent 70%);
+        font-weight: 500;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        backdrop-filter: blur(8px);
     }
 
     .elegant-card .btn-outline-primary:hover {
-        background: linear-gradient(135deg, var(--primary-color, var(--elegant-blue)) 0%, var(--secondary-color, var(--elegant-dark)) 100%);
+        background: rgba(255, 255, 255, 0.25);
+        border-color: rgba(255, 255, 255, 0.5);
         color: #fff;
-        transform: var(--btn-transform, translateX(0)) translateY(-3px);
+        transform: var(--btn-transform, translateX(0)) translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .elegant-card .btn-outline-primary i {
+        transition: transform 0.3s ease;
+    }
+    
+    .elegant-card .btn-outline-primary:hover i {
+        transform: translateX(3px);
+    }
+    
+    /* Para cards sem cover, usar estilo mais sutil */
+    .elegant-card:not(.has-cover) .btn-outline-primary {
+        border: 1.5px solid rgba(30, 41, 59, 0.15);
+        background: rgba(30, 41, 59, 0.03);
+        color: #475569;
+    }
+    
+    .elegant-card:not(.has-cover) .btn-outline-primary:hover {
+        background: rgba(30, 41, 59, 0.08);
+        border-color: rgba(30, 41, 59, 0.3);
+        color: #1e293b;
+    }
+    
+    .elegant-card:not(.has-cover) .btn-outline-primary i {
+        opacity: 0.7;
+    }
+    
+    .elegant-card:not(.has-cover) .btn-outline-primary:hover i {
+        opacity: 1;
     }
 
     /* Product Cards */

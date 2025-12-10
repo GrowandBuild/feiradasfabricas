@@ -218,23 +218,36 @@
         line-height: 1.3;
     }
 
-    /* Make category card button use primary color (filled) instead of bootstrap outline blue */
+    /* Make category card button subtle and elegant */
     .elegant-card .btn-outline-primary {
-        padding: 10px 14px;
-        font-size: 0.95rem;
-        border-radius: 6px;
-        border: none;
-        background: var(--primary-color, var(--elegant-accent));
-        color: #fff;
-        font-weight: 600;
-        box-shadow: 0 6px 18px color-mix(in srgb, var(--primary-color, var(--elegant-accent)), transparent 70%);
-        transition: all 0.2s ease;
+        padding: 8px 16px;
+        font-size: 0.875rem;
+        border-radius: 8px;
+        border: 1.5px solid rgba(30, 41, 59, 0.15);
+        background: rgba(30, 41, 59, 0.03);
+        color: #475569;
+        font-weight: 500;
+        box-shadow: none;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(4px);
     }
 
     .elegant-card .btn-outline-primary:hover {
-        background: linear-gradient(135deg, var(--primary-color, var(--elegant-accent)) 0%, var(--secondary-color, #ad1457) 100%);
-        transform: translateY(-2px);
-        color: #fff;
+        background: rgba(30, 41, 59, 0.08);
+        border-color: rgba(30, 41, 59, 0.3);
+        color: #1e293b;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(30, 41, 59, 0.08);
+    }
+    
+    .elegant-card .btn-outline-primary i {
+        transition: transform 0.3s ease;
+        opacity: 0.7;
+    }
+    
+    .elegant-card .btn-outline-primary:hover i {
+        transform: translateX(3px);
+        opacity: 1;
     }
 
     /* Product Cards */

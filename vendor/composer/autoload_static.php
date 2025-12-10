@@ -581,6 +581,7 @@ class ComposerStaticInit5f3e96838ef76a2bca9e52a58bcb5ce6
         'App\\Http\\Controllers\\Admin\\DepartmentController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/DepartmentController.php',
         'App\\Http\\Controllers\\Admin\\DepartmentSectionController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/DepartmentSectionController.php',
         'App\\Http\\Controllers\\Admin\\HomepageSectionController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/HomepageSectionController.php',
+        'App\\Http\\Controllers\\Admin\\HoverEffectsController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/HoverEffectsController.php',
         'App\\Http\\Controllers\\Admin\\LogController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/LogController.php',
         'App\\Http\\Controllers\\Admin\\LogisticController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/LogisticController.php',
         'App\\Http\\Controllers\\Admin\\OrderController' => __DIR__ . '/../..' . '/app/Http/Controllers/Admin/OrderController.php',

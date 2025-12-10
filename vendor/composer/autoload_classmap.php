@@ -38,6 +38,7 @@ return array(
     'App\\Http\\Controllers\\Admin\\DepartmentController' => $baseDir . '/app/Http/Controllers/Admin/DepartmentController.php',
     'App\\Http\\Controllers\\Admin\\DepartmentSectionController' => $baseDir . '/app/Http/Controllers/Admin/DepartmentSectionController.php',
     'App\\Http\\Controllers\\Admin\\HomepageSectionController' => $baseDir . '/app/Http/Controllers/Admin/HomepageSectionController.php',
+    'App\\Http\\Controllers\\Admin\\HoverEffectsController' => $baseDir . '/app/Http/Controllers/Admin/HoverEffectsController.php',
     'App\\Http\\Controllers\\Admin\\LogController' => $baseDir . '/app/Http/Controllers/Admin/LogController.php',
     'App\\Http\\Controllers\\Admin\\LogisticController' => $baseDir . '/app/Http/Controllers/Admin/LogisticController.php',
     'App\\Http\\Controllers\\Admin\\OrderController' => $baseDir . '/app/Http/Controllers/Admin/OrderController.php',
