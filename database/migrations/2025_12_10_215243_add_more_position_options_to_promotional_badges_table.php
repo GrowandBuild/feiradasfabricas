@@ -13,16 +13,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // MySQL não permite alterar ENUM diretamente, então precisamos usar query raw
-        DB::statement("ALTER TABLE promotional_badges MODIFY COLUMN position ENUM(
-            'bottom-right',
-            'bottom-left',
-            'center-bottom',
-            'top-right',
-            'top-left',
-            'center-top',
-            'center'
-        ) DEFAULT 'center-bottom'");
+        // Verificar se a tabela e coluna existem antes de alterar
+        if (Schema::hasTable('promotional_badges') && Schema::hasColumn('promotional_badges', 'position')) {
+            // MySQL não permite alterar ENUM diretamente, então precisamos usar query raw
+            DB::statement("ALTER TABLE promotional_badges MODIFY COLUMN position ENUM(
+                'bottom-right',
+                'bottom-left',
+                'center-bottom',
+                'top-right',
+                'top-left',
+                'center-top',
+                'center'
+            ) DEFAULT 'center-bottom'");
+        }
     }
 
     /**
@@ -30,10 +33,13 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE promotional_badges MODIFY COLUMN position ENUM(
-            'bottom-right',
-            'bottom-left',
-            'center-bottom'
-        ) DEFAULT 'center-bottom'");
+        // Verificar se a tabela e coluna existem antes de alterar
+        if (Schema::hasTable('promotional_badges') && Schema::hasColumn('promotional_badges', 'position')) {
+            DB::statement("ALTER TABLE promotional_badges MODIFY COLUMN position ENUM(
+                'bottom-right',
+                'bottom-left',
+                'center-bottom'
+            ) DEFAULT 'center-bottom'");
+        }
     }
 };
