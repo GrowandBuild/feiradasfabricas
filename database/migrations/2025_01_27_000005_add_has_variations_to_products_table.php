@@ -14,9 +14,22 @@ return new class extends Migration
     public function up()
     {
         Schema::table('products', function (Blueprint $table) {
-            $table->boolean('has_variations')->default(false)->after('is_featured');
-            $table->index('has_variations');
+            if (!Schema::hasColumn('products', 'has_variations')) {
+                $table->boolean('has_variations')->default(false)->after('is_featured');
+            }
         });
+        
+        // Adicionar índice separadamente se a coluna existe
+        if (Schema::hasColumn('products', 'has_variations')) {
+            Schema::table('products', function (Blueprint $table) {
+                // Verificar se o índice já existe antes de criar
+                $sm = Schema::getConnection()->getDoctrineSchemaManager();
+                $indexesFound = $sm->listTableIndexes('products');
+                if (!isset($indexesFound['products_has_variations_index'])) {
+                    $table->index('has_variations');
+                }
+            });
+        }
     }
 
     /**

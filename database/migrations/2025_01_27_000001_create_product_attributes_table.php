@@ -13,18 +13,20 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('product_attributes', function (Blueprint $table) {
-            $table->id();
-            $table->string('name'); // Ex: "Cor", "Tamanho", "Numeração"
-            $table->string('slug')->unique(); // Ex: "cor", "tamanho", "numeracao"
-            $table->enum('type', ['color', 'size', 'text', 'number', 'image'])->default('text');
-            $table->boolean('is_active')->default(true);
-            $table->integer('sort_order')->default(0);
-            $table->timestamps();
-            
-            $table->index(['is_active', 'sort_order']);
-            $table->index('slug');
-        });
+        if (!Schema::hasTable('product_attributes')) {
+            Schema::create('product_attributes', function (Blueprint $table) {
+                $table->id();
+                $table->string('name'); // Ex: "Cor", "Tamanho", "Numeração"
+                $table->string('slug')->unique(); // Ex: "cor", "tamanho", "numeracao"
+                $table->enum('type', ['color', 'size', 'text', 'number', 'image'])->default('text');
+                $table->boolean('is_active')->default(true);
+                $table->integer('sort_order')->default(0);
+                $table->timestamps();
+                
+                $table->index(['is_active', 'sort_order']);
+                $table->index('slug');
+            });
+        }
     }
 
     /**

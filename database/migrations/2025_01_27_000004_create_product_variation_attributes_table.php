@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('product_variation_attributes', function (Blueprint $table) {
+        if (!Schema::hasTable('product_variation_attributes')) {
+            Schema::create('product_variation_attributes', function (Blueprint $table) {
             $table->id();
             $table->foreignId('variation_id')->constrained('product_variations')->onDelete('cascade');
             $table->foreignId('attribute_id')->constrained('product_attributes')->onDelete('cascade');
@@ -27,6 +28,7 @@ return new class extends Migration
             $table->index(['attribute_id', 'attribute_value_id'], 'pva_attr_attrval_idx');
             $table->index('variation_id');
         });
+        }
     }
 
     /**

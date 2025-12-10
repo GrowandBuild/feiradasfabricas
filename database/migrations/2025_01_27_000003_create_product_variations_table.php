@@ -13,7 +13,8 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('product_variations', function (Blueprint $table) {
+        if (!Schema::hasTable('product_variations')) {
+            Schema::create('product_variations', function (Blueprint $table) {
             $table->id();
             $table->foreignId('product_id')->constrained('products')->onDelete('cascade');
             $table->string('sku')->unique(); // SKU único para variação
@@ -31,6 +32,7 @@ return new class extends Migration
             $table->index(['product_id', 'in_stock']); // Para filtrar variações em estoque
             $table->index('sku');
         });
+        }
     }
 
     /**
