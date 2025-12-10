@@ -161,11 +161,42 @@
                 if (e.key === 'ArrowRight') this.navigate(1);
             });
 
+            // Configurar botões de navegação
+            this.setupNavigationButtons();
+
             // Touch gestures para mobile
             const mainImage = Utils.$(CONFIG.SELECTORS.mainImage);
             if (mainImage) {
                 this.setupTouchGestures(mainImage);
                 this.setupZoom(mainImage);
+            }
+        },
+
+        setupNavigationButtons() {
+            // Remover listeners antigos se existirem
+            const prevBtn = document.getElementById('prev-image');
+            const nextBtn = document.getElementById('next-image');
+            
+            if (prevBtn) {
+                // Clonar o botão para remover listeners antigos
+                const newPrevBtn = prevBtn.cloneNode(true);
+                prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
+                newPrevBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.navigate(-1);
+                });
+            }
+            
+            if (nextBtn) {
+                // Clonar o botão para remover listeners antigos
+                const newNextBtn = nextBtn.cloneNode(true);
+                nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+                newNextBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.navigate(1);
+                });
             }
         },
 
@@ -208,7 +239,11 @@
 
         render() {
             this.renderThumbnails();
-            this.setMainImage(0);
+            // Resetar para a primeira imagem quando renderizar
+            if (this.images.length > 0) {
+                this.currentIndex = 0;
+                this.setMainImage(0);
+            }
             this.updateCounter();
         },
 
@@ -1590,6 +1625,8 @@
                 ImageGallery.images = variation.images;
                 ImageGallery.currentIndex = 0;
                 ImageGallery.render();
+                // Reconfigurar event listeners dos botões de navegação
+                ImageGallery.setupNavigationButtons();
             }
 
             // Mostrar info da variação

@@ -59,30 +59,45 @@ class CategoryController extends Controller
 
     public function update(Request $request, Category $category)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_active' => 'boolean',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
+        try {
+            $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+                'is_active' => 'nullable|boolean',
+                'sort_order' => 'nullable|integer|min:0',
+            ]);
 
-        $data = $request->all();
-        $data['slug'] = Str::slug($request->name);
-        $data['is_active'] = $request->has('is_active');
+            $data = [
+                'name' => $request->name,
+                'slug' => Str::slug($request->name),
+                'description' => $request->description ?? null,
+                'is_active' => $request->has('is_active') ? 1 : 0,
+                'sort_order' => $request->sort_order ?? 0,
+            ];
 
-        if ($request->hasFile('image')) {
-            // Remover imagem anterior
-            if ($category->image) {
-                Storage::disk('public')->delete($category->image);
+            if ($request->hasFile('image')) {
+                // Remover imagem anterior
+                if ($category->image) {
+                    Storage::disk('public')->delete($category->image);
+                }
+                $data['image'] = $request->file('image')->store('categories', 'public');
             }
-            $data['image'] = $request->file('image')->store('categories', 'public');
+
+            $category->update($data);
+
+            return redirect()->route('admin.categories.index')
+                            ->with('success', 'Categoria atualizada com sucesso!');
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                            ->withErrors($e->errors())
+                            ->withInput();
+        } catch (\Exception $e) {
+            \Log::error('Erro ao atualizar categoria: ' . $e->getMessage());
+            return redirect()->back()
+                            ->with('error', 'Erro ao atualizar categoria: ' . $e->getMessage())
+                            ->withInput();
         }
-
-        $category->update($data);
-
-        return redirect()->route('admin.categories.index')
-                        ->with('success', 'Categoria atualizada com sucesso!');
     }
 
     public function destroy(Category $category)

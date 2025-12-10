@@ -39,26 +39,45 @@
                 <div class="variation-values-wrapper" data-attribute-type="{{ $attribute->type }}">
                     @if($attribute->type === 'color')
                         <!-- Color Swatches -->
-                        <div class="color-swatches-grid">
-                            @foreach($attribute->values as $value)
-                                @php
-                                    $isAvailable = false;
-                                    $variationId = null;
-                                    $stockQuantity = 0;
-                                    // Verificar se este valor está disponível em alguma combinação COM ESTOQUE
-                                    // A chave da combinação é uma string como "5-8" com os IDs dos valores ordenados
-                                    // Continuar procurando até encontrar uma combinação com estoque
-                                    foreach($allCombinations as $key => $combo) {
-                                        $valueIds = array_map('intval', explode('-', $key));
-                                        if(in_array((int)$value->id, $valueIds)) {
-                                            if($combo['in_stock']) {
-                                                $isAvailable = true;
-                                                $variationId = $combo['variation_id'];
-                                                $stockQuantity = $combo['stock_quantity'];
-                                                break; // Encontrou uma combinação com estoque, pode parar
+                        @php
+                            // Coletar apenas valores que existem em variações reais do produto
+                            $availableValues = [];
+                            foreach($allCombinations as $key => $combo) {
+                                $valueIds = array_map('intval', explode('-', $key));
+                                foreach($valueIds as $valId) {
+                                    // Verificar se este valor pertence ao atributo atual
+                                    $valueObj = $attribute->values->firstWhere('id', $valId);
+                                    if($valueObj && !isset($availableValues[$valId])) {
+                                        // Buscar se tem estoque ou não
+                                        $hasStock = false;
+                                        $varId = null;
+                                        $stockQty = 0;
+                                        foreach($allCombinations as $k => $c) {
+                                            $ids = array_map('intval', explode('-', $k));
+                                            if(in_array($valId, $ids)) {
+                                                $varId = $c['variation_id'];
+                                                $stockQty = $c['stock_quantity'];
+                                                if($c['in_stock']) {
+                                                    $hasStock = true;
+                                                }
                                             }
                                         }
+                                        $availableValues[$valId] = [
+                                            'value' => $valueObj,
+                                            'isAvailable' => $hasStock,
+                                            'variationId' => $varId,
+                                            'stockQuantity' => $stockQty
+                                        ];
                                     }
+                                }
+                            }
+                        @endphp
+                        <div class="color-swatches-grid">
+                            @foreach($availableValues as $valData)
+                                @php
+                                    $value = $valData['value'];
+                                    $isAvailable = $valData['isAvailable'];
+                                    $variationId = $valData['variationId'];
                                 @endphp
                                 <button type="button" 
                                         class="color-swatch {{ !$isAvailable ? 'disabled out-of-stock' : '' }}"
@@ -83,25 +102,45 @@
                         
                     @elseif($attribute->type === 'size')
                         <!-- Size Buttons -->
-                        <div class="size-buttons-grid">
-                            @foreach($attribute->values as $value)
-                                @php
-                                    $isAvailable = false;
-                                    $variationId = null;
-                                    $stockQuantity = 0;
-                                    // Verificar se este valor está disponível em alguma combinação COM ESTOQUE
-                                    // Continuar procurando até encontrar uma combinação com estoque
-                                    foreach($allCombinations as $key => $combo) {
-                                        $valueIds = array_map('intval', explode('-', $key));
-                                        if(in_array((int)$value->id, $valueIds)) {
-                                            if($combo['in_stock']) {
-                                                $isAvailable = true;
-                                                $variationId = $combo['variation_id'];
-                                                $stockQuantity = $combo['stock_quantity'];
-                                                break; // Encontrou uma combinação com estoque, pode parar
+                        @php
+                            // Coletar apenas valores que existem em variações reais do produto
+                            $availableValues = [];
+                            foreach($allCombinations as $key => $combo) {
+                                $valueIds = array_map('intval', explode('-', $key));
+                                foreach($valueIds as $valId) {
+                                    // Verificar se este valor pertence ao atributo atual
+                                    $valueObj = $attribute->values->firstWhere('id', $valId);
+                                    if($valueObj && !isset($availableValues[$valId])) {
+                                        // Buscar se tem estoque ou não
+                                        $hasStock = false;
+                                        $varId = null;
+                                        $stockQty = 0;
+                                        foreach($allCombinations as $k => $c) {
+                                            $ids = array_map('intval', explode('-', $k));
+                                            if(in_array($valId, $ids)) {
+                                                $varId = $c['variation_id'];
+                                                $stockQty = $c['stock_quantity'];
+                                                if($c['in_stock']) {
+                                                    $hasStock = true;
+                                                }
                                             }
                                         }
+                                        $availableValues[$valId] = [
+                                            'value' => $valueObj,
+                                            'isAvailable' => $hasStock,
+                                            'variationId' => $varId,
+                                            'stockQuantity' => $stockQty
+                                        ];
                                     }
+                                }
+                            }
+                        @endphp
+                        <div class="size-buttons-grid">
+                            @foreach($availableValues as $valData)
+                                @php
+                                    $value = $valData['value'];
+                                    $isAvailable = $valData['isAvailable'];
+                                    $variationId = $valData['variationId'];
                                 @endphp
                                 <button type="button" 
                                         class="size-button {{ !$isAvailable ? 'disabled out-of-stock' : '' }}"
@@ -120,21 +159,42 @@
                         
                     @elseif($attribute->type === 'number')
                         <!-- Number Dropdown -->
+                        @php
+                            // Coletar apenas valores que existem em variações reais do produto
+                            $availableValues = [];
+                            foreach($allCombinations as $key => $combo) {
+                                $valueIds = array_map('intval', explode('-', $key));
+                                foreach($valueIds as $valId) {
+                                    $valueObj = $attribute->values->firstWhere('id', $valId);
+                                    if($valueObj && !isset($availableValues[$valId])) {
+                                        $hasStock = false;
+                                        $varId = null;
+                                        foreach($allCombinations as $k => $c) {
+                                            $ids = array_map('intval', explode('-', $k));
+                                            if(in_array($valId, $ids)) {
+                                                $varId = $c['variation_id'];
+                                                if($c['in_stock']) {
+                                                    $hasStock = true;
+                                                }
+                                            }
+                                        }
+                                        $availableValues[$valId] = [
+                                            'value' => $valueObj,
+                                            'isAvailable' => $hasStock,
+                                            'variationId' => $varId
+                                        ];
+                                    }
+                                }
+                            }
+                        @endphp
                         <select class="variation-select form-select"
                                 data-attribute-id="{{ $attribute->id }}">
                             <option value="">Selecione {{ $attribute->name }}</option>
-                            @foreach($attribute->values as $value)
+                            @foreach($availableValues as $valData)
                                 @php
-                                    $isAvailable = false;
-                                    $variationId = null;
-                                    foreach($allCombinations as $key => $combo) {
-                                        $valueIds = array_map('intval', explode('-', $key));
-                                        if(in_array((int)$value->id, $valueIds)) {
-                                            $isAvailable = $combo['in_stock'];
-                                            $variationId = $combo['variation_id'];
-                                            break;
-                                        }
-                                    }
+                                    $value = $valData['value'];
+                                    $isAvailable = $valData['isAvailable'];
+                                    $variationId = $valData['variationId'];
                                 @endphp
                                 <option value="{{ $value->id }}" 
                                         data-variation-id="{{ $variationId }}"
@@ -147,19 +207,40 @@
                         
                     @elseif($attribute->type === 'image')
                         <!-- Image Swatches -->
-                        <div class="image-swatches-grid">
-                            @foreach($attribute->values as $value)
-                                @php
-                                    $isAvailable = false;
-                                    $variationId = null;
-                                    foreach($allCombinations as $key => $combo) {
-                                        $valueIds = array_map('intval', explode('-', $key));
-                                        if(in_array((int)$value->id, $valueIds)) {
-                                            $isAvailable = $combo['in_stock'];
-                                            $variationId = $combo['variation_id'];
-                                            break;
+                        @php
+                            // Coletar apenas valores que existem em variações reais do produto
+                            $availableValues = [];
+                            foreach($allCombinations as $key => $combo) {
+                                $valueIds = array_map('intval', explode('-', $key));
+                                foreach($valueIds as $valId) {
+                                    $valueObj = $attribute->values->firstWhere('id', $valId);
+                                    if($valueObj && !isset($availableValues[$valId])) {
+                                        $hasStock = false;
+                                        $varId = null;
+                                        foreach($allCombinations as $k => $c) {
+                                            $ids = array_map('intval', explode('-', $k));
+                                            if(in_array($valId, $ids)) {
+                                                $varId = $c['variation_id'];
+                                                if($c['in_stock']) {
+                                                    $hasStock = true;
+                                                }
+                                            }
                                         }
+                                        $availableValues[$valId] = [
+                                            'value' => $valueObj,
+                                            'isAvailable' => $hasStock,
+                                            'variationId' => $varId
+                                        ];
                                     }
+                                }
+                            }
+                        @endphp
+                        <div class="image-swatches-grid">
+                            @foreach($availableValues as $valData)
+                                @php
+                                    $value = $valData['value'];
+                                    $isAvailable = $valData['isAvailable'];
+                                    $variationId = $valData['variationId'];
                                 @endphp
                                 <button type="button" 
                                         class="image-swatch {{ !$isAvailable ? 'disabled out-of-stock' : '' }}"
@@ -188,19 +269,40 @@
                         
                     @else
                         <!-- Text Buttons (default) -->
-                        <div class="text-buttons-grid">
-                            @foreach($attribute->values as $value)
-                                @php
-                                    $isAvailable = false;
-                                    $variationId = null;
-                                    foreach($allCombinations as $key => $combo) {
-                                        $valueIds = array_map('intval', explode('-', $key));
-                                        if(in_array((int)$value->id, $valueIds)) {
-                                            $isAvailable = $combo['in_stock'];
-                                            $variationId = $combo['variation_id'];
-                                            break;
+                        @php
+                            // Coletar apenas valores que existem em variações reais do produto
+                            $availableValues = [];
+                            foreach($allCombinations as $key => $combo) {
+                                $valueIds = array_map('intval', explode('-', $key));
+                                foreach($valueIds as $valId) {
+                                    $valueObj = $attribute->values->firstWhere('id', $valId);
+                                    if($valueObj && !isset($availableValues[$valId])) {
+                                        $hasStock = false;
+                                        $varId = null;
+                                        foreach($allCombinations as $k => $c) {
+                                            $ids = array_map('intval', explode('-', $k));
+                                            if(in_array($valId, $ids)) {
+                                                $varId = $c['variation_id'];
+                                                if($c['in_stock']) {
+                                                    $hasStock = true;
+                                                }
+                                            }
                                         }
+                                        $availableValues[$valId] = [
+                                            'value' => $valueObj,
+                                            'isAvailable' => $hasStock,
+                                            'variationId' => $varId
+                                        ];
                                     }
+                                }
+                            }
+                        @endphp
+                        <div class="text-buttons-grid">
+                            @foreach($availableValues as $valData)
+                                @php
+                                    $value = $valData['value'];
+                                    $isAvailable = $valData['isAvailable'];
+                                    $variationId = $valData['variationId'];
                                 @endphp
                                 <button type="button" 
                                         class="text-button {{ !$isAvailable ? 'disabled out-of-stock' : '' }}"

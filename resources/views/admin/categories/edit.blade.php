@@ -13,7 +13,7 @@
                 </h5>
             </div>
             <div class="card-body">
-                <form action="{{ route('admin.categories.update', $category) }}" method="POST" enctype="multipart/form-data">
+                <form id="categoryEditForm" action="{{ route('admin.categories.update', $category) }}" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -99,11 +99,13 @@
 
                     <!-- Status -->
                     <div class="mb-4">
+                        <input type="hidden" name="is_active" value="0">
                         <div class="form-check form-switch">
                             <input class="form-check-input" 
                                    type="checkbox" 
                                    id="is_active" 
                                    name="is_active"
+                                   value="1"
                                    {{ old('is_active', $category->is_active) ? 'checked' : '' }}>
                             <label class="form-check-label" for="is_active">
                                 Categoria Ativa
@@ -123,7 +125,7 @@
                         <a href="{{ route('admin.categories.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-arrow-left"></i> Voltar
                         </a>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary" onclick="document.getElementById('categoryEditForm').submit(); return true;">
                             <i class="bi bi-check-circle"></i> Atualizar Categoria
                         </button>
                     </div>
@@ -183,6 +185,8 @@ function previewImage(input) {
         preview.style.display = 'none';
     }
 }
+
+// Sem JavaScript adicional - formulário funciona nativamente
 </script>
 @endsection
 
