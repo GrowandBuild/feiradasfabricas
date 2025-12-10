@@ -51,25 +51,25 @@ Route::get('/site.webmanifest', function(Request $request) {
         'background_color' => $dept_setting('theme_background', '#ffffff'),
         'icons' => [
             [
-                'src' => asset('android-chrome-192x192.png'),
+                'src' => '/android-chrome-192x192.png',
                 'sizes' => '192x192',
                 'type' => 'image/png',
                 'purpose' => 'any'
             ],
             [
-                'src' => asset('android-chrome-192x192.png'),
+                'src' => '/android-chrome-192x192.png',
                 'sizes' => '192x192',
                 'type' => 'image/png',
                 'purpose' => 'maskable'
             ],
             [
-                'src' => asset('android-chrome-512x512.png'),
+                'src' => '/android-chrome-512x512.png',
                 'sizes' => '512x512',
                 'type' => 'image/png',
                 'purpose' => 'any'
             ],
             [
-                'src' => asset('android-chrome-512x512.png'),
+                'src' => '/android-chrome-512x512.png',
                 'sizes' => '512x512',
                 'type' => 'image/png',
                 'purpose' => 'maskable'
