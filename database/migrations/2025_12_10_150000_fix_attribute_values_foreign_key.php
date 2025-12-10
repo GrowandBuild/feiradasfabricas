@@ -14,58 +14,47 @@ return new class extends Migration
      */
     public function up()
     {
-        if (Schema::hasTable('attribute_values') && Schema::hasTable('product_attributes')) {
-            // Listar todas as foreign keys da tabela attribute_values
-            $foreignKeys = DB::select("
-                SELECT CONSTRAINT_NAME, REFERENCED_TABLE_NAME
-                FROM information_schema.KEY_COLUMN_USAGE
-                WHERE TABLE_SCHEMA = DATABASE()
-                AND TABLE_NAME = 'attribute_values'
-                AND COLUMN_NAME = 'attribute_id'
-                AND REFERENCED_TABLE_NAME IS NOT NULL
-            ");
-            
-            // Remover todas as foreign keys existentes que apontam para a tabela errada
-            foreach ($foreignKeys as $fk) {
-                if ($fk->REFERENCED_TABLE_NAME !== 'product_attributes') {
+        if (Schema::hasTable('attribute_values')) {
+            try {
+                // Listar todas as foreign keys da tabela attribute_values
+                $foreignKeys = DB::select("
+                    SELECT CONSTRAINT_NAME, REFERENCED_TABLE_NAME
+                    FROM information_schema.KEY_COLUMN_USAGE
+                    WHERE TABLE_SCHEMA = DATABASE()
+                    AND TABLE_NAME = 'attribute_values'
+                    AND COLUMN_NAME = 'attribute_id'
+                    AND REFERENCED_TABLE_NAME IS NOT NULL
+                ");
+                
+                // Remover todas as constraints existentes que referenciam attribute_id
+                foreach ($foreignKeys as $fk) {
                     try {
                         DB::statement("ALTER TABLE `attribute_values` DROP FOREIGN KEY `{$fk->CONSTRAINT_NAME}`");
                     } catch (\Exception $e) {
-                        // Ignorar se não conseguir remover
+                        // Constraint pode não existir, continuar
                     }
                 }
-            }
-            
-            // Verificar se já existe foreign key correta
-            $hasCorrectFk = false;
-            foreach ($foreignKeys as $fk) {
-                if ($fk->REFERENCED_TABLE_NAME === 'product_attributes') {
-                    $hasCorrectFk = true;
-                    break;
+                
+                // Determinar qual tabela usar: product_attributes (preferido) ou attributes (fallback)
+                $targetTable = null;
+                if (Schema::hasTable('product_attributes')) {
+                    $targetTable = 'product_attributes';
+                } elseif (Schema::hasTable('attributes')) {
+                    $targetTable = 'attributes';
                 }
-            }
-            
-            // Adicionar foreign key correta se não existir
-            if (!$hasCorrectFk) {
-                try {
-                    Schema::table('attribute_values', function (Blueprint $table) {
+                
+                // Criar constraint correta se a tabela alvo existir
+                if ($targetTable) {
+                    Schema::table('attribute_values', function (Blueprint $table) use ($targetTable) {
                         $table->foreign('attribute_id')
                               ->references('id')
-                              ->on('product_attributes')
+                              ->on($targetTable)
                               ->onDelete('cascade');
                     });
-                } catch (\Exception $e) {
-                    // Se falhar, tentar com SQL direto
-                    try {
-                        DB::statement('
-                            ALTER TABLE `attribute_values`
-                            ADD CONSTRAINT `attribute_values_attribute_id_foreign`
-                            FOREIGN KEY (`attribute_id`) REFERENCES `product_attributes` (`id`) ON DELETE CASCADE
-                        ');
-                    } catch (\Exception $e2) {
-                        // Ignorar se já existir
-                    }
                 }
+            } catch (\Exception $e) {
+                // Se der erro, apenas logar mas não quebrar a migração
+                \Log::warning('Erro ao corrigir foreign key de attribute_values: ' . $e->getMessage());
             }
         }
     }
@@ -77,7 +66,6 @@ return new class extends Migration
      */
     public function down()
     {
-        // Não fazer rollback para evitar problemas
+        // Não fazer rollback automático para evitar problemas
     }
 };
-
