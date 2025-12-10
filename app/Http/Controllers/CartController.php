@@ -6,6 +6,8 @@ use App\Models\CartItem;
 use App\Models\Product;
 use App\Models\ProductVariation;
 use App\Models\Customer;
+use App\Events\CartUpdated;
+use App\Services\VariationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -23,7 +25,23 @@ class CartController extends Controller
         $cartItems = $this->getCartItems();
         $subtotal = $this->calculateSubtotal($cartItems);
         
-        return view('cart.index', compact('cartItems', 'subtotal'));
+        // Calcular frete da sessão
+        $shipping = $this->calculateShipping();
+        $total = $subtotal + $shipping;
+        
+        return view('cart.index', compact('cartItems', 'subtotal', 'shipping', 'total'));
+    }
+    
+    /**
+     * Calcula o frete baseado na seleção da sessão
+     */
+    private function calculateShipping()
+    {
+        $selection = Session::get('shipping_selection');
+        if (is_array($selection) && isset($selection['price'])) {
+            return (float) $selection['price'];
+        }
+        return 0.0;
     }
 
     /**
@@ -33,45 +51,72 @@ class CartController extends Controller
     {
         $request->validate([
             'product_id' => 'required|exists:products,id',
-            'quantity' => 'required|integer|min:1|max:999',
             'variation_id' => 'nullable|exists:product_variations,id',
+            'quantity' => 'required|integer|min:1|max:999',
         ]);
 
         $product = Product::findOrFail($request->product_id);
         
-        // Se houver variation_id, usar a variação; caso contrário, usar o produto
-        $variation = null;
-        $price = $product->price;
-        $stockQuantity = $product->stock_quantity;
-        $inStock = $product->in_stock;
+        // Verificar se produto está ativo
+        if (!$product->is_active) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Produto não está mais disponível para venda.'
+            ], 400);
+        }
 
+        // Se tiver variation_id, usar dados da variação
+        $variation = null;
         if ($request->variation_id) {
-            $variation = ProductVariation::findOrFail($request->variation_id);
-            if ($variation->product_id !== $product->id) {
+            $variation = ProductVariation::where('id', $request->variation_id)
+                                         ->where('product_id', $product->id)
+                                         ->first();
+            
+            if (!$variation) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Variação não pertence a este produto.'
+                    'message' => 'Variação não encontrada para este produto.'
+                ], 404);
+            }
+
+            // Validar variação
+            if (!$variation->in_stock || $variation->stock_quantity < $request->quantity) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Variação não disponível em estoque suficiente. Estoque disponível: {$variation->stock_quantity} unidades."
                 ], 400);
             }
+
             $price = $variation->price;
             $stockQuantity = $variation->stock_quantity;
             $inStock = $variation->in_stock;
+        } else {
+            // Produto sem variação - usar dados do produto
+            $price = $product->price;
+            $stockQuantity = $product->stock_quantity;
+            $inStock = $product->in_stock;
         }
         
         // Verificar se está disponível
         if (!$inStock || $stockQuantity < $request->quantity) {
             return response()->json([
                 'success' => false,
-                'message' => 'Produto não disponível em estoque suficiente.'
+                'message' => "Produto não disponível em estoque suficiente. Estoque disponível: {$stockQuantity} unidades."
             ], 400);
         }
 
         $sessionId = $this->getSessionId();
         $customerId = Auth::guard('customer')->id();
 
-        // Verificar se o item já existe no carrinho (considerando variação)
+        // Verificar se o item já existe no carrinho (considerando variation_id)
         $existingItem = CartItem::where('product_id', $product->id)
-            ->where('product_variation_id', $request->variation_id)
+            ->where(function($query) use ($request) {
+                if ($request->variation_id) {
+                    $query->where('variation_id', $request->variation_id);
+                } else {
+                    $query->whereNull('variation_id');
+                }
+            })
             ->where(function ($query) use ($sessionId, $customerId) {
                 if ($customerId) {
                     $query->where('customer_id', $customerId);
@@ -85,14 +130,27 @@ class CartController extends Controller
             // Atualizar quantidade
             $newQuantity = $existingItem->quantity + $request->quantity;
             
-            if ($newQuantity > $stockQuantity) {
+            // Validar estoque novamente
+            $currentStock = $variation ? $variation->stock_quantity : $product->stock_quantity;
+            $currentInStock = $variation ? $variation->in_stock : $product->in_stock;
+            
+            if (!$currentInStock || $newQuantity > $currentStock) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Quantidade solicitada excede o estoque disponível.'
+                    'message' => "Quantidade solicitada excede o estoque disponível. Estoque: {$currentStock} unidades."
                 ], 400);
             }
             
-            $existingItem->update(['quantity' => $newQuantity]);
+            // Atualizar preço se mudou
+            $currentPrice = $variation ? $variation->price : $product->price;
+            if ($currentPrice != $existingItem->price) {
+                $existingItem->update([
+                    'quantity' => $newQuantity,
+                    'price' => $currentPrice
+                ]);
+            } else {
+                $existingItem->update(['quantity' => $newQuantity]);
+            }
             $item = $existingItem;
         } else {
             // Criar novo item
@@ -100,7 +158,7 @@ class CartController extends Controller
                 'session_id' => $customerId ? null : $sessionId,
                 'customer_id' => $customerId,
                 'product_id' => $product->id,
-                'product_variation_id' => $request->variation_id,
+                'variation_id' => $request->variation_id,
                 'quantity' => $request->quantity,
                 'price' => $price,
             ]);
@@ -108,8 +166,14 @@ class CartController extends Controller
 
         $cartCount = $this->getCartCount();
         $subtotal = $this->calculateSubtotal($this->getCartItems());
-        // Ao alterar o carrinho, invalidar seleção de frete (pode ficar desatualizada)
-        Session::forget('shipping_selection');
+        // Não limpar frete regional/local automaticamente - apenas frete de Correios precisa recalcular
+        $shippingSelection = Session::get('shipping_selection');
+        if (!empty($shippingSelection) && !empty($shippingSelection['shipping_type']) && $shippingSelection['shipping_type'] === 'correios') {
+            // Apenas limpar se for frete dos Correios (que depende de quantidade/peso)
+            Session::forget('shipping_selection');
+        }
+
+        $displayName = $variation ? $variation->formatted_name : $product->name;
 
         return response()->json([
             'success' => true,
@@ -118,7 +182,7 @@ class CartController extends Controller
             'subtotal' => number_format($subtotal, 2, ',', '.'),
             'item' => [
                 'id' => $item->id,
-                'product_name' => $product->name,
+                'product_name' => $displayName,
                 'quantity' => $item->quantity,
                 'price' => number_format($item->price, 2, ',', '.'),
                 'total' => number_format($item->total, 2, ',', '.'),
@@ -144,20 +208,56 @@ class CartController extends Controller
         }
 
         $product = $cartItem->product;
+        $variation = $cartItem->variation;
         
-        if ($request->quantity > $product->stock_quantity) {
+        // Verificar se produto ainda está disponível
+        if (!$product || !$product->is_active) {
             return response()->json([
                 'success' => false,
-                'message' => 'Quantidade solicitada excede o estoque disponível.'
+                'message' => 'Produto não está mais disponível.'
             ], 400);
+        }
+
+        // Se tiver variação, validar variação; senão, validar produto
+        if ($variation) {
+            if (!$variation->in_stock) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Variação não está mais disponível.'
+                ], 400);
+            }
+            
+            if ($request->quantity > $variation->stock_quantity) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Quantidade solicitada excede o estoque disponível ({$variation->stock_quantity} unidades)."
+                ], 400);
+            }
+        } else {
+            if (!$product->in_stock) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Produto não está mais disponível.'
+                ], 400);
+            }
+            
+            if ($request->quantity > $product->stock_quantity) {
+                return response()->json([
+                    'success' => false,
+                    'message' => "Quantidade solicitada excede o estoque disponível ({$product->stock_quantity} unidades)."
+                ], 400);
+            }
         }
 
         $cartItem->update(['quantity' => $request->quantity]);
 
         $cartCount = $this->getCartCount();
         $subtotal = $this->calculateSubtotal($this->getCartItems());
-        // Quantidade mudou, invalida seleção de frete
-        Session::forget('shipping_selection');
+        // Não limpar frete regional/local - apenas frete de Correios precisa recalcular
+        $shippingSelection = Session::get('shipping_selection');
+        if (!empty($shippingSelection) && !empty($shippingSelection['shipping_type']) && $shippingSelection['shipping_type'] === 'correios') {
+            Session::forget('shipping_selection');
+        }
 
         return response()->json([
             'success' => true,
@@ -186,8 +286,11 @@ class CartController extends Controller
 
         $cartCount = $this->getCartCount();
         $subtotal = $this->calculateSubtotal($this->getCartItems());
-        // Item removido, invalida seleção de frete
-        Session::forget('shipping_selection');
+        // Não limpar frete regional/local - apenas frete de Correios precisa recalcular
+        $shippingSelection = Session::get('shipping_selection');
+        if (!empty($shippingSelection) && !empty($shippingSelection['shipping_type']) && $shippingSelection['shipping_type'] === 'correios') {
+            Session::forget('shipping_selection');
+        }
 
         return response()->json([
             'success' => true,
@@ -252,9 +355,16 @@ class CartController extends Controller
         $sessionItems = CartItem::where('session_id', $sessionId)->get();
 
         foreach ($sessionItems as $sessionItem) {
-            // Verificar se já existe item do cliente para o mesmo produto
+            // Verificar se já existe item do cliente para o mesmo produto e variação
             $existingItem = CartItem::where('customer_id', $customerId)
                 ->where('product_id', $sessionItem->product_id)
+                ->where(function($query) use ($sessionItem) {
+                    if ($sessionItem->variation_id) {
+                        $query->where('variation_id', $sessionItem->variation_id);
+                    } else {
+                        $query->whereNull('variation_id');
+                    }
+                })
                 ->first();
 
             if ($existingItem) {
@@ -285,7 +395,7 @@ class CartController extends Controller
         $customerId = Auth::guard('customer')->id();
 
         // Query estrita: só retornar itens que pertencem EXATAMENTE a esta sessão ou cliente
-        $query = CartItem::with('product');
+        $query = CartItem::with(['product', 'variation.attributeValues.attribute', 'variation']);
         
         if ($customerId) {
             // Se logado: só itens do cliente logado E sem session_id
@@ -377,5 +487,21 @@ class CartController extends Controller
         }
     }
 
+    /**
+     * Broadcast atualização do carrinho
+     */
+    private function broadcastCartUpdate($cartCount, $subtotal)
+    {
+        try {
+            event(new CartUpdated([
+                'cart_count' => $cartCount,
+                'cart_total' => $subtotal,
+                'subtotal' => $subtotal
+            ]));
+        } catch (\Exception $e) {
+            // Log error but don't break the flow
+            \Log::error('Erro ao fazer broadcast do carrinho: ' . $e->getMessage());
+        }
+    }
 
 }

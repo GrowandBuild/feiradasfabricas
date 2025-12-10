@@ -97,9 +97,20 @@
         text-decoration: none;
     }
 
-    /* Sections Simplificadas */
+    /* Sections Simplificadas - Melhorado */
     .section {
-        padding: 4rem 0;
+        padding: var(--section-padding, 4rem) 0;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    
+    .section .container {
+        max-width: var(--site-container-max-width, 1320px);
+        margin-left: auto;
+        margin-right: auto;
+        padding-left: var(--site-container-padding, 1.5rem);
+        padding-right: var(--site-container-padding, 1.5rem);
+        box-sizing: border-box;
     }
 
     .section-light {
@@ -427,7 +438,12 @@
         }
         
         .section {
-            padding: 2rem 0;
+            padding: var(--section-padding, 2rem) 0;
+        }
+        
+        .section .container {
+            padding-left: var(--site-container-padding, 1rem);
+            padding-right: var(--site-container-padding, 1rem);
         }
 
         .section-title {
@@ -511,14 +527,29 @@
 @section('content')
 
 <!-- Banner Principal -->
-<x-banner-slider 
-    :departmentId="null" 
-    position="hero" 
-    :limit="1" 
-    :showDots="false" 
-    :showArrows="false" 
-    :autoplay="true" 
-    :interval="5000" />
+@php
+    use App\Helpers\BannerHelper;
+    // Buscar banners globais primeiro, depois banners de qualquer departamento
+    $heroBanners = BannerHelper::getGlobalBanners('hero', 5);
+    if ($heroBanners->count() == 0) {
+        // Se não há banners globais, buscar todos os banners ativos da posição hero
+        $heroBanners = \App\Models\Banner::active()
+            ->byPosition('hero')
+            ->orderBy('sort_order')
+            ->limit(5)
+            ->get();
+    }
+@endphp
+@if($heroBanners->count() > 0)
+    <x-banner-slider 
+        :departmentId="null" 
+        position="hero" 
+        :limit="5" 
+        :showDots="true" 
+        :showArrows="true" 
+        :autoplay="true" 
+        :interval="5000" />
+@endif
 
 <!-- Hero Section (Fallback se não houver banner) -->
 @php

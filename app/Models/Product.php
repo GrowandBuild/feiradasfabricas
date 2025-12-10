@@ -29,12 +29,12 @@ class Product extends Model
         'is_active',
         'is_unavailable',
         'is_featured',
+        'has_variations',
         'brand',
         'brand_id',
         'model',
         'supplier',
         'images',
-        'variation_images',
         'specifications',
         'weight',
         'length',
@@ -60,6 +60,7 @@ class Product extends Model
         'is_active' => 'boolean',
         'is_unavailable' => 'boolean',
         'is_featured' => 'boolean',
+        'has_variations' => 'boolean',
         'price' => 'decimal:2',
         'compare_price' => 'decimal:2',
         'b2b_price' => 'decimal:2',
@@ -71,11 +72,19 @@ class Product extends Model
         'width' => 'decimal:2',
         'height' => 'decimal:2',
         'images' => 'array',
-        'variation_images' => 'array',
         'specifications' => 'array',
         'sell_b2b' => 'boolean',
         'sell_b2c' => 'boolean',
     ];
+
+    /**
+     * Get the route key for the model.
+     * Permite usar slug nas rotas com model binding
+     */
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
 
     /**
      * Relacionamento com departamento
@@ -139,26 +148,101 @@ class Product extends Model
      */
     public function variations()
     {
-        return $this->hasMany(ProductVariation::class)->orderBy('sort_order');
+        return $this->hasMany(ProductVariation::class);
     }
 
     /**
-     * Relacionamento com variações ativas do produto
+     * Relacionamento com variação padrão
      */
-    public function activeVariations()
+    public function defaultVariation()
     {
-        return $this->hasMany(ProductVariation::class)
-            ->where('is_active', true)
-            ->orderBy('sort_order');
+        return $this->hasOne(ProductVariation::class)->where('is_default', true);
     }
 
     /**
-     * Verifica se o produto tem variações
+     * Obtém atributos usados nas variações deste produto (CORRIGIDO: tratamento de erros)
+     */
+    public function attributeSets()
+    {
+        // Verificar se produto tem variações antes de buscar atributos
+        // CORRIGIDO: Retornar Eloquent Collection vazia, não Collection simples
+        if (!$this->has_variations || $this->variations()->count() === 0) {
+            return \App\Models\ProductAttribute::whereIn('id', [])->get(); // Eloquent Collection vazia
+        }
+
+        try {
+            $attributeIds = \App\Models\ProductVariationAttribute::whereHas('variation', function($query) {
+                $query->where('product_id', $this->id);
+            })->distinct()->pluck('attribute_id');
+
+            // CORRIGIDO: Se não houver atributos, retornar Eloquent Collection vazia
+            if ($attributeIds->isEmpty()) {
+                return \App\Models\ProductAttribute::whereIn('id', [])->get(); // Eloquent Collection vazia
+            }
+
+            $attributes = \App\Models\ProductAttribute::whereIn('id', $attributeIds)
+                                  ->where('is_active', true)
+                                  ->with(['values' => function($query) {
+                                      $query->where('is_active', true)->orderBy('sort_order');
+                                  }])
+                                  ->orderBy('sort_order')
+                                  ->get();
+
+            // CORRIGIDO: Sempre retornar Eloquent Collection, nunca Collection simples
+            // O componente espera Eloquent Collection para acessar métodos do Model
+            return $attributes instanceof \Illuminate\Database\Eloquent\Collection 
+                ? $attributes 
+                : \App\Models\ProductAttribute::whereIn('id', [])->get(); // Eloquent Collection vazia
+        } catch (\Exception $e) {
+            // Em caso de erro, retornar Eloquent Collection vazia (não Collection simples!)
+            \Log::warning("Erro ao carregar attributeSets do produto {$this->id}: " . $e->getMessage());
+            return \App\Models\ProductAttribute::whereIn('id', [])->get(); // Eloquent Collection vazia
+        }
+    }
+
+    /**
+     * Verifica se produto tem variações
      */
     public function hasVariations()
     {
-        return $this->variations()->count() > 0;
+        return $this->has_variations && $this->variations()->count() > 0;
     }
+
+    /**
+     * Obtém preço mínimo das variações (ou preço do produto se não tiver variações)
+     */
+    public function getMinPriceAttribute()
+    {
+        if ($this->has_variations) {
+            $minPrice = $this->variations()->min('price');
+            return $minPrice ?: $this->price;
+        }
+        return $this->price;
+    }
+
+    /**
+     * Obtém preço máximo das variações (ou preço do produto se não tiver variações)
+     */
+    public function getMaxPriceAttribute()
+    {
+        if ($this->has_variations) {
+            $maxPrice = $this->variations()->max('price');
+            return $maxPrice ?: $this->price;
+        }
+        return $this->price;
+    }
+
+    /**
+     * Verifica se alguma variação está em estoque
+     */
+    public function hasVariationInStock()
+    {
+        if (!$this->has_variations) {
+            return $this->in_stock;
+        }
+        return $this->variations()->where('in_stock', true)->where('stock_quantity', '>', 0)->exists();
+    }
+
 
     /**
      * Scope para produtos ativos
@@ -248,34 +332,6 @@ class Product extends Model
         return [];
     }
 
-    /**
-     * Obtém o mapa de imagens por cor (URLs completas)
-     */
-    public function getVariationImagesUrlsAttribute(): array
-    {
-        if (!is_array($this->variation_images) || empty($this->variation_images)) {
-            return [];
-        }
-
-        $map = [];
-
-        foreach ($this->variation_images as $color => $images) {
-            if (!is_array($images)) {
-                continue;
-            }
-
-            $map[$color] = array_values(array_map(function ($image) {
-                if (strpos($image, 'http') === 0 || strpos($image, 'https') === 0) {
-                    return $image;
-                }
-
-                // Retornar caminho relativo absoluto
-                return '/storage/' . ltrim($image, '/');
-            }, array_filter($images))); // remove valores vazios
-        }
-
-        return $map;
-    }
 
     /**
      * Verifica se o produto tem múltiplas imagens
@@ -291,6 +347,22 @@ class Product extends Model
     public function getImageCount()
     {
         return is_array($this->images) ? count($this->images) : 0;
+    }
+
+    /**
+     * Relacionamento com favoritos (lista de desejos)
+     */
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    /**
+     * Verifica se o produto está nos favoritos de um cliente
+     */
+    public function isFavoriteFor($customerId)
+    {
+        return $this->favorites()->where('customer_id', $customerId)->exists();
     }
 
     /**

@@ -67,8 +67,7 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 
 ## Features Extras (Projeto)
 
-- Live search otimizada com relevância e pré-seleção de variação
-- Sistema multi-variação com imagens por cor
+- Live search otimizada com relevância
 - Arquitetura inicial de frete (Correios Provider + Aggregator)
 
 ## API de Frete (Fase 1)

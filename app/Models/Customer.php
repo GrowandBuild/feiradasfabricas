@@ -68,6 +68,14 @@ class Customer extends Authenticatable
     }
 
     /**
+     * Relacionamento com favoritos (lista de desejos)
+     */
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class);
+    }
+
+    /**
      * Scope para clientes B2C
      */
     public function scopeB2C($query)

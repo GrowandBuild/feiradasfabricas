@@ -13,7 +13,7 @@ class CartItem extends Model
         'session_id',
         'customer_id',
         'product_id',
-        'product_variation_id',
+        'variation_id',
         'quantity',
         'price',
     ];
@@ -35,7 +35,7 @@ class CartItem extends Model
      */
     public function variation()
     {
-        return $this->belongsTo(ProductVariation::class, 'product_variation_id');
+        return $this->belongsTo(ProductVariation::class);
     }
 
     /**
@@ -44,6 +44,47 @@ class CartItem extends Model
     public function customer()
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    /**
+     * Obtém o produto ou variação para exibição
+     */
+    public function getDisplayProduct()
+    {
+        return $this->variation ?? $this->product;
+    }
+
+    /**
+     * Obtém nome do item (produto ou variação)
+     */
+    public function getDisplayNameAttribute()
+    {
+        if ($this->variation) {
+            return $this->variation->formatted_name ?? $this->product->name;
+        }
+        return $this->product->name ?? 'Produto';
+    }
+
+    /**
+     * Obtém SKU do item (produto ou variação)
+     */
+    public function getDisplaySkuAttribute()
+    {
+        if ($this->variation) {
+            return $this->variation->sku ?? $this->product->sku;
+        }
+        return $this->product->sku ?? '';
+    }
+
+    /**
+     * Obtém imagem do item (variação ou produto)
+     */
+    public function getDisplayImageAttribute()
+    {
+        if ($this->variation && $this->variation->first_image) {
+            return $this->variation->first_image;
+        }
+        return $this->product->first_image ?? asset('images/no-image.svg');
     }
 
     /**

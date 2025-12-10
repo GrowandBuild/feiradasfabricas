@@ -14,7 +14,17 @@
     if ($departmentId) {
         $banners = BannerHelper::getBannersForDisplay($departmentId, $position, $limit);
     } else {
+        // Primeiro tenta buscar banners globais
         $banners = BannerHelper::getGlobalBanners($position, $limit);
+        
+        // Se não há banners globais e estamos na home, busca todos os banners ativos da posição
+        if ($banners->count() == 0 && $position === 'hero') {
+            $banners = \App\Models\Banner::active()
+                ->byPosition($position)
+                ->orderBy('sort_order')
+                ->limit($limit ?? 5)
+                ->get();
+        }
     }
 @endphp
 

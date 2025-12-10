@@ -205,10 +205,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = '{{ route("cart.add") }}';
             const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
             
-            // Verificar se há variation_id selecionada
-            const variationId = document.querySelector('.add-to-cart-component[data-variation-id]')?.getAttribute('data-variation-id') || 
-                                 document.querySelector('[data-product-id][data-variation-id]')?.getAttribute('data-variation-id') || null;
-
             const response = await fetch(url, {
                 method: 'POST',
                 headers: {
@@ -218,8 +214,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 body: JSON.stringify({
                     product_id: productId,
-                    quantity: quantity,
-                    variation_id: variationId
+                    quantity: quantity
                 })
             });
 

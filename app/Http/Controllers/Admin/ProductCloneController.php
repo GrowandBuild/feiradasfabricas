@@ -31,8 +31,8 @@ class ProductCloneController extends Controller
         $request->validate([
             'product_ids' => 'required|array',
             'product_ids.*' => 'exists:products,id',
-            'variations' => 'required|array',
-            'variations.*' => 'string'
+            'suffixes' => 'required|array',
+            'suffixes.*' => 'string'
         ]);
 
         $cloned = 0;
@@ -40,11 +40,11 @@ class ProductCloneController extends Controller
         foreach ($request->product_ids as $productId) {
             $product = Product::find($productId);
             
-            foreach ($request->variations as $variation) {
+            foreach ($request->suffixes as $suffix) {
                 $newProduct = $product->replicate();
-                $newProduct->name = $product->name . ' ' . $variation;
-                $newProduct->slug = Str::slug($product->name . ' ' . $variation . ' ' . time());
-                $newProduct->sku = $product->sku . '-' . strtoupper(str_replace(' ', '', $variation));
+                $newProduct->name = $product->name . ' ' . $suffix;
+                $newProduct->slug = Str::slug($product->name . ' ' . $suffix . ' ' . time());
+                $newProduct->sku = $product->sku . '-' . strtoupper(str_replace(' ', '', $suffix));
                 $newProduct->stock_quantity = 0;
                 $newProduct->is_featured = false;
                 $newProduct->save();

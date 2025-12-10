@@ -15,19 +15,17 @@ $synonyms = [
 ];
 $terms = $synonyms[$color] ?? [$color];
 
-$matches = \App\Models\Product::with(['variations' => function($q){ $q->select('*'); }])
-    ->whereHas('variations', function($q) use ($terms) {
-        $q->where(function($qq) use ($terms) {
-            foreach ($terms as $t) {
-                $qq->orWhereRaw('LOWER(color) LIKE ?', ['%'.mb_strtolower($t).'%']);
-            }
-        });
+// Sistema de variações não implementado - script desabilitado
+// Busca por cores nos nomes dos produtos como alternativa
+$matches = \App\Models\Product::where(function($q) use ($terms) {
+        foreach ($terms as $t) {
+            $q->orWhereRaw('LOWER(name) LIKE ?', ['%'.mb_strtolower($t).'%']);
+        }
     })
     ->limit(10)
     ->get(['id','name','slug']);
 
 echo "Found products: ".count($matches)."\n";
 foreach ($matches as $p) {
-    $vs = $p->variations->pluck('color')->unique()->take(5)->implode(', ');
-    echo "#{$p->id} {$p->name} | colors: {$vs}\n";
+    echo "#{$p->id} {$p->name}\n";
 }

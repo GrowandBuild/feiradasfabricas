@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\DB;
 class SearchController extends Controller
 {
     /**
-     * Extrai atributos da busca (cores, armazenamento, RAM) e normaliza tokens
+     * Extrai termos da busca (cores, armazenamento, RAM) e normaliza tokens
      */
     private function parseQueryAttributes(string $query): array
     {
@@ -72,26 +72,11 @@ class SearchController extends Controller
     }
 
     /**
-     * Escolhe as imagens certas para um produto dado os atributos procurados
+     * Escolhe as imagens certas para um produto dado os termos procurados
      */
     private function chooseImagesForProduct(Product $product, array $attrs): array
     {
-        // 1) Tentar pelas imagens de variação por cor (variation_images)
-        $map = $product->variation_images_urls ?? [];
-        if (!empty($attrs['colors']) || !empty($attrs['color_terms'])) {
-            // Usar sinônimos detectados se existirem, senão lista normalizada
-            $searchColors = !empty($attrs['color_terms']) ? $attrs['color_terms'] : $attrs['colors'];
-            foreach ($map as $colorKey => $imgs) {
-                $ck = mb_strtolower($colorKey);
-                foreach ($searchColors as $sc) {
-                    if (mb_strpos($ck, mb_strtolower($sc)) !== false && !empty($imgs)) {
-                        return $imgs;
-                    }
-                }
-            }
-        }
-
-        // 2) Sem cor detectada ou sem imagens específicas, usar imagens do produto
+        // Usar imagens do produto
         $images = [];
         if ($product->images) {
             $source = is_array($product->images) ? $product->images : (json_decode($product->images, true) ?: []);
@@ -130,7 +115,7 @@ class SearchController extends Controller
             }
         }
 
-        // Extrair atributos (cor/armazenamento/RAM) para uma busca consciente de variação
+        // Extrair atributos (cor/armazenamento/RAM) para busca otimizada
         $attrs = $this->parseQueryAttributes($query);
 
         // Busca principal com otimizações para tempo real
@@ -179,11 +164,10 @@ class SearchController extends Controller
             'real_time' => $isRealTime,
         ];
 
-        // Enriquecer produtos com imagem da variação, quando aplicável
+        // Enriquecer produtos com imagem de capa
         $products->setCollection(
-            $products->getCollection()->map(function($p) use ($attrs) {
-                $p->variant_images = $this->chooseImagesForProduct($p, $attrs);
-                $p->cover_image = $p->variant_images[0] ?? $p->first_image ?? null;
+            $products->getCollection()->map(function($p) {
+                $p->cover_image = $p->first_image ?? null;
                 return $p;
             })
         );
@@ -321,50 +305,11 @@ class SearchController extends Controller
         // Aplicar filtros
         $this->applyFilters($searchQuery, $filters);
 
-        // Se a busca menciona cor/armazenamento, unir com variações para melhorar relevância
-    $joinVariations = !empty($attrs['colors']) || !empty($attrs['color_terms']) || !empty($attrs['storage']) || !empty($attrs['ram']);
-        if ($joinVariations) {
-            $searchQuery->leftJoin('product_variations as pv', 'pv.product_id', '=', 'products.id');
-            if (!empty($attrs['colors']) || !empty($attrs['color_terms'])) {
-                $colorsLower = array_map('mb_strtolower', array_unique(array_merge(
-                    (array) ($attrs['colors'] ?? []),
-                    (array) ($attrs['color_terms'] ?? [])
-                )));
-                $searchQuery->where(function($q) use ($colorsLower) {
-                    foreach ($colorsLower as $c) {
-                        $q->orWhereRaw('LOWER(pv.color) LIKE ?', ["%{$c}%"]);
-                    }
-                });
-            }
-            if (!empty($attrs['storage'])) {
-                $storages = (array) $attrs['storage'];
-                $searchQuery->where(function($q) use ($storages) {
-                    foreach ($storages as $s) {
-                        // comparar removendo espaços/maiúsculas (ex.: 128 GB)
-                        $comp = mb_strtolower(str_replace(' ', '', $s));
-                        $q->orWhereRaw('REPLACE(LOWER(pv.storage), " ", "") LIKE ?', ["%{$comp}%"]);
-                    }
-                });
-            }
-            if (!empty($attrs['ram'])) {
-                $rams = (array) $attrs['ram'];
-                $searchQuery->where(function($q) use ($rams) {
-                    foreach ($rams as $r) {
-                        $comp = mb_strtolower(str_replace(' ', '', $r));
-                        $q->orWhereRaw('REPLACE(LOWER(pv.ram), " ", "") LIKE ?', ["%{$comp}%"]);
-                    }
-                });
-            }
-            $searchQuery->select('products.*')->distinct();
-        }
-
         // Aplicar ordenação
         $this->applySorting($searchQuery, $sort);
 
         // Eager loading necessário
-        $withs = ['categories'];
-        if ($joinVariations) { $withs[] = 'variations'; }
-        return $searchQuery->with($withs);
+        return $searchQuery->with(['categories']);
     }
 
     private function applyFilters($query, $filters)
@@ -733,7 +678,7 @@ class SearchController extends Controller
     }
 
     /**
-     * Live search: resultados rápidos e ranqueados, conscientes de variação
+     * Live search: resultados rápidos e ranqueados
      */
     public function liveSearch(Request $request)
     {
@@ -775,7 +720,6 @@ class SearchController extends Controller
                       ->orWhere('products.sku', 'like', $prefix)
                       ->orWhere('products.slug', 'like', $prefix);
                 })
-                ->with('variations')
                 ->orderBy('products.is_unavailable', 'asc')
                 ->orderBy('products.in_stock', 'desc')
                 ->orderBy('products.name', 'asc')
@@ -787,52 +731,11 @@ class SearchController extends Controller
         // Se o caminho rápido já retornou resultados suficientes, use-o e evite o "scan" amplo
         if ($fastItems->count() >= min($limit, 5)) {
             $items = $fastItems->take($limit);
-            $attrs = $this->parseQueryAttributes($query); // ainda escolheremos melhor imagem/variação
+            $attrs = $this->parseQueryAttributes($query);
 
             $mapped = $items->map(function(Product $p) use ($attrs) {
-                // Escolher variação mais compatível (se houver)
-                $bestVar = null; $bestScore = -1;
-                foreach ($p->variations as $v) {
-                    $score = 0;
-                    if (!empty($attrs['color_terms'])) {
-                        foreach ($attrs['color_terms'] as $term) {
-                            if ($v->color && mb_stripos($v->color, $term) !== false) { $score += 2; break; }
-                        }
-                    } elseif (!empty($attrs['colors'])) {
-                        foreach ($attrs['colors'] as $term) {
-                            if ($v->color && mb_stripos($v->color, $term) !== false) { $score += 2; break; }
-                        }
-                    }
-                    if (!empty($attrs['storage'])) {
-                        foreach ($attrs['storage'] as $s) {
-                            $comp = mb_strtolower(str_replace(' ', '', $s));
-                            if ($v->storage && mb_strtolower(str_replace(' ', '', $v->storage)) === $comp) { $score += 2; break; }
-                        }
-                    }
-                    if (!empty($attrs['ram'])) {
-                        foreach ($attrs['ram'] as $r) {
-                            $comp = mb_strtolower(str_replace(' ', '', $r));
-                            if ($v->ram && mb_strtolower(str_replace(' ', '', $v->ram)) === $comp) { $score += 1; break; }
-                        }
-                    }
-                    if ($score > $bestScore) { $bestScore = $score; $bestVar = $v; }
-                }
-
                 $images = $this->chooseImagesForProduct($p, $attrs);
-                $displayName = $p->name; $variantUrl = null;
-                if ($bestVar) {
-                    $parts = [];
-                    if ($bestVar->storage) $parts[] = $bestVar->storage;
-                    if ($bestVar->ram) $parts[] = $bestVar->ram;
-                    if ($bestVar->color) $parts[] = $bestVar->color;
-                    if (!empty($parts)) { $displayName .= ' — ' . implode(' / ', $parts); }
-                    $params = [];
-                    if ($bestVar->color) { $params['color'] = $bestVar->color; }
-                    if ($bestVar->storage) { $params['storage'] = $bestVar->storage; }
-                    if ($bestVar->ram) { $params['ram'] = $bestVar->ram; }
-                    $qs = http_build_query($params);
-                    $variantUrl = url('/produto/' . $p->slug . ($qs ? ('?' . $qs) : ''));
-                }
+                $displayName = $p->name;
 
                 return [
                     'id' => $p->id,
@@ -848,7 +751,6 @@ class SearchController extends Controller
                     'short_description' => $p->short_description,
                     'description' => $p->description,
                     'display_name' => $displayName,
-                    'variant_url' => $variantUrl,
                     'product_url' => url('/produto/' . $p->slug),
                 ];
             });
@@ -874,43 +776,6 @@ class SearchController extends Controller
               ->orWhereRaw('LOWER(products.sku) LIKE ?', ["%{$lowerq}%"]);
         });
 
-        // Join com variações somente se for útil (cores/armazenamento/ram detectados)
-        $joinVariations = !empty($attrs['colors']) || !empty($attrs['color_terms']) || !empty($attrs['storage']) || !empty($attrs['ram']);
-        if ($joinVariations) {
-            $qb->leftJoin('product_variations as pv', 'pv.product_id', '=', 'products.id');
-
-            if (!empty($attrs['colors']) || !empty($attrs['color_terms'])) {
-                $colorsLower = array_map('mb_strtolower', array_unique(array_merge(
-                    (array) ($attrs['colors'] ?? []),
-                    (array) ($attrs['color_terms'] ?? [])
-                )));
-                $qb->where(function($q) use ($colorsLower) {
-                    foreach ($colorsLower as $c) {
-                        $q->orWhereRaw('LOWER(pv.color) LIKE ?', ["%{$c}%"]);
-                    }
-                });
-            }
-            if (!empty($attrs['storage'])) {
-                $storages = (array) $attrs['storage'];
-                $qb->where(function($q) use ($storages) {
-                    foreach ($storages as $s) {
-                        $comp = mb_strtolower(str_replace(' ', '', $s));
-                        $q->orWhereRaw('REPLACE(LOWER(pv.storage), " ", "") LIKE ?', ["%{$comp}%"]);
-                    }
-                });
-            }
-            if (!empty($attrs['ram'])) {
-                $rams = (array) $attrs['ram'];
-                $qb->where(function($q) use ($rams) {
-                    foreach ($rams as $r) {
-                        $comp = mb_strtolower(str_replace(' ', '', $r));
-                        $q->orWhereRaw('REPLACE(LOWER(pv.ram), " ", "") LIKE ?', ["%{$comp}%"]);
-                    }
-                });
-            }
-
-            $qb->select('products.*')->distinct();
-        }
 
         // Relevância: dar boost para matches fortes e casos especiais (ex.: "pro max", "iphone x")
         $scorePieces = [];
@@ -982,62 +847,12 @@ class SearchController extends Controller
            ->orderBy('products.in_stock', 'desc')
            ->orderBy('products.name', 'asc');
 
-        // Trazer variações para montar display_name/variant_url
-        $qb->with('variations');
-
         $items = $qb->limit($limit)->get();
 
         // Mapear para payload enxuto da live search
         $mapped = $items->map(function(Product $p) use ($attrs) {
-            // Escolher variação mais compatível (se houver)
-            $bestVar = null;
-            $bestScore = -1;
-            foreach ($p->variations as $v) {
-                $score = 0;
-                if (!empty($attrs['color_terms'])) {
-                    foreach ($attrs['color_terms'] as $term) {
-                        if ($v->color && mb_stripos($v->color, $term) !== false) { $score += 2; break; }
-                    }
-                } elseif (!empty($attrs['colors'])) {
-                    foreach ($attrs['colors'] as $term) {
-                        if ($v->color && mb_stripos($v->color, $term) !== false) { $score += 2; break; }
-                    }
-                }
-                if (!empty($attrs['storage'])) {
-                    foreach ($attrs['storage'] as $s) {
-                        $comp = mb_strtolower(str_replace(' ', '', $s));
-                        if ($v->storage && mb_strtolower(str_replace(' ', '', $v->storage)) === $comp) { $score += 2; break; }
-                    }
-                }
-                if (!empty($attrs['ram'])) {
-                    foreach ($attrs['ram'] as $r) {
-                        $comp = mb_strtolower(str_replace(' ', '', $r));
-                        if ($v->ram && mb_strtolower(str_replace(' ', '', $v->ram)) === $comp) { $score += 1; break; }
-                    }
-                }
-                if ($score > $bestScore) { $bestScore = $score; $bestVar = $v; }
-            }
-
             $images = $this->chooseImagesForProduct($p, $attrs);
-
             $displayName = $p->name;
-            $variantUrl = null;
-            if ($bestVar) {
-                $parts = [];
-                if ($bestVar->storage) $parts[] = $bestVar->storage;
-                if ($bestVar->ram) $parts[] = $bestVar->ram;
-                if ($bestVar->color) $parts[] = $bestVar->color;
-                if (!empty($parts)) {
-                    $displayName .= ' — ' . implode(' / ', $parts);
-                }
-                // Em vez de enviar para a rota da variação, enviar para a página do produto com pré-seleção via querystring
-                $params = [];
-                if ($bestVar->color) { $params['color'] = $bestVar->color; }
-                if ($bestVar->storage) { $params['storage'] = $bestVar->storage; }
-                if ($bestVar->ram) { $params['ram'] = $bestVar->ram; }
-                $qs = http_build_query($params);
-                $variantUrl = url('/produto/' . $p->slug . ($qs ? ('?' . $qs) : ''));
-            }
 
             return [
                 'id' => $p->id,
@@ -1053,7 +868,6 @@ class SearchController extends Controller
                 'short_description' => $p->short_description,
                 'description' => $p->description,
                 'display_name' => $displayName,
-                'variant_url' => $variantUrl,
                 'product_url' => url('/produto/' . $p->slug),
             ];
         });

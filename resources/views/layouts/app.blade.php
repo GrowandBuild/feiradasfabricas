@@ -23,11 +23,10 @@
     } else {
         $logoUrl = asset('logo-ofc.svg');
     }
-    // logo size settings (admin configurable)
+    // logo size settings (admin configurable) - salvo no banco de dados
     $logoMaxHeight = \App\Models\Setting::get('site_logo_max_height');
     $logoMaxWidth = \App\Models\Setting::get('site_logo_max_width');
-    // per-user override stored in session (px)
-    $userLogoSize = session('user_logo_size');
+    // Tamanho fixo para todos os usuários (controlado apenas pelo admin nas settings)
 @endphp
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -123,8 +122,9 @@
             }
 
             .logo-img {
-                max-height: none;
+                /* max-height removido - controlado pelo usuário via session/user_logo_size */
                 height: auto;
+                width: auto;
             }
 
             /* Search bar smaller */
@@ -246,6 +246,11 @@
             z-index: 1000;
         }
 
+        .navbar-custom .container {
+            padding-left: var(--site-container-padding, 1rem);
+            padding-right: var(--site-container-padding, 1rem);
+        }
+
         .navbar-brand {
             color: white !important;
             font-family: 'Poppins', sans-serif;
@@ -264,8 +269,9 @@
         }
 
         .logo-img {
-            height: 35px;
+            height: auto;
             width: auto;
+            /* O tamanho é controlado pelo max-height/max-width inline ou via JavaScript */
         }
 
         .search-bar {
@@ -395,11 +401,22 @@
             transform: translateY(0);
         }
 
-        /* Ocultar contador do carrinho */
-        .header-icon .badge,
-        .header-icon .cart-badge,
-        .header-icon .cart-count {
-            display: none !important;
+        /* Badge do carrinho no desktop - agora visível */
+        .header-icon .quick-action-badge {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 999px;
+            font-size: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            background: var(--secondary-color, #ff6b35);
+            color: #fff;
+            font-weight: 600;
         }
 
         .mobile-menu-button {
@@ -639,6 +656,12 @@
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
             }
 
+            /* Garantir padding lateral no header mobile */
+            .navbar-custom .container {
+                padding-left: 1rem !important;
+                padding-right: 1rem !important;
+            }
+
             /* Footer Mobile */
             .footer {
                 padding: 2rem 0 1rem;
@@ -666,10 +689,21 @@
                 margin-top: 1rem;
             }
 
-            /* Container mobile */
+            /* Container mobile - Melhorado */
             .container {
-                padding-left: 1rem;
-                padding-right: 1rem;
+                max-width: var(--site-container-max-width, 1320px);
+                padding-left: var(--site-container-padding, 1rem);
+                padding-right: var(--site-container-padding, 1rem);
+                margin-left: auto;
+                margin-right: auto;
+                box-sizing: border-box;
+            }
+            
+            .container-fluid {
+                width: 100%;
+                padding-left: var(--site-container-padding, 1rem);
+                padding-right: var(--site-container-padding, 1rem);
+                box-sizing: border-box;
             }
 
             /* Espaçamentos gerais mobile */
@@ -936,6 +970,20 @@
         };
     $sessionTheme = session('current_department_theme', null);
     @endphp
+    @php
+        // Carregar configurações de hover do banco de dados
+        $hoverEnabled = \App\Models\Setting::get('hover_effects_enabled', true);
+        $hoverScale = \App\Models\Setting::get('hover_transform_scale', 1.05);
+        $hoverTranslateY = \App\Models\Setting::get('hover_transform_translate_y', -8);
+        $hoverShadow = \App\Models\Setting::get('hover_shadow_intensity', 24);
+        $hoverDuration = \App\Models\Setting::get('hover_transition_duration', 0.3);
+        $hoverEasing = \App\Models\Setting::get('hover_transition_easing', 'cubic-bezier(0.4, 0, 0.2, 1)');
+        $hoverBorderOpacity = \App\Models\Setting::get('hover_border_color_intensity', 0.8);
+        
+        // Calcular valores de sombra
+        $hoverShadowBlur = round($hoverShadow * 0.4);
+        $hoverShadowSpread = round($hoverShadow * 0.1);
+    @endphp
     <style>
         :root {
             --primary-color: {{ $sessionTheme['theme_primary'] ?? $dept_setting('theme_primary', '#0f172a') }};
@@ -948,7 +996,62 @@
             --warning-color: {{ $sessionTheme['theme_warning'] ?? $dept_setting('theme_warning', '#f59e0b') }};
             --danger-color: {{ $sessionTheme['theme_danger'] ?? $dept_setting('theme_danger', '#ef4444') }};
             --border-color: {{ $sessionTheme['theme_border'] ?? $dept_setting('theme_border', '#e2e8f0') }};
+            
+            /* Variáveis de Hover (controladas pelo admin) */
+            --hover-effects-enabled: {{ $hoverEnabled ? '1' : '0' }};
+            --hover-transform-scale: {{ $hoverScale }};
+            --hover-transform-translate-y: {{ $hoverTranslateY }}px;
+            --hover-shadow-blur: {{ $hoverShadowBlur }}px;
+            --hover-shadow-spread: {{ $hoverShadowSpread }}px;
+            --hover-transition-duration: {{ $hoverDuration }}s;
+            --hover-transition-easing: {{ $hoverEasing }};
+            --hover-border-opacity: {{ $hoverBorderOpacity }};
         }
+        
+        /* Aplicar efeitos de hover apenas se estiverem habilitados */
+        @if($hoverEnabled)
+            /* Cards de Produtos */
+            .product-card-modern:hover,
+            .product-card:hover,
+            .album-card:hover {
+                transform: translateY(var(--hover-transform-translate-y)) scale(var(--hover-transform-scale)) !important;
+                box-shadow: 0 var(--hover-shadow-blur) var(--hover-shadow-spread) rgba(0, 0, 0, 0.12) !important;
+                transition: all var(--hover-transition-duration) var(--hover-transition-easing) !important;
+            }
+            
+            /* Borda colorida no hover usando secondary-color */
+            .product-card-modern:hover,
+            .product-card:hover {
+                border-color: color-mix(in srgb, var(--secondary-color) var(--hover-border-opacity), transparent) !important;
+            }
+            
+            /* Botões com hover */
+            .btn:hover:not(:disabled),
+            .btn-product-add:hover,
+            .btn-filter-primary:hover {
+                transform: translateY(calc(var(--hover-transform-translate-y) * 0.5)) !important;
+                transition: all var(--hover-transition-duration) var(--hover-transition-easing) !important;
+            }
+            
+            /* Cards e elementos interativos */
+            .card:hover:not(.product-card-modern):not(.product-card),
+            .filters-card:hover {
+                transform: translateY(calc(var(--hover-transform-translate-y) * 0.3)) !important;
+                box-shadow: 0 calc(var(--hover-shadow-blur) * 0.7) calc(var(--hover-shadow-spread) * 0.7) rgba(0, 0, 0, 0.08) !important;
+                transition: all var(--hover-transition-duration) var(--hover-transition-easing) !important;
+            }
+        @else
+            /* Desabilitar todos os hovers */
+            .product-card-modern:hover,
+            .product-card:hover,
+            .album-card:hover,
+            .card:hover,
+            .btn:hover:not(:disabled) {
+                transform: none !important;
+                box-shadow: none !important;
+                transition: none !important;
+            }
+        @endif
     </style>
     
     @yield('styles')
@@ -980,7 +1083,7 @@
         <div class="container">
             <!-- Logo -->
             <a class="navbar-brand" href="{{ route('home') }}">
-                <img id="siteLogoImage" src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="height:auto !important; width:auto !important; {{ ($userLogoSize ?? null) ? 'max-height:'.($userLogoSize).'px !important; max-width:'.($userLogoSize).'px !important;' : ($logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '') . ' ' . ($logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '') }}">
+                <img id="siteLogoImage" src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="height:auto !important; width:auto !important; {{ $logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '' }} {{ $logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '' }}">
                 {{-- logo-size controls removed from header; admin control moved to admin bottom nav --}}
             </a>
 
@@ -995,7 +1098,7 @@
                 <div class="mobile-header">
                     <div class="mobile-top-bar">
                         <a class="mobile-logo" href="{{ route('home') }}" onclick="if(window.innerWidth <= 768){ event.preventDefault(); }">
-                            <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="height:auto !important; width:auto !important; {{ ($userLogoSize ?? null) ? 'max-height:'.($userLogoSize).'px !important; max-width:'.($userLogoSize).'px !important;' : ($logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '') . ' ' . ($logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '') }}">
+                            <img src="{{ $logoUrl }}" alt="{{ setting('site_name', 'Feira das Fábricas') }}" class="logo-img" style="height:auto !important; width:auto !important; {{ $logoMaxHeight ? 'max-height:'.$logoMaxHeight.'px !important;' : '' }} {{ $logoMaxWidth ? 'max-width:'.$logoMaxWidth.'px !important;' : '' }}">
                         </a>
                         {{-- mobile logo menu removed (simplified header). Admin controls are available in the floating FAB --}}
                         <button class="mobile-menu-button mobile-user-avatar" type="button" aria-label="Abrir menu">
@@ -1023,9 +1126,39 @@
                         <a href="#" class="quick-action" title="Notificações">
                             <i class="fas fa-bell"></i>
                         </a>
-                        <a href="{{ route('contact') }}" class="quick-action" title="Suporte">
-                            <i class="fas fa-headphones"></i>
-                        </a>
+                        @auth('customer')
+                            <a href="{{ route('wishlist.index') }}" class="quick-action" title="Lista de Desejos">
+                                <i class="fas fa-heart"></i>
+                                @php
+                                    try {
+                                        $wishlistCount = auth('customer')->user()->favorites()->count() ?? 0;
+                                    } catch (\Exception $e) {
+                                        $wishlistCount = 0;
+                                    }
+                                @endphp
+                                @if($wishlistCount > 0)
+                                    <span class="quick-action-badge" style="background: var(--secondary-color, #ff6b35);">{{ $wishlistCount }}</span>
+                                @endif
+                            </a>
+                        @elseauth('admin')
+                            <a href="{{ route('wishlist.index') }}" class="quick-action" title="Lista de Desejos">
+                                <i class="fas fa-heart"></i>
+                                @php
+                                    try {
+                                        $wishlistCount = auth('admin')->user()->favorites()->count() ?? 0;
+                                    } catch (\Exception $e) {
+                                        $wishlistCount = 0;
+                                    }
+                                @endphp
+                                @if($wishlistCount > 0)
+                                    <span class="quick-action-badge" style="background: var(--secondary-color, #ff6b35);">{{ $wishlistCount }}</span>
+                                @endif
+                            </a>
+                        @else
+                            <a href="{{ route('login') }}" class="quick-action" title="Lista de Desejos">
+                                <i class="fas fa-heart"></i>
+                            </a>
+                        @endauth
                         @auth('customer')
                             <a href="{{ route('orders.index') }}" class="quick-action" title="Minha Conta">
                                 <i class="fas fa-user"></i>
@@ -1088,17 +1221,47 @@
                     <a href="{{ route('albums.index') }}" class="header-icon" title="Álbuns de Imagens">
                         <i class="fas fa-image"></i>
                     </a>
-                    <a href="#" class="header-icon" title="Favoritos">
-                        <i class="fas fa-heart"></i>
-                    </a>
+                    @auth('customer')
+                        <a href="{{ route('wishlist.index') }}" class="header-icon" title="Lista de Desejos">
+                            <i class="fas fa-heart"></i>
+                            @php
+                                try {
+                                    $wishlistCount = auth('customer')->user()->favorites()->count() ?? 0;
+                                } catch (\Exception $e) {
+                                    $wishlistCount = 0;
+                                }
+                            @endphp
+                            @if($wishlistCount > 0)
+                                <span class="quick-action-badge" style="background: var(--secondary-color, #ff6b35); position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; border-radius: 999px; font-size: 11px; display: flex; align-items: center; justify-content: center; padding: 0 4px;">{{ $wishlistCount }}</span>
+                            @endif
+                        </a>
+                    @elseauth('admin')
+                        <a href="{{ route('wishlist.index') }}" class="header-icon" title="Lista de Desejos">
+                            <i class="fas fa-heart"></i>
+                            @php
+                                try {
+                                    $wishlistCount = auth('admin')->user()->favorites()->count() ?? 0;
+                                } catch (\Exception $e) {
+                                    $wishlistCount = 0;
+                                }
+                            @endphp
+                            @if($wishlistCount > 0)
+                                <span class="quick-action-badge" style="background: var(--secondary-color, #ff6b35); position: absolute; top: -6px; right: -6px; min-width: 18px; height: 18px; border-radius: 999px; font-size: 11px; display: flex; align-items: center; justify-content: center; padding: 0 4px;">{{ $wishlistCount }}</span>
+                            @endif
+                        </a>
+                    @else
+                        <a href="{{ route('login') }}" class="header-icon" title="Lista de Desejos">
+                            <i class="fas fa-heart"></i>
+                        </a>
+                    @endauth
                     <a href="#" class="header-icon" title="Notificações">
                         <i class="fas fa-bell"></i>
                     </a>
-                    <a href="{{ route('contact') }}" class="header-icon" title="Suporte">
-                        <i class="fas fa-headphones"></i>
-                    </a>
                     <a href="{{ route('cart.index') }}" class="header-icon" title="Carrinho">
                         <i class="fas fa-shopping-cart"></i>
+                        @if($cartCount > 0)
+                            <span class="quick-action-badge">{{ $cartCount }}</span>
+                        @endif
                     </a>
                     @auth('customer')
                         @php
@@ -1330,6 +1493,9 @@
                     <h6>Empresa</h6>
                     <ul class="list-unstyled">
                         <li><a href="#" class="text-light">Sobre Nós</a></li>
+                        @auth('customer')
+                            <li><a href="{{ route('wishlist.index') }}" class="text-light">Lista de Desejos</a></li>
+                        @endauth
                         <li><a href="{{ route('contact') }}" class="text-light">Contato</a></li>
                         <li><a href="#" class="text-light">Trabalhe Conosco</a></li>
                     </ul>
@@ -1387,6 +1553,25 @@
     </script>
     
     <style>
+        /* Aplicar tamanho da logo globalmente via CSS (prioridade máxima) */
+        @if($logoMaxHeight && is_numeric($logoMaxHeight))
+            #siteLogoImage.logo-img,
+            .mobile-logo img.logo-img,
+            .logo-img {
+                max-height: {{ (int)$logoMaxHeight }}px !important;
+                height: auto !important;
+            }
+        @endif
+        
+        @if($logoMaxWidth && is_numeric($logoMaxWidth))
+            #siteLogoImage.logo-img,
+            .mobile-logo img.logo-img,
+            .logo-img {
+                max-width: {{ (int)$logoMaxWidth }}px !important;
+                width: auto !important;
+            }
+        @endif
+        
         .logo-size-picker{
             position: absolute;
             background: #fff;
@@ -1417,11 +1602,95 @@
     </style>
 
     <script>
+        // Função para aplicar tamanho da logo das settings (sempre disponível)
+        function applyLogoSizes() {
+            try {
+                var imgs = document.querySelectorAll('#siteLogoImage, .mobile-logo img.logo-img, .logo-img');
+                if (!imgs || imgs.length === 0) return;
+                
+                @if($logoMaxHeight && is_numeric($logoMaxHeight))
+                    var logoMaxHeight = {{ (int)$logoMaxHeight }};
+                    imgs.forEach(function(img){
+                        if(img) {
+                            img.style.setProperty('max-height', logoMaxHeight + 'px', 'important');
+                            img.style.setProperty('height', 'auto', 'important');
+                        }
+                    });
+                @endif
+                
+                @if($logoMaxWidth && is_numeric($logoMaxWidth))
+                    var logoMaxWidth = {{ (int)$logoMaxWidth }};
+                    imgs.forEach(function(img){
+                        if(img) {
+                            img.style.setProperty('max-width', logoMaxWidth + 'px', 'important');
+                            img.style.setProperty('width', 'auto', 'important');
+                        }
+                    });
+                @endif
+            } catch(e) {
+                console.error('Erro ao aplicar tamanho da logo:', e);
+            }
+        }
+        
+        // Aplicar imediatamente (antes do DOM estar pronto)
+        applyLogoSizes();
+        
+        // Aplicar quando DOM estiver pronto
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                applyLogoSizes();
+                // Reaplicar múltiplas vezes para garantir
+                setTimeout(applyLogoSizes, 50);
+                setTimeout(applyLogoSizes, 200);
+                setTimeout(applyLogoSizes, 500);
+                setTimeout(applyLogoSizes, 1000);
+            });
+        } else {
+            applyLogoSizes();
+            setTimeout(applyLogoSizes, 50);
+            setTimeout(applyLogoSizes, 200);
+            setTimeout(applyLogoSizes, 500);
+            setTimeout(applyLogoSizes, 1000);
+        }
+        
+        // Observar mudanças no DOM para aplicar quando novas logos forem adicionadas
+        if (window.MutationObserver) {
+            var observer = new MutationObserver(function(mutations) {
+                applyLogoSizes();
+            });
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+        }
+        
+        // Remover completamente o picker de tamanho para usuários comuns
         document.addEventListener('DOMContentLoaded', function(){
+            @guest('admin')
+                // Para usuários comuns, remover qualquer botão e picker de ajuste de logo
+                var btns = document.querySelectorAll('#logoSizeBtn, #adminLogoSizeBtn, #adminMobileLogoSizeBtn, #mobileLogoSizeBtn');
+                btns.forEach(function(btn){
+                    if(btn && btn.parentNode) {
+                        btn.style.display = 'none';
+                        btn.remove(); // Remove completamente do DOM
+                    }
+                });
+                
+                // Remover picker se existir
+                var pickers = document.querySelectorAll('.logo-size-picker');
+                pickers.forEach(function(picker){
+                    picker.remove();
+                });
+                
+                return; // Não criar nenhum picker para usuários comuns
+            @endguest
+            
+            // Se chegou aqui, é admin - apenas preview (mas não salva mais, deve usar settings)
             var btns = document.querySelectorAll('#logoSizeBtn, #adminLogoSizeBtn, #adminMobileLogoSizeBtn, #mobileLogoSizeBtn');
-            var imgs = document.querySelectorAll('#siteLogoImage, .mobile-logo img.logo-img');
-            // require at least one trigger button; imgs may be absent in some render paths
             if(!btns || btns.length === 0) return;
+
+            // Definir imgs no escopo correto para uso posterior
+            var imgs = document.querySelectorAll('#siteLogoImage, .mobile-logo img.logo-img');
 
             var picker = document.createElement('div');
             picker.className = 'logo-size-picker';
@@ -1501,34 +1770,38 @@
             document.addEventListener('click', function(e){ if(!picker.contains(e.target) && !Array.from(btns).some(function(bt){ return bt === e.target || bt.contains(e.target); })) hidePicker(); });
             window.addEventListener('resize', function(){ if(picker.style.display !== 'none' && activeTrigger) positionPicker(activeTrigger); });
 
-            // Handle selection and close button
+            // Handle selection and close button - apenas preview visual para admin
             picker.addEventListener('click', function(e){
                 var closeBtn = e.target.closest('.logo-size-picker-close');
                 if(closeBtn){ e.preventDefault(); hidePicker(); return; }
                 var b = e.target.closest('button[data-size]');
                 if(!b) return;
+                e.preventDefault();
+                
+                // Apenas preview visual - não salva mais (admin deve usar settings)
                 var size = b.getAttribute('data-size');
-                var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                fetch('{{ route("logo.size") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': token,
-                        'Accept': 'application/json'
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ size: size })
-                }).then(function(r){ return r.json(); }).then(function(json){
-                    if(json && json.success && json.size){
-                        imgs.forEach(function(img){
-                            try{ img.style.height = 'auto'; img.style.width = 'auto'; img.style.maxHeight = json.size + 'px'; img.style.maxWidth = json.size + 'px'; }catch(e){}
-                        });
-                        Array.from(picker.querySelectorAll('button[data-size]')).forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-size') === size); });
-                        setTimeout(hidePicker, 180);
-                    } else {
-                        alert((json && json.message) ? json.message : 'Erro ao ajustar tamanho');
-                    }
-                }).catch(function(err){ console.error('Erro logo.size', err); alert('Erro ao ajustar tamanho'); });
+                var sizeMap = {small: 24, medium: 36, large: 60, xlarge: 100};
+                var sizePx = sizeMap[size];
+                
+                if(sizePx) {
+                    // Preview temporário apenas - buscar imgs novamente para garantir que estão disponíveis
+                    var previewImgs = document.querySelectorAll('#siteLogoImage, .mobile-logo img.logo-img, #admin-site-logo');
+                    previewImgs.forEach(function(img){
+                        if(img) {
+                            img.style.setProperty('max-height', sizePx + 'px', 'important');
+                            img.style.setProperty('max-width', sizePx + 'px', 'important');
+                            img.style.setProperty('height', 'auto', 'important');
+                            img.style.setProperty('width', 'auto', 'important');
+                        }
+                    });
+                    Array.from(picker.querySelectorAll('button[data-size]')).forEach(function(x){ 
+                        x.classList.toggle('active', x.getAttribute('data-size') === size); 
+                    });
+                    
+                    // Mostrar mensagem informativa
+                    alert('Esta é apenas uma pré-visualização. Para salvar permanentemente, vá em Configurações > Identidade Visual e clique em "Salvar tamanho".');
+                    setTimeout(hidePicker, 500);
+                }
             });
         });
         

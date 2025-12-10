@@ -15,8 +15,6 @@ class Kernel extends ConsoleKernel
      */
     protected $commands = [
         ImportExampleProducts::class,
-        \App\Console\Commands\BackfillAttributesHash::class,
-        \App\Console\Commands\ReportVariationDuplicates::class,
     ];
     /**
      * Define the application's command schedule.

@@ -61,14 +61,18 @@ Route::get('/', [DepartmentController::class, 'index'])->name('home')->defaults(
 Route::get('/vitrine-departamentos', [HomeController::class, 'index'])->name('landing.departments');
 Route::get('/produtos', [HomeController::class, 'products'])->name('products');
 Route::get('/produto/{slug}', [HomeController::class, 'product'])->name('product');
-// Página indexável da variação específica
-Route::get('/produto/{slug}/{variantSlug}', [HomeController::class, 'productVariant'])->name('product.variant');
-// Endpoint AJAX para detalhes de variação
-Route::get('/produto/{slug}/variacao', [HomeController::class, 'getProductVariation'])->name('product.variation');
 // Sitemap
 Route::get('/sitemap.xml', [App\Http\Controllers\SitemapController::class, 'index'])->name('sitemap');
 Route::get('/contato', [ContactController::class, 'index'])->name('contact');
 Route::post('/contato', [ContactController::class, 'send'])->name('contact.send');
+
+// Lista de Desejos (Wishlist) - Disponível para customer e admin
+Route::middleware(['auth:customer,admin'])->group(function () {
+    Route::get('/lista-desejos', [App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');
+    Route::post('/produto/{product}/favoritar', [App\Http\Controllers\WishlistController::class, 'store'])->name('wishlist.store');
+    Route::delete('/produto/{product}/desfavoritar', [App\Http\Controllers\WishlistController::class, 'destroy'])->name('wishlist.destroy');
+    Route::post('/produto/{product}/toggle-favorito', [App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
+});
 
 // Álbuns públicos (novo)
 Route::get('/albuns', [AlbumPublicController::class, 'index'])->name('albums.index');
@@ -258,27 +262,16 @@ Route::post('/danger/drop-shipping', [DangerController::class, 'dropShippingData
 // Frete: cálculo de cotação por produto (Melhor Envio)
 Route::post('/shipping/quote', [ShippingController::class, 'quote'])->name('shipping.quote');
 Route::post('/shipping/quote-cart', [ShippingController::class, 'quoteCart'])->name('shipping.quote.cart');
+// Frete: cálculo de cotação regional/local
+Route::post('/shipping/quote-regional', [ShippingController::class, 'quoteRegional'])->name('shipping.quote.regional');
+Route::get('/shipping/regional-areas', [ShippingController::class, 'listRegionalAreas'])->name('shipping.regional.areas');
+Route::post('/shipping/regional-price', [ShippingController::class, 'getRegionalPrice'])->name('shipping.regional.price');
 // Frete: persistência da opção selecionada na sessão
 Route::post('/shipping/select', [ShippingController::class, 'select'])->name('shipping.select');
 Route::get('/shipping/current', [ShippingController::class, 'current'])->name('shipping.current');
 Route::delete('/shipping/selection', [ShippingController::class, 'clear'])->name('shipping.clear');
 
-// Public endpoint to persist per-session logo size preference (small/medium/large/xlarge)
-use Illuminate\Http\Request;
-Route::post('/logo/size', function(Request $request) {
-    $size = $request->input('size');
-    $map = [
-        'small' => 24,
-        'medium' => 36,
-        'large' => 60,
-        'xlarge' => 100
-    ];
-    if (!array_key_exists($size, $map)) {
-        return response()->json(['success' => false, 'message' => 'Invalid size'], 422);
-    }
-    session(['user_logo_size' => $map[$size]]);
-    return response()->json(['success' => true, 'size' => $map[$size]]);
-})->name('logo.size');
+// Rota removida - tamanho da logo agora é controlado apenas pelo admin nas settings (banco de dados)
 
 // Admin-only: toggle "view as normal user" for bottom nav (stores in session)
 Route::post('/admin/ui/toggle-view-as-user', function(Request $request) {

@@ -986,13 +986,13 @@
                             <i class="bi bi-tag"></i> 
                             <span>Marcas</span>
                         </a>
-                        <a class="nav-link {{ request()->routeIs('admin.attributes.*') ? 'active' : '' }}" href="{{ route('admin.attributes.index') }}" style="padding-left: 2.5rem;">
-                            <i class="bi bi-list-ul"></i>
-                            <span>Atributos</span>
-                        </a>
                         <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
                             <i class="bi bi-tags"></i> 
                             <span>Categorias</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('admin.attributes.*') ? 'active' : '' }}" href="{{ route('admin.attributes.index') }}">
+                            <i class="bi bi-sliders"></i> 
+                            <span>Atributos</span>
                         </a>
                         <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">
                             <i class="bi bi-cart-check"></i> 
@@ -1005,6 +1005,10 @@
                         <a class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">
                             <i class="bi bi-ticket-perforated"></i> 
                             <span>Cupons</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('admin.regional-shipping.*') ? 'active' : '' }}" href="{{ route('admin.regional-shipping.index') }}">
+                            <i class="bi bi-truck"></i>
+                            <span>Entregas Regionais</span>
                         </a>
                         <a class="nav-link {{ request()->routeIs('admin.banners.*') ? 'active' : '' }}" href="{{ route('admin.banners.index') }}">
                             <i class="bi bi-image"></i>
@@ -1030,6 +1034,10 @@
                         <a class="nav-link {{ request()->routeIs('admin.settings.*') ? 'active' : '' }}" href="{{ route('admin.settings.index') }}">
                             <i class="bi bi-gear"></i> 
                             <span>Configurações</span>
+                        </a>
+                        <a class="nav-link {{ request()->routeIs('admin.hover-effects.*') ? 'active' : '' }}" href="{{ route('admin.hover-effects.index') }}">
+                            <i class="bi bi-cursor-fill"></i> 
+                            <span>Efeitos Hover</span>
                         </a>
                         {{-- Links de frete removidos --}}
                     </nav>
@@ -1384,6 +1392,10 @@
                     <i class="bi bi-tags"></i>
                     <span>Categorias</span>
                 </a>
+                <a class="nav-link {{ request()->routeIs('admin.attributes.*') ? 'active' : '' }}" href="{{ route('admin.attributes.index') }}">
+                    <i class="bi bi-sliders"></i>
+                    <span>Atributos</span>
+                </a>
                 <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">
                     <i class="bi bi-cart-check"></i>
                     <span>Pedidos</span>
@@ -1719,26 +1731,31 @@
             picker.addEventListener('click', function(e){
                 var b = e.target.closest('button[data-size]');
                 if(!b) return;
+                e.preventDefault();
+                
+                // Apenas preview visual - admin deve usar Configurações > Identidade Visual para salvar
                 var size = b.getAttribute('data-size');
-                var token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                fetch('{{ route("logo.size") }}', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': token,
-                        'Accept': 'application/json'
-                    },
-                    credentials: 'same-origin',
-                    body: JSON.stringify({ size: size })
-                }).then(function(r){ return r.json(); }).then(function(json){
-                    if(json && json.success && json.size){
-                        imgs.forEach(function(img){ try{ img.style.height = 'auto'; img.style.width = 'auto'; img.style.maxHeight = json.size + 'px'; img.style.maxWidth = json.size + 'px'; }catch(e){} });
-                        Array.from(picker.querySelectorAll('button[data-size]')).forEach(function(x){ x.classList.toggle('active', x.getAttribute('data-size') === size); });
-                        setTimeout(hidePicker, 180);
-                    } else {
-                        alert((json && json.message) ? json.message : 'Erro ao ajustar tamanho');
-                    }
-                }).catch(function(err){ console.error('Erro logo.size', err); alert('Erro ao ajustar tamanho'); });
+                var sizeMap = {small: 24, medium: 36, large: 60, xlarge: 100};
+                var sizePx = sizeMap[size];
+                
+                if(sizePx) {
+                    // Preview temporário apenas
+                    imgs.forEach(function(img){
+                        if(img) {
+                            img.style.setProperty('max-height', sizePx + 'px', 'important');
+                            img.style.setProperty('max-width', sizePx + 'px', 'important');
+                            img.style.setProperty('height', 'auto', 'important');
+                            img.style.setProperty('width', 'auto', 'important');
+                        }
+                    });
+                    Array.from(picker.querySelectorAll('button[data-size]')).forEach(function(x){ 
+                        x.classList.toggle('active', x.getAttribute('data-size') === size); 
+                    });
+                    
+                    // Mostrar mensagem informativa
+                    alert('Esta é apenas uma pré-visualização. Para salvar permanentemente, vá em Configurações > Identidade Visual e clique em "Salvar tamanho".');
+                    setTimeout(hidePicker, 500);
+                }
             });
         });
     </script>

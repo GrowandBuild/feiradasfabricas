@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use App\Models\Setting;
+use App\Models\RegionalShipping;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -310,21 +311,26 @@ class ShippingController extends Controller
             $validated = $request->validate([
                 'service' => 'required|string|max:255',
                 'price' => 'required|numeric|min:0',
-                'cep' => 'required|string',
+                'cep' => 'nullable|string',
                 'delivery_days' => 'nullable|integer|min:0|max:60',
                 'service_id' => 'nullable|integer',
                 'company' => 'nullable|string|max:255',
                 'product_id' => 'nullable|integer',
-                'quantity' => 'nullable|integer|min:1'
+                'quantity' => 'nullable|integer|min:1',
+                'region_id' => 'nullable|integer',
+                'region_name' => 'nullable|string'
             ]);
 
-            // Normalizar CEP
-            $cepDestino = preg_replace('/\D+/', '', (string) $validated['cep']);
-            if (strlen($cepDestino) !== 8) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'CEP inválido. Informe 8 dígitos.'
-                ], 422);
+            // Normalizar CEP (opcional para entrega local/regional)
+            $cepDestino = '00000000'; // CEP padrão para entrega local
+            if (!empty($validated['cep'])) {
+                $cepDestino = preg_replace('/\D+/', '', (string) $validated['cep']);
+                if (strlen($cepDestino) !== 8 && !empty($validated['cep'])) {
+                    return response()->json([
+                        'success' => false,
+                        'message' => 'CEP inválido. Informe 8 dígitos.'
+                    ], 422);
+                }
             }
 
             // Sanitizar nome do serviço (evitar prefixos inconsistentes no front)
@@ -342,6 +348,9 @@ class ShippingController extends Controller
                 'cep' => $cepDestino,
                 'product_id' => $validated['product_id'] ?? null,
                 'quantity' => $validated['quantity'] ?? null,
+                'region_id' => $validated['region_id'] ?? null,
+                'region_name' => $validated['region_name'] ?? null,
+                'shipping_type' => !empty($validated['region_id']) ? 'regional' : 'correios',
                 'updated_at' => now()->toIso8601String(),
             ];
 
@@ -652,6 +661,199 @@ class ShippingController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Não foi possível calcular o frete do carrinho.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Calcula cotações de frete regional/local para um produto.
+     * Requer: product_id, cep (destino), quantity opcional (default 1)
+     */
+    public function quoteRegional(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'product_id' => 'required|integer|exists:products,id',
+                'cep' => 'required|string',
+                'quantity' => 'nullable|integer|min:1',
+            ]);
+
+            $product = Product::findOrFail($validated['product_id']);
+            $qty = max(1, (int)($validated['quantity'] ?? 1));
+
+            // Normalizar CEP
+            $cepDestino = preg_replace('/\D+/', '', (string) $validated['cep']);
+            if (strlen($cepDestino) !== 8) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'CEP inválido. Informe 8 dígitos.'
+                ], 422);
+            }
+
+            // Buscar regiões ativas que correspondem ao CEP
+            $regions = RegionalShipping::active()->ordered()->get();
+            $matchingRegions = $regions->filter(function($region) use ($cepDestino) {
+                return $region->matchesCep($cepDestino);
+            });
+
+            if ($matchingRegions->isEmpty()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Não há entrega regional disponível para este CEP.'
+                ], 404);
+            }
+
+            // Calcular preços para cada região correspondente
+            $quotes = [];
+            $weight = (float) ($product->weight ?: 0.3) * $qty;
+            $weight = max($weight, 0.1); // Mínimo 0.1kg
+
+            foreach ($matchingRegions as $region) {
+                $price = $region->calculatePrice($weight, $qty);
+                
+                $quotes[] = [
+                    'service_id' => 'regional_' . $region->id,
+                    'service' => 'Entrega Local - ' . $region->name,
+                    'company' => 'Entrega Regional',
+                    'price' => $price,
+                    'delivery_days' => $region->delivery_days_min,
+                    'delivery_time' => $region->delivery_time,
+                    'region_id' => $region->id,
+                    'region_name' => $region->name,
+                    'type' => 'regional',
+                ];
+            }
+
+            // Ordenar por preço
+            usort($quotes, function ($a, $b) {
+                return ($a['price'] ?? INF) <=> ($b['price'] ?? INF);
+            });
+
+            return response()->json([
+                'success' => true,
+                'quotes' => $quotes,
+            ]);
+
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return response()->json([
+                'success' => false,
+                'message' => $ve->validator->errors()->first(),
+                'errors' => $ve->validator->errors()->toArray(),
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('Erro ao calcular frete regional: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Não foi possível calcular o frete regional. Tente novamente.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Lista todas as regiões de entrega local disponíveis para busca
+     */
+    public function listRegionalAreas()
+    {
+        try {
+            $regions = RegionalShipping::active()
+                ->ordered()
+                ->select('id', 'name', 'description', 'delivery_days_min', 'delivery_days_max')
+                ->get()
+                ->map(function($region) {
+                    return [
+                        'id' => $region->id,
+                        'name' => $region->name,
+                        'description' => $region->description,
+                        'delivery_time' => $region->delivery_time,
+                    ];
+                });
+
+            return response()->json([
+                'success' => true,
+                'regions' => $regions,
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Erro ao listar regiões: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao carregar regiões disponíveis.'
+            ], 500);
+        }
+    }
+
+    /**
+     * Busca preço de uma região específica por nome ou CEP
+     */
+    public function getRegionalPrice(Request $request)
+    {
+        try {
+            $validated = $request->validate([
+                'product_id' => 'required|integer|exists:products,id',
+                'region_id' => 'nullable|integer|exists:regional_shipping,id',
+                'region_name' => 'nullable|string',
+                'cep' => 'nullable|string',
+                'quantity' => 'nullable|integer|min:1',
+            ]);
+
+            $product = Product::findOrFail($validated['product_id']);
+            $qty = max(1, (int)($validated['quantity'] ?? 1));
+            $weight = (float) ($product->weight ?: 0.3) * $qty;
+            $weight = max($weight, 0.1);
+
+            $region = null;
+
+            // Buscar por ID
+            if (!empty($validated['region_id'])) {
+                $region = RegionalShipping::active()->find($validated['region_id']);
+            }
+            // Buscar por nome
+            elseif (!empty($validated['region_name'])) {
+                $region = RegionalShipping::active()
+                    ->where('name', 'like', '%' . $validated['region_name'] . '%')
+                    ->first();
+            }
+            // Buscar por CEP
+            elseif (!empty($validated['cep'])) {
+                $cep = preg_replace('/\D+/', '', $validated['cep']);
+                if (strlen($cep) === 8) {
+                    $regions = RegionalShipping::active()->ordered()->get();
+                    $region = $regions->first(function($r) use ($cep) {
+                        return $r->matchesCep($cep);
+                    });
+                }
+            }
+
+            if (!$region) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Região não encontrada ou não disponível.'
+                ], 404);
+            }
+
+            $price = $region->calculatePrice($weight, $qty);
+
+            return response()->json([
+                'success' => true,
+                'region' => [
+                    'id' => $region->id,
+                    'name' => $region->name,
+                    'description' => $region->description,
+                    'price' => $price,
+                    'delivery_time' => $region->delivery_time,
+                    'delivery_days_min' => $region->delivery_days_min,
+                    'delivery_days_max' => $region->delivery_days_max,
+                ],
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return response()->json([
+                'success' => false,
+                'message' => $ve->validator->errors()->first(),
+            ], 422);
+        } catch (\Throwable $e) {
+            Log::error('Erro ao buscar preço regional: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao calcular preço.'
             ], 500);
         }
     }

@@ -39,7 +39,7 @@ class InventoryLog extends Model
     public function getTypeLabelAttribute()
     {
         return match ($this->type) {
-            'in' => 'Entrada',
+            'in' => 'Entrada', // Usado para entrada inicial e outras entradas
             'out' => 'Saída',
             'adjustment' => 'Ajuste',
             'sale' => 'Venda',

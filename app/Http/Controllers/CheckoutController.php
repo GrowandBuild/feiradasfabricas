@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Facades\Auth;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -29,6 +30,22 @@ class CheckoutController extends Controller
         $shipping = $this->calculateShipping();
         $total = $subtotal + $shipping;
         $shippingSelection = session('shipping_selection');
+        
+        // Se for requisição AJAX, retornar apenas JSON com os valores
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json([
+                'success' => true,
+                'subtotal' => $subtotal,
+                'shipping' => $shipping,
+                'total' => $total,
+                'shipping_selection' => $shippingSelection,
+                'formatted' => [
+                    'subtotal' => 'R$ ' . number_format($subtotal, 2, ',', '.'),
+                    'shipping' => 'R$ ' . number_format($shipping, 2, ',', '.'),
+                    'total' => 'R$ ' . number_format($total, 2, ',', '.')
+                ]
+            ]);
+        }
 
         return view('checkout.index', compact('cartItems', 'subtotal', 'shipping', 'total', 'shippingSelection'));
     }
@@ -38,19 +55,47 @@ class CheckoutController extends Controller
      */
     public function store(Request $request)
     {
+        // Verificar se há frete regional selecionado
+        $shippingSelection = session('shipping_selection');
+        $hasRegionalShipping = !empty($shippingSelection) && !empty($shippingSelection['shipping_type']) && $shippingSelection['shipping_type'] === 'regional';
+        
+        // Regras de validação baseadas no tipo de frete
+        $addressRules = $hasRegionalShipping ? 'required' : 'nullable';
+        
         $request->validate([
             'customer_name' => 'required|string|max:255',
             'customer_email' => 'required|email|max:255',
             'customer_phone' => 'nullable|string|max:20',
             'customer_cpf' => 'nullable|string|max:14',
-            // Endereço de entrega agora opcional (sem impacto em pagamento)
+            // Campos de endereço detalhados
+            'shipping_street' => $addressRules . '|string|max:255',
+            'shipping_number' => $addressRules . '|string|max:20',
+            'shipping_complement' => 'nullable|string|max:255',
+            'shipping_neighborhood' => $addressRules . '|string|max:255',
+            'shipping_city' => $addressRules . '|string|max:100',
+            'shipping_state' => $addressRules . '|string|max:2',
+            'shipping_zip' => $addressRules . '|string|max:10',
+            // Campo antigo mantido para compatibilidade
             'shipping_address' => 'nullable|string|max:500',
-            'shipping_city' => 'nullable|string|max:100',
-            'shipping_state' => 'nullable|string|max:2',
-            // CEP removido: tornar opcional
-            'shipping_zip' => 'nullable|string|max:10',
             'payment_method' => 'required|in:credit_card,pix,boleto'
         ]);
+        
+        // Montar endereço completo dos campos detalhados
+        $shippingAddress = '';
+        if ($request->shipping_street) {
+            $parts = array_filter([
+                $request->shipping_street,
+                $request->shipping_number ? 'Nº ' . $request->shipping_number : null,
+                $request->shipping_complement,
+                $request->shipping_neighborhood ? 'Bairro: ' . $request->shipping_neighborhood : null,
+                $request->shipping_city,
+                $request->shipping_state,
+                $request->shipping_zip
+            ]);
+            $shippingAddress = implode(', ', $parts);
+        } else {
+            $shippingAddress = $request->shipping_address ?? '';
+        }
 
         try {
             DB::beginTransaction();
@@ -62,6 +107,54 @@ class CheckoutController extends Controller
                 return redirect()->back()
                     ->with('error', 'Seu carrinho está vazio.')
                     ->withInput();
+            }
+
+            // Validar produtos antes de processar checkout
+            foreach ($cartItems as $cartItem) {
+                $product = $cartItem->product;
+                $variation = $cartItem->variation;
+                
+                // Verificar se produto ainda existe e está ativo
+                if (!$product || !$product->is_active) {
+                    $productName = $product ? ($product->name ?? 'desconhecido') : 'desconhecido';
+                    return redirect()->back()
+                        ->with('error', "Produto {$productName} não está mais disponível.")
+                        ->withInput();
+                }
+                
+                // Se tiver variação, validar variação; senão, validar produto
+                if ($variation) {
+                    // Validar variação
+                    if (!$variation->in_stock || $variation->stock_quantity < $cartItem->quantity) {
+                        return redirect()->back()
+                            ->with('error', "Variação do produto {$product->name} não está mais disponível em estoque suficiente.")
+                            ->withInput();
+                    }
+                    
+                    // Validar preço da variação
+                    $priceDifference = abs($variation->price - $cartItem->price);
+                    $priceChangePercent = $cartItem->price > 0 ? ($priceDifference / $cartItem->price) * 100 : 0;
+                    
+                    if ($priceChangePercent > 10) {
+                        $cartItem->update(['price' => $variation->price]);
+                    }
+                } else {
+                    // Validar estoque do produto
+                    if (!$product->in_stock || $product->stock_quantity < $cartItem->quantity) {
+                        return redirect()->back()
+                            ->with('error', "Produto {$product->name} não está mais disponível em estoque suficiente.")
+                            ->withInput();
+                    }
+                    
+                    // Validar se preço mudou significativamente (mais de 10% de diferença)
+                    $priceDifference = abs($product->price - $cartItem->price);
+                    $priceChangePercent = $cartItem->price > 0 ? ($priceDifference / $cartItem->price) * 100 : 0;
+                    
+                    if ($priceChangePercent > 10) {
+                        // Atualizar preço no carrinho se mudou muito
+                        $cartItem->update(['price' => $product->price]);
+                    }
+                }
             }
 
             // Calcular totais
@@ -83,20 +176,22 @@ class CheckoutController extends Controller
                 'cpf' => $request->customer_cpf,
                 'payment_method' => $request->payment_method,
                 'address' => [
-                    'street' => $request->shipping_address,
-                    'city' => $request->shipping_city,
-                    'state' => $request->shipping_state,
-                    // CEP removido do payload (opcional)
+                    'street' => $shippingAddress,
+                    'city' => $request->shipping_city ?? '',
+                    'state' => $request->shipping_state ?? '',
+                    'zip' => $request->shipping_zip ?? ''
                 ]
             ];
 
             // Preparar itens do carrinho para metadados
             $cartItemsArray = $cartItems->map(function($item) {
+                $displayProduct = $item->variation ?? $item->product;
                 return [
                     'product_id' => $item->product_id,
+                    'variation_id' => $item->variation_id,
                     'product' => [
-                        'name' => $item->product->name ?? 'Produto',
-                        'sku' => $item->product->sku ?? '',
+                        'name' => $displayProduct->formatted_name ?? $item->product->name ?? 'Produto',
+                        'sku' => $displayProduct->sku ?? $item->product->sku ?? '',
                         'description' => $item->product->description ?? ''
                     ],
                     'quantity' => $item->quantity,
@@ -141,7 +236,11 @@ class CheckoutController extends Controller
                         'customer_email' => $request->customer_email,
                         'customer_phone' => $request->customer_phone ?? null,
                         'customer_cpf' => $request->customer_cpf ?? null,
-                        'shipping_address' => $request->shipping_address,
+                        'shipping_address' => $shippingAddress,
+                        'shipping_street' => $request->shipping_street,
+                        'shipping_number' => $request->shipping_number,
+                        'shipping_complement' => $request->shipping_complement,
+                        'shipping_neighborhood' => $request->shipping_neighborhood,
                         'shipping_city' => $request->shipping_city,
                         'shipping_state' => $request->shipping_state,
                         'shipping_zip' => $request->shipping_zip,
@@ -306,33 +405,80 @@ class CheckoutController extends Controller
         try {
             DB::beginTransaction();
 
+            // Validar estoque antes de criar pedido
+            foreach ($tempOrderData['cart_items'] as $item) {
+                if (!empty($item['variation_id'])) {
+                    // Validar variação
+                    $variation = \App\Models\ProductVariation::find($item['variation_id']);
+                    if (!$variation || !$variation->in_stock || $variation->stock_quantity < $item['quantity']) {
+                        throw new \Exception("Variação do produto {$item['product']['name']} não está mais disponível em estoque suficiente.");
+                    }
+                } else {
+                    // Validar produto
+                    $product = Product::find($item['product_id']);
+                    if (!$product || !$product->in_stock || $product->stock_quantity < $item['quantity']) {
+                        throw new \Exception("Produto {$item['product']['name']} não está mais disponível em estoque suficiente.");
+                    }
+                }
+            }
+
             $shipSel = $tempOrderData['shipping_selection'] ?? session('shipping_selection');
+            
+            // Separar nome completo em first_name e last_name
+            $nameParts = explode(' ', $tempOrderData['customer_name'], 2);
+            $firstName = $nameParts[0] ?? $tempOrderData['customer_name'];
+            $lastName = $nameParts[1] ?? '';
+            
+            // Preparar CEP
+            $zipCode = isset($shipSel['cep']) ? (substr($shipSel['cep'],0,5).'-'.substr($shipSel['cep'],5)) : ($tempOrderData['shipping_zip'] ?? '');
+            
             $order = Order::create([
                 'order_number' => 'ORD-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
-                'customer_name' => $tempOrderData['customer_name'],
-                'customer_email' => $tempOrderData['customer_email'],
-                'customer_phone' => $tempOrderData['customer_phone'],
-                'customer_cpf' => $tempOrderData['customer_cpf'],
-                'shipping_address' => $tempOrderData['shipping_address'],
-                'shipping_city' => $tempOrderData['shipping_city'],
-                'shipping_state' => $tempOrderData['shipping_state'],
-                // CEP preferencialmente vem da seleção de frete; se não, usa do temp
-                'shipping_zip_code' => isset($shipSel['cep']) ? (substr($shipSel['cep'],0,5).'-'.substr($shipSel['cep'],5)) : ($tempOrderData['shipping_zip'] ?? null),
-                'payment_method' => $tempOrderData['payment_method'],
+                'customer_id' => Auth::guard('customer')->id(), // Se logado
                 'subtotal' => $tempOrderData['subtotal'],
+                'tax_amount' => 0,
                 'shipping_amount' => $tempOrderData['shipping_cost'] ?? 0,
+                'discount_amount' => 0,
                 'total_amount' => $tempOrderData['total_amount'],
                 'status' => 'paid',
                 'payment_status' => $status,
+                'shipping_status' => 'pending',
+                'payment_method' => $tempOrderData['payment_method'],
                 'payment_details' => json_encode([
                     'payment_id' => $checkoutData['payment_id'] ?? null,
                     'status' => $status,
-                    'provider' => 'mercadopago'
+                    'provider' => 'mercadopago',
+                    'customer_email' => $tempOrderData['customer_email'],
+                    'customer_phone' => $tempOrderData['customer_phone'] ?? null,
+                    'customer_cpf' => $tempOrderData['customer_cpf'] ?? null,
                 ]),
+                // Campos obrigatórios de shipping
+                'shipping_first_name' => $firstName,
+                'shipping_last_name' => $lastName,
+                'shipping_address' => $tempOrderData['shipping_address'] ?? '',
+                'shipping_street' => $tempOrderData['shipping_street'] ?? '',
+                'shipping_number' => $tempOrderData['shipping_number'] ?? '',
+                'shipping_complement' => $tempOrderData['shipping_complement'] ?? '',
+                'shipping_neighborhood' => $tempOrderData['shipping_neighborhood'] ?? '',
+                'shipping_city' => $tempOrderData['shipping_city'] ?? '',
+                'shipping_state' => $tempOrderData['shipping_state'] ?? '',
+                'shipping_zip_code' => $zipCode,
+                'shipping_phone' => $tempOrderData['customer_phone'] ?? null,
+                'shipping_company' => $shipSel['company'] ?? null,
+                // Campos obrigatórios de billing (mesmo que shipping)
+                'billing_first_name' => $firstName,
+                'billing_last_name' => $lastName,
+                'billing_address' => $tempOrderData['shipping_address'] ?? '',
+                'billing_street' => $tempOrderData['shipping_street'] ?? '',
+                'billing_number' => $tempOrderData['shipping_number'] ?? '',
+                'billing_complement' => $tempOrderData['shipping_complement'] ?? '',
+                'billing_neighborhood' => $tempOrderData['shipping_neighborhood'] ?? '',
+                'billing_city' => $tempOrderData['shipping_city'] ?? '',
+                'billing_state' => $tempOrderData['shipping_state'] ?? '',
+                'billing_zip_code' => $zipCode,
                 // Persistir seleção de frete
                 'shipping_service' => $shipSel['service'] ?? null,
                 'shipping_service_id' => $shipSel['service_id'] ?? null,
-                'shipping_company' => $shipSel['company'] ?? null,
                 'shipping_delivery_days' => $shipSel['delivery_days'] ?? null,
             ]);
 
@@ -341,6 +487,7 @@ class CheckoutController extends Controller
                 OrderItem::create([
                     'order_id' => $order->id,
                     'product_id' => $item['product_id'],
+                    'variation_id' => $item['variation_id'] ?? null,
                     'product_name' => $item['product']['name'],
                     'product_sku' => $item['product']['sku'],
                     'quantity' => $item['quantity'],
@@ -348,8 +495,20 @@ class CheckoutController extends Controller
                     'total' => $item['total'],
                 ]);
 
-                // Atualizar estoque
-                Product::find($item['product_id'])->decrement('stock_quantity', $item['quantity']);
+                // Atualizar estoque - se tiver variação, atualizar variação; senão, produto
+                if (!empty($item['variation_id'])) {
+                    $variation = \App\Models\ProductVariation::find($item['variation_id']);
+                    if ($variation) {
+                        $variation->decrement('stock_quantity', $item['quantity']);
+                        $variation->update(['in_stock' => $variation->stock_quantity > 0]);
+                    }
+                } else {
+                    $product = Product::find($item['product_id']);
+                    if ($product) {
+                        $product->decrement('stock_quantity', $item['quantity']);
+                        $product->update(['in_stock' => $product->stock_quantity > 0]);
+                    }
+                }
             }
 
             // Limpar carrinho e sessão
@@ -410,34 +569,74 @@ class CheckoutController extends Controller
                 ], 400);
             }
 
+            // Validar estoque antes de processar pagamento
+            foreach ($tempOrderData['cart_items'] as $item) {
+                $product = Product::find($item['product_id']);
+                if (!$product || !$product->in_stock || $product->stock_quantity < $item['quantity']) {
+                    DB::rollBack();
+                    return response()->json([
+                        'success' => false,
+                        'error' => "Produto {$item['product']['name']} não está mais disponível em estoque suficiente."
+                    ], 400);
+                }
+            }
+
             // SÓ criar o pedido se o pagamento for aprovado
             if ($paymentResult['status'] === 'approved' || $paymentResult['status'] === 'paid') {
                 $shipSel = $tempOrderData['shipping_selection'] ?? session('shipping_selection');
+                
+                // Separar nome completo em first_name e last_name
+                $nameParts = explode(' ', $tempOrderData['customer_name'], 2);
+                $firstName = $nameParts[0] ?? $tempOrderData['customer_name'];
+                $lastName = $nameParts[1] ?? '';
+                
+                // Preparar CEP
+                $zipCode = isset($shipSel['cep']) ? (substr($shipSel['cep'],0,5).'-'.substr($shipSel['cep'],5)) : ($tempOrderData['shipping_zip'] ?? '');
+                
                 $order = Order::create([
                     'order_number' => 'ORD-' . date('Ymd') . '-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT),
-                    'customer_name' => $tempOrderData['customer_name'],
-                    'customer_email' => $tempOrderData['customer_email'],
-                    'customer_phone' => $tempOrderData['customer_phone'],
-                    'customer_cpf' => $tempOrderData['customer_cpf'],
-                    'shipping_address' => $tempOrderData['shipping_address'],
-                    'shipping_city' => $tempOrderData['shipping_city'],
-                    'shipping_state' => $tempOrderData['shipping_state'],
-                    'shipping_zip_code' => isset($shipSel['cep']) ? (substr($shipSel['cep'],0,5).'-'.substr($shipSel['cep'],5)) : ($tempOrderData['shipping_zip'] ?? null),
-                    'payment_method' => $tempOrderData['payment_method'],
+                    'customer_id' => Auth::guard('customer')->id(), // Se logado
                     'subtotal' => $tempOrderData['subtotal'],
+                    'tax_amount' => 0,
                     'shipping_amount' => $tempOrderData['shipping_cost'] ?? 0,
+                    'discount_amount' => 0,
                     'total_amount' => $tempOrderData['total_amount'],
                     'status' => 'paid', // Pedido pago
                     'payment_status' => $paymentResult['status'],
+                    'shipping_status' => 'pending',
+                    'payment_method' => $tempOrderData['payment_method'],
                     'payment_details' => json_encode([
                         'payment_id' => $paymentResult['payment_id'],
                         'status' => $paymentResult['status'],
-                        'provider' => 'mercadopago'
+                        'provider' => 'mercadopago',
+                        'customer_email' => $tempOrderData['customer_email'],
+                        'customer_phone' => $tempOrderData['customer_phone'] ?? null,
+                        'customer_cpf' => $tempOrderData['customer_cpf'] ?? null,
                     ]),
+                    // Campos obrigatórios de shipping
+                    'shipping_first_name' => $firstName,
+                    'shipping_last_name' => $lastName,
+                    'shipping_address' => $tempOrderData['shipping_address'] ?? '',
+                    'shipping_street' => $tempOrderData['shipping_street'] ?? '',
+                    'shipping_number' => $tempOrderData['shipping_number'] ?? '',
+                    'shipping_complement' => $tempOrderData['shipping_complement'] ?? '',
+                    'shipping_neighborhood' => $tempOrderData['shipping_neighborhood'] ?? '',
+                    'shipping_city' => $tempOrderData['shipping_city'] ?? '',
+                    'shipping_state' => $tempOrderData['shipping_state'] ?? '',
+                    'shipping_zip_code' => $zipCode,
+                    'shipping_phone' => $tempOrderData['customer_phone'] ?? null,
+                    'shipping_company' => $shipSel['company'] ?? null,
+                    // Campos obrigatórios de billing (mesmo que shipping)
+                    'billing_first_name' => $firstName,
+                    'billing_last_name' => $lastName,
+                    'billing_address' => $tempOrderData['shipping_address'] ?? '',
+                    'billing_neighborhood' => '',
+                    'billing_city' => $tempOrderData['shipping_city'] ?? '',
+                    'billing_state' => $tempOrderData['shipping_state'] ?? '',
+                    'billing_zip_code' => $zipCode,
                     // Persistir seleção de frete
                     'shipping_service' => $shipSel['service'] ?? null,
                     'shipping_service_id' => $shipSel['service_id'] ?? null,
-                    'shipping_company' => $shipSel['company'] ?? null,
                     'shipping_delivery_days' => $shipSel['delivery_days'] ?? null,
                 ]);
 
@@ -446,6 +645,7 @@ class CheckoutController extends Controller
                     OrderItem::create([
                         'order_id' => $order->id,
                         'product_id' => $item['product_id'],
+                        'variation_id' => $item['variation_id'] ?? null,
                         'product_name' => $item['product']['name'],
                         'product_sku' => $item['product']['sku'],
                         'quantity' => $item['quantity'],
@@ -453,8 +653,20 @@ class CheckoutController extends Controller
                         'total' => $item['total'],
                     ]);
 
-                    // Atualizar estoque
-                    Product::find($item['product_id'])->decrement('stock_quantity', $item['quantity']);
+                    // Atualizar estoque - se tiver variação, atualizar variação; senão, produto
+                    if (!empty($item['variation_id'])) {
+                        $variation = \App\Models\ProductVariation::find($item['variation_id']);
+                        if ($variation) {
+                            $variation->decrement('stock_quantity', $item['quantity']);
+                            $variation->update(['in_stock' => $variation->stock_quantity > 0]);
+                        }
+                    } else {
+                        $product = Product::find($item['product_id']);
+                        if ($product) {
+                            $product->decrement('stock_quantity', $item['quantity']);
+                            $product->update(['in_stock' => $product->stock_quantity > 0]);
+                        }
+                    }
                 }
 
                 // Limpar carrinho e sessão
@@ -499,13 +711,33 @@ class CheckoutController extends Controller
 
     /**
      * Obter itens do carrinho
+     * Usa mesma lógica do CartController para garantir consistência
      */
     private function getCartItems()
     {
-        $sessionId = $this->getCartSessionId();
-        return CartItem::where('session_id', $sessionId)
-            ->with('product')
-            ->get();
+        $sessionId = $this->getSessionId();
+        $customerId = Auth::guard('customer')->id();
+
+        // Query estrita: só retornar itens que pertencem EXATAMENTE a esta sessão ou cliente
+        $query = CartItem::with(['product', 'variation.attributeValues.attribute']);
+        
+        if ($customerId) {
+            // Se logado: só itens do cliente logado E sem session_id
+            $query->where('customer_id', $customerId)
+                  ->where(function($q) {
+                      $q->whereNull('session_id')
+                        ->orWhere('session_id', '');
+                  });
+        } else {
+            // Se não logado: só itens da sessão atual E sem customer_id
+            $query->where('session_id', $sessionId)
+                  ->where(function($q) {
+                      $q->whereNull('customer_id')
+                        ->orWhere('customer_id', 0);
+                  });
+        }
+        
+        return $query->get();
     }
 
     /**
@@ -531,21 +763,46 @@ class CheckoutController extends Controller
 
     /**
      * Limpar carrinho
+     * Usa mesma lógica do CartController
      */
     private function clearCart()
     {
-        $sessionId = $this->getCartSessionId();
-        CartItem::where('session_id', $sessionId)->delete();
+        $sessionId = $this->getSessionId();
+        $customerId = Auth::guard('customer')->id();
+
+        CartItem::where(function ($query) use ($sessionId, $customerId) {
+            if ($customerId) {
+                $query->where('customer_id', $customerId);
+            } else {
+                $query->where('session_id', $sessionId);
+            }
+        })->delete();
+        
+        // Limpar seleção de frete
+        Session::forget('shipping_selection');
     }
 
     /**
      * Obter ID da sessão do carrinho
+     * Usa mesma lógica do CartController para garantir consistência
      */
-    private function getCartSessionId()
+    private function getSessionId()
     {
-        if (!Session::has('cart_session_id')) {
-            Session::put('cart_session_id', uniqid());
+        $sessionKey = 'cart_session_id';
+        
+        if (!Session::has($sessionKey)) {
+            // Usar o ID da sessão do Laravel como base (já é único por navegador/sessão)
+            // Adicionar um hash adicional para garantir unicidade absoluta
+            $laravelSessionId = session()->getId();
+            $uniqueId = 'cart_' . $laravelSessionId . '_' . md5($laravelSessionId . time() . uniqid('', true));
+            
+            // Armazenar na sessão do Laravel (que é isolada por navegador)
+            Session::put($sessionKey, $uniqueId);
+            
+            // Garantir que a sessão seja persistida
+            Session::save();
         }
-        return Session::get('cart_session_id');
+        
+        return Session::get($sessionKey);
     }
 }

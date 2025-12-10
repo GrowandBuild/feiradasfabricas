@@ -3,7 +3,7 @@ require __DIR__ . '/../vendor/autoload.php';
 $app = require __DIR__ . '/../bootstrap/app.php';
 $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
-$rows = \App\Models\Product::select('id','name','is_active','is_unavailable','in_stock','images','variation_images')
+$rows = \App\Models\Product::select('id','name','is_active','is_unavailable','in_stock','images')
     ->where('name','like','%iPhone%')
     ->orderBy('id')
     ->get();

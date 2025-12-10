@@ -25,14 +25,6 @@ if (!$product) {
 
 $ctrl = new ProductController();
 
-echo "--- getVariations ({$productId}) ---\n";
-$res = $ctrl->getVariations($product);
-if (method_exists($res, 'getData')) {
-    echo json_encode($res->getData(), JSON_PRETTY_PRINT) . "\n";
-} else {
-    echo "Non JSON response\n";
-}
-
 if ($deptId) {
     echo "--- attributesList (department={$deptId}) ---\n";
     $req = Request::create('/admin/attributes/list', 'GET', ['department' => $deptId]);

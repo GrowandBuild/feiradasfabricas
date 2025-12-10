@@ -4,11 +4,13 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\BannerController;
 use App\Http\Controllers\Admin\SettingController;
+use App\Http\Controllers\Admin\RegionalShippingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentBadgeController;
 use App\Http\Controllers\Admin\AlbumController as AdminAlbumController;
@@ -45,37 +47,36 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::patch('brands/{brand}/toggle-active', [App\Http\Controllers\Admin\BrandController::class, 'toggleActive'])->name('brands.toggle-active');
         Route::get('brands/list', [App\Http\Controllers\Admin\BrandController::class, 'list'])->name('brands.list');
         Route::post('products/{product}/adjust-stock', [ProductController::class, 'adjustStock'])->name('products.adjust-stock');
-        Route::get('products/{product}/variations', [ProductController::class, 'getVariations'])->name('products.variations');
-        Route::get('attributes/list', [ProductController::class, 'attributesList'])->name('attributes.list');
-        // Atributos (gerenciamento centralizado)
-        Route::resource('attributes', App\Http\Controllers\Admin\AttributeController::class);
-        Route::post('attributes/{attribute}/values', [App\Http\Controllers\Admin\AttributeController::class, 'storeValue'])->name('attributes.values.store');
-        Route::patch('attributes/{attribute}/values/{value}', [App\Http\Controllers\Admin\AttributeController::class, 'updateValue'])->name('attributes.values.update');
-        Route::delete('attributes/{attribute}/values/{value}', [App\Http\Controllers\Admin\AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
-        Route::post('products/{product}/variations/toggle', [ProductController::class, 'toggleVariation'])->name('products.variations.toggle');
-        Route::post('products/{product}/variations/add', [ProductController::class, 'addVariation'])->name('products.variations.add');
-        // Bulk add full variation combinations (expects payload { combos: [{ram, storage, color}, ...] })
-        Route::post('products/{product}/variations/bulk-add', [ProductController::class, 'bulkAddVariations'])->name('products.variations.bulk-add');
-        // Variations generator UI (simple test UI)
-        Route::get('variations/generator', [App\Http\Controllers\Admin\ProductVariationGeneratorController::class, 'create'])->name('variations.generator');
-        Route::post('products/{product}/variations/generate', [App\Http\Controllers\Admin\ProductVariationGeneratorController::class, 'store'])->name('products.variations.generate');
-        Route::post('products/{product}/variations/update-stock', [ProductController::class, 'updateStock'])->name('products.variations.update-stock');
-        Route::post('products/{product}/variations/color-images', [ProductController::class, 'updateColorImages'])->name('products.variations.color-images');
-        Route::delete('products/{product}/variations/{variationId}', [ProductController::class, 'deleteVariation'])->name('products.variations.destroy');
-        Route::delete('products/{product}/variations/value', [ProductController::class, 'deleteVariationValue'])->name('products.variations.delete-value');
-        Route::delete('products/{product}/variations/inactive/delete-all', [ProductController::class, 'deleteInactiveVariations'])->name('products.variations.delete-inactive');
-        Route::post('products/{product}/variations/color-hex', [ProductController::class, 'updateColorHex'])->name('products.variations.color-hex');
-        Route::post('products/variations/{variation}/update-price', [ProductController::class, 'updateVariationPrice'])->name('products.variations.update-price');
-        // Inline field update for a variation (AJAX)
-        Route::put('products/{product}/variations/{variation}', [ProductController::class, 'updateVariationField'])->name('products.variations.update-field');
         Route::post('products/{product}/update-description', [ProductController::class, 'updateDescription'])->name('products.update-description');
     Route::post('products/{product}/update-name', [ProductController::class, 'updateName'])->name('products.update-name');
         Route::get('products/{product}/images', [ProductController::class, 'getImages'])->name('products.images');
         Route::post('products/{product}/update-images', [ProductController::class, 'updateImages'])->name('products.update-images');
         Route::post('products/{product}/remove-image', [ProductController::class, 'removeImage'])->name('products.remove-image');
+        
+        // Variações de Produtos
+        Route::post('products/{product}/variations', [ProductController::class, 'createVariation'])->name('products.variations.store');
+        Route::get('products/variations/{variation}', [ProductController::class, 'getVariation'])->name('products.variations.show');
+        Route::put('products/variations/{variation}', [ProductController::class, 'updateVariation'])->name('products.variations.update');
+        Route::delete('products/variations/{variation}', [ProductController::class, 'destroyVariation'])->name('products.variations.destroy');
+        Route::post('products/{product}/toggle-variations', [ProductController::class, 'toggleVariations'])->name('products.toggle-variations');
+        
+        // Imagens de Variações
+        Route::get('products/variations/{variation}/images', [ProductController::class, 'getVariationImages'])->name('products.variations.images');
+        Route::post('products/variations/{variation}/images', [ProductController::class, 'uploadVariationImage'])->name('products.variations.images.upload');
+        Route::delete('products/variations/{variation}/images', [ProductController::class, 'removeVariationImage'])->name('products.variations.images.remove');
+        Route::post('products/variations/{variation}/images/primary', [ProductController::class, 'setVariationPrimaryImage'])->name('products.variations.images.primary');
 
         // Categorias
         Route::resource('categories', CategoryController::class);
+        
+        // Atributos de Produtos (Variações)
+        // IMPORTANTE: Rotas específicas DEVEM vir ANTES do resource para evitar conflitos
+        Route::get('attributes/list', [AttributeController::class, 'list'])->name('attributes.list');
+        Route::get('attributes/values/{value}', [AttributeController::class, 'getValue'])->name('attributes.values.show');
+        Route::post('attributes/{attribute}/values', [AttributeController::class, 'addValue'])->name('attributes.values.store');
+        Route::put('attributes/values/{value}', [AttributeController::class, 'updateValue'])->name('attributes.values.update');
+        Route::delete('attributes/values/{value}', [AttributeController::class, 'destroyValue'])->name('attributes.values.destroy');
+        Route::resource('attributes', AttributeController::class);
         // JSON list for categories (used by quick-create modal)
         Route::get('categories/list', [CategoryController::class, 'list'])->name('categories.list');
         // Quick inline update for categories (used by frontend when admin is logged)
@@ -143,6 +144,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
+        
+        // Efeitos de Hover
+        Route::get('hover-effects', [App\Http\Controllers\Admin\HoverEffectsController::class, 'index'])->name('hover-effects.index');
+        Route::post('hover-effects', [App\Http\Controllers\Admin\HoverEffectsController::class, 'update'])->name('hover-effects.update');
         // Upload da logo do site (via modal no painel)
         Route::post('settings/upload-logo', [SettingController::class, 'uploadLogo'])->name('settings.upload-logo');
         // Upload do favicon do site (via painel)
@@ -159,6 +164,11 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::delete('settings/{setting}', [SettingController::class, 'destroy'])->name('settings.destroy');
 
     // Rotas de frete removidas (Melhor Envio / Providers)
+
+        // Entregas Regionais
+        Route::resource('regional-shipping', App\Http\Controllers\Admin\RegionalShippingController::class);
+        Route::patch('regional-shipping/{regionalShipping}/toggle-active', [App\Http\Controllers\Admin\RegionalShippingController::class, 'toggleActive'])->name('regional-shipping.toggle-active');
+        Route::post('regional-shipping/import', [App\Http\Controllers\Admin\RegionalShippingController::class, 'import'])->name('regional-shipping.import');
 
         // Gerenciamento de Usuários Admin (apenas para usuários com permissão)
         Route::middleware('permission:users.manage')->group(function () {

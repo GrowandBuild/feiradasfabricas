@@ -30,17 +30,11 @@
                 </a>
 
                 <div class="nav-item">
-                    <a class="nav-link {{ request()->routeIs('admin.products.*') || request()->routeIs('admin.variations.generator') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
+                    <a class="nav-link {{ request()->routeIs('admin.products.*') ? 'active' : '' }}" href="{{ route('admin.products.index') }}">
                         <i class="bi bi-box-seam"></i>
                         <span>Produtos</span>
                     </a>
                     <ul class="submenu">
-                        <li>
-                            <a class="nav-link {{ request()->routeIs('admin.attributes.*') ? 'active' : '' }}" href="{{ route('admin.attributes.index') }}">
-                                <i class="bi bi-list-ul"></i>
-                                <span>Atributos</span>
-                            </a>
-                        </li>
                         <li>
                             <a class="nav-link {{ request()->routeIs('admin.categories.*') ? 'active' : '' }}" href="{{ route('admin.categories.index') }}">
                                 <i class="bi bi-tags"></i>
@@ -48,9 +42,9 @@
                             </a>
                         </li>
                         <li>
-                            <a class="nav-link {{ request()->routeIs('admin.variations.generator') ? 'active' : '' }}" href="{{ route('admin.variations.generator') }}">
-                                <i class="bi bi-shuffle"></i>
-                                <span>Gerador de variações</span>
+                            <a class="nav-link {{ request()->routeIs('admin.attributes.*') ? 'active' : '' }}" href="{{ route('admin.attributes.index') }}">
+                                <i class="bi bi-sliders"></i>
+                                <span>Atributos</span>
                             </a>
                         </li>
                     </ul>
@@ -87,6 +81,24 @@
                 <a class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">
                     <i class="bi bi-ticket-perforated"></i> 
                     <span>Cupons</span>
+                </a>
+            </div>
+
+            <!-- Entregas Regionais - Link direto na lista principal -->
+            <a class="nav-link {{ request()->routeIs('admin.regional-shipping.*') ? 'active' : '' }}" href="{{ route('admin.regional-shipping.index') }}">
+                <i class="bi bi-truck"></i> 
+                <span>Entregas Regionais</span>
+            </a>
+
+            <div class="nav-section">
+                <div class="nav-section-title">Operação</div>
+                <a class="nav-link {{ request()->routeIs('admin.orders.*') ? 'active' : '' }}" href="{{ route('admin.orders.index') }}">
+                    <i class="bi bi-cart-check"></i> 
+                    <span>Pedidos</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.customers.*') ? 'active' : '' }}" href="{{ route('admin.customers.index') }}">
+                    <i class="bi bi-people"></i> 
+                    <span>Clientes</span>
                 </a>
             </div>
 

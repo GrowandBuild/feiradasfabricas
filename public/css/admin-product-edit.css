@@ -111,12 +111,6 @@ form .form-label{ font-size:0.9rem; margin-bottom:0.25rem }
 
 @media(max-width:991px){ .sidebar-preview{ position:static; margin-top:18px } .save-bar{ position:static; margin-top:12px; display:flex; justify-content:flex-end } }
 
-/* dept attribute styles */
-.dept-attr-checkbox.variation-exists { opacity: 0.65; cursor: not-allowed; }
-.dept-attr-checkbox.variation-exists + .form-check-label .badge-created { margin-left: 0.5rem; }
-.dept-attr-action-badge { display: inline-block; vertical-align: middle; transition: opacity 0.12s ease, transform 0.12s ease; }
-.dept-attr-action-badge[aria-busy="true"] { opacity: 0.6; transform: scale(0.98); }
-
 /* image manager helpers */
 .dropzone { cursor: pointer }
 .dropzone .py-4 { pointer-events: none }

@@ -553,7 +553,6 @@
                     <button class="ss-tab active" data-tab="create" id="qpTabCreate">Criar</button>
                     <button class="ss-tab" data-tab="manage" id="pmTabManage">Gerenciador</button>
                     <button class="ss-tab" data-tab="latest" id="pmTabLatest">Últimos</button>
-                    <button class="ss-tab" data-tab="attributes" id="pmTabAttributes">Atributos</button>
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
                     <button class="ss-btn ss-btn-secondary" id="ssQuickProductClose" type="button">Fechar</button>
@@ -652,29 +651,6 @@
                         <input type="file" id="qpImages" class="form-control" multiple accept="image/*" />
                         <div id="qpPreview" class="d-flex gap-2 mt-2"></div>
                     </div>
-                    <div class="mb-2" id="qpMvpVariations">
-                        <label class="form-label">Variações (MVP)</label>
-                        <div style="display:flex; gap:8px; align-items:center; margin-bottom:8px;">
-                            <button type="button" id="qpMvpToggle" class="ss-btn ss-btn-secondary">Alternar Variations</button>
-                            <small class="text-muted">Fluxo simples: defina eixos (ex: Cor, RAM), adicione valores e gere combinações.</small>
-                        </div>
-
-                        <div id="qpMvpPanel" style="display:none; border:1px dashed #e6edf3; padding:8px; border-radius:6px;">
-                            <div style="display:flex; gap:8px; margin-bottom:8px;">
-                                <input type="text" id="qpMvpAxisName" class="form-control" placeholder="Nome do eixo (ex: Cor)" />
-                                <input type="text" id="qpMvpAxisValues" class="form-control" placeholder="Valores separados por vírgula (ex: Vermelho,Azul)" />
-                                <button type="button" id="qpMvpAddAxisBtn" class="ss-btn ss-btn-primary">Adicionar eixo</button>
-                            </div>
-                            <div id="qpMvpAxesList" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"></div>
-                            <div id="qpMvpSuggestedAttrs" style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px;"></div>
-                            <div style="display:flex; gap:8px; margin-bottom:8px;">
-                                <button type="button" id="qpMvpGenerateBtn" class="ss-btn ss-btn-primary">Gerar Variações</button>
-                                <button type="button" id="qpMvpClearBtn" class="ss-btn ss-btn-secondary">Limpar</button>
-                                <div id="qpMvpCount" style="margin-left:auto; color:#64748b; align-self:center;">0 variações</div>
-                            </div>
-                            <div id="qpMvpCombosPreview" style="max-height:220px; overflow:auto; border-top:1px solid #eef2f7; padding-top:8px;"></div>
-                        </div>
-                    </div>
                     <div class="mb-2 d-flex gap-2" id="qpStockBlock">
                         <div style="flex:1">
                             <label class="form-label">Estoque</label>
@@ -705,19 +681,6 @@
             <div id="pmLatestPanel" class="qp-tab-panel" data-panel="latest" style="display:none; padding:16px; max-height:64vh; overflow:auto;">
                 <div style="margin-bottom:12px; color:#64748b;">Últimos produtos registrados (últimas 20 entradas)</div>
                 <div id="pmLatestResults" style="max-height:52vh; overflow:auto;"></div>
-            </div>
-
-            <div id="pmAttributesPanel" class="qp-tab-panel" data-panel="attributes" style="display:none; padding:16px; max-height:64vh; overflow:auto;">
-                <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
-                    <select id="pmAttrDepartment" class="form-select" style="min-width:180px;">
-                        <option value="">— Selecione o departamento —</option>
-                    </select>
-                    <input id="pmAttrSearch" type="search" class="form-control" placeholder="Filtrar atributos por nome..." aria-label="Pesquisar atributos" />
-                    <button id="pmAttrNewBtn" class="ss-btn ss-btn-primary" type="button">Adicionar Atributo</button>
-                    <button id="pmAttrGenerateBtn" class="ss-btn ss-btn-primary" type="button">Gerar Variações</button>
-                </div>
-                <div id="pmAttributesList" style="max-height:52vh; overflow:auto; border-top:1px solid #eef2f7; padding-top:8px;"></div>
-                <div style="margin-top:10px; color:#64748b; font-size:13px;">Selecione valores e clique em <strong>Aplicar ao Criar Rápido</strong> para inserir atributos no formulário de criação rápida.</div>
             </div>
 
         </div>
@@ -1083,47 +1046,6 @@
                     .slice(0, 80);
             }
 
-            // Load department attributes and render suggestions for Quick-Create MVP
-            function loadDeptAttributes(dept){
-                try {
-                    if (!dept) return;
-                    const target = `/admin/attributes/list?department=${encodeURIComponent(dept)}`;
-                    fetch(target, { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' })
-                        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-                        .then(data => {
-                            try { renderDeptAttributes(data); } catch(e) { console.debug && console.debug('renderDeptAttributes error', e); }
-                        })
-                        .catch(err => { console.debug && console.debug('loadDeptAttributes fetch failed', err); renderDeptAttributes(null); });
-                } catch(e) { console.debug && console.debug('loadDeptAttributes failed', e); }
-            }
-
-            function renderDeptAttributes(data){
-                const container = document.getElementById('qpMvpSuggestedAttrs');
-                if (!container) return;
-                container.innerHTML = '';
-                if (!data || !Array.isArray(data.attributes) || data.attributes.length === 0) {
-                    const hint = document.createElement('div'); hint.style.color = '#64748b'; hint.style.fontSize = '13px'; hint.textContent = 'Nenhum atributo encontrado para este departamento.';
-                    container.appendChild(hint); return;
-                }
-                data.attributes.slice(0, 40).forEach(attr => {
-                    try {
-                        const name = attr.name || attr.title || attr.key || '';
-                        const vals = Array.isArray(attr.values) ? attr.values : (attr.values && typeof attr.values === 'string' ? attr.values.split(',') : []);
-                        const btn = document.createElement('button');
-                        btn.type = 'button'; btn.className = 'ss-btn ss-btn-secondary';
-                        btn.style.padding = '6px 10px'; btn.style.fontSize = '13px';
-                        btn.title = `Adicionar eixo ${name} com ${vals.length} valor(es)`;
-                        btn.textContent = `${name} (${vals.length})`;
-                        btn.addEventListener('click', function(){
-                            // Add axis prefilled with values
-                            addMvpAxis(name, vals.map(v => (v || '').toString().trim()).filter(Boolean));
-                            // open panel if closed
-                            const p = document.getElementById('qpMvpPanel'); if (p && p.style.display === 'none') p.style.display = '';
-                        });
-                        container.appendChild(btn);
-                    } catch(e) { console.debug && console.debug('renderDeptAttributes item failed', e); }
-                });
-            }
 
             function generateSkuFromName(name){
                 const base = (slugify(name || '') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0,8) || 'PRD';
@@ -2539,111 +2461,6 @@
                 });
             });
 
-            // Quick-create MVP: lightweight axes/variations manager
-            const qpAttributesList = null;
-            const qpAddAttrBtn = null;
-            const qpAttrKey = null;
-            const qpAttrValue = null;
-            const qpVariationsList = null;
-            const qpAddVariationBtn = null;
-
-            // MVP state
-            let qpMvpAxes = []; // [{ name: 'Cor', values: ['Red','Blue'] }, ...]
-            let qpMvpCombos = []; // generated combos
-
-            function renderMvpAxes(){
-                const list = document.getElementById('qpMvpAxesList');
-                if (!list) return;
-                list.innerHTML = '';
-                qpMvpAxes.forEach((axis, idx) => {
-                    const chip = document.createElement('div');
-                    chip.className = 'qp-axis-chip';
-                    chip.style.border = '1px solid #e6edf3';
-                    chip.style.padding = '6px 10px';
-                    chip.style.borderRadius = '8px';
-                    chip.style.background = '#fff';
-                    chip.style.display = 'flex'; chip.style.gap = '8px'; chip.style.alignItems = 'center';
-                    chip.innerHTML = `<strong style="margin-right:8px">${escapeHtml(axis.name)}</strong><span style="color:#64748b">${axis.values.join(', ')}</span>`;
-                    const rem = document.createElement('button'); rem.type='button'; rem.className='ss-btn ss-btn-secondary'; rem.textContent='Remover'; rem.style.marginLeft='8px';
-                    rem.addEventListener('click', ()=>{ qpMvpAxes.splice(idx,1); renderMvpAxes(); });
-                    chip.appendChild(rem);
-                    list.appendChild(chip);
-                });
-            }
-
-            function addMvpAxis(name, values){
-                if (!name) return;
-                const vals = (Array.isArray(values) ? values : String(values||'').split(',')).map(s=>s.trim()).filter(Boolean);
-                if (!vals.length) return;
-                qpMvpAxes.push({ name: name.trim(), values: vals });
-                renderMvpAxes();
-            }
-
-            function clearMvp(){ qpMvpAxes = []; qpMvpCombos = []; renderMvpAxes(); renderMvpCombos(); document.getElementById('qpMvpCount') && (document.getElementById('qpMvpCount').textContent = '0 variações'); }
-
-            function renderMvpCombos(){
-                const preview = document.getElementById('qpMvpCombosPreview');
-                if (!preview) return;
-                preview.innerHTML = '';
-                if (!qpMvpCombos || !qpMvpCombos.length) { preview.innerHTML = '<div class="text-muted">Nenhuma variação gerada.</div>'; return; }
-                const table = document.createElement('table'); table.style.width='100%'; table.style.borderCollapse='collapse';
-                table.innerHTML = `<thead><tr><th style="text-align:left; padding:6px">Nome</th><th style="padding:6px">SKU</th><th style="padding:6px">Preço</th><th style="padding:6px">Estoque</th><th style="padding:6px">Ação</th></tr></thead>`;
-                const tbody = document.createElement('tbody');
-                qpMvpCombos.forEach((c, i) => {
-                    const tr = document.createElement('tr');
-                    tr.style.borderTop = '1px solid #eef2f7';
-                    tr.innerHTML = `
-                        <td style="padding:6px"><input class="form-control qp-mvp-name" value="${escapeHtml(c.name||'')}" /></td>
-                        <td style="padding:6px"><input class="form-control qp-mvp-sku" value="${escapeHtml(c.sku||'')}" /></td>
-                        <td style="padding:6px"><input class="form-control qp-mvp-price" value="${c.price!=null?c.price:''}" /></td>
-                        <td style="padding:6px"><input class="form-control qp-mvp-stock" value="${c.stock_quantity!=null?c.stock_quantity:''}" /></td>
-                        <td style="padding:6px"><button type="button" class="ss-btn ss-btn-secondary qp-mvp-remove">Remover</button></td>
-                    `;
-                    tr.querySelector('.qp-mvp-remove')?.addEventListener('click', ()=>{ qpMvpCombos.splice(i,1); renderMvpCombos(); document.getElementById('qpMvpCount') && (document.getElementById('qpMvpCount').textContent = qpMvpCombos.length + ' variações'); });
-                    tbody.appendChild(tr);
-                });
-                table.appendChild(tbody);
-                preview.appendChild(table);
-            }
-
-            function generateMvpCombos(){
-                qpMvpCombos = [];
-                if (!qpMvpAxes || qpMvpAxes.length === 0) return [];
-                const arrays = qpMvpAxes.map(a => a.values.map(v => ({ key: a.name, value: v })));
-                const combos = (typeof cartesianProduct === 'function') ? cartesianProduct(arrays) : arrays.reduce((a,b)=>a.flatMap(d=>b.map(e=>d.concat([e]))), [[]]);
-                combos.forEach(combo => {
-                    const attrs = {};
-                    combo.forEach(c => { const slug = slugify(c.key||''); attrs[slug] = c.value; });
-                    const name = combo.map(c=>c.value).join(' / ');
-                    qpMvpCombos.push({ attributes: attrs, name, sku: null, price: null, stock_quantity: 0 });
-                });
-                renderMvpCombos();
-                document.getElementById('qpMvpCount') && (document.getElementById('qpMvpCount').textContent = qpMvpCombos.length + ' variações');
-            }
-
-            // Wire MVP UI actions
-            (function wireMvp(){
-                try {
-                    document.getElementById('qpMvpAddAxisBtn')?.addEventListener('click', function(){
-                        const name = document.getElementById('qpMvpAxisName')?.value || '';
-                        const vals = document.getElementById('qpMvpAxisValues')?.value || '';
-                        if (!name || !vals) { window.ssShowToast && ssShowToast('Informe nome do eixo e seus valores.', 'warning'); return; }
-                        addMvpAxis(name, vals.split(',').map(s=>s.trim()).filter(Boolean));
-                        document.getElementById('qpMvpAxisName').value = '';
-                        document.getElementById('qpMvpAxisValues').value = '';
-                    });
-                    document.getElementById('qpMvpGenerateBtn')?.addEventListener('click', function(){
-                        if (qpMvpAxes.length === 0) { window.ssShowToast && ssShowToast('Adicione ao menos um eixo com valores.', 'warning'); return; }
-                        // safety limit
-                        const total = qpMvpAxes.reduce((acc,a)=>acc*(a.values.length||1), 1);
-                        if (total > 500) { if (!confirm(`Serão geradas ${total} variações. Continuar?`)) return; }
-                        generateMvpCombos();
-                        window.ssShowToast && ssShowToast('Variações geradas (MVP). Edite nomes/sku/price se desejar.', 'success');
-                    });
-                    document.getElementById('qpMvpClearBtn')?.addEventListener('click', clearMvp);
-                    document.getElementById('qpMvpToggle')?.addEventListener('click', function(){ const p = document.getElementById('qpMvpPanel'); if (p) p.style.display = (p.style.display === 'none' ? '' : 'none'); });
-                } catch(e) { console.debug && console.debug('wireMvp failed', e); }
-            })();
 
             // SKU automatico: gerar a partir do nome enquanto o usuário não editar o campo SKU
             try {
@@ -2677,7 +2494,6 @@
                 const form = document.getElementById('qpForm');
                 if (!form) return; form.reset();
                 if (qpPreview) qpPreview.innerHTML = '';
-                if (qpAttributesList) qpAttributesList.innerHTML = '';
                 // repopulate selects
                 loadQuickFormOptions();
             }
@@ -2733,21 +2549,6 @@
                             applyToggle();
                         }
                     } catch(e) { console.debug && console.debug('qp product_type toggle failed', e); }
-                    // If a department is already selected, preload its attributes
-                    try { const deptSel = document.getElementById('qpDepartment'); if (deptSel && deptSel.value) loadDeptAttributes(deptSel.value); } catch(e) { console.debug && console.debug('preload dept attrs failed', e); }
-                    // --- REMOVER SISTEMA DE ATRIBUTOS DO ATALHO QUICK-CREATE ---
-                    // Esconder controles de atributos/variações apenas para o atalho de criação rápida
-                    try {
-                        const hideIds = ['qpAttributesList','qpAddAttr','qpAttrKey','qpAttrValue','qpAddVariation','qpVariationsList','qpImages','qpPreview'];
-                        hideIds.forEach(id => {
-                            const el = document.getElementById(id);
-                            if (el) el.style.display = 'none';
-                        });
-                        // também esconder qualquer título/painel pai se existir
-                        const panel = document.getElementById('dept-attributes-section');
-                        if (panel) panel.style.display = 'none';
-                        const variationsPanel = document.getElementById('qpVariationsPanel'); if (variationsPanel) variationsPanel.style.display = 'none';
-                    } catch(e) { console.debug && console.debug('fail hide quick attributes', e); }
                 },60);
             }
             function closeQuickProduct(){
@@ -2822,8 +2623,6 @@
                             renderDeptList('');
                             // wire combobox handlers once
                             try { wireDeptCombo(); } catch(e){}
-                            // when the hidden select changes, load attributes for that department
-                            try { deptEl.addEventListener('change', function(){ if (this.value) loadDeptAttributes(this.value); }); } catch(e) {}
                         })
                         .catch(err => { console.debug && console.debug('fetch departments failed', err); });
                 }
@@ -2997,8 +2796,6 @@
                     }
                     hidden.value = id;
                 }
-                // Load department-scoped attributes for the Quick-Create MVP
-                try { loadDeptAttributes(id); } catch(e) { console.debug && console.debug('loadDeptAttributes failed', e); }
                 const listEl = document.getElementById('qpDeptList');
                 if (listEl) { listEl.style.display = 'none'; }
                 const comboEl = document.getElementById('qpDeptCombo');
@@ -3146,9 +2943,6 @@
                     payload.seo_title = (document.getElementById('qpSeoTitle')?.value || '').trim() || null;
                     payload.seo_description = (document.getElementById('qpSeoDescription')?.value || '').trim() || null;
 
-                    // --- Sistema de atributos/variações do atalho removido ---
-                    // As coleções de atributos e variações geradas no modal de atalho foram intencionalmente desativadas.
-                    // Se futuramente formos recriar esse fluxo, reconstruir payload.attributes e payload.variations aqui.
 
                     // Include sell channel flags
                     payload.sell_b2b = document.getElementById('qpSellB2B')?.checked ? 1 : 0;
@@ -3493,12 +3287,8 @@
         document.addEventListener('DOMContentLoaded', function(){
             const pmTabManage = document.getElementById('pmTabManage');
             const pmTabLatest = document.getElementById('pmTabLatest');
-            const pmTabAttributes = document.getElementById('pmTabAttributes');
             const pmManagePanel = document.getElementById('pmManagePanel');
             const pmLatestPanel = document.getElementById('pmLatestPanel');
-            const pmAttributesPanel = document.getElementById('pmAttributesPanel');
-            // ID do produto selecionado no gerenciador (usado para aplicar variações no servidor)
-            let currentPmProductId = null;
             const pmSearchInput = document.getElementById('pmSearchInput');
             const pmResults = document.getElementById('pmResults');
             const pmLatestResults = document.getElementById('pmLatestResults');
@@ -3522,7 +3312,6 @@
 
             pmTabManage?.addEventListener('click', () => switchPmTab('manage'));
             pmTabLatest?.addEventListener('click', () => switchPmTab('latest'));
-            pmTabAttributes?.addEventListener('click', () => switchPmTab('attributes'));
 
             function renderPmItem(prod){
                 const el = document.createElement('div');
@@ -3558,15 +3347,6 @@
                             el.remove();
                             window.ssShowToast && ssShowToast('Produto removido', 'success');
                         }).catch(err => { window.ssShowToast ? ssShowToast(err.message || 'Erro', 'error') : alert(err.message || 'Erro'); });
-                });
-                // select product button (so attributes tab can apply server-side changes)
-                el.querySelector('.pm-select-btn')?.addEventListener('click', function(){
-                    try {
-                        currentPmProductId = prod.id;
-                        window.ssShowToast && ssShowToast('Produto selecionado para aplicar atributos: ID ' + prod.id, 'info');
-                        const btn = document.querySelector('.ss-tab[data-tab="attributes"]');
-                        if (btn) btn.click();
-                    } catch(e) { console.debug && console.debug('pm select failed', e); }
                 });
                 return el;
             }
@@ -3620,301 +3400,6 @@
                 }
                 tryFetch(0);
             }
-
-            // ----- Attributes management -----
-            const pmAttrDeptSel = document.getElementById('pmAttrDepartment');
-            const pmAttrSearch = document.getElementById('pmAttrSearch');
-            const pmAttributesList = document.getElementById('pmAttributesList');
-            const pmAttrNewBtn = document.getElementById('pmAttrNewBtn');
-            const pmAttrGenerateBtn = document.getElementById('pmAttrGenerateBtn');
-
-            async function populateAttrDepartments(){
-                try {
-                    // use departmentsForQuick if available, else fetch snapshot
-                    let depts = (typeof departmentsForQuick !== 'undefined' && Array.isArray(departmentsForQuick) && departmentsForQuick.length) ? departmentsForQuick : [];
-                    if (!depts.length) {
-                        const r = await fetch('/admin/departments/inline-snapshot', { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
-                        if (r.ok) {
-                            const data = await r.json();
-                            depts = Array.isArray(data.departments) ? data.departments.map(d => ({ id: d.id, name: d.name || d.title || String(d.id), slug: d.slug || null })) : [];
-                        }
-                    }
-                    if (!pmAttrDeptSel) return;
-                    pmAttrDeptSel.innerHTML = '<option value="">— Selecione o departamento —</option>';
-                    depts.forEach(d => {
-                        const opt = document.createElement('option'); opt.value = d.id || (d.slug || ''); opt.textContent = d.name || String(d.id || ''); pmAttrDeptSel.appendChild(opt);
-                    });
-                } catch(e){ console.debug && console.debug('populateAttrDepartments failed', e); }
-            }
-
-            async function loadPmAttributesForDept(dept){
-                if (!pmAttributesList) return;
-                pmAttributesList.innerHTML = '<div style="padding:16px;color:#64748b">Carregando atributos...</div>';
-                const tryUrls = [
-                    `/admin/products/attributes?department=${encodeURIComponent(dept)}`,
-                    `/admin/attributes?department=${encodeURIComponent(dept)}`,
-                    `/admin/attributes/list?department=${encodeURIComponent(dept)}`
-                ];
-                let fetched = null;
-                for (let i=0;i<tryUrls.length;i++){
-                    try {
-                        const r = await fetch(tryUrls[i], { headers: { 'Accept': 'application/json' }, credentials: 'same-origin' });
-                        if (!r.ok) continue;
-                        const js = await r.json();
-                        // Expect shape: { attributes: [ { name: 'Cor', values: ['Azul','Vermelho'] }, ... ] }
-                        if (js && (Array.isArray(js.attributes) || Array.isArray(js))) {
-                            fetched = Array.isArray(js.attributes) ? js.attributes : js;
-                            break;
-                        }
-                    } catch(e){ /* try next */ }
-                }
-                if (!fetched) {
-                    pmAttributesList.innerHTML = '<div style="padding:16px;color:#64748b">Nenhum atributo encontrado para este departamento.</div>';
-                    return;
-                }
-                renderPmAttributes(fetched || []);
-            }
-
-            function renderPmAttributes(list){
-                if (!pmAttributesList) return;
-                pmAttributesList.innerHTML = '';
-                const q = (pmAttrSearch && pmAttrSearch.value || '').trim().toLowerCase();
-                list.forEach(attr => {
-                    const name = attr.name || attr.key || '';
-                    const rawValues = Array.isArray(attr.values) ? attr.values : (Array.isArray(attr.options) ? attr.options : (attr.values_string ? String(attr.values_string).split(',').map(s=>s.trim()).filter(Boolean) : []));
-                    const values = rawValues.map(v => {
-                        if (v && typeof v === 'object') return v;
-                        return { value: String(v) };
-                    });
-                    const valuesText = values.map(v => (v && (v.value || v.name)) ? String(v.value || v.name) : '').join(',');
-                    if (q && !name.toLowerCase().includes(q) && !valuesText.toLowerCase().includes(q)) return;
-                    const wrap = document.createElement('div');
-                    wrap.style.padding = '10px'; wrap.style.borderBottom = '1px solid #f1f5f9';
-                    wrap.innerHTML = `<div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><div style="font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${escapeHtml(name)}</div><div><button class="ss-btn ss-btn-primary pm-apply-attr">Aplicar ao Criar Rápido</button> <button class="ss-btn ss-btn-secondary pm-add-server-variations" title="Adicionar como variações (produto selecionado)">Adicionar como variações</button></div></div>`;
-                    const vals = document.createElement('div'); vals.style.marginTop = '8px'; vals.style.display = 'flex'; vals.style.flexWrap = 'wrap'; vals.style.gap = '8px';
-                    values.forEach(v => {
-                        const display = (v && (v.value || v.name)) ? (v.value || v.name) : (v === null || v === undefined ? '' : String(v));
-                        const cbWrap = document.createElement('label'); cbWrap.style.display='inline-flex'; cbWrap.style.alignItems='center'; cbWrap.style.gap='6px'; cbWrap.style.border='1px solid #eef2f7'; cbWrap.style.padding='6px 8px'; cbWrap.style.borderRadius='8px'; cbWrap.style.background='#fff';
-                        const cb = document.createElement('input'); cb.type='checkbox'; cb.value = display; cb.dataset.attr = name; cb.className = 'pm-attr-value';
-                        // store raw object if present for possible future use
-                        if (v && typeof v === 'object') cb.dataset.raw = JSON.stringify(v);
-                        const span = document.createElement('span'); span.textContent = display; span.style.fontSize='13px';
-                        // if color hex present, add a small swatch
-                        if (v && typeof v === 'object' && v.hex) {
-                            const sw = document.createElement('span'); sw.style.display='inline-block'; sw.style.width='12px'; sw.style.height='12px'; sw.style.borderRadius='50%'; sw.style.marginLeft='8px'; sw.style.border='1px solid #e6edf3';
-                            try { sw.style.background = (String(v.hex).startsWith('#') ? String(v.hex) : ('#' + String(v.hex).replace('#',''))); } catch(e){}
-                            cbWrap.appendChild(sw);
-                        }
-                        cbWrap.appendChild(cb); cbWrap.appendChild(span); vals.appendChild(cbWrap);
-                    });
-                    wrap.appendChild(vals);
-                    // attach handler (quick-create insertion disabled)
-                    const btn = wrap.querySelector('.pm-apply-attr');
-                    btn?.addEventListener('click', function(){
-                        try {
-                            window.ssShowToast && ssShowToast('Inserção de atributos no atalho Quick‑Create está desativada.', 'info');
-                        } catch(e) { console.debug && console.debug('pm-apply-attr noop failed', e); }
-                    });
-                    // attach server-side apply (if product selected) - uses bulk endpoint
-                    const serverBtn = wrap.querySelector('.pm-add-server-variations');
-                    serverBtn?.addEventListener('click', async function(){
-                        try {
-                            // collect all checked attribute values across the attributes list
-                            const checked = Array.from(pmAttributesList.querySelectorAll('.pm-attr-value:checked'));
-                            if (!checked.length) { window.ssShowToast && ssShowToast('Selecione ao menos um valor para adicionar.', 'warning'); return; }
-                            if (!currentPmProductId) { window.ssShowToast && ssShowToast('Selecione um produto no Gerenciador antes de aplicar variações no servidor.', 'warning'); return; }
-
-                            // group by attribute name
-                            const groups = {};
-                            checked.forEach(cb => {
-                                const key = cb.dataset.attr || 'value';
-                                const raw = cb.dataset.raw || '';
-                                let meta = null;
-                                if (raw) {
-                                    try { meta = JSON.parse(raw); } catch(e) { meta = raw; }
-                                }
-                                if (!groups[key]) groups[key] = [];
-                                groups[key].push({ key, value: cb.value, meta });
-                            });
-
-                            const keys = Object.keys(groups);
-                            const arrays = keys.map(k => groups[k]);
-                            const combosRaw = (typeof cartesianProduct === 'function') ? cartesianProduct(arrays) : arrays.map(a=>a.map(v=>[v]));
-
-                            if (!combosRaw || !combosRaw.length) { window.ssShowToast && ssShowToast('Nenhuma combinação gerada.', 'warning'); return; }
-
-                            const combos = combosRaw.map(combo => {
-                                const attrs = {};
-                                combo.forEach(c => {
-                                    if (!c || !c.key) return;
-                                    const slug = slugify(c.key || c.attr || '');
-                                    attrs[slug] = c.value;
-                                });
-                                return attrs;
-                            });
-
-                            if (combos.length > 500) {
-                                if (!confirm(`Serão geradas ${combos.length} variações. Continuar?`)) return;
-                            }
-
-                            const csrf = CSRF || (document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').content : '');
-                            const resp = await fetch(`/admin/products/${currentPmProductId}/variations/bulk-add`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
-                                body: JSON.stringify({ combos })
-                            });
-                            const data = await resp.json().catch(() => null);
-                            if (data && data.success) {
-                                window.ssShowToast && ssShowToast(`Operação concluída. ${data.created || 0} variação(ões) criada(s).`, 'success');
-                            } else {
-                                console.error('bulk add failed', data);
-                                window.ssShowToast && ssShowToast('Erro ao criar variações em lote. Veja o console.', 'error');
-                            }
-                        } catch(e) { console.error('pm add server variations failed', e); window.ssShowToast && ssShowToast('Erro ao aplicar variações no servidor. Veja console.', 'error'); }
-                    });
-
-                    pmAttributesList.appendChild(wrap);
-                });
-                if (!pmAttributesList.children.length) pmAttributesList.innerHTML = '<div style="padding:16px;color:#64748b">Nenhum atributo disponível.</div>';
-            }
-
-            // Wire department change and search
-            pmAttrDeptSel?.addEventListener('change', function(){ const dept = this.value || ''; if (dept) loadPmAttributesForDept(dept); else pmAttributesList.innerHTML = '<div style="padding:16px;color:#64748b">Selecione um departamento para ver atributos.</div>'; });
-            pmAttrSearch?.addEventListener('input', function(){ // re-filter existing list if present
-                // naive: refetch current dept list to re-render with filter
-                const d = pmAttrDeptSel?.value || '';
-                if (d) loadPmAttributesForDept(d);
-            });
-
-            pmAttrNewBtn?.addEventListener('click', function(){
-                // simple prompt flow: ask attribute name and comma-separated values, then render locally and allow applying
-                const name = prompt('Nome do atributo (ex: Cor, Tamanho, RAM)');
-                if (!name || !name.trim()) return;
-                const valuesRaw = prompt('Valores separados por vírgula (ex: Azul, Vermelho, Verde)');
-                const values = valuesRaw ? valuesRaw.split(',').map(s=>s.trim()).filter(Boolean) : [];
-                const obj = { name: name.trim(), values };
-                // prepend to list
-                const curr = [];
-                // try to parse currently visible attributes (no persistent store)
-                try { renderPmAttributes([obj].concat(curr)); } catch(e){ console.debug && console.debug('render new attr failed', e); }
-            });
-
-            // Helper: cartesian product of arrays
-            function cartesianProduct(arr) {
-                return arr.reduce((a, b) => a.flatMap(d => b.map(e => d.concat([e]))), [[]]);
-            }
-
-            // Generate variations from selected attribute values across attributes
-            pmAttrGenerateBtn?.addEventListener('click', function(){
-                try {
-                    if (!pmAttributesList) {
-                        console.error('pmAttrGenerate: pmAttributesList element not found');
-                        window.ssShowToast && ssShowToast('A lista de atributos não está disponível.', 'error');
-                        return;
-                    }
-
-                    // gather checked values grouped by attribute name
-                    const checked = Array.from(pmAttributesList.querySelectorAll('.pm-attr-value:checked'));
-                    if (!checked.length) { window.ssShowToast && ssShowToast('Selecione ao menos um valor para gerar variações.', 'warning'); return; }
-                    const groups = {}; // key -> [{ value, meta }]
-                    checked.forEach(cb => {
-                        const key = cb.dataset.attr || 'value';
-                        const raw = cb.dataset.raw || '';
-                        let meta = null;
-                        if (raw) {
-                            try { meta = JSON.parse(raw); } catch(err) { meta = raw; }
-                        }
-                        if (!groups[key]) groups[key] = [];
-                        groups[key].push({ key, value: cb.value, meta });
-                    });
-
-                    // Prepare arrays for cartesian product ordered by attribute key
-                    const keys = Object.keys(groups);
-                    if (!keys.length) { window.ssShowToast && ssShowToast('Nenhum atributo válido selecionado.', 'warning'); return; }
-                    const arrays = keys.map(k => groups[k]);
-
-                    // Use fallback if cartesianProduct isn't available
-                    const cartesianFn = (typeof cartesianProduct === 'function') ? cartesianProduct : function(arr) { return arr.reduce((a, b) => a.flatMap(d => b.map(e => d.concat([e]))), [[]]); };
-                    const combos = cartesianFn(arrays) || [];
-                    if (!combos.length) { window.ssShowToast && ssShowToast('Nenhuma combinação gerada.', 'warning'); return; }
-
-                    // ensure slugify exists; provide safe fallback
-                    const slugifyFn = (typeof slugify === 'function') ? slugify : function(s){ return String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').replace(/-{2,}/g,'-').slice(0,80); };
-
-                    // For each combination, create a variation object and add a row
-                    combos.forEach(combo => {
-                        try {
-                            // combo is array of {key, value, meta}
-                            // build a generic attributes map using slugified keys
-                            const attrs = {};
-                            combo.forEach(c => {
-                                if (!c || !c.key) return;
-                                const slug = slugifyFn(c.key || c.attr || '');
-                                attrs[slug] = c.value;
-                            });
-
-                            const variation = { name: combo.map(c => c.value).join(' / '), sku: null, price: null, stock_quantity: 0, attributes: attrs };
-
-                            // Backwards-compatible: expose common fields when present so addVariationRow can still read them
-                            if (attrs.ram) variation.ram = attrs.ram;
-                            if (attrs.storage) variation.storage = attrs.storage;
-                            if (attrs.armazenamento && !variation.storage) variation.storage = attrs.armazenamento;
-                            if (attrs.color) variation.color = attrs.color;
-                            if (attrs.cor && !variation.color) variation.color = attrs.cor;
-
-                            // If any combo item had meta with hex, attach color hex
-                            combo.forEach(c => {
-                                if (!c || !c.key) return;
-                                const slug = slugifyFn(c.key || c.attr || '');
-                                if ((slug === 'color' || slug === 'cor' || slug.indexOf('color') !== -1) && c.meta && (c.meta.hex || c.meta.color_hex)) {
-                                    variation.color_hex = c.meta.hex || c.meta.color_hex;
-                                }
-                            });
-
-                            if (typeof addVariationRow === 'function') addVariationRow(variation);
-                            else console.warn('addVariationRow not available, skipping UI insertion', variation);
-                        } catch(inner) {
-                            console.error('pmAttrGenerate: failed to build variation for combo', combo, inner);
-                        }
-                    });
-
-                    window.ssShowToast && ssShowToast('Variações geradas — revise antes de salvar.', 'success');
-                } catch(e) {
-                    console.error('pmAttrGenerate failed', e, { pmAttributesList, pmAttrGenerateBtn });
-                    window.ssShowToast && ssShowToast('Erro ao gerar variações. Veja console.', 'error');
-                }
-            });
-
-            // Ensure departments list populated when attributes tab opened
-            const origSwitchPmTab = switchPmTab;
-            function switchPmTabWithAttrs(tab){
-                if (tab === 'attributes') {
-                    // hide others
-                    try { if (pmManagePanel) pmManagePanel.style.display = 'none'; } catch(e){}
-                    try { if (pmLatestPanel) pmLatestPanel.style.display = 'none'; } catch(e){}
-                    try { if (pmAttributesPanel) pmAttributesPanel.style.display = ''; } catch(e){}
-                    // update tab active state
-                    try { pmTabManage.classList.remove('active'); } catch(e){}
-                    try { pmTabLatest.classList.remove('active'); } catch(e){}
-                    try { pmTabAttributes && pmTabAttributes.classList.add('active'); } catch(e){}
-                    // populate departments and try select current
-                    populateAttrDepartments();
-                    const current = (typeof getCurrentDepartmentSlug === 'function') ? getCurrentDepartmentSlug() : (window.CurrentDepartmentSlug || null);
-                    if (current && pmAttrDeptSel && !pmAttrDeptSel.value) {
-                        setTimeout(()=>{
-                            Array.from(pmAttrDeptSel.options).forEach(o=>{ if (String(o.text || '').toLowerCase().indexOf(String(current).toLowerCase()) !== -1 || String(o.value) === String(current)) { pmAttrDeptSel.value = o.value; } });
-                            if (pmAttrDeptSel.value) loadPmAttributesForDept(pmAttrDeptSel.value);
-                        }, 120);
-                    }
-                    return;
-                }
-                // fallback to original behavior for manage/latest
-                origSwitchPmTab(tab);
-            }
-            // override switch handler (local + global) so existing listeners call the enhanced version
-            try { switchPmTab = switchPmTabWithAttrs; } catch(e) { window.switchPmTab = switchPmTabWithAttrs; }
-            // call once to ensure default remains (start on manage only when explicitly requested)
-            try { if (typeof switchPmTabWithAttrs === 'function') {/* no-op on load; default will be create */} } catch(e){}
 
             // initial state: show create tab by default
             document.querySelectorAll('.ss-tab').forEach(b=>b.classList.remove('active'));
@@ -4035,9 +3520,6 @@
 
                 // If the quick-create specific selectDept function exists, call it to keep internal state
                 try { if (typeof selectDept === 'function') selectDept(id, name, color); } catch(err){}
-
-                // Try to load department attributes for the selected department
-                try { if (typeof loadDeptAttributes === 'function') loadDeptAttributes(id); } catch(err){}
             } catch(err) { console.debug && console.debug('department:selected handler error', err); }
         });
     </script>

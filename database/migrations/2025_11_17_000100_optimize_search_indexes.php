@@ -25,17 +25,6 @@ return new class extends Migration
             }
         });
 
-        Schema::table('product_variations', function (Blueprint $table) {
-            if (!self::hasIndex('product_variations', 'pv_color_index')) {
-                $table->index('color', 'pv_color_index');
-            }
-            if (!self::hasIndex('product_variations', 'pv_storage_index')) {
-                $table->index('storage', 'pv_storage_index');
-            }
-            if (!self::hasIndex('product_variations', 'pv_ram_index')) {
-                $table->index('ram', 'pv_ram_index');
-            }
-        });
 
         // FULLTEXT (MySQL/MariaDB) para melhorar LIKE %termo%
         try {
@@ -59,11 +48,6 @@ return new class extends Migration
             self::dropIndexIfExists('products', 'products_stock_flags_index');
         });
 
-        Schema::table('product_variations', function (Blueprint $table) {
-            self::dropIndexIfExists('product_variations', 'pv_color_index');
-            self::dropIndexIfExists('product_variations', 'pv_storage_index');
-            self::dropIndexIfExists('product_variations', 'pv_ram_index');
-        });
 
         try {
             $driver = DB::getDriverName();

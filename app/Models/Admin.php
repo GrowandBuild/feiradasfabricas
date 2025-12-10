@@ -56,4 +56,12 @@ class Admin extends Authenticatable
     {
         return $this->hasMany(InventoryLog::class);
     }
+
+    /**
+     * Relacionamento com favoritos (lista de desejos)
+     */
+    public function favorites()
+    {
+        return $this->hasMany(Favorite::class);
+    }
 }

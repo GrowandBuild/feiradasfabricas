@@ -1,9 +1,9 @@
 /**
- * PDP Professional - Sistema de Variações Impecável
- * Arquitetura moderna, performance otimizada e UX excepcional
+ * PDP Professional - Página de Detalhes do Produto
+ * Sistema de galeria de imagens, controle de quantidade, cálculo de frete e adicionar ao carrinho
  * 
  * @author Professional Developer
- * @version 2.0.0
+ * @version 2.1.0
  */
 
 (function() {
@@ -21,25 +21,14 @@
             totalImages: '#total-images',
             thumbnailsWrapper: '#thumbnailsWrapper',
             priceDisplay: '#product-price-display',
-            skuDisplay: '#variation-sku-display',
-            skuValue: '#selected-variation-sku',
-            stockDisplay: '#variation-stock-display',
-            stockBadge: '#variation-stock-badge',
-            unavailableMessage: '#variation-unavailable-message',
             addToCartBtn: '.btn-add-to-cart-ml',
-            variationOptions: '.variation-option-ml',
-            variationInputs: '.variation-option-ml input',
             pdpConfig: '#pdp-config'
         },
         
         // Estados da aplicação
         STATE: {
-            currentVariation: null,
-            selectedOptions: {},
             isLoading: false,
-            images: [],
-            variations: [],
-            colorImages: {}
+            images: []
         },
         
         // Performance thresholds
@@ -63,7 +52,7 @@
          */
         $(selector, context = document) {
             const element = context.querySelector(selector);
-            if (!element && process.env.NODE_ENV === 'development') {
+            if (!element && typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') {
                 console.warn(`Element not found: ${selector}`);
             }
             return element;
@@ -159,7 +148,6 @@
             try {
                 const config = JSON.parse(configEl.textContent || '{}');
                 this.images = Array.isArray(config.images) ? config.images : [];
-                CONFIG.STATE.colorImages = config.variationColorImages || {};
             } catch (error) {
                 console.error('Invalid PDP configuration:', error);
                 this.images = [];
@@ -319,28 +307,6 @@
             this.setMainImage(newIndex);
         },
 
-        applyColorImages(color) {
-            if (!color || !CONFIG.STATE.colorImages[color]) {
-                this.images = this.getOriginalImages();
-            } else {
-                this.images = CONFIG.STATE.colorImages[color];
-            }
-            
-            this.render();
-        },
-
-        getOriginalImages() {
-            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
-            if (!configEl) return [];
-            
-            try {
-                const config = JSON.parse(configEl.textContent || '{}');
-                return Array.isArray(config.images) ? config.images : [];
-            } catch {
-                return [];
-            }
-        },
-
         getEmptyStateHTML() {
             return `
                 <div class="text-center p-4">
@@ -351,297 +317,615 @@
         }
     };
 
-    /**
-     * Variation System Professional
-     */
-    const VariationSystem = {
-        init() {
-            this.loadConfiguration();
-            this.setupEventListeners();
-            this.initializeSelections();
-        },
-
-        loadConfiguration() {
-            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
-            if (!configEl) return;
-
-            try {
-                const config = JSON.parse(configEl.textContent || '{}');
-                CONFIG.STATE.variations = Array.isArray(config.variationData) 
-                    ? config.variationData 
-                    : [];
-            } catch (error) {
-                console.error('Invalid variations configuration:', error);
-                CONFIG.STATE.variations = [];
-            }
-        },
-
-        setupEventListeners() {
-            // Delegated events para performance
-            document.addEventListener('change', (e) => {
-                if (e.target.matches(CONFIG.SELECTORS.variationInputs)) {
-                    this.handleOptionChange(e.target);
-                }
-            });
-
-            document.addEventListener('click', (e) => {
-                if (e.target.closest(CONFIG.SELECTORS.variationOptions)) {
-                    this.handleOptionClick(e.target.closest(CONFIG.SELECTORS.variationOptions));
-                }
-            });
-        },
-
-        handleOptionChange(input) {
-            const type = input.getAttribute('name');
-            const value = input.value;
-            
-            CONFIG.STATE.selectedOptions[type] = value;
-            this.updateAvailability();
-            this.updateVariation();
-        },
-
-        handleOptionClick(option) {
-            const input = option.querySelector('input');
-            if (input && !input.disabled && !input.checked) {
-                input.checked = true;
-                input.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        },
-
-        initializeSelections() {
-            Utils.$$(CONFIG.SELECTORS.variationInputs).forEach(input => {
-                if (input.checked) {
-                    CONFIG.STATE.selectedOptions[input.name] = input.value;
-                }
-            });
-
-            this.updateAvailability();
-        },
-
-        updateAvailability() {
-            const selected = CONFIG.STATE.selectedOptions;
-            
-            ['ram', 'storage', 'color'].forEach(type => {
-                const options = Utils.$$(`label[data-variation-type="${type}"]`);
-                
-                options.forEach(option => {
-                    const input = option.querySelector('input');
-                    if (!input) return;
-
-                    const value = input.value;
-                    const isAvailable = this.isCombinationAvailable(
-                        type === 'ram' ? value : selected.ram,
-                        type === 'storage' ? value : selected.storage,
-                        type === 'color' ? value : selected.color
-                    );
-
-                    input.disabled = !isAvailable;
-                    option.classList.toggle('disabled', !isAvailable);
-
-                    // Auto-select primeira opção disponível
-                    if (!input.checked && isAvailable && !options.some(o => o.querySelector('input:checked'))) {
-                        input.checked = true;
-                        CONFIG.STATE.selectedOptions[type] = value;
-                    }
-                });
-            });
-
-            this.updateVisualStates();
-        },
-
-        updateVisualStates() {
-            Utils.$$(CONFIG.SELECTORS.variationOptions).forEach(option => {
-                const input = option.querySelector('input');
-                const isActive = input && input.checked && !input.disabled;
-                option.classList.toggle('active', isActive);
-            });
-
-            this.applyColorSwatches();
-        },
-
-        applyColorSwatches() {
-            Utils.$$('.variation-option-ml[data-variation-type="color"]').forEach(option => {
-                const value = option.getAttribute('data-value');
-                const swatch = option.querySelector('.swatch-ml');
-                
-                if (swatch && value) {
-                    const variation = CONFIG.STATE.variations.find(v => v.color === value);
-                    const hex = variation?.color_hex || '#f1f5f9';
-                    swatch.style.background = hex;
-                }
-            });
-        },
-
-        isCombinationAvailable(ram, storage, color) {
-            return CONFIG.STATE.variations.some(variation => {
-                if (!variation.in_stock || variation.stock_quantity <= 0) return false;
-                
-                const matchesRam = !ram || variation.ram === ram;
-                const matchesStorage = !storage || variation.storage === storage;
-                const matchesColor = !color || variation.color === color;
-                
-                return matchesRam && matchesStorage && matchesColor;
-            });
-        },
-
-        async updateVariation() {
-            const selected = CONFIG.STATE.selectedOptions;
-            const hasCompleteSelection = Object.values(selected).filter(v => v).length >= 2;
-            
-            if (!hasCompleteSelection) {
-                this.hideUnavailableMessage();
-                return;
-            }
-
-            const isAvailable = this.isCombinationAvailable(
-                selected.ram, 
-                selected.storage, 
-                selected.color
-            );
-
-            if (!isAvailable) {
-                this.showUnavailableMessage();
-                this.disableAddToCart();
-                return;
-            }
-
-            this.hideUnavailableMessage();
-            await this.fetchVariationDetails();
-        },
-
-        async fetchVariationDetails() {
-            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
-            if (!configEl) return;
-
-            try {
-                const config = JSON.parse(configEl.textContent || '{}');
-                const url = new URL(config.routes?.productVariation || '/produto/{slug}/variacao', window.location.origin);
-                
-                // Adicionar parâmetros
-                Object.entries(CONFIG.STATE.selectedOptions).forEach(([key, value]) => {
-                    if (value) url.searchParams.append(key, value);
-                });
-
-                CONFIG.STATE.isLoading = true;
-                const response = await fetch(url.toString());
-                const data = await response.json();
-
-                if (data.success && data.variation) {
-                    this.updateVariationDisplay(data.variation);
-                    this.enableAddToCart(data.variation.id);
-                    ImageGallery.applyColorImages(CONFIG.STATE.selectedOptions.color);
-                } else {
-                    this.showUnavailableMessage();
-                    this.disableAddToCart();
-                }
-            } catch (error) {
-                console.error('Error fetching variation:', error);
-                this.showUnavailableMessage();
-                this.disableAddToCart();
-            } finally {
-                CONFIG.STATE.isLoading = false;
-            }
-        },
-
-        updateVariationDisplay(variation) {
-            // Update price
-            const priceDisplay = Utils.$(CONFIG.SELECTORS.priceDisplay);
-            if (priceDisplay && variation.price) {
-                priceDisplay.textContent = `R$ ${variation.price}`;
-            }
-
-            // Update SKU
-            const skuDisplay = Utils.$(CONFIG.SELECTORS.skuDisplay);
-            const skuValue = Utils.$(CONFIG.SELECTORS.skuValue);
-            if (skuDisplay && skuValue && variation.sku) {
-                skuValue.textContent = variation.sku;
-                skuDisplay.style.display = 'block';
-            }
-
-            // Update stock
-            this.updateStockDisplay(variation);
-        },
-
-        updateStockDisplay(variation) {
-            const stockDisplay = Utils.$(CONFIG.SELECTORS.stockDisplay);
-            const stockBadge = Utils.$(CONFIG.SELECTORS.stockBadge);
-            
-            if (!stockDisplay || !stockBadge) return;
-
-            const inStock = variation.in_stock && variation.stock_quantity > 0;
-            
-            if (inStock) {
-                stockBadge.className = 'badge bg-success';
-                stockBadge.innerHTML = `
-                    <i class="fas fa-check-circle me-1"></i>
-                    Em estoque (${variation.stock_quantity} unidades)
-                `;
-                this.enableAddToCart();
-            } else {
-                stockBadge.className = 'badge bg-danger';
-                stockBadge.innerHTML = `
-                    <i class="fas fa-times-circle me-1"></i>
-                    Fora de estoque
-                `;
-                this.disableAddToCart();
-            }
-            
-            stockDisplay.style.display = 'block';
-        },
-
-        showUnavailableMessage() {
-            const message = Utils.$(CONFIG.SELECTORS.unavailableMessage);
-            if (message) {
-                message.style.display = 'flex';
-            }
-        },
-
-        hideUnavailableMessage() {
-            const message = Utils.$(CONFIG.SELECTORS.unavailableMessage);
-            if (message) {
-                message.style.display = 'none';
-            }
-        },
-
-        enableAddToCart(variationId) {
-            const btn = Utils.$(CONFIG.SELECTORS.addToCartBtn);
-            if (btn) {
-                btn.disabled = false;
-                btn.classList.remove('disabled');
-                if (variationId) {
-                    btn.setAttribute('data-variation-id', variationId);
-                }
-            }
-        },
-
-        disableAddToCart() {
-            const btn = Utils.$(CONFIG.SELECTORS.addToCartBtn);
-            if (btn) {
-                btn.disabled = true;
-                btn.classList.add('disabled');
-                btn.removeAttribute('data-variation-id');
-            }
-        }
-    };
 
     /**
      * Shipping System Professional
      */
     const ShippingSystem = {
+        regionsList: [],
+        selectedRegion: null,
+        searchTimeout: null,
+
         init() {
+            console.log('ShippingSystem.init() chamado');
             this.setupEventListeners();
+            this.setupTabs();
+            // Carregar regiões primeiro, depois configurar busca
+            this.loadRegionsList().then(() => {
+                console.log('Regiões carregadas, configurando busca...');
+                this.setupRegionSearch();
+            }).catch(error => {
+                console.error('Erro ao carregar regiões:', error);
+                // Mesmo assim, configurar busca para tentar recarregar depois
+                this.setupRegionSearch();
+            });
+        },
+
+        async loadRegionsList() {
+            try {
+                console.log('🔄 Carregando lista de regiões...');
+                const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+                if (!configEl) {
+                    console.error('❌ Elemento de configuração não encontrado');
+                    this.regionsList = [];
+                    return;
+                }
+                
+                const config = JSON.parse(configEl?.textContent || '{}');
+                const route = config.routes?.shippingRegionalAreas || '/shipping/regional-areas';
+                console.log('🌐 Fazendo requisição para:', route);
+                
+                const response = await fetch(route, {
+                    headers: {
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('📡 Resposta recebida:', response.status, response.statusText);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const data = await response.json();
+                console.log('📦 Dados recebidos:', data);
+                
+                if (data.success && data.regions) {
+                    this.regionsList = data.regions;
+                    console.log('✅ Regiões carregadas:', this.regionsList.length);
+                    if (this.regionsList.length > 0) {
+                        console.log('📝 Primeiras regiões:', this.regionsList.slice(0, 3).map(r => r.name));
+                        // Selecionar uma região aleatória por padrão
+                        this.selectRandomRegion();
+                    }
+                } else {
+                    console.warn('⚠️ Nenhuma região retornada ou resposta inválida:', data);
+                    this.regionsList = [];
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar regiões:', error);
+                this.regionsList = [];
+            }
+        },
+
+        setupRegionSearch() {
+            const searchInput = Utils.$('#region-search-local');
+            const suggestionsBox = Utils.$('#region-suggestions');
+            
+            if (!searchInput) {
+                console.error('❌ Campo de busca não encontrado: #region-search-local');
+                return;
+            }
+            
+            if (!suggestionsBox) {
+                console.error('❌ Container de sugestões não encontrado: #region-suggestions');
+                return;
+            }
+
+            console.log('✅ Configurando busca regional. Total de regiões:', this.regionsList?.length || 0);
+            console.log('✅ Campo de busca encontrado:', searchInput);
+            console.log('✅ Container de sugestões encontrado:', suggestionsBox);
+
+            // Buscar enquanto digita
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                console.log('🔍 Usuário digitou:', query, '| Tamanho:', query.length);
+                
+                clearTimeout(this.searchTimeout);
+                
+                if (query.length < 2) {
+                    console.log('⏸️ Query muito curta, escondendo sugestões');
+                    suggestionsBox.style.display = 'none';
+                    this.clearSelectedRegion();
+                    return;
+                }
+
+                console.log('⏳ Aguardando 300ms antes de buscar...');
+                this.searchTimeout = setTimeout(() => {
+                    console.log('🔎 Iniciando busca por:', query);
+                    console.log('📋 Regiões disponíveis:', this.regionsList?.length || 0);
+                    
+                    if (!this.regionsList || this.regionsList.length === 0) {
+                        console.warn('⚠️ Lista de regiões vazia. Tentando recarregar...');
+                        this.loadRegionsList().then(() => {
+                            console.log('✅ Regiões recarregadas, mostrando sugestões...');
+                            this.showSuggestions(query.toLowerCase(), suggestionsBox);
+                        });
+                    } else {
+                        console.log('✅ Mostrando sugestões com', this.regionsList.length, 'regiões disponíveis');
+                        this.showSuggestions(query.toLowerCase(), suggestionsBox);
+                    }
+                }, 300);
+            });
+
+            // Fechar sugestões ao clicar fora
+            document.addEventListener('click', (e) => {
+                if (!searchInput.contains(e.target) && !suggestionsBox.contains(e.target)) {
+                    suggestionsBox.style.display = 'none';
+                }
+            });
+
+            // Selecionar com Enter ou setas
+            searchInput.addEventListener('keydown', (e) => {
+                const suggestions = Array.from(suggestionsBox.querySelectorAll('.suggestion-item'));
+                const currentIndex = suggestions.findIndex(s => s.classList.contains('highlighted'));
+                
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const highlighted = suggestionsBox.querySelector('.suggestion-item.highlighted');
+                    const firstSuggestion = highlighted || suggestions[0];
+                    if (firstSuggestion) {
+                        firstSuggestion.click();
+                    }
+                } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    const nextIndex = currentIndex < suggestions.length - 1 ? currentIndex + 1 : 0;
+                    suggestions.forEach(s => s.classList.remove('highlighted'));
+                    if (suggestions[nextIndex]) {
+                        suggestions[nextIndex].classList.add('highlighted');
+                        suggestions[nextIndex].style.background = '#e7f3ff';
+                    }
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    const prevIndex = currentIndex > 0 ? currentIndex - 1 : suggestions.length - 1;
+                    suggestions.forEach(s => s.classList.remove('highlighted'));
+                    if (suggestions[prevIndex]) {
+                        suggestions[prevIndex].classList.add('highlighted');
+                        suggestions[prevIndex].style.background = '#e7f3ff';
+                    }
+                } else if (e.key === 'Escape') {
+                    suggestionsBox.style.display = 'none';
+                }
+            });
+        },
+
+        /**
+         * Calcula a similaridade entre duas strings usando Levenshtein distance
+         */
+        calculateSimilarity(str1, str2) {
+            const s1 = str1.toLowerCase().trim();
+            const s2 = str2.toLowerCase().trim();
+            
+            // Se for exatamente igual, retorna 1
+            if (s1 === s2) return 1;
+            
+            // Se uma contém a outra, retorna alta similaridade
+            if (s1.includes(s2) || s2.includes(s1)) {
+                return 0.9;
+            }
+            
+            // Calcular distância de Levenshtein
+            const maxLen = Math.max(s1.length, s2.length);
+            if (maxLen === 0) return 1;
+            
+            const distance = this.levenshteinDistance(s1, s2);
+            const similarity = 1 - (distance / maxLen);
+            
+            // Bonus se palavras individuais correspondem
+            const words1 = s1.split(/\s+/).filter(w => w.length > 2);
+            const words2 = s2.split(/\s+/).filter(w => w.length > 2);
+            let wordMatches = 0;
+            
+            words1.forEach(w1 => {
+                words2.forEach(w2 => {
+                    if (w1 === w2 || w1.includes(w2) || w2.includes(w1)) {
+                        wordMatches++;
+                    }
+                });
+            });
+            
+            if (wordMatches > 0) {
+                const wordBonus = Math.min(0.3, wordMatches * 0.1);
+                return Math.min(1, similarity + wordBonus);
+            }
+            
+            return similarity;
+        },
+
+        /**
+         * Calcula a distância de Levenshtein entre duas strings
+         */
+        levenshteinDistance(str1, str2) {
+            const matrix = [];
+            const len1 = str1.length;
+            const len2 = str2.length;
+
+            for (let i = 0; i <= len2; i++) {
+                matrix[i] = [i];
+            }
+
+            for (let j = 0; j <= len1; j++) {
+                matrix[0][j] = j;
+            }
+
+            for (let i = 1; i <= len2; i++) {
+                for (let j = 1; j <= len1; j++) {
+                    if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
+                        matrix[i][j] = matrix[i - 1][j - 1];
+                    } else {
+                        matrix[i][j] = Math.min(
+                            matrix[i - 1][j - 1] + 1,
+                            matrix[i][j - 1] + 1,
+                            matrix[i - 1][j] + 1
+                        );
+                    }
+                }
+            }
+
+            return matrix[len2][len1];
+        },
+
+        showSuggestions(query, container) {
+            const queryLower = query.toLowerCase().trim();
+            
+            if (!this.regionsList || this.regionsList.length === 0) {
+                console.warn('Lista de regiões vazia ao mostrar sugestões');
+                container.innerHTML = `
+                    <div class="p-3 text-muted text-center">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Nenhuma região disponível
+                        <div class="mt-2 small">Carregando regiões...</div>
+                    </div>
+                `;
+                container.style.display = 'block';
+                return;
+            }
+            
+            console.log(`Buscando "${queryLower}" em ${this.regionsList.length} regiões`);
+            
+            // Calcular similaridade para todas as regiões
+            const regionsWithScore = this.regionsList.map(region => ({
+                region: region,
+                score: this.calculateSimilarity(queryLower, region.name.toLowerCase())
+            }));
+
+            // Filtrar e ordenar por similaridade (maior score primeiro)
+            const matches = regionsWithScore
+                .filter(item => item.score > 0.3) // Mínimo de 30% de similaridade
+                .sort((a, b) => b.score - a.score) // Ordenar por score decrescente
+                .slice(0, 10) // Limitar a 10 resultados
+                .map(item => item.region);
+
+            console.log('🎯 Matches encontrados:', matches.length);
+            if (matches.length > 0) {
+                console.log('✅ Primeiros matches:', matches.slice(0, 3).map(m => m.name));
+            }
+
+            if (matches.length === 0) {
+                console.log('❌ Nenhum match encontrado');
+                container.innerHTML = `
+                    <div class="p-3 text-muted text-center">
+                        <i class="bi bi-search me-2"></i>Nenhuma região encontrada
+                        <div class="mt-2 small">
+                            <i class="bi bi-lightbulb me-1"></i>
+                            Tente buscar por palavras-chave como "Parque", "Centro", "Vila", etc.
+                        </div>
+                    </div>
+                `;
+                container.style.display = 'block';
+                return;
+            }
+
+            // Encontrar o score de cada match para destacar os melhores
+            const matchesWithScore = matches.map(region => {
+                const score = this.calculateSimilarity(queryLower, region.name.toLowerCase());
+                return { region, score };
+            });
+
+            container.innerHTML = matchesWithScore.map(({ region, score }) => {
+                // Destacar se a similaridade for muito alta (quase exata)
+                const isHighMatch = score >= 0.8;
+                const highlightClass = isHighMatch ? 'border-start border-primary border-3' : '';
+                
+                return `
+                    <div class="suggestion-item p-3 border-bottom cursor-pointer ${highlightClass}" 
+                         data-region-id="${region.id}"
+                         data-region-name="${region.name}"
+                         style="cursor: pointer; transition: all 0.2s;"
+                         onmouseover="this.style.background='#f8f9fa'; this.style.transform='translateX(2px)'"
+                         onmouseout="this.style.background='white'; this.style.transform='translateX(0)'">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <div class="fw-semibold">
+                                    <i class="bi bi-geo-alt-fill text-primary me-2"></i>${region.name}
+                                    ${isHighMatch ? '<span class="badge bg-success ms-2">Correto</span>' : ''}
+                                </div>
+                                ${region.description ? `<small class="text-muted d-block mt-1">${region.description}</small>` : ''}
+                                ${region.delivery_time ? `<small class="text-muted d-block mt-1"><i class="bi bi-clock me-1"></i>${region.delivery_time}</small>` : ''}
+                            </div>
+                            ${score < 0.9 ? `<small class="text-muted ms-2" title="Similaridade: ${Math.round(score * 100)}%">~${Math.round(score * 100)}%</small>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            // Adicionar listeners
+            container.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', () => {
+                    this.selectRegion({
+                        id: parseInt(item.dataset.regionId),
+                        name: item.dataset.regionName
+                    });
+                    container.style.display = 'none';
+                });
+                
+                // Remover highlight ao passar o mouse
+                item.addEventListener('mouseenter', () => {
+                    container.querySelectorAll('.suggestion-item').forEach(s => {
+                        s.classList.remove('highlighted');
+                        if (!s.matches(':hover')) {
+                            s.style.background = '';
+                        }
+                    });
+                });
+            });
+
+            // Garantir que o container esteja visível e posicionado corretamente
+            container.style.display = 'block';
+            
+            console.log('Sugestões exibidas:', matches.length);
+        },
+
+        async selectRegion(region) {
+            this.selectedRegion = region;
+            const searchInput = Utils.$('#region-search-local');
+            if (searchInput) {
+                searchInput.value = region.name;
+            }
+
+            // Buscar preço e salvar na sessão
+            await this.fetchRegionPrice(region.id);
+        },
+
+        async fetchRegionPrice(regionId) {
+            try {
+                const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+                const config = JSON.parse(configEl?.textContent || '{}');
+                const qtyInput = Utils.$('#qty-shipping-local');
+                const quantity = parseInt(qtyInput?.value || '1', 10) || 1;
+
+                const route = config.routes?.shippingRegionalPrice || '/shipping/regional-price';
+                const response = await fetch(route, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrf || '',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        product_id: config.product?.id,
+                        region_id: regionId,
+                        quantity: quantity
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success && data.region) {
+                    this.showSelectedRegionInfo(data.region);
+                    
+                    // Salvar frete local na sessão para sincronizar com checkout
+                    await this.saveRegionalShippingToSession(data.region);
+                } else {
+                    this.clearSelectedRegion();
+                    const resultBox = Utils.$('#frete-resultado');
+                    if (resultBox) {
+                        resultBox.innerHTML = `
+                            <div class="alert alert-warning m-3">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                ${data.message || 'Erro ao buscar preço'}
+                            </div>
+                        `;
+                        resultBox.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Erro ao buscar preço:', error);
+                this.clearSelectedRegion();
+            }
+        },
+
+        showSelectedRegionInfo(region) {
+            const infoBox = Utils.$('#selected-region-info');
+            const nameEl = Utils.$('#selected-region-name');
+            const priceEl = Utils.$('#selected-region-price');
+            const deliveryEl = Utils.$('#selected-region-delivery');
+
+            if (infoBox) {
+                if (nameEl) nameEl.textContent = region.name;
+                if (priceEl) priceEl.textContent = `R$ ${region.price.toFixed(2).replace('.', ',')}`;
+                if (deliveryEl) deliveryEl.textContent = region.delivery_time || 'A combinar';
+                
+                infoBox.style.display = 'block';
+            }
+        },
+
+        clearSelectedRegion() {
+            this.selectedRegion = null;
+            const infoBox = Utils.$('#selected-region-info');
+            if (infoBox) {
+                infoBox.style.display = 'none';
+            }
+        },
+
+        async selectRandomRegion() {
+            if (!this.regionsList || this.regionsList.length === 0) {
+                return;
+            }
+            
+            // Selecionar uma região aleatória
+            const randomIndex = Math.floor(Math.random() * this.regionsList.length);
+            const randomRegion = this.regionsList[randomIndex];
+            
+            console.log('🎲 Região aleatória selecionada:', randomRegion.name);
+            
+            // Selecionar a região
+            this.selectedRegion = randomRegion;
+            
+            // Preencher o campo de busca
+            const searchInput = Utils.$('#region-search-local');
+            if (searchInput) {
+                searchInput.value = randomRegion.name;
+            }
+            
+            // Buscar o preço e prazo via API
+            if (randomRegion.id) {
+                await this.fetchRegionPrice(randomRegion.id);
+            } else {
+                // Se não tiver ID, tentar mostrar com dados da região
+                this.showSelectedRegionInfo(randomRegion);
+            }
+        },
+
+        async saveRegionalShippingToSession(region) {
+            try {
+                const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+                const config = JSON.parse(configEl?.textContent || '{}');
+                const qtyInput = Utils.$('#qty-shipping-local') || Utils.$('.quantity-input-ml');
+                const quantity = parseInt(qtyInput?.value || '1', 10) || 1;
+                
+                // Extrair dias de entrega (pode ser string ou número)
+                let deliveryDays = null;
+                if (region.delivery_days_min !== undefined) {
+                    deliveryDays = region.delivery_days_min;
+                } else if (region.delivery_time) {
+                    // Tentar extrair número de "1 dia útil" ou similar
+                    const match = region.delivery_time.toString().match(/(\d+)/);
+                    if (match) {
+                        deliveryDays = parseInt(match[1], 10);
+                    }
+                }
+                
+                // Salvar seleção de frete regional na sessão
+                const response = await fetch('/shipping/select', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': config.csrf || '',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        service: `Entrega Local - ${region.name}`,
+                        price: region.price || 0,
+                        cep: '00000000', // CEP genérico para entrega local (não é usado)
+                        delivery_days: deliveryDays,
+                        product_id: config.product?.id,
+                        quantity: quantity,
+                        region_id: region.id,
+                        region_name: region.name
+                    })
+                });
+                
+                const result = await response.json();
+                if (result.success) {
+                    console.log('✅ Frete regional salvo na sessão:', region.name, 'R$', region.price);
+                } else {
+                    console.warn('⚠️ Erro ao salvar frete regional:', result.message);
+                }
+            } catch (error) {
+                console.error('❌ Erro ao salvar frete regional na sessão:', error);
+            }
+        },
+
+        setupTabs() {
+            // Sincronizar CEP entre as abas
+            const cepCorreios = Utils.$('#cep-destino');
+            const cepLocal = Utils.$('#cep-destino-local');
+            const qtyCorreios = Utils.$('#qty-shipping');
+            const qtyLocal = Utils.$('#qty-shipping-local');
+            const localTab = Utils.$('#local-tab');
+            const correiosTab = Utils.$('#correios-tab');
+            const localPane = Utils.$('#local-pane');
+            const correiosPane = Utils.$('#correios-pane');
+            const actionsBox = Utils.$('#frete-actions');
+
+            // Função para esconder botões de ordenação
+            const hideSortButtons = () => {
+                if (actionsBox) {
+                    actionsBox.style.display = 'none';
+                }
+            };
+
+            // Função para mostrar botões apenas se for Correios e houver resultados
+            const showSortButtonsIfNeeded = () => {
+                if (actionsBox) {
+                    const isLocalActive = localPane && localPane.classList.contains('active') && localPane.classList.contains('show');
+                    const isCorreiosActive = correiosPane && correiosPane.classList.contains('active') && correiosPane.classList.contains('show');
+                    
+                    if (isLocalActive) {
+                        actionsBox.style.display = 'none';
+                    } else if (isCorreiosActive) {
+                        const resultBox = Utils.$('#frete-resultado');
+                        if (resultBox && resultBox.style.display !== 'none' && resultBox.children.length > 0) {
+                            actionsBox.style.display = 'flex';
+                        } else {
+                            actionsBox.style.display = 'none';
+                        }
+                    } else {
+                        actionsBox.style.display = 'none';
+                    }
+                }
+            };
+
+            // Esconder por padrão
+            hideSortButtons();
+
+            // Listener para mudança de abas usando Bootstrap
+            const tabElements = [localTab, correiosTab];
+            tabElements.forEach(tab => {
+                if (tab) {
+                    tab.addEventListener('shown.bs.tab', () => {
+                        setTimeout(() => showSortButtonsIfNeeded(), 100);
+                    });
+                }
+            });
+
+            // Verificar aba inicial após um pequeno delay
+            setTimeout(() => showSortButtonsIfNeeded(), 200);
+
+            if (cepCorreios && cepLocal) {
+                cepCorreios.addEventListener('input', () => {
+                    if (cepLocal) cepLocal.value = cepCorreios.value;
+                });
+                cepLocal.addEventListener('input', () => {
+                    if (cepCorreios) cepCorreios.value = cepLocal.value;
+                });
+            }
+
+            if (qtyCorreios && qtyLocal) {
+                qtyCorreios.addEventListener('input', () => {
+                    if (qtyLocal) qtyLocal.value = qtyCorreios.value;
+                });
+                qtyLocal.addEventListener('input', () => {
+                    if (qtyCorreios) qtyCorreios.value = qtyLocal.value;
+                    // Recalcular preço se houver região selecionada
+                    if (this.selectedRegion) {
+                        this.fetchRegionPrice(this.selectedRegion.id);
+                    }
+                });
+            }
+            
+            // Verificar aba inicial
+            showSortButtonsIfNeeded();
         },
 
         setupEventListeners() {
             const cepInput = Utils.$('#cep-destino');
+            const cepInputLocal = Utils.$('#cep-destino-local');
             const calcBtn = Utils.$('#btn-calc-frete');
+            const calcBtnLocal = Utils.$('#btn-calc-frete-local');
             
             if (cepInput) {
                 cepInput.addEventListener('input', this.handleCEPInput.bind(this));
             }
+            if (cepInputLocal) {
+                cepInputLocal.addEventListener('input', this.handleCEPInput.bind(this));
+            }
             
             if (calcBtn) {
-                calcBtn.addEventListener('click', this.calculateShipping.bind(this));
+                calcBtn.addEventListener('click', () => this.calculateShipping('correios'));
+            }
+            if (calcBtnLocal) {
+                calcBtnLocal.addEventListener('click', () => this.calculateShipping('local'));
             }
         },
 
@@ -653,10 +937,11 @@
             e.target.value = value;
         },
 
-        async calculateShipping() {
-            const cepInput = Utils.$('#cep-destino');
-            const qtyInput = Utils.$('#qty-shipping');
-            const btn = Utils.$('#btn-calc-frete');
+        async calculateShipping(type = 'correios') {
+            const isLocal = type === 'local';
+            const cepInput = isLocal ? Utils.$('#cep-destino-local') : Utils.$('#cep-destino');
+            const qtyInput = isLocal ? Utils.$('#qty-shipping-local') : Utils.$('#qty-shipping');
+            const btn = isLocal ? Utils.$('#btn-calc-frete-local') : Utils.$('#btn-calc-frete');
             const resultBox = Utils.$('#frete-resultado');
 
             if (!cepInput || !btn || !resultBox) return;
@@ -671,14 +956,20 @@
 
             // Loading state
             btn.disabled = true;
-            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Calculando...';
+            const btnDefault = btn.innerHTML;
+            btn.innerHTML = '<span class="label-loading"><i class="fas fa-spinner fa-spin me-2"></i>Calculando...</span>';
             resultBox.style.display = 'none';
 
             try {
                 const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
                 const config = JSON.parse(configEl?.textContent || '{}');
                 
-                const response = await fetch(config.routes?.shippingQuote || '/frete/calcular', {
+                // Escolher endpoint baseado no tipo
+                const endpoint = isLocal 
+                    ? (config.routes?.shippingQuoteRegional || '/frete/calcular-regional')
+                    : (config.routes?.shippingQuote || '/frete/calcular');
+                
+                const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -695,7 +986,7 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    this.renderShippingQuotes(data.quotes || []);
+                    this.renderShippingQuotes(data.quotes || [], type);
                 } else {
                     this.showShippingMessage(data.message || 'Erro ao calcular frete', 'danger');
                 }
@@ -704,11 +995,11 @@
                 this.showShippingMessage('Falha na conexão. Tente novamente.', 'danger');
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fas fa-truck me-2"></i> Calcular Frete';
+                btn.innerHTML = btnDefault;
             }
         },
 
-        renderShippingQuotes(quotes) {
+        renderShippingQuotes(quotes, type = 'correios') {
             const resultBox = Utils.$('#frete-resultado');
             if (!resultBox) return;
 
@@ -717,30 +1008,67 @@
                 return;
             }
 
-            const html = quotes.map((quote, index) => `
-                <div class="shipping-option ${index === 0 ? 'option-cheapest' : ''}" data-index="${index}">
-                    <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
-                        <div class="flex-grow-1">
-                            <div class="d-flex align-items-center mb-2">
-                                <input type="radio" name="shipping_service" class="form-check-input me-2" 
-                                       ${index === 0 ? 'checked' : ''} value="${quote.service}">
-                                <span class="fw-semibold">${quote.service}</span>
+            const isLocal = type === 'local';
+            const typeLabel = isLocal ? 'local' : 'correios';
+            
+            // Esconder botões de ordenação se for Entrega Local
+            const actionsBox = Utils.$('#frete-actions');
+            if (actionsBox) {
+                if (isLocal) {
+                    actionsBox.style.display = 'none';
+                } else {
+                    // Só mostrar se houver mais de uma opção E se a aba Correios estiver ativa
+                    const correiosPane = Utils.$('#correios-pane');
+                    const isCorreiosActive = correiosPane && correiosPane.classList.contains('active') && correiosPane.classList.contains('show');
+                    if (isCorreiosActive && quotes.length > 1) {
+                        actionsBox.style.display = 'flex';
+                    } else {
+                        actionsBox.style.display = 'none';
+                    }
+                }
+            }
+
+            const html = quotes.map((quote, index) => {
+                const deliveryTime = quote.delivery_time || (quote.delivery_days ? `${quote.delivery_days} dia(s) úteis` : '');
+                const icon = isLocal ? 'bi-geo-alt' : 'bi-envelope';
+                
+                return `
+                    <div class="shipping-option ${index === 0 ? 'option-cheapest' : ''}" 
+                         data-index="${index}" 
+                         data-type="${typeLabel}"
+                         data-service-id="${quote.service_id || ''}"
+                         data-price="${quote.price}"
+                         data-service="${quote.service}">
+                        <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center mb-2">
+                                    <input type="radio" name="shipping_service" class="form-check-input me-2" 
+                                           ${index === 0 ? 'checked' : ''} 
+                                           value="${quote.service_id || quote.service}"
+                                           data-type="${typeLabel}">
+                                    <i class="bi ${icon} me-2"></i>
+                                    <span class="fw-semibold">${quote.service}</span>
+                                </div>
+                                <div class="small text-muted">
+                                    ${deliveryTime}
+                                    ${quote.company ? ` • ${quote.company}` : ''}
+                                </div>
                             </div>
-                            <div class="small text-muted">
-                                ${quote.delivery_days ? `${quote.delivery_days} dia(s) úteis` : ''}
-                            </div>
-                        </div>
-                        <div class="text-end">
-                            <div class="fw-bold text-primary">
-                                R$ ${quote.price.toFixed(2).replace('.', ',')}
+                            <div class="text-end">
+                                <div class="fw-bold text-primary">
+                                    R$ ${quote.price.toFixed(2).replace('.', ',')}
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            `).join('');
+                `;
+            }).join('');
 
             resultBox.innerHTML = `<div class="border rounded">${html}</div>`;
             resultBox.style.display = 'block';
+
+            // Adicionar listeners para seleção
+            this.setupQuoteSelection();
         },
 
         showShippingMessage(message, type) {
@@ -754,6 +1082,196 @@
                 </div>
             `;
             resultBox.style.display = 'block';
+        }
+    };
+
+    /**
+     * Add to Cart Professional
+     */
+    const AddToCart = {
+        init() {
+            // Aguardar DOM estar pronto
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', () => this.setupEventListeners());
+            } else {
+                this.setupEventListeners();
+            }
+        },
+
+        setupEventListeners() {
+            // Usar querySelectorAll para pegar TODOS os botões
+            const buttons = document.querySelectorAll('.btn-add-to-cart-ml');
+            
+            buttons.forEach((button) => {
+                // Remover listeners anteriores se existirem
+                const newButton = button.cloneNode(true);
+                button.parentNode.replaceChild(newButton, button);
+                
+                // Adicionar novo listener
+                newButton.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.handleAddToCart(newButton);
+                });
+            });
+        },
+
+        async handleAddToCart(button) {
+            const productId = button.dataset.productId;
+            if (!productId) {
+                console.error('Product ID not found');
+                return;
+            }
+
+            // Obter quantidade do input
+            const quantityInput = Utils.$(`#quantity-${productId}`) || Utils.$('.quantity-input-ml');
+            const quantity = parseInt(quantityInput?.value || '1', 10) || 1;
+
+            // Desabilitar botão durante requisição
+            const originalText = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i> Adicionando...';
+
+            try {
+                const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+                const config = JSON.parse(configEl?.textContent || '{}');
+                
+                const formData = new FormData();
+                formData.append('product_id', productId);
+                formData.append('quantity', quantity);
+                
+                // Adicionar variation_id se selecionada
+                const variationId = document.getElementById('selected-variation-id')?.value;
+                if (variationId) {
+                    formData.append('variation_id', variationId);
+                }
+                
+                const response = await fetch('/carrinho/adicionar', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRF-TOKEN': config.csrf || '',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    // Sucesso
+                    button.innerHTML = '<i class="fas fa-check me-2"></i> Adicionado!';
+                    button.style.background = 'linear-gradient(135deg, #28a745 0%, #20c997 100%)';
+                    
+                    // Atualizar contador do carrinho se existir
+                    AddToCart.updateCartCount(result.cart_count || 0);
+                    
+                    // Mostrar modal de sucesso
+                    AddToCart.showSuccessModal(result);
+                    
+                    // Restaurar botão após 2 segundos
+                    setTimeout(() => {
+                        button.disabled = false;
+                        button.innerHTML = originalText;
+                        button.style.background = '';
+                    }, 2000);
+                } else {
+                    throw new Error(result.message || 'Erro ao adicionar ao carrinho');
+                }
+            } catch (error) {
+                console.error('Add to cart error:', error);
+                button.disabled = false;
+                button.innerHTML = originalText;
+                alert(error.message || 'Erro ao adicionar produto ao carrinho. Tente novamente.');
+            }
+        },
+
+        updateCartCount(count) {
+            // Atualizar contador do carrinho em qualquer elemento que tenha a classe
+            document.querySelectorAll('.cart-count, .cart-badge, [data-cart-count]').forEach(el => {
+                el.textContent = count;
+                el.style.display = count > 0 ? 'inline-block' : 'none';
+            });
+        },
+
+        showSuccessModal(result) {
+            // Criar modal de sucesso
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 10000;
+                animation: fadeIn 0.3s ease;
+            `;
+            
+            modal.innerHTML = `
+                <div style="
+                    background: white;
+                    border-radius: 12px;
+                    padding: 2rem;
+                    max-width: 400px;
+                    width: 90%;
+                    text-align: center;
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+                    animation: slideUp 0.3s ease;
+                ">
+                    <div style="font-size: 48px; color: #28a745; margin-bottom: 1rem;">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3 style="margin-bottom: 1rem; color: #333;">Produto adicionado!</h3>
+                    <p style="color: #666; margin-bottom: 1.5rem;">${result.message || 'Produto adicionado ao carrinho com sucesso.'}</p>
+                    <div style="display: flex; gap: 1rem; justify-content: center;">
+                        <button id="continueShopping" style="
+                            padding: 0.75rem 1.5rem;
+                            border: 1px solid #ddd;
+                            background: white;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 500;
+                        ">Continuar Comprando</button>
+                        <button id="viewCart" style="
+                            padding: 0.75rem 1.5rem;
+                            border: none;
+                            background: linear-gradient(135deg, #495a6d 0%, #2c3e50 100%);
+                            color: white;
+                            border-radius: 8px;
+                            cursor: pointer;
+                            font-weight: 500;
+                        ">Ver Carrinho</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Event listeners
+            modal.querySelector('#continueShopping').addEventListener('click', () => {
+                modal.remove();
+            });
+            
+            modal.querySelector('#viewCart').addEventListener('click', () => {
+                window.location.href = '/carrinho';
+            });
+            
+            // Fechar ao clicar fora
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    modal.remove();
+                }
+            });
+            
+            // Auto-fechar após 5 segundos
+            setTimeout(() => {
+                if (document.body.contains(modal)) {
+                    modal.remove();
+                }
+            }, 5000);
         }
     };
 
@@ -841,9 +1359,10 @@
             try {
                 // Inicializar módulos
                 ImageGallery.init();
-                VariationSystem.init();
                 ShippingSystem.init();
                 QuantityControl.init();
+                AddToCart.init();
+                VariationSelector.init();
 
                 // Setup global error handling
                 window.addEventListener('error', this.handleGlobalError.bind(this));
@@ -863,15 +1382,8 @@
         },
 
         handleInitializationError(error) {
-            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
-            if (configEl) {
-                configEl.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        Erro ao inicializar a página. Por favor, recarregue.
-                    </div>
-                `;
-            }
+            // Não substituir o conteúdo do script JSON, apenas logar o erro
+            console.error('PDP initialization error:', error);
         },
 
         trackPerformance() {
@@ -897,14 +1409,268 @@
         App.init();
     }
 
+    /**
+     * Variation Selector Professional
+     */
+    const VariationSelector = {
+        selectedAttributes: {},
+        productConfig: null,
+        currentVariation: null,
+
+        init() {
+            const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
+            if (!configEl) return;
+
+            try {
+                // Verificar se o conteúdo é JSON válido (não HTML)
+                const content = configEl.textContent || '';
+                if (content.trim().startsWith('<') || content.includes('<div')) {
+                    console.error('Variation selector: Config element contains HTML instead of JSON');
+                    return;
+                }
+                
+                const config = JSON.parse(content);
+                this.productConfig = config.product || {};
+                
+                if (!this.productConfig.has_variations) return;
+
+                this.setupEventListeners();
+                this.loadInitialVariation();
+            } catch (error) {
+                console.error('Variation selector init error:', error);
+                console.error('Config content:', configEl.textContent?.substring(0, 200));
+            }
+        },
+
+        setupEventListeners() {
+            // Color swatches
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.addEventListener('click', (e) => {
+                    if (swatch.disabled) return;
+                    this.handleAttributeSelect(e.currentTarget);
+                });
+            });
+
+            // Size buttons
+            document.querySelectorAll('.size-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (btn.disabled) return;
+                    this.handleAttributeSelect(e.currentTarget);
+                });
+            });
+
+            // Text buttons
+            document.querySelectorAll('.text-button').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    if (btn.disabled) return;
+                    this.handleAttributeSelect(e.currentTarget);
+                });
+            });
+
+            // Image swatches
+            document.querySelectorAll('.image-swatch').forEach(swatch => {
+                swatch.addEventListener('click', (e) => {
+                    if (swatch.disabled) return;
+                    this.handleAttributeSelect(e.currentTarget);
+                });
+            });
+
+            // Select dropdowns
+            document.querySelectorAll('.variation-select').forEach(select => {
+                select.addEventListener('change', (e) => {
+                    this.handleSelectChange(e.currentTarget);
+                });
+            });
+        },
+
+        handleAttributeSelect(element) {
+            const attributeId = element.dataset.attributeId;
+            const valueId = element.dataset.valueId;
+
+            if (!attributeId || !valueId) return;
+
+            // Remover seleção anterior do mesmo atributo
+            document.querySelectorAll(`[data-attribute-id="${attributeId}"]`).forEach(el => {
+                el.classList.remove('selected');
+            });
+
+            // Adicionar seleção atual
+            element.classList.add('selected');
+            this.selectedAttributes[attributeId] = valueId;
+
+            // Atualizar texto do atributo selecionado
+            const label = document.querySelector(`.selected-value-text[data-attribute-id="${attributeId}"]`);
+            if (label) {
+                const valueText = element.title || element.textContent.trim();
+                label.textContent = valueText;
+            }
+
+            this.updateVariation();
+        },
+
+        handleSelectChange(select) {
+            const attributeId = select.dataset.attributeId;
+            const valueId = select.value;
+
+            if (!attributeId || !valueId) {
+                delete this.selectedAttributes[attributeId];
+                this.updateVariation();
+                return;
+            }
+
+            this.selectedAttributes[attributeId] = valueId;
+            this.updateVariation();
+        },
+
+        updateVariation() {
+            const allAttributesSelected = Object.keys(this.selectedAttributes).length === 
+                                         document.querySelectorAll('.variation-attribute-group').length;
+
+            if (!allAttributesSelected) {
+                this.clearVariationInfo();
+                return;
+            }
+
+            // Buscar variação correspondente
+            const valueIds = Object.values(this.selectedAttributes).map(id => parseInt(id)).sort();
+            const variation = this.findVariationByAttributes(valueIds);
+
+            if (variation) {
+                this.currentVariation = variation;
+                this.updateProductInfo(variation);
+            } else {
+                this.clearVariationInfo();
+            }
+        },
+
+        findVariationByAttributes(valueIds) {
+            if (!this.productConfig.variations) return null;
+
+            return this.productConfig.variations.find(v => {
+                const vIds = v.attribute_value_ids.sort();
+                return vIds.length === valueIds.length && 
+                       vIds.every((id, i) => id === valueIds[i]);
+            });
+        },
+
+        updateProductInfo(variation) {
+            // Atualizar preço
+            const priceDisplay = Utils.$(CONFIG.SELECTORS.priceDisplay);
+            if (priceDisplay) {
+                priceDisplay.textContent = `R$ ${Utils.formatCurrency(variation.price)}`;
+            }
+
+            // Atualizar SKU
+            const skuDisplay = Utils.$('#product-sku-display');
+            if (skuDisplay) {
+                skuDisplay.textContent = variation.sku || '';
+            }
+
+            // Atualizar estoque
+            this.updateStockStatus(variation);
+
+            // Atualizar quantidade máxima
+            const quantityInputs = document.querySelectorAll('.quantity-input-ml');
+            quantityInputs.forEach(input => {
+                input.setAttribute('max', variation.stock_quantity);
+                input.setAttribute('data-max-stock', variation.stock_quantity);
+                if (parseInt(input.value) > variation.stock_quantity) {
+                    input.value = variation.stock_quantity;
+                }
+            });
+
+            // Atualizar variation_id hidden input
+            const variationInput = Utils.$('#selected-variation-id');
+            if (variationInput) {
+                variationInput.value = variation.id;
+            }
+
+            // Atualizar imagens se a variação tiver imagens específicas
+            if (variation.images && variation.images.length > 0) {
+                ImageGallery.images = variation.images;
+                ImageGallery.currentIndex = 0;
+                ImageGallery.render();
+            }
+
+            // Mostrar info da variação
+            const infoEl = Utils.$('.selected-variation-info');
+            if (infoEl) {
+                infoEl.style.display = 'block';
+                const nameEl = infoEl.querySelector('.variation-name');
+                const skuEl = infoEl.querySelector('.variation-sku');
+                if (nameEl) nameEl.textContent = variation.name;
+                if (skuEl) skuEl.textContent = `SKU: ${variation.sku}`;
+            }
+        },
+
+        updateStockStatus(variation) {
+            const stockAvailable = Utils.$('#stock-status');
+            const stockUnavailable = Utils.$('#stock-unavailable');
+            const stockText = Utils.$('#stock-text');
+
+            if (variation.in_stock && variation.stock_quantity > 0) {
+                if (stockAvailable) {
+                    stockAvailable.style.display = 'inline-block';
+                    if (stockText) {
+                        stockText.textContent = `Em estoque (${variation.stock_quantity} unidades)`;
+                    }
+                }
+                if (stockUnavailable) stockUnavailable.style.display = 'none';
+            } else {
+                if (stockAvailable) stockAvailable.style.display = 'none';
+                if (stockUnavailable) stockUnavailable.style.display = 'inline-block';
+            }
+        },
+
+        clearVariationInfo() {
+            this.currentVariation = null;
+            const variationInput = Utils.$('#selected-variation-id');
+            if (variationInput) variationInput.value = '';
+
+            const infoEl = Utils.$('.selected-variation-info');
+            if (infoEl) infoEl.style.display = 'none';
+        },
+
+        loadInitialVariation() {
+            // Tentar carregar variação padrão
+            if (this.productConfig.variations && this.productConfig.variations.length > 0) {
+                const defaultVariation = this.productConfig.variations.find(v => v.is_default) || 
+                                        this.productConfig.variations[0];
+                
+                if (defaultVariation && defaultVariation.attribute_value_ids) {
+                    // Selecionar valores da variação padrão
+                    defaultVariation.attribute_value_ids.forEach(valueId => {
+                        const element = document.querySelector(`[data-value-id="${valueId}"]`);
+                        if (element && !element.disabled) {
+                            if (element.tagName === 'SELECT') {
+                                element.value = valueId;
+                                this.handleSelectChange(element);
+                            } else {
+                                this.handleAttributeSelect(element);
+                            }
+                        }
+                    });
+                }
+            }
+        }
+    };
+
+    // Inicializar VariationSelector
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', () => VariationSelector.init());
+    } else {
+        VariationSelector.init();
+    }
+
     // Expor utilidades globalmente para debugging
-    if (process.env.NODE_ENV === 'development') {
+    if (typeof process !== 'undefined' && process.env && process.env.NODE_ENV === 'development') {
         window.PDP = {
             Utils,
             ImageGallery,
-            VariationSystem,
             ShippingSystem,
             QuantityControl,
+            AddToCart,
+            VariationSelector,
             CONFIG
         };
     }

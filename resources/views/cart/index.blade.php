@@ -514,8 +514,8 @@
                                             <td class="py-4">
                                                 <div class="d-flex align-items-center">
                                                     <div class="product-image-container me-3" style="width: 70px; height: 70px; border-radius: var(--radius-lg); overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                                                        <img src="{{ $item->product->first_image }}" 
-                                                             alt="{{ $item->product->name }}" 
+                                                        <img src="{{ $item->display_image }}" 
+                                                             alt="{{ $item->display_name }}" 
                                                              class="product-image" 
                                                              style="width: 100%; height: 100%; object-fit: cover;"
                                                              onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';"
@@ -526,19 +526,15 @@
                                                         </div>
                                                     </div>
                                                     <div>
-                                                        <h6 class="product-name mb-1">{{ $item->product->name }}</h6>
-                                                        @if($item->variation)
-                                                            <div class="variation-details mb-2" style="font-size: 0.85rem; color: #6b7280;">
-                                                                @if($item->variation->attributes)
-                                                                    @foreach($item->variation->attributes as $attribute => $value)
-                                                                        <span class="badge bg-light text-dark me-1" style="font-size: 0.75rem;">
-                                                                            <strong>{{ ucfirst($attribute) }}: {{ $value }}</strong>
-                                                                        </span>
-                                                                    @endforeach
-                                                                @endif
-                                                            </div>
-                                                        @endif
-                                                        <small class="text-muted">SKU: {{ $item->variation ? $item->variation->sku : $item->product->sku }}</small>
+                                                        <h6 class="product-name mb-1">
+                                                            {{ $item->display_name }}
+                                                            @if($item->variation)
+                                                                <small class="variation-attributes d-block mt-1" style="font-size: 0.85rem; color: var(--text-muted, #64748b); font-weight: 400;">
+                                                                    {{ $item->variation->attributes_string }}
+                                                                </small>
+                                                            @endif
+                                                        </h6>
+                                                        <small class="text-muted">SKU: {{ $item->display_sku }}</small>
                                                     </div>
                                                 </div>
                                             </td>
@@ -607,8 +603,28 @@
                             <span style="font-family: 'Inter', sans-serif; font-weight: 500; color: #374151;">Subtotal:</span>
                             <span id="subtotal" style="font-family: 'Poppins', sans-serif; font-weight: 700; color: #1f2937; font-size: 1.1rem;">R$ {{ number_format($subtotal, 2, ',', '.') }}</span>
                         </div>
-                        {{-- Frete removido --}}
-                        {{-- Frete removido --}}
+                        
+                        @php
+                            $shippingSelection = session('shipping_selection');
+                        @endphp
+                        @if($shipping > 0)
+                        <div class="d-flex justify-content-between mb-3">
+                            <span style="font-family: 'Inter', sans-serif; font-weight: 500; color: #374151;">
+                                <i class="bi bi-truck me-1"></i>Frete:
+                                @if(!empty($shippingSelection['region_name']))
+                                    <small class="text-muted d-block" style="font-size: 0.75rem; margin-top: 0.25rem;">
+                                        {{ $shippingSelection['region_name'] }}
+                                    </small>
+                                @elseif(!empty($shippingSelection['service']))
+                                    <small class="text-muted d-block" style="font-size: 0.75rem; margin-top: 0.25rem;">
+                                        {{ $shippingSelection['service'] }}
+                                    </small>
+                                @endif
+                            </span>
+                            <span id="shipping" style="font-family: 'Poppins', sans-serif; font-weight: 600; color: #1f2937; font-size: 1rem;">R$ {{ number_format($shipping, 2, ',', '.') }}</span>
+                        </div>
+                        @endif
+                        
                         <div class="d-flex justify-content-between mb-3">
                             <span style="font-family: 'Inter', sans-serif; font-weight: 500; color: #374151;">Desconto:</span>
                             <span style="font-family: 'Poppins', sans-serif; font-weight: 600; color: #059669;">R$ 0,00</span>
@@ -616,7 +632,7 @@
                         <hr style="border-color: #e5e7eb; margin: 1.5rem 0;">
                         <div class="d-flex justify-content-between mb-4">
                             <strong style="font-family: 'Poppins', sans-serif; font-weight: 700; color: #111827; font-size: 1.1rem;">Total:</strong>
-                            <strong id="total" style="font-family: 'Poppins', sans-serif; font-weight: 800; color: #111827; font-size: 1.3rem;">R$ {{ number_format($subtotal, 2, ',', '.') }}</strong>
+                            <strong id="total" style="font-family: 'Poppins', sans-serif; font-weight: 800; color: #111827; font-size: 1.3rem;">R$ {{ number_format($total, 2, ',', '.') }}</strong>
                         </div>
 
                         <a href="{{ route('checkout.index') }}" class="btn btn-primary-modern btn-modern w-100 mb-3">

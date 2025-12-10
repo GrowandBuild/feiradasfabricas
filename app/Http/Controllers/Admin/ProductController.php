@@ -6,14 +6,22 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Category;
 use App\Models\Department;
-use App\Models\InventoryLog;
+use App\Models\ProductAttribute;
 use App\Models\ProductVariation;
+use App\Models\InventoryLog;
+use App\Services\VariationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
 {
+    protected $variationService;
+
+    public function __construct(VariationService $variationService)
+    {
+        $this->variationService = $variationService;
+    }
     public function index(Request $request)
     {
         $query = Product::query();
@@ -62,7 +70,19 @@ class ProductController extends Controller
         ]);
 
         $data = $request->all();
-        $data['slug'] = Str::slug($request->name);
+        
+        // CORRIGIDO: Garantir que o slug seja único
+        $baseSlug = Str::slug($request->name);
+        $slug = $baseSlug;
+        $counter = 1;
+        
+        // Verificar se slug já existe e gerar um único
+        while (Product::where('slug', $slug)->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+        
+        $data['slug'] = $slug;
 
         $uploaded = [];
         if ($request->hasFile('images')) {
@@ -81,7 +101,7 @@ class ProductController extends Controller
             InventoryLog::create([
                 'product_id' => $prod->id,
                 'admin_id' => auth('admin')->id(),
-                'type' => 'initial',
+                'type' => 'in', // CORRIGIDO: 'initial' não existe no enum, usar 'in' (entrada)
                 'quantity_before' => 0,
                 'quantity_change' => $prod->stock_quantity ?? 0,
                 'quantity_after' => $prod->stock_quantity ?? 0,
@@ -99,7 +119,13 @@ class ProductController extends Controller
         $categories = Category::all();
         $departments = Department::all();
         $productCategories = $product->categories->pluck('id')->toArray();
-        return view('admin.products.edit', compact('product', 'categories', 'productCategories', 'departments'));
+        
+        // Carregar variações e atributos
+        $product->load(['variations.attributeValues.attribute']);
+        $variations = $product->variations ?? collect();
+        $attributes = $this->variationService->getGlobalAttributes();
+        
+        return view('admin.products.edit', compact('product', 'categories', 'productCategories', 'departments', 'variations', 'attributes'));
     }
 
     public function update(Request $request, Product $product)
@@ -113,7 +139,19 @@ class ProductController extends Controller
         ]);
 
         $data = $request->all();
-        $data['slug'] = Str::slug($request->name);
+        
+        // CORRIGIDO: Garantir que o slug seja único ao atualizar
+        $baseSlug = Str::slug($request->name);
+        $slug = $baseSlug;
+        $counter = 1;
+        
+        // Verificar se slug já existe (exceto para o produto atual)
+        while (Product::where('slug', $slug)->where('id', '!=', $product->id)->exists()) {
+            $slug = $baseSlug . '-' . $counter;
+            $counter++;
+        }
+        
+        $data['slug'] = $slug;
 
         $images = [];
         if ($request->has('existing_images') && is_array($request->existing_images)) {
@@ -174,356 +212,6 @@ class ProductController extends Controller
         return redirect()->route('admin.products.index')->with('success', 'Produto excluído com sucesso!');
     }
 
-    /**
-     * Retorna variações do produto para JSON (AJAX)
-     */
-    public function getVariations(Product $product)
-    {
-        $variations = $product->variations()->withTrashed()->get();
-        
-        // Agrupar atributos para o frontend
-        $attributeGroups = [];
-        $variationsData = [];
-        
-        foreach ($variations as $variation) {
-            $variationsData[] = [
-                'id' => $variation->id,
-                'sku' => $variation->sku,
-                'ram' => $variation->ram,
-                'storage' => $variation->storage,
-                'color' => $variation->color,
-                'color_hex' => $variation->color_hex,
-                'price' => $variation->price,
-                'b2b_price' => $variation->b2b_price,
-                'cost_price' => $variation->cost_price,
-                'stock_quantity' => $variation->stock_quantity,
-                'in_stock' => $variation->in_stock,
-                'is_active' => $variation->is_active,
-                'sort_order' => $variation->sort_order,
-                'created_at' => $variation->created_at,
-                'updated_at' => $variation->updated_at,
-                'deleted_at' => $variation->deleted_at,
-            ];
-            
-            // Agrupar valores por atributo
-            foreach (['ram', 'storage', 'color'] as $attr) {
-                if (!empty($variation->{$attr})) {
-                    if (!isset($attributeGroups[$attr])) {
-                        $attributeGroups[$attr] = [];
-                    }
-                    
-                    $value = $variation->{$attr};
-                    $key = $value;
-                    
-                    if (!isset($attributeGroups[$attr][$key])) {
-                        $attributeGroups[$attr][$key] = [
-                            'name' => $value,
-                            'count' => 0,
-                            'enabled' => true
-                        ];
-                        
-                        if ($attr === 'color' && $variation->color_hex) {
-                            $attributeGroups[$attr][$key]['hex'] = $variation->color_hex;
-                        }
-                    }
-                    
-                    $attributeGroups[$attr][$key]['count']++;
-                }
-            }
-        }
-        
-        return response()->json([
-            'success' => true,
-            'variations' => $variationsData,
-            'attribute_groups' => $attributeGroups,
-            'total' => count($variationsData),
-            'active' => $variations->where('is_active', true)->count()
-        ]);
-    }
-
-    /**
-     * Adiciona única variação (AJAX)
-     */
-    public function addVariation(Request $request, Product $product)
-    {
-        $data = $request->validate([
-            'type' => 'required|string|in:ram,storage,color',
-            'value' => 'required|string|max:50',
-            'price' => 'nullable|numeric|min:0',
-            'stock_quantity' => 'nullable|integer|min:0',
-        ]);
-        
-        $variationData = [
-            $data['type'] => $data['value'],
-            'price' => $data['price'] ?? $product->price,
-            'stock_quantity' => $data['stock_quantity'] ?? 0,
-            'is_active' => true,
-        ];
-        
-        // Gerar SKU automático
-        $variationData['sku'] = $this->generateVariationSku($product, $variationData);
-        
-        $variation = $product->variations()->create($variationData);
-        
-        return response()->json([
-            'success' => true,
-            'variation' => $variation,
-            'message' => 'Variação adicionada com sucesso'
-        ]);
-    }
-
-    /**
-     * Adiciona múltiplas variações (JSON/bulk)
-     */
-    public function bulkAddVariations(Request $request, Product $product)
-    {
-        try {
-            $data = $request->validate([
-                'combinations' => 'required|array|min:1',
-                'combinations.*' => 'array',
-            ]);
-            
-            $generator = new \App\Services\VariationGenerator();
-            $results = $generator->generate($product, $data['combinations']);
-            
-            return response()->json([
-                'success' => true,
-                'results' => $results,
-                'message' => count($results) . ' variações processadas'
-            ]);
-            
-        } catch (\Exception $e) {
-            \Log::error('Error in bulkAddVariations: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Erro ao processar variações: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Toggle ativação de variação
-     */
-    public function toggleVariation(Request $request, Product $product)
-    {
-        $request->validate([
-            'variation_id' => 'required|exists:product_variations,id'
-        ]);
-        
-        $variation = $product->variations()->findOrFail($request->variation_id);
-        $variation->is_active = !$variation->is_active;
-        $variation->save();
-        
-        return response()->json([
-            'success' => true,
-            'is_active' => $variation->is_active,
-            'message' => $variation->is_active ? 'Variação ativada' : 'Variação desativada'
-        ]);
-    }
-
-    /**
-     * Atualiza estoque de variações em massa
-     */
-    public function updateStock(Request $request, Product $product)
-    {
-        $data = $request->validate([
-            'updates' => 'required|array|min:1',
-            'updates.*.variation_id' => 'required|exists:product_variations,id',
-            'updates.*.stock_quantity' => 'required|integer|min:0',
-        ]);
-        
-        $updated = 0;
-        foreach ($data['updates'] as $update) {
-            $variation = $product->variations()->find($update['variation_id']);
-            if ($variation) {
-                $variation->stock_quantity = $update['stock_quantity'];
-                $variation->in_stock = $update['stock_quantity'] > 0;
-                $variation->save();
-                $updated++;
-            }
-        }
-        
-        return response()->json([
-            'success' => true,
-            'updated' => $updated,
-            'message' => $updated . ' estoques atualizados'
-        ]);
-    }
-
-    /**
-     * Atualiza imagens por cor
-     */
-    public function updateColorImages(Request $request, Product $product)
-    {
-        $data = $request->validate([
-            'color_images' => 'required|array',
-            'color_images.*.color' => 'required|string',
-            'color_images.*.images' => 'required|array',
-        ]);
-        
-        $product->variation_images = $data['color_images'];
-        $product->save();
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Imagens por cor atualizadas'
-        ]);
-    }
-
-    /**
-     * Atualiza cor HEX
-     */
-    public function updateColorHex(Request $request, Product $product)
-    {
-        $data = $request->validate([
-            'color' => 'required|string',
-            'hex' => 'required|string|regex:/^#[0-9A-Fa-f]{6}$/',
-        ]);
-        
-        $product->variations()
-            ->where('color', $data['color'])
-            ->update(['color_hex' => $data['hex']]);
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Cor HEX atualizada'
-        ]);
-    }
-
-    /**
-     * Atualiza preço de variação específica
-     */
-    public function updateVariationPrice(Request $request, ProductVariation $variation)
-    {
-        $data = $request->validate([
-            'price' => 'required|numeric|min:0',
-            'price_type' => 'required|in:price,b2b_price,cost_price',
-        ]);
-        
-        $variation->{$data['price_type']} = $data['price'];
-        $variation->save();
-        
-        return response()->json([
-            'success' => true,
-            'message' => 'Preço atualizado'
-        ]);
-    }
-
-    /**
-     * Exclui valor de atributo
-     */
-    public function deleteVariationValue(Request $request, Product $product)
-    {
-        $data = $request->validate([
-            'attribute' => 'required|string|in:ram,storage,color',
-            'value' => 'required|string',
-        ]);
-        
-        $deleted = $product->variations()
-            ->where($data['attribute'], $data['value'])
-            ->delete();
-        
-        return response()->json([
-            'success' => true,
-            'deleted' => $deleted,
-            'message' => $deleted . ' variações excluídas'
-        ]);
-    }
-
-    /**
-     * Exclui todas as variações inativas
-     */
-    public function deleteInactiveVariations(Product $product)
-    {
-        $deleted = $product->variations()
-            ->where('is_active', false)
-            ->delete();
-        
-        return response()->json([
-            'success' => true,
-            'deleted' => $deleted,
-            'message' => $deleted . ' variações inativas excluídas'
-        ]);
-    }
-
-    private function generateVariationSku(Product $product, array $data): string
-    {
-        $parts = [$product->id];
-        foreach (['ram', 'storage', 'color'] as $field) {
-            if (!empty($data[$field])) {
-                $parts[] = \Illuminate\Support\Str::slug($data[$field]);
-            }
-        }
-        
-        $base = implode('-', $parts);
-        $sku = strtoupper($base);
-        
-        $counter = 1;
-        $candidate = $sku;
-        while (\App\Models\ProductVariation::where('sku', $candidate)->exists()) {
-            $candidate = $sku . '-' . $counter++;
-        }
-        
-        return $candidate;
-    }
-
-    /**
-     * Atualiza um campo específico de uma variação (AJAX)
-     */
-    public function updateVariationField(Request $request, Product $product, ProductVariation $variation)
-    {
-        // Garante que a variação pertence ao produto
-        if ($variation->product_id !== $product->id) {
-            return response()->json(['success' => false, 'message' => 'Variação não encontrada para este produto'], 404);
-        }
-
-        $field = $request->input('field');
-        $value = $request->input('value');
-
-        if (!in_array($field, ['sku', 'price', 'stock_quantity', 'is_active'])) {
-            return response()->json(['success' => false, 'message' => 'Campo inválido'], 422);
-        }
-
-        // Validações básicas por campo
-        if ($field === 'sku') {
-            $value = trim($value);
-            if (empty($value)) $value = null;
-        } elseif ($field === 'price') {
-            $value = is_numeric($value) ? (float) $value : 0;
-        } elseif ($field === 'stock_quantity') {
-            $value = is_numeric($value) ? (int) $value : 0;
-        } elseif ($field === 'is_active') {
-            $value = (int) $value;
-        }
-
-        $variation->{$field} = $value;
-        $saved = $variation->save();
-
-        if ($saved) {
-            return response()->json(['success' => true, 'message' => 'Campo atualizado com sucesso']);
-        } else {
-            return response()->json(['success' => false, 'message' => 'Erro ao salvar campo'], 500);
-        }
-    }
-
-    /**
-     * Exclui uma variação (AJAX)
-     */
-    public function deleteVariation(Product $product, ProductVariation $variation)
-    {
-        // Garante que a variação pertence ao produto
-        if ($variation->product_id !== $product->id) {
-            return response()->json(['success' => false, 'message' => 'Variação não encontrada para este produto'], 404);
-        }
-
-        $deleted = $variation->delete();
-
-        if ($deleted) {
-            return response()->json(['success' => true, 'message' => 'Variação excluída com sucesso']);
-        } else {
-            return response()->json(['success' => false, 'message' => 'Erro ao excluir variação'], 500);
-        }
-    }
 
     private function extractImagePath($image)
     {
@@ -538,5 +226,319 @@ class ProductController extends Controller
         }
         if (strpos($image, '/') === 0) return substr($image, 1);
         return $image;
+    }
+
+    /**
+     * Criar nova variação
+     */
+    public function createVariation(Request $request, Product $product)
+    {
+        $request->validate([
+            'price' => 'required|numeric|min:0',
+            'b2b_price' => 'nullable|numeric|min:0',
+            'stock_quantity' => 'required|integer|min:0',
+            'sku' => 'nullable|string|max:255|unique:product_variations,sku',
+            'name' => 'nullable|string|max:255',
+            'is_default' => 'boolean',
+            'attribute_values' => 'required|array|min:1',
+            'attribute_values.*' => 'exists:attribute_values,id'
+        ]);
+
+        try {
+            $variation = $this->variationService->createVariation(
+                $product,
+                [
+                    'price' => $request->price,
+                    'b2b_price' => $request->b2b_price,
+                    'stock_quantity' => $request->stock_quantity,
+                    'in_stock' => $request->stock_quantity > 0,
+                    'sku' => $request->sku,
+                    'name' => $request->name,
+                    'is_default' => $request->is_default ?? false
+                ],
+                $request->attribute_values
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Variação criada com sucesso!',
+                'variation' => $variation
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao criar variação: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Atualizar variação
+     */
+    public function updateVariation(Request $request, ProductVariation $variation)
+    {
+        $request->validate([
+            'price' => 'required|numeric|min:0',
+            'b2b_price' => 'nullable|numeric|min:0',
+            'stock_quantity' => 'required|integer|min:0',
+            'sku' => 'nullable|string|max:255|unique:product_variations,sku,' . $variation->id,
+            'name' => 'nullable|string|max:255',
+            'is_default' => 'boolean',
+            'attribute_values' => 'nullable|array|min:1',
+            'attribute_values.*' => 'exists:attribute_values,id'
+        ]);
+
+        try {
+            // Preparar dados para atualização
+            $updateData = [
+                'price' => $request->price,
+                'b2b_price' => $request->b2b_price,
+                'stock_quantity' => $request->stock_quantity,
+                'in_stock' => $request->stock_quantity > 0,
+                'is_default' => $request->is_default ?? false
+            ];
+            
+            // Só incluir SKU e nome se forem fornecidos (não null)
+            // Isso evita sobrescrever valores existentes quando apenas o estoque é atualizado
+            if ($request->has('sku') && $request->sku !== null) {
+                $updateData['sku'] = $request->sku;
+            }
+            
+            if ($request->has('name') && $request->name !== null) {
+                $updateData['name'] = $request->name;
+            }
+            
+            $variation = $this->variationService->updateVariation(
+                $variation,
+                $updateData,
+                $request->attribute_values ?? null
+            );
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Variação atualizada com sucesso!',
+                'variation' => $variation
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao atualizar variação: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Buscar variação específica
+     */
+    public function getVariation(ProductVariation $variation)
+    {
+        $variation->load('attributeValues.attribute');
+        
+        // Preparar imagens
+        $images = $variation->images ?? [];
+        $formattedImages = array_map(function($img) {
+            return [
+                'path' => $img,
+                'url' => strpos($img, 'http') === 0 ? $img : asset('storage/' . $img)
+            ];
+        }, $images);
+        
+        return response()->json([
+            'success' => true,
+            'variation' => [
+                'id' => $variation->id,
+                'sku' => $variation->sku,
+                'name' => $variation->name,
+                'price' => $variation->price,
+                'b2b_price' => $variation->b2b_price,
+                'stock_quantity' => $variation->stock_quantity,
+                'is_default' => $variation->is_default,
+                'images' => $formattedImages,
+                'first_image' => $variation->first_image,
+                'attribute_values' => $variation->attributeValues->map(function($av) {
+                    return [
+                        'attribute_id' => $av->attribute->id,
+                        'attribute_value_id' => $av->id,
+                        'value' => $av->value,
+                        'display_value' => $av->display_value
+                    ];
+                })
+            ]
+        ]);
+    }
+
+    /**
+     * Excluir variação
+     */
+    public function destroyVariation(ProductVariation $variation)
+    {
+        try {
+            $variation->delete();
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Variação excluída com sucesso!'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao excluir variação: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Upload de imagem para variação
+     */
+    public function uploadVariationImage(Request $request, ProductVariation $variation)
+    {
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
+        ]);
+
+        try {
+            $path = $request->file('image')->store('products/variations', 'public');
+            
+            $images = $variation->images ?? [];
+            $images[] = $path;
+            $variation->update(['images' => $images]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagem adicionada com sucesso!',
+                'image' => [
+                    'path' => $path,
+                    'url' => asset('storage/' . $path)
+                ],
+                'images' => array_map(function($img) {
+                    return [
+                        'path' => $img,
+                        'url' => asset('storage/' . $img)
+                    ];
+                }, $images)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao fazer upload: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Remover imagem de variação
+     */
+    public function removeVariationImage(Request $request, ProductVariation $variation)
+    {
+        $request->validate([
+            'image_path' => 'required|string'
+        ]);
+
+        try {
+            $images = $variation->images ?? [];
+            $imagePath = $request->image_path;
+            
+            // Remover da lista
+            $images = array_filter($images, function($img) use ($imagePath) {
+                return $img !== $imagePath;
+            });
+            $images = array_values($images); // Reindexar
+            
+            $variation->update(['images' => $images]);
+
+            // Tentar remover arquivo físico
+            $fullPath = storage_path('app/public/' . $imagePath);
+            if (file_exists($fullPath)) {
+                unlink($fullPath);
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagem removida com sucesso!',
+                'images' => array_map(function($img) {
+                    return [
+                        'path' => $img,
+                        'url' => asset('storage/' . $img)
+                    ];
+                }, $images)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao remover imagem: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Obter imagens da variação
+     */
+    public function getVariationImages(ProductVariation $variation)
+    {
+        $images = $variation->images ?? [];
+        
+        return response()->json([
+            'success' => true,
+            'images' => array_map(function($img) {
+                return [
+                    'path' => $img,
+                    'url' => strpos($img, 'http') === 0 ? $img : asset('storage/' . $img)
+                ];
+            }, $images),
+            'product_images' => $variation->product ? array_map(function($img) {
+                return [
+                    'path' => $img,
+                    'url' => strpos($img, 'http') === 0 ? $img : asset('storage/' . $img)
+                ];
+            }, $variation->product->images ?? []) : []
+        ]);
+    }
+
+    /**
+     * Definir imagem principal da variação
+     */
+    public function setVariationPrimaryImage(Request $request, ProductVariation $variation)
+    {
+        $request->validate([
+            'image_path' => 'required|string'
+        ]);
+
+        try {
+            $images = $variation->images ?? [];
+            $imagePath = $request->image_path;
+            
+            // Verificar se a imagem existe na lista
+            if (!in_array($imagePath, $images)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Imagem não encontrada na variação'
+                ], 404);
+            }
+            
+            // Mover para primeira posição
+            $images = array_filter($images, function($img) use ($imagePath) {
+                return $img !== $imagePath;
+            });
+            array_unshift($images, $imagePath);
+            $images = array_values($images);
+            
+            $variation->update(['images' => $images]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Imagem principal definida!',
+                'images' => array_map(function($img) {
+                    return [
+                        'path' => $img,
+                        'url' => asset('storage/' . $img)
+                    ];
+                }, $images)
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

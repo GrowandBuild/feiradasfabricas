@@ -664,7 +664,7 @@ if (window.__liveSearchInitialized) {
             
             const price = formatPrice(product.price);
             // Construir URL do produto
-            let productUrl = product.variant_url || (function(){
+            let productUrl = (function(){
                 let base = '/produto/';
                 if (product.slug) { return base + product.slug; }
                 return base + product.id;

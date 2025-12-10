@@ -3,42 +3,91 @@
 @section('title', $album->title)
 
 @section('content')
-<div class="container py-4">
-    <a href="{{ route('albums.index') }}" class="btn btn-outline-secondary btn-sm mb-3">Voltar</a>
+<div class="container py-4 album-show-page">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <a href="{{ route('albums.index') }}" class="btn-back-album btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Voltar
+        </a>
+        @if(auth()->guard('admin')->check())
+            <a href="{{ route('admin.albums.edit', $album->id) }}" 
+               class="btn-edit-album btn btn-sm" 
+               title="Editar álbum"
+               style="background: var(--secondary-color, #ff6b35); border-color: var(--secondary-color, #ff6b35); color: #ffffff;">
+                <i class="bi bi-pencil-square me-1"></i>Editar
+            </a>
+        @endif
+    </div>
 
-    <div class="d-flex align-items-center gap-3 mb-3">
-        <div class="ratio ratio-1x1" style="width:80px">
-            <img src="{{ $album->cover_url ?? asset('images/no-image.svg') }}" class="w-100 h-100 rounded" style="object-fit:cover;" loading="lazy">
+    <div class="album-header d-flex align-items-center gap-3 mb-4 p-3 rounded position-relative" style="background: linear-gradient(135deg, rgba(var(--secondary-color-rgb, 255, 107, 53), 0.05) 0%, #ffffff 100%); border: 2px solid rgba(var(--secondary-color-rgb, 255, 107, 53), 0.1);">
+        <div class="album-cover-thumb ratio ratio-1x1" style="width:100px; min-width: 100px;">
+            <img src="{{ $album->cover_url ?? asset('images/no-image.svg') }}" 
+                 class="w-100 h-100 rounded shadow-sm" 
+                 style="object-fit:cover; border: 3px solid rgba(var(--secondary-color-rgb, 255, 107, 53), 0.2);" 
+                 loading="lazy">
         </div>
-        <div>
-            <h1 class="h4 m-0">{{ $album->title }}</h1>
+        <div class="flex-grow-1">
+            <h1 class="album-title-display h3 m-0 mb-2 fw-bold" style="color: var(--text-dark);">{{ $album->title }}</h1>
             @if($album->description)
-                <div class="text-muted">{{ $album->description }}</div>
+                <div class="album-description text-muted">{{ $album->description }}</div>
+            @endif
+            @if($album->images->count() > 0)
+                <div class="album-image-count mt-2">
+                    <small class="text-muted">
+                        <i class="bi bi-images me-1"></i>{{ $album->images->count() }} {{ $album->images->count() === 1 ? 'imagem' : 'imagens' }}
+                    </small>
+                </div>
             @endif
         </div>
     </div>
 
     @if($album->images->count() === 0)
-        <div class="alert alert-secondary">Nenhuma imagem neste álbum.</div>
+        <div class="alert alert-secondary text-center py-4">
+            <i class="bi bi-images fs-3 d-block mb-2"></i>
+            Nenhuma imagem neste álbum.
+        </div>
     @else
-        <div class="row g-3">
+        <div class="album-images-grid row g-3 g-md-4">
             @foreach($album->images as $image)
-            <div class="col-6 col-md-4 col-lg-3 position-relative">
+            <div class="col-6 col-md-4 col-lg-3 position-relative album-image-item">
                 @if(auth()->guard('admin')->check())
-                    <button type="button" class="btn btn-sm btn-danger position-absolute m-2 btn-delete-image" style="z-index:6; right:0;" data-image-id="{{ $image->id }}">Remover</button>
+                    <button type="button" class="btn btn-sm btn-danger position-absolute m-2 btn-delete-image" 
+                            style="z-index:6; right:0; border-radius: 50%; width: 32px; height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;" 
+                            data-image-id="{{ $image->id }}"
+                            title="Remover imagem">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
                 @endif
 
-                <div class="select-target position-relative" data-image-id="{{ $image->id }}" style="z-index:1">
-                    <a href="{{ Storage::url($image->path) }}" target="_blank" rel="noopener" class="d-block border rounded overflow-hidden">
-                        <img src="{{ Storage::url($image->path) }}" class="w-100" style="aspect-ratio:1/1; object-fit:cover;" alt="{{ $image->alt ?? $album->title }}" loading="lazy">
+                <div class="select-target position-relative album-image-wrapper" data-image-id="{{ $image->id }}" style="z-index:1">
+                    <a href="{{ Storage::url($image->path) }}" 
+                       target="_blank" 
+                       rel="noopener" 
+                       class="album-image-link d-block border rounded overflow-hidden shadow-sm"
+                       data-lightbox="album"
+                       data-title="{{ $image->alt ?? $album->title }}">
+                        <div class="album-image-container position-relative" style="aspect-ratio:1/1; overflow: hidden;">
+                            <img src="{{ Storage::url($image->path) }}" 
+                                 class="w-100 h-100" 
+                                 style="object-fit:cover; transition: transform 0.3s ease;" 
+                                 alt="{{ $image->alt ?? $album->title }}" 
+                                 loading="lazy">
+                            <div class="album-image-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+                                <i class="bi bi-zoom-in text-white fs-2 opacity-0" style="transition: opacity 0.3s ease;"></i>
+                            </div>
+                        </div>
                     </a>
 
                     @if(auth()->guard('admin')->check())
-                        <button type="button" class="select-toggle btn btn-sm btn-light position-absolute" style="top:8px; left:8px; z-index:5; width:34px; height:34px; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1px solid rgba(0,0,0,0.08);">
+                        <button type="button" 
+                                class="select-toggle btn btn-sm btn-light position-absolute" 
+                                style="top:8px; left:8px; z-index:5; width:36px; height:36px; padding:0; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid rgba(255,255,255,0.9); background: rgba(255,255,255,0.95); box-shadow: 0 2px 8px rgba(0,0,0,0.15);"
+                                title="Selecionar">
                             <i class="bi bi-square" aria-hidden="true"></i>
                         </button>
                         <div class="selected-check position-absolute" style="top:8px; right:8px; z-index:5; display:none;">
-                            <span class="badge bg-success"><i class="bi bi-check-lg"></i></span>
+                            <span class="badge bg-success rounded-circle p-2" style="box-shadow: 0 2px 8px rgba(0,0,0,0.2);">
+                                <i class="bi bi-check-lg"></i>
+                            </span>
                         </div>
                     @endif
                 </div>
@@ -48,23 +97,27 @@
     @endif
     @if(auth()->guard('admin')->check())
         <!-- Selection toolbar for admins -->
-        <div id="album-selection-toolbar" class="position-fixed shadow-lg d-none" style="right:16px; bottom:90px; z-index:2000; background:#fff; border-radius:12px; padding:10px 14px; min-width:220px;">
-            <div class="d-flex align-items-center justify-content-between">
+        <div id="album-selection-toolbar" class="position-fixed shadow-lg d-none" style="right:16px; bottom:90px; z-index:2000; background:#fff; border-radius:12px; padding:14px 18px; min-width:250px; border: 2px solid var(--secondary-color, #ff6b35);">
+            <div class="d-flex align-items-center justify-content-between gap-3">
                 <div>
-                    <strong id="selected-count">0</strong>
+                    <strong id="selected-count" style="color: var(--secondary-color, #ff6b35); font-size: 1.25rem;">0</strong>
                     <div class="small text-muted">imagens selecionadas</div>
                 </div>
                 <div>
-                    <button id="create-product-from-selected" class="btn btn-primary btn-sm">Criar produto</button>
+                    <button id="create-product-from-selected" class="btn btn-primary btn-sm" style="background: var(--secondary-color); border-color: var(--secondary-color);">
+                        <i class="bi bi-plus-lg me-1"></i>Criar produto
+                    </button>
                 </div>
             </div>
         </div>
     @endif
 
     @if(auth()->guard('admin')->check())
-        <hr class="my-4">
-        <div class="card p-3">
-            <h5 class="mb-3">Adicionar imagens (admin)</h5>
+        <hr class="my-4" style="border-color: rgba(var(--secondary-color-rgb, 255, 107, 53), 0.2);">
+        <div class="card p-4 shadow-sm border-0 admin-upload-section" style="background: linear-gradient(135deg, rgba(var(--secondary-color-rgb, 255, 107, 53), 0.05) 0%, #ffffff 100%); border: 2px solid rgba(var(--secondary-color-rgb, 255, 107, 53), 0.1) !important; border-radius: 12px;">
+            <h5 class="mb-3 fw-bold">
+                <i class="bi bi-cloud-upload me-2" style="color: var(--secondary-color, #ff6b35);"></i>Adicionar imagens (admin)
+            </h5>
             @if(session('success'))
                 <div class="alert alert-success">{{ session('success') }}</div>
             @endif
@@ -75,9 +128,14 @@
                 @csrf
                 <div class="mb-3">
                     <input type="file" name="images[]" multiple accept="image/*" class="form-control" />
+                    <small class="text-muted d-block mt-1">
+                        <i class="bi bi-info-circle me-1"></i>Selecione uma ou mais imagens para adicionar ao álbum
+                    </small>
                 </div>
                 <div>
-                    <button class="btn btn-primary btn-sm">Enviar imagens</button>
+                    <button class="btn btn-primary btn-sm" style="background: var(--secondary-color); border-color: var(--secondary-color);">
+                        <i class="bi bi-upload me-1"></i>Enviar imagens
+                    </button>
                 </div>
             </form>
         </div>
@@ -293,4 +351,228 @@
     })();
     </script>
 </div>
+
+@push('styles')
+<style>
+    /* Página de Visualização de Álbum - Design Moderno */
+    .album-show-page {
+        max-width: var(--site-container-max-width, 1320px);
+        margin: 0 auto;
+    }
+
+    .btn-back-album {
+        transition: all 0.3s ease;
+        border-color: var(--secondary-color, #ff6b35);
+        color: var(--secondary-color, #ff6b35);
+    }
+
+    .btn-back-album:hover {
+        background: var(--secondary-color, #ff6b35);
+        color: #ffffff;
+        transform: translateX(-3px);
+    }
+
+    .btn-edit-album {
+        transition: all 0.3s ease;
+        font-weight: 600;
+        box-shadow: 0 2px 8px rgba(var(--secondary-color-rgb, 255, 107, 53), 0.3);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .btn-edit-album::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+        transition: left 0.5s;
+    }
+
+    .btn-edit-album:hover::before {
+        left: 100%;
+    }
+
+    .btn-edit-album:hover {
+        transform: translateY(-2px) scale(1.05);
+        box-shadow: 0 4px 16px rgba(var(--secondary-color-rgb, 255, 107, 53), 0.4);
+        color: #ffffff;
+    }
+
+    .btn-edit-album:active {
+        transform: translateY(0) scale(1);
+    }
+
+    .album-header {
+        transition: all 0.3s ease;
+    }
+
+    .album-header:hover {
+        border-color: rgba(var(--secondary-color-rgb, 255, 107, 53), 0.3) !important;
+    }
+
+    .album-cover-thumb {
+        animation: fadeIn 0.5s ease;
+    }
+
+    .album-title-display {
+        animation: slideInLeft 0.5s ease;
+    }
+
+    .album-description {
+        animation: slideInLeft 0.6s ease;
+    }
+
+    /* Grid de imagens */
+    .album-images-grid {
+        animation: fadeIn 0.7s ease;
+    }
+
+    .album-image-item {
+        animation: fadeInUp 0.5s ease;
+        animation-fill-mode: both;
+    }
+
+    .album-image-item:nth-child(1) { animation-delay: 0.1s; }
+    .album-image-item:nth-child(2) { animation-delay: 0.2s; }
+    .album-image-item:nth-child(3) { animation-delay: 0.3s; }
+    .album-image-item:nth-child(4) { animation-delay: 0.4s; }
+    .album-image-item:nth-child(5) { animation-delay: 0.1s; }
+    .album-image-item:nth-child(6) { animation-delay: 0.2s; }
+    .album-image-item:nth-child(7) { animation-delay: 0.3s; }
+    .album-image-item:nth-child(8) { animation-delay: 0.4s; }
+
+    .album-image-wrapper {
+        transition: transform 0.3s ease;
+    }
+
+    .album-image-link {
+        transition: all 0.3s ease;
+        border-radius: 12px !important;
+        overflow: hidden;
+    }
+
+    .album-image-link:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2) !important;
+        border-color: var(--secondary-color, #ff6b35) !important;
+    }
+
+    .album-image-container {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    }
+
+    .album-image-link:hover .album-image-container img {
+        transform: scale(1.1);
+    }
+
+    .album-image-overlay {
+        background: rgba(0, 0, 0, 0.5);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .album-image-link:hover .album-image-overlay {
+        opacity: 1;
+    }
+
+    .album-image-link:hover .album-image-overlay i {
+        opacity: 1;
+    }
+
+    .select-toggle {
+        transition: all 0.3s ease;
+    }
+
+    .select-toggle:hover {
+        background: rgba(255, 255, 255, 1) !important;
+        transform: scale(1.1);
+    }
+
+    .select-target.selected .select-toggle {
+        background: var(--secondary-color, #ff6b35) !important;
+        border-color: var(--secondary-color, #ff6b35) !important;
+        color: white;
+    }
+
+    .btn-delete-image {
+        transition: all 0.3s ease;
+    }
+
+    .btn-delete-image:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+    }
+
+    .admin-upload-section {
+        animation: slideInUp 0.5s ease;
+    }
+
+    /* Animações */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    @keyframes slideInLeft {
+        from {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes slideInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .album-header {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .album-cover-thumb {
+            width: 80px !important;
+            min-width: 80px !important;
+            margin: 0 auto;
+        }
+
+        .album-title-display {
+            font-size: 1.5rem !important;
+        }
+
+        #album-selection-toolbar {
+            right: 8px !important;
+            bottom: 80px !important;
+            min-width: 200px !important;
+            padding: 12px 14px !important;
+        }
+    }
+</style>
+@endpush
 @endsection

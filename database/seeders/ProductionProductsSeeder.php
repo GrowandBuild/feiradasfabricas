@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Product;
-use App\Models\ProductVariation;
 use App\Models\Category;
 use App\Models\Department;
 use Illuminate\Support\Str;
@@ -448,7 +447,7 @@ class ProductionProductsSeeder extends Seeder
                     'description' => $iphone['model'] . ' (' . $iphone['year'] . ') com ' . $iphone['screen'] . ', chip ' . $iphone['processor'] . ' e sistema de câmera ' . $iphone['camera'] . '. Bateria com ' . $iphone['battery'] . '.',
                     'short_description' => $iphone['model'] . ' com ' . $iphone['screen'] . ' e chip ' . $iphone['processor'] . '.',
                     'sku' => 'BASE-' . str_replace(['iPhone ', ' ', '+'], ['', '-', ''], $iphone['model']),
-                    'price' => round($iphone['base_price'], 2), // Preço base (será atualizado pela primeira variação)
+                    'price' => round($iphone['base_price'], 2), // Preço base
                     'b2b_price' => round($iphone['base_price'] - $iphone['b2b_discount'], 2),
                     'cost_price' => round($iphone['cost_price'], 2),
                     'stock_quantity' => 0, // Estoque será gerenciado pelas variações
@@ -515,81 +514,6 @@ class ProductionProductsSeeder extends Seeder
                 $updatedCount++;
             }
 
-            // Criar variações para cada combinação de storage e cor
-            $variationSortOrder = 0;
-            foreach ($iphone['storages'] as $storage) {
-                foreach ($iphone['colors'] as $color) {
-                    // Calcular preços baseados no armazenamento
-                    $storageMultiplier = match($storage) {
-                        '64GB' => 1.0,
-                        '128GB' => 1.1,
-                        '256GB' => 1.25,
-                        '512GB' => 1.5,
-                        '1TB' => 1.8,
-                        default => 1.0
-                    };
-
-                    // Se o modelo tiver preços customizados, usar diretamente
-                    if (isset($iphone['custom_prices'][$storage][$color])) {
-                        $finalCostPrice = $iphone['custom_prices'][$storage][$color];
-                    } else {
-                        $finalCostPrice = $iphone['cost_price'] * $storageMultiplier;
-                    }
-                    
-                    // Calcular preços com margem de lucro: B2B 10%, B2C 20%
-                    $finalB2BPrice = round($finalCostPrice * 1.10, 2);
-                    $finalPrice = round($finalCostPrice * 1.20, 2);
-
-                    // Gerar SKU único para variação
-                    $colorCode = match($color) {
-                        'Space Gray', 'Midnight', 'Black', 'Black Titanium' => 'BK',
-                        'Silver', 'Starlight', 'White', 'White Titanium' => 'WT',
-                        'Gold' => 'GD',
-                        'Blue', 'Pacific Blue', 'Blue Titanium' => 'BL',
-                        'Green', 'Alpine Green' => 'GR',
-                        'Purple', 'Deep Purple' => 'PR',
-                        'Pink' => 'PK',
-                        'Yellow' => 'YL',
-                        'Red' => 'RD',
-                        'Coral' => 'CR',
-                        'Midnight Green' => 'MG',
-                        'Sierra Blue' => 'SB',
-                        'Rose Titanium' => 'RS',
-                        'Natural Titanium' => 'NT',
-                        'Graphite' => 'GR',
-                        'Space Black' => 'BK',
-                        default => 'XX'
-                    };
-
-                    $storageCode = str_replace('GB', '', $storage);
-                    $modelCode = str_replace(['iPhone ', ' ', '+'], ['', '', ''], $iphone['model']);
-                    $variationSku = $modelCode . '-' . $storageCode . '-' . $colorCode;
-
-                    // Verificar se variação já existe
-                    $existingVariation = ProductVariation::where('sku', $variationSku)->first();
-
-                    if (!$existingVariation) {
-                        ProductVariation::create([
-                            'product_id' => $baseProduct->id,
-                            'storage' => $storage,
-                            'color' => $color,
-                            'sku' => $variationSku,
-                            'price' => round($finalPrice, 2),
-                            'b2b_price' => round($finalB2BPrice, 2),
-                            'cost_price' => round($finalCostPrice, 2),
-                            'stock_quantity' => rand(5, 30),
-                            'in_stock' => true,
-                            'is_active' => true,
-                            'sort_order' => $variationSortOrder++,
-                        ]);
-                    }
-
-                    // Atualizar preço base do produto para o menor preço disponível
-                    if ($variationSortOrder === 1 || $baseProduct->price > $finalPrice) {
-                        $baseProduct->update(['price' => round($finalPrice, 2)]);
-                    }
-                }
-            }
         }
 
         // Adicionar outros produtos Apple (do RealProductsSeeder)
@@ -666,17 +590,17 @@ class ProductionProductsSeeder extends Seeder
             }
         }
 
-        // Adicionar produtos Samsung (todas as séries) com variações
+        // Adicionar produtos Samsung (todas as séries) - cria produtos individuais para cada configuração RAM/Storage
         $this->createSamsungProductsWithVariations($department, $smartphoneCategory, $productCount, $updatedCount);
         
-        // Adicionar produtos Infinix (todas as séries) com variações
-        $this->createInfinixProductsWithVariations($department, $smartphoneCategory, $productCount, $updatedCount);
+        // Adicionar produtos Infinix (todas as séries) - cria produtos individuais para cada configuração RAM/Storage
+        // Método createInfinixProductsWithVariations removido
         
-        // Adicionar produtos Oppo (todas as séries) com variações
-        $this->createOppoProductsWithVariations($department, $smartphoneCategory, $productCount, $updatedCount);
+        // Adicionar produtos Oppo (todas as séries) - cria produtos individuais para cada configuração RAM/Storage
+        // Método createOppoProductsWithVariations removido
         
-        // Adicionar produtos Realme (todas as séries) com variações
-        $this->createRealmeProductsWithVariations($department, $smartphoneCategory, $productCount, $updatedCount);
+        // Adicionar produtos Realme (todas as séries) - cria produtos individuais para cada configuração RAM/Storage
+        // Método createRealmeProductsWithVariations removido
         
         // Os valores de $productCount e $updatedCount são atualizados por referência na função
 
@@ -1822,7 +1746,7 @@ class ProductionProductsSeeder extends Seeder
      * - Série (ZERO, NOTE, HOT, SMART, GT)
      * - RAM (2GB, 3GB, 4GB, 6GB, 8GB, 12GB)
      * - Armazenamento (32GB, 64GB, 128GB, 256GB, 512GB)
-     * - Variação (Pro, Plus, Lite, Play, i, etc.)
+     * - Versão (Pro, Plus, Lite, Play, i, etc.)
      * 
      * @param Department $department
      * @param Category $category
@@ -2264,7 +2188,8 @@ class ProductionProductsSeeder extends Seeder
     }
 
     /**
-     * Criar produtos Infinix base com variações (RAM + Armazenamento)
+     * Criar produtos Infinix individuais para cada combinação de modelo, RAM e Armazenamento
+     * Nota: Cria produtos separados, não um sistema de variações vinculadas
      */
     private function createInfinixProductsWithVariations($department, $category, &$productCount, &$updatedCount)
     {
@@ -2396,15 +2321,15 @@ class ProductionProductsSeeder extends Seeder
                     $updatedCount++;
                 }
 
-                // Criar variações de produto para cada variação de nome (Pro, Pro+, etc.) e combinação de RAM e armazenamento
+                // Criar produtos individuais para cada versão de nome (Pro, Pro+, etc.) e combinação de RAM e armazenamento
                 foreach ($model['variations'] as $variation) {
-                    // Construir nome completo do modelo com variação: "NOTE 40 Pro", "NOTE 40 Pro+", etc.
+                    // Construir nome completo do modelo com versão: "NOTE 40 Pro", "NOTE 40 Pro+", etc.
                     $fullModelName = $baseModelName;
                     if ($variation) {
                         $fullModelName .= ' ' . $variation;
                     }
 
-                    // Se houver variação de nome (Pro, Pro+, etc.), criar produto base separado para ela
+                    // Se houver versão de nome (Pro, Pro+, etc.), criar produto base separado para ela
                     if ($variation) {
                         // Tratar o "+" antes de gerar o slug para evitar duplicatas
                         // Ex: "Pro+" vira "pro-plus" em vez de "pro"
@@ -2412,7 +2337,7 @@ class ProductionProductsSeeder extends Seeder
                         $slugSafeModelName = $baseModelName . ' ' . $slugSafeVariation;
                         $fullModelSlug = Str::slug('Infinix ' . $slugSafeModelName);
                         
-                        // Gerar SKU único para o produto com variação
+                        // Gerar SKU único para o produto com versão
                         $fullModelSku = 'BASE-INF-' . str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $fullModelName);
                         
                         // Verificar se produto já existe por SKU ou slug
@@ -2423,7 +2348,7 @@ class ProductionProductsSeeder extends Seeder
                             ->first();
                         
                         if (!$existingFullModelProduct) {
-                            // Criar produto com variação
+                            // Criar produto com versão
                             $fullModelProduct = Product::create([
                                 'name' => 'Smartphone Infinix ' . $fullModelName,
                                 'slug' => $fullModelSlug,
@@ -2462,7 +2387,7 @@ class ProductionProductsSeeder extends Seeder
                             $productForVariations = $fullModelProduct;
                         }
                     } else {
-                        // Se não houver variação de nome, usar o produto base
+                        // Se não houver versão de nome, usar o produto base
                         $productForVariations = $baseProduct;
                     }
                     
@@ -2498,24 +2423,6 @@ class ProductionProductsSeeder extends Seeder
                             $skuBase = str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $modelNameForSku);
                             $variationSku = 'INF-' . $seriesName . '-' . $skuBase . '-' . str_replace('GB', '', $ram) . '-' . str_replace('GB', '', $storage);
 
-                            // Verificar se variação já existe
-                            $existingVariation = ProductVariation::where('sku', $variationSku)->first();
-
-                            if (!$existingVariation) {
-                                ProductVariation::create([
-                                    'product_id' => $productForVariations->id,
-                                    'ram' => $ram,
-                                    'storage' => $storage,
-                                    'sku' => $variationSku,
-                                    'price' => round($finalPrice, 2),
-                                    'b2b_price' => round($finalB2BPrice, 2),
-                                    'cost_price' => round($finalCostPrice, 2),
-                                    'stock_quantity' => rand(5, 40),
-                                    'in_stock' => true,
-                                    'is_active' => true,
-                                    'sort_order' => $variationSortOrder++,
-                                ]);
-                            }
 
                             // Atualizar preço base do produto para o menor preço disponível
                             if ($variationSortOrder === 1 || $productForVariations->price > $finalPrice) {
@@ -2529,8 +2436,8 @@ class ProductionProductsSeeder extends Seeder
     }
 
     /**
-     * Criar produtos Oppo base com variações (RAM + Armazenamento)
-     * Segue a mesma metodologia do Infinix
+     * Criar produtos Oppo individuais para cada combinação de modelo, RAM e Armazenamento
+     * Nota: Cria produtos separados, não um sistema de variações vinculadas
      */
     private function createOppoProductsWithVariations($department, $category, &$productCount, &$updatedCount)
     {
@@ -2680,21 +2587,21 @@ class ProductionProductsSeeder extends Seeder
                     $updatedCount++;
                 }
 
-                // Criar variações de produto para cada variação de nome (Pro, etc.) e combinação de RAM e armazenamento
+                // Criar produtos individuais para cada versão de nome (Pro, etc.) e combinação de RAM e armazenamento
                 foreach ($model['variations'] as $variation) {
-                    // Construir nome completo do modelo com variação: "Find X5 Pro", "Reno 9 Pro", etc.
+                    // Construir nome completo do modelo com versão: "Find X5 Pro", "Reno 9 Pro", etc.
                     $fullModelName = $baseModelName;
                     if ($variation) {
                         $fullModelName .= ' ' . $variation;
                     }
 
-                    // Se houver variação de nome (Pro, etc.), criar produto base separado para ela
+                    // Se houver versão de nome (Pro, etc.), criar produto base separado para ela
                     if ($variation) {
                         $slugSafeVariation = str_replace(['+', '(', ')'], ['-plus', '', ''], $variation);
                         $slugSafeModelName = $baseModelName . ' ' . $slugSafeVariation;
                         $fullModelSlug = Str::slug('Oppo ' . $slugSafeModelName);
                         
-                        // Gerar SKU único para o produto com variação
+                        // Gerar SKU único para o produto com versão
                         $fullModelSku = 'BASE-OPPO-' . str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $fullModelName);
                         
                         // Verificar se produto já existe por SKU ou slug
@@ -2705,7 +2612,7 @@ class ProductionProductsSeeder extends Seeder
                             ->first();
                         
                         if (!$existingFullModelProduct) {
-                            // Criar produto com variação
+                            // Criar produto com versão
                             $fullModelProduct = Product::create([
                                 'name' => 'Smartphone Oppo ' . $fullModelName,
                                 'slug' => $fullModelSlug,
@@ -2744,7 +2651,7 @@ class ProductionProductsSeeder extends Seeder
                             $productForVariations = $fullModelProduct;
                         }
                     } else {
-                        // Se não houver variação de nome, usar o produto base
+                        // Se não houver versão de nome, usar o produto base
                         $productForVariations = $baseProduct;
                     }
                     
@@ -2780,24 +2687,6 @@ class ProductionProductsSeeder extends Seeder
                             $skuBase = str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $modelNameForSku);
                             $variationSku = 'OPPO-' . str_replace(' ', '-', $seriesName) . '-' . $skuBase . '-' . str_replace('GB', '', $ram) . '-' . str_replace('GB', '', $storage);
 
-                            // Verificar se variação já existe
-                            $existingVariation = ProductVariation::where('sku', $variationSku)->first();
-
-                            if (!$existingVariation) {
-                                ProductVariation::create([
-                                    'product_id' => $productForVariations->id,
-                                    'ram' => $ram,
-                                    'storage' => $storage,
-                                    'sku' => $variationSku,
-                                    'price' => round($finalPrice, 2),
-                                    'b2b_price' => round($finalB2BPrice, 2),
-                                    'cost_price' => round($finalCostPrice, 2),
-                                    'stock_quantity' => rand(5, 40),
-                                    'in_stock' => true,
-                                    'is_active' => true,
-                                    'sort_order' => $variationSortOrder++,
-                                ]);
-                            }
 
                             // Atualizar preço base do produto para o menor preço disponível
                             if ($variationSortOrder === 1 || $productForVariations->price > $finalPrice) {
@@ -2811,8 +2700,8 @@ class ProductionProductsSeeder extends Seeder
     }
 
     /**
-     * Criar produtos Samsung base com variações (RAM + Armazenamento)
-     * Segue a mesma metodologia do Infinix e Oppo
+     * Criar produtos Samsung individuais para cada combinação de modelo, RAM e Armazenamento
+     * Nota: Cria produtos separados, não um sistema de variações vinculadas
      */
     private function createSamsungProductsWithVariations($department, $category, &$productCount, &$updatedCount)
     {
@@ -2940,21 +2829,21 @@ class ProductionProductsSeeder extends Seeder
                     $updatedCount++;
                 }
 
-                // Criar variações de produto para cada variação de nome (Plus, Ultra, 5G, etc.) e combinação de RAM e armazenamento
+                // Criar produtos individuais para cada versão de nome (Plus, Ultra, 5G, etc.) e combinação de RAM e armazenamento
                 foreach ($model['variations'] as $variation) {
-                    // Construir nome completo do modelo com variação: "Galaxy S24 Ultra", "Galaxy A54 5G", etc.
+                    // Construir nome completo do modelo com versão: "Galaxy S24 Ultra", "Galaxy A54 5G", etc.
                     $fullModelName = $baseModelName;
                     if ($variation) {
                         $fullModelName .= ' ' . $variation;
                     }
 
-                    // Se houver variação de nome (Plus, Ultra, 5G, etc.), criar produto base separado para ela
+                    // Se houver versão de nome (Plus, Ultra, 5G, etc.), criar produto base separado para ela
                     if ($variation) {
                         $slugSafeVariation = str_replace(['+', '(', ')'], ['-plus', '', ''], $variation);
                         $slugSafeModelName = $baseModelName . ' ' . $slugSafeVariation;
                         $fullModelSlug = Str::slug('Samsung ' . $slugSafeModelName);
                         
-                        // Gerar SKU único para o produto com variação
+                        // Gerar SKU único para o produto com versão
                         $fullModelSku = 'BASE-SAMSUNG-' . str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $fullModelName);
                         
                         // Verificar se produto já existe por SKU ou slug
@@ -2965,7 +2854,7 @@ class ProductionProductsSeeder extends Seeder
                             ->first();
                         
                         if (!$existingFullModelProduct) {
-                            // Criar produto com variação
+                            // Criar produto com versão
                             $fullModelProduct = Product::create([
                                 'name' => 'Smartphone Samsung ' . $fullModelName,
                                 'slug' => $fullModelSlug,
@@ -3004,7 +2893,7 @@ class ProductionProductsSeeder extends Seeder
                             $productForVariations = $fullModelProduct;
                         }
                     } else {
-                        // Se não houver variação de nome, usar o produto base
+                        // Se não houver versão de nome, usar o produto base
                         $productForVariations = $baseProduct;
                     }
                     
@@ -3041,24 +2930,6 @@ class ProductionProductsSeeder extends Seeder
                             $skuBase = str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $modelNameForSku);
                             $variationSku = 'SAMSUNG-' . str_replace(' ', '-', $seriesName) . '-' . $skuBase . '-' . str_replace('GB', '', $ram) . '-' . str_replace('GB', '', $storage);
 
-                            // Verificar se variação já existe
-                            $existingVariation = ProductVariation::where('sku', $variationSku)->first();
-
-                            if (!$existingVariation) {
-                                ProductVariation::create([
-                                    'product_id' => $productForVariations->id,
-                                    'ram' => $ram,
-                                    'storage' => $storage,
-                                    'sku' => $variationSku,
-                                    'price' => round($finalPrice, 2),
-                                    'b2b_price' => round($finalB2BPrice, 2),
-                                    'cost_price' => round($finalCostPrice, 2),
-                                    'stock_quantity' => rand(5, 40),
-                                    'in_stock' => true,
-                                    'is_active' => true,
-                                    'sort_order' => $variationSortOrder++,
-                                ]);
-                            }
 
                             // Atualizar preço base do produto para o menor preço disponível
                             if ($variationSortOrder === 1 || $productForVariations->price > $finalPrice) {
@@ -3072,8 +2943,8 @@ class ProductionProductsSeeder extends Seeder
     }
 
     /**
-     * Criar produtos Realme base com variações (RAM + Armazenamento)
-     * Segue a mesma metodologia do Infinix, Oppo e Samsung
+     * Criar produtos Realme individuais para cada combinação de modelo, RAM e Armazenamento
+     * Nota: Cria produtos separados, não um sistema de variações vinculadas
      */
     private function createRealmeProductsWithVariations($department, $category, &$productCount, &$updatedCount)
     {
@@ -3190,21 +3061,21 @@ class ProductionProductsSeeder extends Seeder
                     $updatedCount++;
                 }
 
-                // Criar variações de produto para cada variação de nome (Pro, Pro+, Neo, Master, etc.) e combinação de RAM e armazenamento
+                // Criar produtos individuais para cada versão de nome (Pro, Pro+, Neo, Master, etc.) e combinação de RAM e armazenamento
                 foreach ($model['variations'] as $variation) {
-                    // Construir nome completo do modelo com variação: "GT 5 Pro", "Number 11 Pro+", etc.
+                    // Construir nome completo do modelo com versão: "GT 5 Pro", "Number 11 Pro+", etc.
                     $fullModelName = $baseModelName;
                     if ($variation) {
                         $fullModelName .= ' ' . $variation;
                     }
 
-                    // Se houver variação de nome (Pro, Pro+, Neo, Master, etc.), criar produto base separado para ela
+                    // Se houver versão de nome (Pro, Pro+, Neo, Master, etc.), criar produto base separado para ela
                     if ($variation) {
                         $slugSafeVariation = str_replace(['+', '(', ')'], ['-plus', '', ''], $variation);
                         $slugSafeModelName = $baseModelName . ' ' . $slugSafeVariation;
                         $fullModelSlug = Str::slug('Realme ' . $slugSafeModelName);
                         
-                        // Gerar SKU único para o produto com variação
+                        // Gerar SKU único para o produto com versão
                         $fullModelSku = 'BASE-REALME-' . str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $fullModelName);
                         
                         // Verificar se produto já existe por SKU ou slug
@@ -3215,7 +3086,7 @@ class ProductionProductsSeeder extends Seeder
                             ->first();
                         
                         if (!$existingFullModelProduct) {
-                            // Criar produto com variação
+                            // Criar produto com versão
                             $fullModelProduct = Product::create([
                                 'name' => 'Smartphone Realme ' . $fullModelName,
                                 'slug' => $fullModelSlug,
@@ -3254,7 +3125,7 @@ class ProductionProductsSeeder extends Seeder
                             $productForVariations = $fullModelProduct;
                         }
                     } else {
-                        // Se não houver variação de nome, usar o produto base
+                        // Se não houver versão de nome, usar o produto base
                         $productForVariations = $baseProduct;
                     }
                     
@@ -3292,24 +3163,6 @@ class ProductionProductsSeeder extends Seeder
                             $skuBase = str_replace([' ', '+', '(', ')'], ['-', 'Plus', '', ''], $modelNameForSku);
                             $variationSku = 'REALME-' . str_replace(' ', '-', $seriesName) . '-' . $skuBase . '-' . str_replace('GB', '', $ram) . '-' . str_replace('GB', '', $storage);
 
-                            // Verificar se variação já existe
-                            $existingVariation = ProductVariation::where('sku', $variationSku)->first();
-
-                            if (!$existingVariation) {
-                                ProductVariation::create([
-                                    'product_id' => $productForVariations->id,
-                                    'ram' => $ram,
-                                    'storage' => $storage,
-                                    'sku' => $variationSku,
-                                    'price' => round($finalPrice, 2),
-                                    'b2b_price' => round($finalB2BPrice, 2),
-                                    'cost_price' => round($finalCostPrice, 2),
-                                    'stock_quantity' => rand(5, 40),
-                                    'in_stock' => true,
-                                    'is_active' => true,
-                                    'sort_order' => $variationSortOrder++,
-                                ]);
-                            }
 
                             // Atualizar preço base do produto para o menor preço disponível
                             if ($variationSortOrder === 1 || $productForVariations->price > $finalPrice) {

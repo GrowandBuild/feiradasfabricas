@@ -187,6 +187,178 @@
                                     </div>
                                 </div>
                             </div>
+
+                            <!-- Melhor Envio - Configurações de Logística -->
+                            <div class="col-12 mb-4">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header d-flex align-items-center justify-content-between">
+                                        <div>
+                                            <h6 class="card-title mb-0"><i class="bi bi-truck me-2"></i>Melhor Envio</h6>
+                                            <small class="text-muted">Configurações de cálculo e envio de fretes</small>
+                                        </div>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="melhor_envio_enabled" 
+                                                   {{ setting('melhor_envio_enabled', false) ? 'checked' : '' }}
+                                                   onchange="updateStatusText('melhor_envio_enabled')">
+                                            <label class="form-check-label" for="melhor_envio_enabled" id="melhor_envio_enabled_label">
+                                                {{ setting('melhor_envio_enabled', false) ? 'Ativo' : 'Inativo' }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        @php
+                                            $hasToken = !empty(setting('melhor_envio_token'));
+                                            $tokenExpiresAt = setting('melhor_envio_token_expires_at');
+                                            $isTokenExpired = $tokenExpiresAt && \Carbon\Carbon::parse($tokenExpiresAt)->isPast();
+                                        @endphp
+
+                                        <!-- Status da Conexão -->
+                                        @if($hasToken)
+                                            <div class="alert alert-{{ $isTokenExpired ? 'warning' : 'success' }} mb-3">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <i class="bi bi-{{ $isTokenExpired ? 'exclamation-triangle' : 'check-circle' }} me-2"></i>
+                                                        <strong>Conectado ao Melhor Envio</strong>
+                                                        @if($tokenExpiresAt)
+                                                            <br><small>Token expira em: {{ \Carbon\Carbon::parse($tokenExpiresAt)->format('d/m/Y H:i') }}</small>
+                                                        @endif
+                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="revokeMelhorEnvioTokens()">
+                                                        <i class="bi bi-x-circle me-1"></i>Desconectar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="alert alert-info mb-3">
+                                                <i class="bi bi-info-circle me-2"></i>
+                                                <strong>Não conectado.</strong> Configure as credenciais abaixo e clique em "Conectar ao Melhor Envio" para autorizar.
+                                            </div>
+                                        @endif
+
+                                        <!-- Credenciais OAuth -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="melhor_envio_client_id" class="form-label">
+                                                    Client ID <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" class="form-control" id="melhor_envio_client_id" 
+                                                       value="{{ setting('melhor_envio_client_id', '') }}" 
+                                                       placeholder="Seu Client ID do Melhor Envio">
+                                                <small class="form-text text-muted">
+                                                    Obtenha em: <a href="https://melhorenvio.com.br/painel/desenvolvedor" target="_blank">melhorenvio.com.br/painel/desenvolvedor</a>
+                                                </small>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="melhor_envio_client_secret" class="form-label">
+                                                    Client Secret <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="password" class="form-control" id="melhor_envio_client_secret" 
+                                                       value="{{ setting('melhor_envio_client_secret', '') }}" 
+                                                       placeholder="Seu Client Secret do Melhor Envio">
+                                                <small class="form-text text-muted">Mantenha em sigilo</small>
+                                            </div>
+                                        </div>
+
+                                        <!-- Ambiente e CEP de Origem -->
+                                        <div class="row mb-3">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="melhor_envio_sandbox" class="form-label">Ambiente</label>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="melhor_envio_sandbox" 
+                                                           {{ setting('melhor_envio_sandbox', true) ? 'checked' : '' }}>
+                                                    <label class="form-check-label" for="melhor_envio_sandbox">
+                                                        Modo Sandbox (Teste)
+                                                    </label>
+                                                </div>
+                                                <small class="form-text text-muted">
+                                                    Desmarque para usar em produção
+                                                </small>
+                                            </div>
+                                            <div class="col-md-6 mb-3">
+                                                <label for="melhor_envio_cep_origem" class="form-label">
+                                                    CEP de Origem <span class="text-danger">*</span>
+                                                </label>
+                                                <input type="text" class="form-control" id="melhor_envio_cep_origem" 
+                                                       value="{{ setting('melhor_envio_cep_origem', '') }}" 
+                                                       placeholder="00000-000" maxlength="9">
+                                                <small class="form-text text-muted">CEP da sua loja (apenas números)</small>
+                                            </div>
+                                        </div>
+
+                                        <!-- Serviços de Entrega -->
+                                        <div class="mb-3">
+                                            <label for="melhor_envio_service_ids" class="form-label">Serviços de Entrega</label>
+                                            <input type="text" class="form-control" id="melhor_envio_service_ids" 
+                                                   value="{{ setting('melhor_envio_service_ids', '') }}" 
+                                                   placeholder="Ex: 1,2,3,4 (IDs separados por vírgula)">
+                                            <small class="form-text text-muted">
+                                                IDs dos serviços habilitados. Deixe vazio para usar todos. 
+                                                <a href="https://melhorenvio.com.br/documentacao/api" target="_blank">Ver documentação</a>
+                                            </small>
+                                        </div>
+
+                                        <!-- Configurações Avançadas -->
+                                        <div class="accordion mb-3" id="melhorEnvioAdvanced">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#melhorEnvioAdvancedCollapse">
+                                                        <i class="bi bi-gear me-2"></i>Configurações Avançadas
+                                                    </button>
+                                                </h2>
+                                                <div id="melhorEnvioAdvancedCollapse" class="accordion-collapse collapse" data-bs-parent="#melhorEnvioAdvanced">
+                                                    <div class="accordion-body">
+                                                        <div class="row">
+                                                            <div class="col-md-6 mb-3">
+                                                                <label for="melhor_envio_declared_mode" class="form-label">Modo de Declaração</label>
+                                                                <select class="form-select" id="melhor_envio_declared_mode">
+                                                                    <option value="declared" {{ setting('melhor_envio_declared_mode', 'declared') == 'declared' ? 'selected' : '' }}>Declarado</option>
+                                                                    <option value="not_declared" {{ setting('melhor_envio_declared_mode') == 'not_declared' ? 'selected' : '' }}>Não Declarado</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-6 mb-3">
+                                                                <label for="melhor_envio_declared_cap" class="form-label">Capacidade de Declaração (R$)</label>
+                                                                <input type="number" class="form-control" id="melhor_envio_declared_cap" 
+                                                                       value="{{ setting('melhor_envio_declared_cap', '') }}" 
+                                                                       placeholder="0.00" step="0.01" min="0">
+                                                                <small class="form-text text-muted">Valor máximo para declaração</small>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Botões de Ação -->
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <button type="button" class="btn btn-primary" onclick="saveDeliveryConfig('melhor_envio')">
+                                                <i class="bi bi-save me-1"></i>Salvar Configurações
+                                            </button>
+                                            @if(!empty(setting('melhor_envio_client_id')) && !empty(setting('melhor_envio_client_secret')))
+                                                @if(!$hasToken)
+                                                    <a href="{{ route('admin.settings.melhor-envio.authorize') }}" class="btn btn-success">
+                                                        <i class="bi bi-link-45deg me-1"></i>Conectar ao Melhor Envio
+                                                    </a>
+                                                @endif
+                                                <button type="button" class="btn btn-outline-primary" onclick="testDeliveryConnection('melhor_envio')">
+                                                    <i class="bi bi-wifi me-1"></i>Testar Conexão
+                                                </button>
+                                            @endif
+                                        </div>
+
+                                        <!-- Informações de Ajuda -->
+                                        <div class="mt-3 p-3 bg-light rounded">
+                                            <h6 class="mb-2"><i class="bi bi-question-circle me-2"></i>Como configurar:</h6>
+                                            <ol class="mb-0 small">
+                                                <li>Acesse <a href="https://melhorenvio.com.br/painel/desenvolvedor" target="_blank">melhorenvio.com.br/painel/desenvolvedor</a></li>
+                                                <li>Crie uma aplicação e obtenha o <strong>Client ID</strong> e <strong>Client Secret</strong></li>
+                                                <li>Preencha os campos acima e clique em "Salvar Configurações"</li>
+                                                <li>Clique em "Conectar ao Melhor Envio" para autorizar o acesso</li>
+                                                <li>Configure o CEP de origem da sua loja</li>
+                                            </ol>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -290,12 +462,35 @@ document.addEventListener('DOMContentLoaded', function() {
             fetch('{{ route("admin.settings.update") }}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
                 .then(r => r.json()).then(data => {
                     if (data && data.success) {
-                        showAlert('Tamanho da logo salvo.', 'success');
+                        showAlert('Tamanho da logo salvo com sucesso! O novo tamanho será aplicado em todas as páginas do site.', 'success');
                         const logoPreview = document.getElementById('identityLogoPreview');
                         if (logoPreview) {
                             if (h) logoPreview.style.maxHeight = h + 'px'; else logoPreview.style.maxHeight = '';
                             if (w) logoPreview.style.maxWidth = w + 'px'; else logoPreview.style.maxWidth = '';
                         }
+                        // Atualizar logo no header do admin também (se estiver visível)
+                        setTimeout(function() {
+                            var adminLogos = document.querySelectorAll('#admin-site-logo, #siteLogoImage, .mobile-logo img.logo-img, .logo-img');
+                            adminLogos.forEach(function(logo) {
+                                if (h) {
+                                    logo.style.setProperty('max-height', h + 'px', 'important');
+                                    logo.setAttribute('style', logo.getAttribute('style') + ' max-height:' + h + 'px !important;');
+                                }
+                                if (w) {
+                                    logo.style.setProperty('max-width', w + 'px', 'important');
+                                    logo.setAttribute('style', logo.getAttribute('style') + ' max-width:' + w + 'px !important;');
+                                }
+                                logo.style.setProperty('height', 'auto', 'important');
+                                logo.style.setProperty('width', 'auto', 'important');
+                            });
+                            
+                            // Forçar reload da página após 1 segundo para garantir que o tamanho seja aplicado em todas as páginas
+                            setTimeout(function() {
+                                if (confirm('Tamanho salvo! Deseja recarregar a página para ver as mudanças em todas as logos?')) {
+                                    window.location.reload();
+                                }
+                            }, 1000);
+                        }, 200);
                     } else {
                         showAlert('Erro ao salvar tamanho.', 'danger');
                     }
@@ -919,6 +1114,18 @@ document.addEventListener('DOMContentLoaded', function() {
             value = value.replace(/(\d{2})(\d)/, '$1.$2');
             value = value.replace(/(\d{3})(\d)/, '$1/$2');
             value = value.replace(/(\d{4})(\d)/, '$1-$2');
+            e.target.value = value;
+        });
+    }
+
+    // Máscara para CEP Melhor Envio
+    const melhorEnvioCepInput = document.getElementById('melhor_envio_cep_origem');
+    if (melhorEnvioCepInput) {
+        melhorEnvioCepInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 5) {
+                value = value.replace(/(\d{5})(\d)/, '$1-$2');
+            }
             e.target.value = value;
         });
     }

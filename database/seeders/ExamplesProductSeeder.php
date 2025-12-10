@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Product;
-use App\Models\ProductVariation;
 use Illuminate\Support\Facades\DB;
 use App\Services\ProductNormalizer;
 use Illuminate\Support\Str;
@@ -28,10 +27,6 @@ class ExamplesProductSeeder extends Seeder
                 'width' => 25,
                 'height' => 2,
                 'materials' => ['Algodao','Elastano'],
-                'variants' => [
-                    ['sku' => 'VET-NIKE-POLO21-MR-BR-0001-M', 'attributes' => ['size' => 'M'], 'price' => 159.90, 'stock_quantity' => 50],
-                    ['sku' => 'VET-NIKE-POLO21-MR-BR-0001-L', 'attributes' => ['size' => 'L'], 'price' => 159.90, 'stock_quantity' => 30],
-                ],
             ],
 
             // Eletrônico - Smartphone
@@ -48,9 +43,6 @@ class ExamplesProductSeeder extends Seeder
                 'width' => 7.4,
                 'height' => 0.8,
                 'materials' => ['Aluminio','Vidro'],
-                'variants' => [
-                    ['sku' => 'CEL-SAM-S20U-128G-PRE-0001-8-128', 'attributes' => ['ram' => '8GB','storage' => '128GB','color' => 'Preto Fosco'], 'price' => 4999.00, 'stock_quantity' => 20],
-                ],
             ],
 
             // Cosmético - Creme Facial
@@ -67,7 +59,6 @@ class ExamplesProductSeeder extends Seeder
                 'width' => 5,
                 'height' => 12,
                 'materials' => ['Embalagem Plastico','Conteudo Cremoso'],
-                'variants' => [],
             ],
         ];
 
@@ -93,39 +84,6 @@ class ExamplesProductSeeder extends Seeder
                     'specifications' => isset($item['materials']) ? ['materials' => $item['materials']] : null,
                 ]
             );
-
-            // Create variants if provided (encode attributes as JSON to avoid binding issues)
-            if (!empty($item['variants']) && is_array($item['variants'])) {
-                foreach ($item['variants'] as $v) {
-                    $vSku = $v['sku'] ?? strtoupper(substr(md5(json_encode($v)),0,12));
-                    $attributes = $v['attributes'] ?? [];
-
-                    $attrsJson = is_array($attributes) ? json_encode($attributes, JSON_UNESCAPED_UNICODE) : ($attributes ?? null);
-                    $slug = isset($product->slug) ? $product->slug . '-' . strtolower(str_replace(' ', '-', substr($vSku, 0, 8))) : strtolower(substr($vSku, 0, 12));
-
-                    $payload = [
-                        'product_id' => $product->id,
-                        'sku' => $vSku,
-                        'price' => $v['price'] ?? $product->price,
-                        'stock_quantity' => $v['stock_quantity'] ?? 0,
-                        'in_stock' => ($v['stock_quantity'] ?? 0) > 0,
-                        'is_active' => true,
-                        'attributes' => $attrsJson,
-                        'slug' => $slug,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ];
-
-                    $existing = DB::table('product_variations')->where('sku', $vSku)->first();
-                    if ($existing) {
-                        DB::table('product_variations')->where('sku', $vSku)->update($payload);
-                        $this->command->info('Updated variation (via DB): ' . $vSku);
-                    } else {
-                        DB::table('product_variations')->insert($payload);
-                        $this->command->info('Inserted variation (via DB): ' . $vSku);
-                    }
-                }
-            }
 
             $this->command->info("Seeded product: {$product->sku}");
         }
