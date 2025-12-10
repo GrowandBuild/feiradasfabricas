@@ -1718,7 +1718,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 _token: csrf
             };
             
-            fetch(`/admin/products/{{ $product->id }}/variations`, {
+            fetch(`/admin/products/{{ $product->slug }}/variations`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1889,7 +1889,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const url = variationId 
                 ? `/admin/products/variations/${variationId}`
-                : `/admin/products/{{ $product->id }}/variations`;
+                : `/admin/products/{{ $product->slug }}/variations`;
             const method = variationId ? 'PUT' : 'POST';
             
             const submitBtn = this.querySelector('button[type="submit"]');
