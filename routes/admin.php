@@ -65,6 +65,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::post('products/variations/{variation}/images', [ProductController::class, 'uploadVariationImage'])->name('products.variations.images.upload');
         Route::delete('products/variations/{variation}/images', [ProductController::class, 'removeVariationImage'])->name('products.variations.images.remove');
         Route::post('products/variations/{variation}/images/primary', [ProductController::class, 'setVariationPrimaryImage'])->name('products.variations.images.primary');
+        
+        // Buscar imagens de álbuns
+        Route::get('products/album-images', [ProductController::class, 'getAlbumImages'])->name('products.album-images');
 
         // Categorias
         Route::resource('categories', CategoryController::class);

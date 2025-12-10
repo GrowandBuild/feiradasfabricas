@@ -860,10 +860,34 @@
                                        name="image" accept="image/jpeg,image/png,image/jpg,image/gif,image/webp">
                                 <small class="text-muted">Formatos aceitos: JPEG, PNG, GIF, WebP. Máximo: 5MB</small>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-sm" id="upload-variation-image-btn">
-                                <i class="bi bi-upload me-1"></i> Fazer Upload
-                            </button>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary btn-sm" id="upload-variation-image-btn">
+                                    <i class="bi bi-upload me-1"></i> Fazer Upload
+                                </button>
+                                <button type="button" class="btn btn-secondary btn-sm" id="select-from-album-btn">
+                                    <i class="bi bi-images me-1"></i> Do Álbum
+                                </button>
+                            </div>
                         </form>
+                    </div>
+                </div>
+                
+                <!-- Modal para selecionar imagens do álbum -->
+                <div class="modal fade" id="albumImagesModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-xl">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Selecionar Imagem do Álbum</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="album-images-container" class="row g-3">
+                                    <div class="col-12 text-center py-4">
+                                        <i class="bi bi-hourglass-split"></i> Carregando álbuns...
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 

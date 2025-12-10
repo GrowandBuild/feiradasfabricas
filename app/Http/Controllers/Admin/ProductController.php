@@ -9,9 +9,11 @@ use App\Models\Department;
 use App\Models\ProductAttribute;
 use App\Models\ProductVariation;
 use App\Models\InventoryLog;
+use App\Models\AlbumImage;
 use App\Services\VariationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ProductController extends Controller
@@ -52,11 +54,28 @@ class ProductController extends Controller
         return view('admin.products.index', compact('products', 'categories', 'suppliers'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $categories = Category::all();
         $departments = Department::all();
-        return view('admin.products.create', compact('categories', 'departments'));
+        
+        // Processar imagens selecionadas do álbum
+        $preselectedImages = [];
+        if ($request->has('image_ids')) {
+            $imageIds = explode(',', $request->image_ids);
+            $albumImages = AlbumImage::whereIn('id', $imageIds)->get();
+            
+            foreach ($albumImages as $albumImage) {
+                $preselectedImages[] = [
+                    'id' => $albumImage->id,
+                    'url' => $albumImage->url,
+                    'path' => $albumImage->path,
+                    'alt' => $albumImage->alt ?? 'Imagem do álbum'
+                ];
+            }
+        }
+        
+        return view('admin.products.create', compact('categories', 'departments', 'preselectedImages'));
     }
 
     public function store(Request $request)
@@ -85,13 +104,43 @@ class ProductController extends Controller
         $data['slug'] = $slug;
 
         $uploaded = [];
+        
+        // Processar imagens enviadas via upload
         if ($request->hasFile('images')) {
             foreach ($request->file('images') as $image) {
                 $path = $image->store('products', 'public');
                 if ($path) $uploaded[] = $path;
             }
         }
-        if (!empty($uploaded)) $data['images'] = $uploaded;
+        
+        // Processar imagens selecionadas do álbum
+        if ($request->has('existing_image_ids') && is_array($request->existing_image_ids)) {
+            foreach ($request->existing_image_ids as $albumImageId) {
+                $albumImage = AlbumImage::find($albumImageId);
+                if ($albumImage) {
+                    // Copiar imagem do álbum para a pasta de produtos
+                    $sourcePath = $albumImage->path;
+                    $destinationPath = 'products/' . basename($sourcePath);
+                    
+                    // Se o arquivo existe, copiar
+                    if (Storage::disk('public')->exists($sourcePath)) {
+                        $copied = Storage::disk('public')->copy($sourcePath, $destinationPath);
+                        if ($copied) {
+                            $uploaded[] = $destinationPath;
+                        }
+                    } else {
+                        // Se não existe localmente, pode ser URL externa - usar diretamente
+                        if (strpos($sourcePath, 'http') === 0) {
+                            $uploaded[] = $sourcePath;
+                        }
+                    }
+                }
+            }
+        }
+        
+        if (!empty($uploaded)) {
+            $data['images'] = $uploaded;
+        }
 
         $product = DB::transaction(function() use ($data, $request) {
             $prod = Product::create($data);
@@ -392,12 +441,58 @@ class ProductController extends Controller
      */
     public function uploadVariationImage(Request $request, ProductVariation $variation)
     {
-        $request->validate([
-            'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
-        ]);
+        // Validar: ou image (upload) ou album_image_id (do álbum)
+        if ($request->hasFile('image')) {
+            $request->validate([
+                'image' => 'required|image|mimes:jpeg,png,jpg,gif,webp|max:5120'
+            ]);
+        } elseif ($request->has('album_image_id')) {
+            $request->validate([
+                'album_image_id' => 'required|exists:album_images,id'
+            ]);
+        } else {
+            return response()->json([
+                'success' => false,
+                'message' => 'Envie uma imagem ou selecione uma do álbum'
+            ], 422);
+        }
 
         try {
-            $path = $request->file('image')->store('products/variations', 'public');
+            $path = null;
+            
+            // Se é upload de arquivo
+            if ($request->hasFile('image')) {
+                $path = $request->file('image')->store('products/variations', 'public');
+            } 
+            // Se é imagem do álbum
+            elseif ($request->has('album_image_id')) {
+                $albumImage = AlbumImage::find($request->album_image_id);
+                if ($albumImage) {
+                    // Copiar imagem do álbum para a pasta de variações
+                    $sourcePath = $albumImage->path;
+                    $destinationPath = 'products/variations/' . basename($sourcePath);
+                    
+                    // Se o arquivo existe, copiar
+                    if (Storage::disk('public')->exists($sourcePath)) {
+                        $copied = Storage::disk('public')->copy($sourcePath, $destinationPath);
+                        if ($copied) {
+                            $path = $destinationPath;
+                        }
+                    } else {
+                        // Se não existe localmente, pode ser URL externa - usar diretamente
+                        if (strpos($sourcePath, 'http') === 0) {
+                            $path = $sourcePath;
+                        }
+                    }
+                }
+            }
+            
+            if (!$path) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Erro ao processar imagem'
+                ], 500);
+            }
             
             $images = $variation->images ?? [];
             $images[] = $path;
@@ -540,5 +635,34 @@ class ProductController extends Controller
                 'message' => 'Erro: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    /**
+     * Buscar imagens de álbuns para usar em produtos/variações
+     */
+    public function getAlbumImages(Request $request)
+    {
+        $albums = \App\Models\Album::with('images')->get();
+        
+        $formattedAlbums = $albums->map(function($album) {
+            return [
+                'id' => $album->id,
+                'title' => $album->title,
+                'slug' => $album->slug,
+                'images' => $album->images->map(function($image) {
+                    return [
+                        'id' => $image->id,
+                        'url' => $image->url,
+                        'path' => $image->path,
+                        'alt' => $image->alt ?? ''
+                    ];
+                })
+            ];
+        });
+        
+        return response()->json([
+            'success' => true,
+            'albums' => $formattedAlbums
+        ]);
     }
 }
