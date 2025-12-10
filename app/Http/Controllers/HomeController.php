@@ -36,7 +36,9 @@ class HomeController extends Controller
         // Apenas produtos disponíveis
         $query = Product::active()
             ->available() // Apenas produtos disponíveis
-            ->with(['categories']);
+            ->with(['categories', 'variations' => function($q) {
+                $q->where('in_stock', true);
+            }]);
 
         // Filtro por categoria
         if ($request->filled('category')) {

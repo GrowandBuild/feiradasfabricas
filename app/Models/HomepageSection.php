@@ -35,14 +35,22 @@ class HomepageSection extends Model
      */
     public function getProducts()
     {
-        $query = Product::query()->where('is_active', true)->where('in_stock', true);
+        $query = Product::query()->where('is_active', true)->where('in_stock', true)
+            ->with(['variations' => function($q) {
+                $q->where('in_stock', true);
+            }]);
 
         if (is_array($this->product_ids) && count($this->product_ids) > 0) {
             $ids = $this->product_ids;
             // preserve order
-            $ordered = Product::whereIn('id', $ids)->get()->sortBy(function($p) use ($ids) {
-                return array_search($p->id, $ids);
-            });
+            $ordered = Product::whereIn('id', $ids)
+                ->with(['variations' => function($q) {
+                    $q->where('in_stock', true);
+                }])
+                ->get()
+                ->sortBy(function($p) use ($ids) {
+                    return array_search($p->id, $ids);
+                });
             return $ordered->take($this->limit ?? 4);
         }
 

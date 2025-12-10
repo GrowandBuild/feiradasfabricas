@@ -130,18 +130,47 @@
                                     <!-- Product Image -->
                                     <div class="product-image-container">
                                         <a href="{{ route('product', $product->slug) }}{{ $linkDept ? '?department='.$linkDept : '' }}" class="product-image-link">
-                                            @if($product->first_image)
-                                                <img src="{{ $product->first_image }}" 
-                                                    alt="{{ $product->name }}" 
-                                                    class="product-image @auth('admin') js-change-image @endauth"
-                                                    @auth('admin') data-product-id="{{ $product->id }}" @endauth
-                                                    onerror="this.src='{{ asset('images/no-image.svg') }}'">
-                                            @else
-                                                <img src="{{ asset('images/no-image.svg') }}" 
-                                                    alt="{{ $product->name }}" 
-                                                    class="product-image @auth('admin') js-change-image @endauth"
-                                                    @auth('admin') data-product-id="{{ $product->id }}" @endauth>
-                                            @endif
+                                            @php
+                                                // Coletar todas as imagens únicas (produto + variações)
+                                                $allImages = [];
+                                                if ($product->first_image) {
+                                                    $allImages[] = $product->first_image;
+                                                }
+                                                
+                                                // Adicionar imagens das variações que têm imagens próprias
+                                                if ($product->has_variations && $product->variations) {
+                                                    foreach ($product->variations as $variation) {
+                                                        if ($variation->images && is_array($variation->images) && !empty($variation->images)) {
+                                                            foreach ($variation->images as $img) {
+                                                                $imgUrl = strpos($img, 'http') === 0 ? $img : '/storage/' . ltrim($img, '/');
+                                                                if (!in_array($imgUrl, $allImages)) {
+                                                                    $allImages[] = $imgUrl;
+                                                                }
+                                                            }
+                                                        } elseif ($variation->first_image && !in_array($variation->first_image, $allImages)) {
+                                                            $allImages[] = $variation->first_image;
+                                                        }
+                                                    }
+                                                }
+                                                
+                                                // Garantir pelo menos uma imagem
+                                                if (empty($allImages)) {
+                                                    $allImages[] = asset('images/no-image.svg');
+                                                }
+                                            @endphp
+                                            
+                                            <div class="product-image-carousel" data-product-id="{{ $product->id }}">
+                                                @foreach($allImages as $index => $img)
+                                                    <img src="{{ $img }}" 
+                                                         alt="{{ $product->name }}" 
+                                                         class="product-image product-carousel-image {{ $index === 0 ? 'active' : '' }} @auth('admin') js-change-image @endauth"
+                                                         @auth('admin') data-product-id="{{ $product->id }}" @endauth
+                                                         loading="{{ $index === 0 ? 'eager' : 'lazy' }}"
+                                                         decoding="async"
+                                                         data-index="{{ $index }}"
+                                                         onerror="this.src='{{ asset('images/no-image.svg') }}'">
+                                                @endforeach
+                                            </div>
                                             
                                             @if($product->is_unavailable)
                                                 <div class="product-unavailable-overlay">
@@ -160,11 +189,23 @@
                                         </a>
                                         
                                         @auth('admin')
-                                            <a href="{{ route('admin.products.edit', $product) }}"
-                                               class="btn-admin-edit-product"
-                                               title="Editar Produto">
-                                                <i class="bi bi-pencil"></i>
-                                            </a>
+                                            <div class="admin-actions-product" style="position: absolute; top: 8px; right: 8px; z-index: 10; display: flex; gap: 6px;">
+                                                <a href="{{ route('admin.products.edit', $product) }}"
+                                                   class="btn-admin-edit-product"
+                                                   title="Editar Produto"
+                                                   style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.95); border: 2px solid var(--secondary-color, #ff6b35); color: var(--secondary-color, #ff6b35); display: flex; align-items: center; justify-content: center; text-decoration: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.3s ease;">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                                <button type="button"
+                                                        class="btn-admin-delete-product"
+                                                        title="Excluir Produto"
+                                                        data-product-id="{{ $product->id }}"
+                                                        data-product-name="{{ $product->name }}"
+                                                        data-product-slug="{{ $product->slug }}"
+                                                        style="width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.95); border: 2px solid var(--danger-color, #dc3545); color: var(--danger-color, #dc3545); display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); transition: all 0.3s ease; cursor: pointer;">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
                                         @endauth
                                     </div>
                                     
@@ -552,6 +593,36 @@
         display: block;
     }
 
+    .product-image-carousel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
+
+    .product-carousel-image {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        opacity: 0;
+        transition: opacity 1.2s ease-in-out;
+        z-index: 1;
+    }
+
+    .product-carousel-image.active {
+        opacity: 1;
+        z-index: 2;
+    }
+
+    .product-carousel-image:first-child {
+        position: absolute;
+    }
+
     .product-image {
         width: 100%;
         height: 100%;
@@ -601,10 +672,18 @@
         box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
     }
 
-    .btn-admin-edit-product {
-        position: absolute;
-        bottom: 12px;
-        right: 12px;
+    .admin-actions-product {
+        opacity: 0.8;
+        transition: all 0.3s ease;
+    }
+
+    .product-card-modern:hover .admin-actions-product {
+        opacity: 1;
+    }
+
+    .btn-admin-edit-product,
+    .btn-admin-delete-product {
+        position: relative;
         background: white;
         color: var(--secondary-color, #ff6b35);
         border: 2px solid var(--secondary-color, #ff6b35);
@@ -618,12 +697,32 @@
         z-index: 10;
         transition: all 0.3s ease;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        opacity: 0.8;
+    }
+
+    .btn-admin-delete-product {
+        color: var(--danger-color, #dc3545);
+        border-color: var(--danger-color, #dc3545);
+    }
+
+    .product-card-modern:hover .btn-admin-edit-product,
+    .product-card-modern:hover .btn-admin-delete-product {
+        opacity: 1;
+        transform: scale(1.1);
     }
 
     .btn-admin-edit-product:hover {
         background: var(--secondary-color, #ff6b35);
         color: white;
-        transform: scale(1.1);
+        transform: scale(1.15);
+        box-shadow: 0 6px 16px rgba(var(--secondary-color-rgb, 255, 107, 53), 0.5);
+    }
+
+    .btn-admin-delete-product:hover {
+        background: var(--danger-color, #dc3545);
+        color: white;
+        transform: scale(1.15);
+        box-shadow: 0 6px 16px rgba(220, 53, 69, 0.5);
     }
 
     .product-info {
@@ -986,6 +1085,99 @@
             select.addEventListener('change', function() {
                 this.form.submit();
             });
+        });
+        
+        // Carrossel automático de imagens de variações
+        initVariationCarousels();
+    });
+    
+    // Carrossel automático de imagens de variações
+    function initVariationCarousels() {
+        const carousels = document.querySelectorAll('.product-image-carousel');
+        
+        carousels.forEach(function(carousel) {
+            const images = carousel.querySelectorAll('.product-carousel-image');
+            
+            // Só ativar se tiver mais de uma imagem
+            if (images.length <= 1) {
+                return;
+            }
+            
+            let currentIndex = 0;
+            const totalImages = images.length;
+            
+            // Intervalo de troca (3 segundos)
+            const intervalTime = 3000;
+            
+            function showNextImage() {
+                // Remover classe active da imagem atual
+                images[currentIndex].classList.remove('active');
+                
+                // Avançar para próxima imagem
+                currentIndex = (currentIndex + 1) % totalImages;
+                
+                // Adicionar classe active na nova imagem
+                images[currentIndex].classList.add('active');
+            }
+            
+            // Pausar ao passar o mouse
+            let carouselInterval;
+            
+            function startCarousel() {
+                carouselInterval = setInterval(showNextImage, intervalTime);
+            }
+            
+            function stopCarousel() {
+                if (carouselInterval) {
+                    clearInterval(carouselInterval);
+                }
+            }
+            
+            // Inicializar carrossel
+            startCarousel();
+            
+            // Pausar ao passar o mouse
+            carousel.addEventListener('mouseenter', stopCarousel);
+            carousel.addEventListener('mouseleave', startCarousel);
+        });
+    }
+    
+    // Botão de excluir produto
+    document.querySelectorAll('.btn-admin-delete-product').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const productId = this.dataset.productId;
+            const productName = this.dataset.productName;
+            const productSlug = this.dataset.productSlug;
+            
+            if (!confirm('Tem certeza que deseja excluir o produto "' + productName + '"?\n\nEsta ação não pode ser desfeita!')) {
+                return;
+            }
+            
+            // Criar formulário para DELETE
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '/admin/products/' + productSlug;
+            
+            // Adicionar CSRF token
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = document.querySelector('meta[name="csrf-token"]')?.content || '';
+            form.appendChild(csrfInput);
+            
+            // Adicionar método DELETE
+            const methodInput = document.createElement('input');
+            methodInput.type = 'hidden';
+            methodInput.name = '_method';
+            methodInput.value = 'DELETE';
+            form.appendChild(methodInput);
+            
+            // Enviar formulário
+            document.body.appendChild(form);
+            form.submit();
         });
     });
 </script>
