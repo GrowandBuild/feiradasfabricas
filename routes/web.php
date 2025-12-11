@@ -118,6 +118,9 @@ Route::get('/site.webmanifest', function(Request $request) {
         // Em caso de erro, retornar manifest mínimo válido
         \Log::error('Erro ao gerar manifest: ' . $e->getMessage());
         
+        // Usar URL absoluta no fallback também
+        $baseUrl = $request->getSchemeAndHttpHost();
+        
         $fallbackManifest = [
             'name' => setting('site_name', 'Feira das Fábricas'),
             'short_name' => setting('site_short_name', 'Feira'),
@@ -125,7 +128,7 @@ Route::get('/site.webmanifest', function(Request $request) {
             'display' => 'standalone',
             'icons' => [
                 [
-                    'src' => '/favicon.ico',
+                    'src' => $baseUrl . '/favicon.ico',
                     'sizes' => '192x192',
                     'type' => 'image/x-icon'
                 ]

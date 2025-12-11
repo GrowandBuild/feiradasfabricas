@@ -507,24 +507,95 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Função para atualizar status do PWA
+    let pwaStatusCheckInProgress = false;
     function updatePWAStatus() {
-        fetch('{{ route("site.manifest") }}')
-            .then(response => response.json())
-            .then(manifest => {
-                const iconsCount = manifest.icons ? manifest.icons.length : 0;
-                const countBadge = document.getElementById('pwa-icons-count');
-                if (countBadge) {
+        // Evitar múltiplas chamadas simultâneas
+        if (pwaStatusCheckInProgress) {
+            return;
+        }
+        
+        const countBadge = document.getElementById('pwa-icons-count');
+        if (!countBadge) {
+            return;
+        }
+        
+        pwaStatusCheckInProgress = true;
+        
+        // Criar um timeout para evitar requisições infinitas
+        const timeoutId = setTimeout(() => {
+            pwaStatusCheckInProgress = false;
+            if (countBadge) {
+                countBadge.innerHTML = `<i class="bi bi-images me-1"></i>Erro ao carregar`;
+                countBadge.className = 'badge bg-warning';
+            }
+        }, 10000); // 10 segundos de timeout
+        
+        fetch('{{ route("site.manifest") }}', {
+            method: 'GET',
+            headers: {
+                'Accept': 'application/manifest+json, application/json',
+            },
+            cache: 'no-cache'
+        })
+        .then(response => {
+            clearTimeout(timeoutId);
+            
+            // Verificar se a resposta é OK
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            // Verificar se o content-type é JSON
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                // Tentar fazer parse mesmo assim, mas com cuidado
+                return response.text().then(text => {
+                    try {
+                        return JSON.parse(text);
+                    } catch (e) {
+                        throw new Error('Resposta não é JSON válido');
+                    }
+                });
+            }
+            
+            return response.json();
+        })
+        .then(manifest => {
+            pwaStatusCheckInProgress = false;
+            
+            if (!manifest || typeof manifest !== 'object') {
+                throw new Error('Manifest inválido');
+            }
+            
+            const iconsCount = manifest.icons && Array.isArray(manifest.icons) ? manifest.icons.length : 0;
+            
+            if (countBadge) {
+                if (iconsCount > 0) {
                     countBadge.innerHTML = `<i class="bi bi-images me-1"></i>${iconsCount} ícones`;
+                    countBadge.className = 'badge bg-success';
+                } else {
+                    countBadge.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Sem ícones`;
+                    countBadge.className = 'badge bg-warning';
                 }
-            })
-            .catch(error => {
-                console.error('Erro ao verificar status do PWA:', error);
-            });
+            }
+        })
+        .catch(error => {
+            clearTimeout(timeoutId);
+            pwaStatusCheckInProgress = false;
+            
+            console.error('Erro ao verificar status do PWA:', error);
+            
+            if (countBadge) {
+                countBadge.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i>Erro`;
+                countBadge.className = 'badge bg-danger';
+            }
+        });
     }
     
-    // Atualizar status ao carregar a página
+    // Atualizar status ao carregar a página (com delay para garantir que o DOM está pronto)
     if (document.getElementById('pwa-icons-count')) {
-        updatePWAStatus();
+        // Aguardar um pouco para garantir que tudo está carregado
+        setTimeout(updatePWAStatus, 500);
     }
 
     // Favicon

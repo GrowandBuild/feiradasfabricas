@@ -310,14 +310,39 @@ class PwaIconHelper
      */
     private static function generateResizedIcons(string $iconPath, string $baseUrl): array
     {
+        // Verificar se a extensão GD está disponível
+        if (!extension_loaded('gd')) {
+            if (config('app.debug')) {
+                \Log::warning('PWA: Extensão GD não está disponível, não é possível gerar ícones redimensionados');
+            }
+            return [];
+        }
+
         $srcFull = public_path('storage/' . $iconPath);
         if (!file_exists($srcFull)) {
+            if (config('app.debug')) {
+                \Log::warning('PWA: Arquivo de ícone não encontrado', ['path' => $srcFull]);
+            }
+            return [];
+        }
+
+        // Verificar se o arquivo é uma imagem válida
+        $imageInfo = @getimagesize($srcFull);
+        if ($imageInfo === false) {
+            if (config('app.debug')) {
+                \Log::warning('PWA: Arquivo não é uma imagem válida', ['path' => $srcFull]);
+            }
             return [];
         }
 
         $destDir = public_path('storage/pwa-icons');
         if (!is_dir($destDir)) {
-            @mkdir($destDir, 0755, true);
+            if (!@mkdir($destDir, 0755, true)) {
+                if (config('app.debug')) {
+                    \Log::warning('PWA: Não foi possível criar diretório', ['path' => $destDir]);
+                }
+                return [];
+            }
         }
 
         $basename = pathinfo($iconPath, PATHINFO_FILENAME);
@@ -337,35 +362,88 @@ class PwaIconHelper
 
         // Attempt to load source image
         $data = @file_get_contents($srcFull);
-        if ($data === false) return [];
+        if ($data === false) {
+            if (config('app.debug')) {
+                \Log::warning('PWA: Não foi possível ler o arquivo de ícone', ['path' => $srcFull]);
+            }
+            return [];
+        }
+        
         $srcImg = @imagecreatefromstring($data);
-        if ($srcImg === false) return [];
+        if ($srcImg === false) {
+            if (config('app.debug')) {
+                \Log::warning('PWA: Não foi possível criar imagem a partir do arquivo', ['path' => $srcFull]);
+            }
+            return [];
+        }
 
         // Helper to resize and save PNG with alpha
         $resizeAndSave = function($w, $h, $destPath) use ($srcImg) {
-            $dst = imagecreatetruecolor($w, $h);
-            imagesavealpha($dst, true);
-            $trans_colour = imagecolorallocatealpha($dst, 0, 0, 0, 127);
-            imagefill($dst, 0, 0, $trans_colour);
-            $srcW = imagesx($srcImg);
-            $srcH = imagesy($srcImg);
-            imagecopyresampled($dst, $srcImg, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
-            @imagepng($dst, $destPath, 6);
-            imagedestroy($dst);
-            return file_exists($destPath);
+            try {
+                $dst = @imagecreatetruecolor($w, $h);
+                if ($dst === false) {
+                    return false;
+                }
+                
+                @imagesavealpha($dst, true);
+                $trans_colour = @imagecolorallocatealpha($dst, 0, 0, 0, 127);
+                if ($trans_colour !== false) {
+                    @imagefill($dst, 0, 0, $trans_colour);
+                }
+                
+                $srcW = imagesx($srcImg);
+                $srcH = imagesy($srcImg);
+                
+                if ($srcW === false || $srcH === false) {
+                    @imagedestroy($dst);
+                    return false;
+                }
+                
+                $result = @imagecopyresampled($dst, $srcImg, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
+                if ($result === false) {
+                    @imagedestroy($dst);
+                    return false;
+                }
+                
+                $saved = @imagepng($dst, $destPath, 6);
+                @imagedestroy($dst);
+                
+                return $saved && file_exists($destPath);
+            } catch (\Throwable $e) {
+                if (config('app.debug')) {
+                    \Log::warning('PWA: Erro ao redimensionar ícone', [
+                        'error' => $e->getMessage(),
+                        'dest' => $destPath
+                    ]);
+                }
+                return false;
+            }
         };
 
         $ok192 = $resizeAndSave(192, 192, $dest192);
         $ok512 = $resizeAndSave(512, 512, $dest512);
-        imagedestroy($srcImg);
+        @imagedestroy($srcImg);
 
         if ($ok192 && $ok512) {
+            if (config('app.debug')) {
+                \Log::info('PWA: Ícones redimensionados gerados com sucesso', [
+                    '192' => $dest192,
+                    '512' => $dest512
+                ]);
+            }
             return [
                 ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest192), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
                 ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest192), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
                 ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest512), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
                 ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest512), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
             ];
+        }
+
+        if (config('app.debug')) {
+            \Log::warning('PWA: Falha ao gerar ícones redimensionados', [
+                'ok192' => $ok192,
+                'ok512' => $ok512
+            ]);
         }
 
         return [];
