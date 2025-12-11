@@ -173,12 +173,59 @@
         }
     }
 
+    // Debug: Verificar requisitos do PWA
+    function checkPWARequirements() {
+        const checks = {
+            manifest: document.querySelector('link[rel="manifest"]') !== null,
+            serviceWorker: 'serviceWorker' in navigator,
+            https: location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1',
+            icons: true // Será verificado pelo manifest
+        };
+        
+        console.log('🔍 PWA Requirements Check:', checks);
+        
+        // Verificar manifest
+        const manifestLink = document.querySelector('link[rel="manifest"]');
+        if (manifestLink) {
+            fetch(manifestLink.href)
+                .then(res => res.json())
+                .then(manifest => {
+                    console.log('✅ Manifest válido:', manifest);
+                    console.log('📱 Ícones no manifest:', manifest.icons?.length || 0);
+                    if (!manifest.icons || manifest.icons.length === 0) {
+                        console.error('❌ Manifest não tem ícones!');
+                    }
+                })
+                .catch(err => {
+                    console.error('❌ Erro ao carregar manifest:', err);
+                });
+        }
+        
+        return checks;
+    }
+    
+    // Executar verificação após carregar
+    setTimeout(checkPWARequirements, 1000);
+    
     // Capturar evento beforeinstallprompt (Chrome/Edge/Opera)
     window.addEventListener('beforeinstallprompt', (e) => {
+        console.log('🎉 beforeinstallprompt disparado!');
         e.preventDefault();
         deferredPrompt = e;
         showPrompt();
     });
+    
+    // Log se o evento não disparar após 5 segundos
+    setTimeout(() => {
+        if (!deferredPrompt) {
+            console.warn('⚠️ beforeinstallprompt não foi disparado. Verifique:');
+            console.warn('  1. Manifest está acessível e válido?');
+            console.warn('  2. Service Worker está registrado?');
+            console.warn('  3. Ícones estão acessíveis?');
+            console.warn('  4. Site está em HTTPS ou localhost?');
+            checkPWARequirements();
+        }
+    }, 5000);
 
     // Para iOS Safari - mostrar instruções
     const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;

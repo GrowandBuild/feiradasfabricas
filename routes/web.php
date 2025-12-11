@@ -43,6 +43,131 @@ Route::get('/site.webmanifest', function(Request $request) {
     // Usar URL absoluta para os ícones (necessário para PWA no mobile)
     $baseUrl = $request->getSchemeAndHttpHost();
     
+    // Verificar se há ícones customizados configurados
+    $siteAppIcon = setting('site_app_icon');
+    $siteFavicon = setting('site_favicon');
+    
+    $icons = [];
+    
+    // Priorizar ícones customizados do admin
+    if ($siteAppIcon && file_exists(public_path('storage/' . $siteAppIcon))) {
+        $appIconUrl = $baseUrl . '/storage/' . $siteAppIcon;
+        $icons[] = [
+            'src' => $appIconUrl,
+            'sizes' => '512x512',
+            'type' => 'image/png',
+            'purpose' => 'any'
+        ];
+        $icons[] = [
+            'src' => $appIconUrl,
+            'sizes' => '512x512',
+            'type' => 'image/png',
+            'purpose' => 'maskable'
+        ];
+        $icons[] = [
+            'src' => $appIconUrl,
+            'sizes' => '192x192',
+            'type' => 'image/png',
+            'purpose' => 'any'
+        ];
+        $icons[] = [
+            'src' => $appIconUrl,
+            'sizes' => '192x192',
+            'type' => 'image/png',
+            'purpose' => 'maskable'
+        ];
+    }
+    
+    // Fallback para ícones padrão na pasta public
+    if (empty($icons)) {
+        // Verificar se os ícones existem
+        $icon192Exists = file_exists(public_path('android-chrome-192x192.png'));
+        $icon512Exists = file_exists(public_path('android-chrome-512x512.png'));
+        
+        if ($icon192Exists) {
+            $icons[] = [
+                'src' => $baseUrl . '/android-chrome-192x192.png',
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any'
+            ];
+            $icons[] = [
+                'src' => $baseUrl . '/android-chrome-192x192.png',
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'maskable'
+            ];
+        }
+        
+        if ($icon512Exists) {
+            $icons[] = [
+                'src' => $baseUrl . '/android-chrome-512x512.png',
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any'
+            ];
+            $icons[] = [
+                'src' => $baseUrl . '/android-chrome-512x512.png',
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'maskable'
+            ];
+        }
+        
+        // Se ainda não tiver ícones, usar favicon como fallback
+        if (empty($icons) && $siteFavicon && file_exists(public_path('storage/' . $siteFavicon))) {
+            $faviconUrl = $baseUrl . '/storage/' . $siteFavicon;
+            $icons[] = [
+                'src' => $faviconUrl,
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+            $icons[] = [
+                'src' => $faviconUrl,
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+        }
+    }
+    
+    // Garantir que temos pelo menos um ícone (requisito do PWA)
+    if (empty($icons)) {
+        // Tentar usar apple-touch-icon como fallback
+        if (file_exists(public_path('apple-touch-icon.png'))) {
+            $icons[] = [
+                'src' => $baseUrl . '/apple-touch-icon.png',
+                'sizes' => '180x180',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+        } elseif ($siteFavicon && file_exists(public_path('storage/' . $siteFavicon))) {
+            // Usar favicon do storage
+            $faviconUrl = $baseUrl . '/storage/' . $siteFavicon;
+            $icons[] = [
+                'src' => $faviconUrl,
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+            $icons[] = [
+                'src' => $faviconUrl,
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+        } else {
+            // Último recurso: usar favicon.ico
+            $icons[] = [
+                'src' => $baseUrl . '/favicon.ico',
+                'sizes' => '192x192',
+                'type' => 'image/x-icon',
+                'purpose' => 'any'
+            ];
+        }
+    }
+    
     $manifest = [
         'name' => setting('site_name', 'Feira das Fábricas'),
         'short_name' => setting('site_short_name', 'Feira'),
@@ -54,38 +179,62 @@ Route::get('/site.webmanifest', function(Request $request) {
         'theme_color' => $themeSecondary,
         'background_color' => $dept_setting('theme_background', '#ffffff'),
         'categories' => ['shopping', 'ecommerce'],
-        'icons' => [
-            [
-                'src' => $baseUrl . '/android-chrome-192x192.png',
-                'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'any'
-            ],
-            [
-                'src' => $baseUrl . '/android-chrome-192x192.png',
-                'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'maskable'
-            ],
-            [
-                'src' => $baseUrl . '/android-chrome-512x512.png',
-                'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'any'
-            ],
-            [
-                'src' => $baseUrl . '/android-chrome-512x512.png',
-                'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'maskable'
-            ]
-        ]
+        'icons' => $icons
     ];
 
     return response()->json($manifest)
         ->header('Content-Type', 'application/manifest+json')
         ->header('Cache-Control', 'public, max-age=3600');
 })->name('site.manifest');
+
+// Rota de debug para verificar status do PWA (apenas em desenvolvimento ou com debug ativo)
+Route::get('/pwa-debug', function(Request $request) {
+    if (!config('app.debug') && !app()->environment('local')) {
+        abort(404);
+    }
+    
+    $baseUrl = $request->getSchemeAndHttpHost();
+    $siteAppIcon = setting('site_app_icon');
+    $siteFavicon = setting('site_favicon');
+    
+    $checks = [
+        'manifest_url' => route('site.manifest'),
+        'service_worker_url' => $baseUrl . '/service-worker.js',
+        'icons' => [
+            'custom_app_icon' => $siteAppIcon ? [
+                'exists' => file_exists(public_path('storage/' . $siteAppIcon)),
+                'path' => 'storage/' . $siteAppIcon,
+                'url' => $baseUrl . '/storage/' . $siteAppIcon
+            ] : null,
+            'custom_favicon' => $siteFavicon ? [
+                'exists' => file_exists(public_path('storage/' . $siteFavicon)),
+                'path' => 'storage/' . $siteFavicon,
+                'url' => $baseUrl . '/storage/' . $siteFavicon
+            ] : null,
+            'android_chrome_192' => [
+                'exists' => file_exists(public_path('android-chrome-192x192.png')),
+                'url' => $baseUrl . '/android-chrome-192x192.png'
+            ],
+            'android_chrome_512' => [
+                'exists' => file_exists(public_path('android-chrome-512x512.png')),
+                'url' => $baseUrl . '/android-chrome-512x512.png'
+            ],
+            'apple_touch_icon' => [
+                'exists' => file_exists(public_path('apple-touch-icon.png')),
+                'url' => $baseUrl . '/apple-touch-icon.png'
+            ],
+            'favicon_ico' => [
+                'exists' => file_exists(public_path('favicon.ico')),
+                'url' => $baseUrl . '/favicon.ico'
+            ]
+        ],
+        'https' => $request->getScheme() === 'https',
+        'app_url' => config('app.url'),
+        'environment' => app()->environment()
+    ];
+    
+    return response()->json($checks, JSON_PRETTY_PRINT);
+})->name('pwa.debug');
 
 Route::get('/', [DepartmentController::class, 'index'])->name('home')->defaults('slug', 'eletronicos');
 Route::get('/vitrine-departamentos', [HomeController::class, 'index'])->name('landing.departments');
