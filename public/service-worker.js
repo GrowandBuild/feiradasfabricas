@@ -1,7 +1,7 @@
 const CACHE_PREFIX = 'feira-fabricas-cache';
 // Bump version to invalidate old caches
-// v4: Removed HTML page caching to prevent stale pages when server is offline
-const CACHE_VERSION = 'v4';
+// v5: Added manifest caching and improved PWA support
+const CACHE_VERSION = 'v5';
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
@@ -59,10 +59,27 @@ self.addEventListener('fetch', event => {
   // Never cache admin or API routes
   const isAdmin = url.pathname.startsWith('/admin');
   const isApi = url.pathname.startsWith('/api') || url.pathname.startsWith('/webhooks');
+  const isManifest = url.pathname === '/site.webmanifest';
 
   // For HTML navigation requests, NEVER cache - always fetch from server
   // This prevents serving stale pages when server is offline
   const isHtmlRequest = acceptHeader.includes('text/html');
+
+  // Manifest deve sempre vir do servidor (network-first)
+  if (isManifest) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
 
   if (isAdmin || isApi || isHtmlRequest) {
     // Always fetch from network, never serve from cache for HTML/admin/API

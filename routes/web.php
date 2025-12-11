@@ -173,18 +173,89 @@ Route::get('/site.webmanifest', function(Request $request) {
         }
     }
     
+    // Garantir que temos pelo menos um ícone de 192x192 e 512x512 (requisito mínimo para PWA instalável)
+    $has192 = false;
+    $has512 = false;
+    $validIcons = [];
+    
+    foreach ($icons as $icon) {
+        if (isset($icon['src']) && isset($icon['sizes'])) {
+            $sizes = $icon['sizes'];
+            // Verificar se tem 192x192
+            if (preg_match('/192/', $sizes)) {
+                $has192 = true;
+            }
+            // Verificar se tem 512x512
+            if (preg_match('/512/', $sizes)) {
+                $has512 = true;
+            }
+            $validIcons[] = $icon;
+        }
+    }
+    
+    // Se não tiver os tamanhos mínimos, usar os ícones padrão
+    if (!$has192 || !$has512) {
+        // Tentar usar android-chrome-192x192.png e android-chrome-512x512.png
+        if (file_exists(public_path('android-chrome-192x192.png')) && !$has192) {
+            $validIcons[] = [
+                'src' => $baseUrl . '/android-chrome-192x192.png',
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+            $has192 = true;
+        }
+        if (file_exists(public_path('android-chrome-512x512.png')) && !$has512) {
+            $validIcons[] = [
+                'src' => $baseUrl . '/android-chrome-512x512.png',
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+            $has512 = true;
+        }
+    }
+    
+    // Se ainda não tiver, usar o primeiro ícone disponível como fallback
+    if ((!$has192 || !$has512) && !empty($validIcons)) {
+        $firstIcon = $validIcons[0]['src'];
+        if (!$has192) {
+            $validIcons[] = [
+                'src' => $firstIcon,
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+        }
+        if (!$has512) {
+            $validIcons[] = [
+                'src' => $firstIcon,
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+        }
+    }
+    
+    $icons = $validIcons;
+    
     $manifest = [
+        'id' => '/',
         'name' => setting('site_name', 'Feira das Fábricas'),
         'short_name' => setting('site_short_name', 'Feira'),
         'description' => setting('site_description', 'Sua Loja Online Completa'),
         'start_url' => '/?source=pwa',
         'scope' => '/',
         'display' => 'standalone',
+        'display_override' => ['standalone', 'minimal-ui', 'browser'],
         'orientation' => 'portrait-primary',
         'theme_color' => $themeSecondary,
         'background_color' => $dept_setting('theme_background', '#ffffff'),
+        'dir' => 'ltr',
+        'lang' => 'pt-BR',
         'categories' => ['shopping', 'ecommerce'],
-        'icons' => $icons
+        'icons' => $icons,
+        'prefer_related_applications' => false
     ];
 
     // Garantir que retorna JSON puro, sem BOM ou caracteres extras
