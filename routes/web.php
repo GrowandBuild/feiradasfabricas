@@ -4,6 +4,7 @@
 Route::get('/admin/departments/json', [App\Http\Controllers\Admin\DepartmentController::class, 'jsonList'])->name('admin.departments.json');
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\Auth\CustomerAuthController;
