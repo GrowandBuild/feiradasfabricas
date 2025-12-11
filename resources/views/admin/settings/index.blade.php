@@ -41,25 +41,117 @@
                             </div>
                         </div>
 
-                        <div class="col-6">
-                            <label class="form-label">Favicon</label>
-                            <div class="d-flex gap-2 align-items-center">
-                                <input type="file" id="identityFaviconFile" accept="image/*" class="form-control form-control-sm" />
-                                <button type="button" id="identityFaviconUploadBtn" class="btn btn-sm btn-primary">Enviar</button>
+                        {{-- Seção PWA - Ícones para Progressive Web App --}}
+                        <div class="col-12 mt-3">
+                            <hr>
+                            <div class="d-flex align-items-center mb-3">
+                                <i class="bi bi-phone me-2 text-primary"></i>
+                                <h6 class="mb-0">Ícones PWA (Progressive Web App)</h6>
+                                <span class="badge bg-primary ms-2">Obrigatório</span>
                             </div>
-                            <div class="mt-2">
-                                <img id="identityFaviconPreview" src="{{ setting('site_favicon') ? asset('storage/' . setting('site_favicon')) : asset('favicon-32x32.png') }}" alt="Favicon" style="max-height:32px;" />
-                            </div>
-                        </div>
+                            <p class="text-muted small mb-3">
+                                Configure os ícones para instalação do app no celular. O sistema gerará automaticamente os tamanhos necessários (192x192 e 512x512).
+                            </p>
+                            
+                            <div class="row g-3">
+                                {{-- App Icon (Principal para PWA) --}}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-app me-1"></i>App Icon (PWA)
+                                        <small class="text-muted d-block">Ícone principal para instalação no celular</small>
+                                    </label>
+                                    <div class="card border">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex gap-2 align-items-center mb-2">
+                                                <input type="file" id="identityAppIconFile" accept="image/png,image/jpeg,image/jpg,image/webp" class="form-control form-control-sm" />
+                                                <button type="button" id="identityAppIconUploadBtn" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-upload me-1"></i>Enviar
+                                                </button>
+                                            </div>
+                                            <div class="text-center mt-3 p-2 bg-light rounded">
+                                                <img id="identityAppIconPreview" 
+                                                     src="{{ setting('site_app_icon') ? asset('storage/' . setting('site_app_icon')) . '?v=' . time() : asset('android-chrome-192x192.png') }}" 
+                                                     alt="App Icon" 
+                                                     style="max-width: 128px; max-height: 128px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                                                <div class="mt-2">
+                                                    <small class="text-muted d-block">Recomendado: 512x512px</small>
+                                                    @if(setting('site_app_icon'))
+                                                        <span class="badge bg-success mt-1">
+                                                            <i class="bi bi-check-circle me-1"></i>Configurado
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-warning mt-1">
+                                                            <i class="bi bi-exclamation-triangle me-1"></i>Usando padrão
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
 
-                        <div class="col-6">
-                            <label class="form-label">App Icon</label>
-                            <div class="d-flex gap-2 align-items-center">
-                                <input type="file" id="identityAppIconFile" accept="image/*" class="form-control form-control-sm" />
-                                <button type="button" id="identityAppIconUploadBtn" class="btn btn-sm btn-primary">Enviar</button>
+                                {{-- Favicon (Secundário) --}}
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">
+                                        <i class="bi bi-star me-1"></i>Favicon
+                                        <small class="text-muted d-block">Ícone exibido na aba do navegador</small>
+                                    </label>
+                                    <div class="card border">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex gap-2 align-items-center mb-2">
+                                                <input type="file" id="identityFaviconFile" accept="image/png,image/ico,image/x-icon" class="form-control form-control-sm" />
+                                                <button type="button" id="identityFaviconUploadBtn" class="btn btn-sm btn-primary">
+                                                    <i class="bi bi-upload me-1"></i>Enviar
+                                                </button>
+                                            </div>
+                                            <div class="text-center mt-3 p-2 bg-light rounded">
+                                                <img id="identityFaviconPreview" 
+                                                     src="{{ setting('site_favicon') ? asset('storage/' . setting('site_favicon')) . '?v=' . time() : asset('favicon-32x32.png') }}" 
+                                                     alt="Favicon" 
+                                                     style="max-width: 64px; max-height: 64px; border-radius: 4px;" />
+                                                <div class="mt-2">
+                                                    <small class="text-muted d-block">Recomendado: 32x32px ou 64x64px</small>
+                                                    @if(setting('site_favicon'))
+                                                        <span class="badge bg-success mt-1">
+                                                            <i class="bi bi-check-circle me-1"></i>Configurado
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-warning mt-1">
+                                                            <i class="bi bi-exclamation-triangle me-1"></i>Usando padrão
+                                                        </span>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="mt-2">
-                                <img id="identityAppIconPreview" src="{{ setting('site_app_icon') ? asset('storage/' . setting('site_app_icon')) : asset('android-chrome-192x192.png') }}" alt="App Icon" style="max-height:48px;" />
+
+                            {{-- Status do PWA --}}
+                            <div class="mt-3 p-3 bg-light rounded">
+                                <h6 class="mb-2"><i class="bi bi-info-circle me-2"></i>Status do PWA</h6>
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <small class="text-muted d-block">Manifest</small>
+                                        <a href="{{ route('site.manifest') }}" target="_blank" class="text-decoration-none">
+                                            <span class="badge bg-info">
+                                                <i class="bi bi-link-45deg me-1"></i>Ver Manifest
+                                            </span>
+                                        </a>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <small class="text-muted d-block">Service Worker</small>
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-check-circle me-1"></i>Ativo
+                                        </span>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <small class="text-muted d-block">Ícones no Manifest</small>
+                                        <span class="badge bg-primary" id="pwa-icons-count">
+                                            <i class="bi bi-images me-1"></i>Carregando...
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -414,6 +506,27 @@ document.addEventListener('DOMContentLoaded', function() {
             }).catch(err => { console.error(err); showAlert('Erro ao enviar logo.', 'danger'); });
     });
 
+    // Função para atualizar status do PWA
+    function updatePWAStatus() {
+        fetch('{{ route("site.manifest") }}')
+            .then(response => response.json())
+            .then(manifest => {
+                const iconsCount = manifest.icons ? manifest.icons.length : 0;
+                const countBadge = document.getElementById('pwa-icons-count');
+                if (countBadge) {
+                    countBadge.innerHTML = `<i class="bi bi-images me-1"></i>${iconsCount} ícones`;
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao verificar status do PWA:', error);
+            });
+    }
+    
+    // Atualizar status ao carregar a página
+    if (document.getElementById('pwa-icons-count')) {
+        updatePWAStatus();
+    }
+
     // Favicon
     const favFile = document.getElementById('identityFaviconFile');
     const favPreview = document.getElementById('identityFaviconPreview');
@@ -424,7 +537,12 @@ document.addEventListener('DOMContentLoaded', function() {
         const fd = new FormData(); fd.append('favicon', f);
         fetch('{{ route("admin.settings.upload-favicon") }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': token }, body: fd })
             .then(r => r.json()).then(data => {
-                if (data && data.success) { favPreview.src = data.url + '?v=' + Date.now(); showAlert(data.message || 'Favicon enviado.', 'success'); }
+                if (data && data.success) { 
+                    favPreview.src = data.url + '?v=' + Date.now(); 
+                    showAlert(data.message || 'Favicon enviado.', 'success');
+                    // Atualizar status do PWA após upload
+                    setTimeout(updatePWAStatus, 1000);
+                }
                 else if (data && data.errors) showAlert(Object.values(data.errors).flat().join(' '), 'danger');
                 else showAlert(data.message || 'Erro ao enviar favicon.', 'danger');
             }).catch(err => { console.error(err); showAlert('Erro ao enviar favicon.', 'danger'); });
@@ -440,7 +558,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const fd = new FormData(); fd.append('app_icon', f);
         fetch('{{ route("admin.settings.upload-app-icon") }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': token }, body: fd })
             .then(r => r.json()).then(data => {
-                if (data && data.success) { appPreview.src = data.url + '?v=' + Date.now(); showAlert(data.message || 'App icon enviado.', 'success'); }
+                if (data && data.success) { 
+                    appPreview.src = data.url + '?v=' + Date.now(); 
+                    showAlert(data.message || 'App icon enviado. O PWA será atualizado automaticamente.', 'success');
+                    setTimeout(updatePWAStatus, 1000);
+                }
                 else if (data && data.errors) showAlert(Object.values(data.errors).flat().join(' '), 'danger');
                 else showAlert(data.message || 'Erro ao enviar app icon.', 'danger');
             }).catch(err => { console.error(err); showAlert('Erro ao enviar app icon.', 'danger'); });

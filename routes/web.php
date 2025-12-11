@@ -48,191 +48,8 @@ Route::get('/site.webmanifest', function(Request $request) {
     // Usar URL absoluta para os ícones (necessário para PWA no mobile)
     $baseUrl = $request->getSchemeAndHttpHost();
     
-    // Verificar se há ícones customizados configurados
-    $siteAppIcon = setting('site_app_icon');
-    $siteFavicon = setting('site_favicon');
-    
-    $icons = [];
-    
-    // IMPORTANTE: Sempre usar os ícones padrão (192x192 e 512x512) como base
-    // Esses são OBRIGATÓRIOS para PWA instalável funcionar corretamente
-    $icon192Exists = file_exists(public_path('android-chrome-192x192.png'));
-    $icon512Exists = file_exists(public_path('android-chrome-512x512.png'));
-    
-    if ($icon192Exists) {
-        $icons[] = [
-            'src' => $baseUrl . '/android-chrome-192x192.png',
-            'sizes' => '192x192',
-            'type' => 'image/png',
-            'purpose' => 'any'
-        ];
-        $icons[] = [
-            'src' => $baseUrl . '/android-chrome-192x192.png',
-            'sizes' => '192x192',
-            'type' => 'image/png',
-            'purpose' => 'maskable'
-        ];
-    }
-    
-    if ($icon512Exists) {
-        $icons[] = [
-            'src' => $baseUrl . '/android-chrome-512x512.png',
-            'sizes' => '512x512',
-            'type' => 'image/png',
-            'purpose' => 'any'
-        ];
-        $icons[] = [
-            'src' => $baseUrl . '/android-chrome-512x512.png',
-            'sizes' => '512x512',
-            'type' => 'image/png',
-            'purpose' => 'maskable'
-        ];
-    }
-    
-    // Adicionar ícone customizado como adicional (se existir)
-    // Mas NÃO substituir os ícones padrão, pois eles são obrigatórios
-    if ($siteAppIcon && file_exists(public_path('storage/' . $siteAppIcon))) {
-        $appIconUrl = $baseUrl . '/storage/' . $siteAppIcon;
-        // Adicionar como ícone adicional (pode ser usado pelo sistema, mas não substitui os obrigatórios)
-        $icons[] = [
-            'src' => $appIconUrl,
-            'sizes' => '512x512',
-            'type' => 'image/png',
-            'purpose' => 'any'
-        ];
-    }
-    
-    // Se não tiver os ícones padrão, usar fallbacks
-    if (empty($icons)) {
-        // Tentar usar favicon como fallback
-        if ($siteFavicon && file_exists(public_path('storage/' . $siteFavicon))) {
-            $faviconUrl = $baseUrl . '/storage/' . $siteFavicon;
-            $icons[] = [
-                'src' => $faviconUrl,
-                'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ];
-            $icons[] = [
-                'src' => $faviconUrl,
-                'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ];
-        } elseif ($siteAppIcon && file_exists(public_path('storage/' . $siteAppIcon))) {
-            // Usar app icon como último recurso
-            $appIconUrl = $baseUrl . '/storage/' . $siteAppIcon;
-            $icons[] = [
-                'src' => $appIconUrl,
-                'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ];
-            $icons[] = [
-                'src' => $appIconUrl,
-                'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ];
-        }
-    }
-    
-    // Garantir que temos pelo menos um ícone (requisito do PWA)
-    if (empty($icons)) {
-        // Tentar usar apple-touch-icon como fallback
-        if (file_exists(public_path('apple-touch-icon.png'))) {
-            $icons[] = [
-                'src' => $baseUrl . '/apple-touch-icon.png',
-                'sizes' => '180x180',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ];
-        } elseif ($siteFavicon && file_exists(public_path('storage/' . $siteFavicon))) {
-            // Usar favicon do storage
-            $faviconUrl = $baseUrl . '/storage/' . $siteFavicon;
-            $icons[] = [
-                'src' => $faviconUrl,
-                'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ];
-            $icons[] = [
-                'src' => $faviconUrl,
-                'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ];
-        } else {
-            // Último recurso: usar favicon.ico
-            $icons[] = [
-                'src' => $baseUrl . '/favicon.ico',
-                'sizes' => '192x192',
-                'type' => 'image/x-icon',
-                'purpose' => 'any'
-            ];
-        }
-    }
-    
-    // Validar que temos os ícones obrigatórios (192x192 e 512x512)
-    // Esses são OBRIGATÓRIOS para PWA instalável
-    $has192 = false;
-    $has512 = false;
-    
-    foreach ($icons as $icon) {
-        if (isset($icon['sizes'])) {
-            $sizes = $icon['sizes'];
-            if (preg_match('/\b192\b/', $sizes)) {
-                $has192 = true;
-            }
-            if (preg_match('/\b512\b/', $sizes)) {
-                $has512 = true;
-            }
-        }
-    }
-    
-    // Se não tiver os tamanhos obrigatórios, adicionar fallbacks
-    if (!$has192 || !$has512) {
-        // Tentar usar os ícones padrão que já devem estar na lista
-        if (!$has192 && file_exists(public_path('android-chrome-192x192.png'))) {
-            array_unshift($icons, [
-                'src' => $baseUrl . '/android-chrome-192x192.png',
-                'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ]);
-            $has192 = true;
-        }
-        if (!$has512 && file_exists(public_path('android-chrome-512x512.png'))) {
-            array_unshift($icons, [
-                'src' => $baseUrl . '/android-chrome-512x512.png',
-                'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ]);
-            $has512 = true;
-        }
-        
-        // Se ainda não tiver, usar o primeiro ícone disponível (último recurso)
-        if ((!$has192 || !$has512) && !empty($icons)) {
-            $firstIcon = $icons[0]['src'];
-            if (!$has192) {
-                array_unshift($icons, [
-                    'src' => $firstIcon,
-                    'sizes' => '192x192',
-                    'type' => 'image/png',
-                    'purpose' => 'any maskable'
-                ]);
-            }
-            if (!$has512) {
-                array_unshift($icons, [
-                    'src' => $firstIcon,
-                    'sizes' => '512x512',
-                    'type' => 'image/png',
-                    'purpose' => 'any maskable'
-                ]);
-            }
-        }
-    }
+    // Usar helper dedicado para gerenciar ícones do PWA
+    $icons = \App\Helpers\PwaIconHelper::getManifestIcons($baseUrl);
     
     $manifest = [
         'id' => '/',
@@ -265,9 +82,11 @@ Route::get('/site.webmanifest', function(Request $request) {
     // Remover BOM se existir
     $json = preg_replace('/^\xEF\xBB\xBF/', '', $json);
     
+    // Cache mais curto para garantir que mudanças sejam refletidas rapidamente
+    // Mas ainda permite cache para performance
     return response($json, 200)
         ->header('Content-Type', 'application/manifest+json; charset=utf-8')
-        ->header('Cache-Control', 'public, max-age=3600')
+        ->header('Cache-Control', 'public, max-age=300') // 5 minutos ao invés de 1 hora
         ->header('X-Content-Type-Options', 'nosniff');
 })->name('site.manifest');
 
@@ -281,19 +100,29 @@ Route::get('/pwa-debug', function(Request $request) {
     $siteAppIcon = setting('site_app_icon');
     $siteFavicon = setting('site_favicon');
     
+    // Verificar quais ícones o helper retornaria
+    $manifestIcons = \App\Helpers\PwaIconHelper::getManifestIcons($baseUrl);
+    
     $checks = [
         'manifest_url' => route('site.manifest'),
         'service_worker_url' => $baseUrl . '/service-worker.js',
+        'settings' => [
+            'site_app_icon' => $siteAppIcon,
+            'site_favicon' => $siteFavicon,
+        ],
         'icons' => [
             'custom_app_icon' => $siteAppIcon ? [
+                'setting_value' => $siteAppIcon,
+                'full_path' => public_path('storage/' . $siteAppIcon),
                 'exists' => file_exists(public_path('storage/' . $siteAppIcon)),
-                'path' => 'storage/' . $siteAppIcon,
-                'url' => $baseUrl . '/storage/' . $siteAppIcon
+                'url' => $baseUrl . '/storage/' . $siteAppIcon,
+                'accessible' => null // será testado
             ] : null,
             'custom_favicon' => $siteFavicon ? [
+                'setting_value' => $siteFavicon,
+                'full_path' => public_path('storage/' . $siteFavicon),
                 'exists' => file_exists(public_path('storage/' . $siteFavicon)),
-                'path' => 'storage/' . $siteFavicon,
-                'url' => $baseUrl . '/storage/' . $siteFavicon
+                'url' => $baseUrl . '/storage/' . $siteFavicon,
             ] : null,
             'android_chrome_192' => [
                 'exists' => file_exists(public_path('android-chrome-192x192.png')),
@@ -303,19 +132,24 @@ Route::get('/pwa-debug', function(Request $request) {
                 'exists' => file_exists(public_path('android-chrome-512x512.png')),
                 'url' => $baseUrl . '/android-chrome-512x512.png'
             ],
-            'apple_touch_icon' => [
-                'exists' => file_exists(public_path('apple-touch-icon.png')),
-                'url' => $baseUrl . '/apple-touch-icon.png'
-            ],
-            'favicon_ico' => [
-                'exists' => file_exists(public_path('favicon.ico')),
-                'url' => $baseUrl . '/favicon.ico'
-            ]
         ],
+        'manifest_icons' => $manifestIcons, // Ícones que serão usados no manifest
         'https' => $request->getScheme() === 'https',
         'app_url' => config('app.url'),
         'environment' => app()->environment()
     ];
+    
+    // Testar se a URL do ícone customizado é acessível
+    if ($siteAppIcon) {
+        $iconUrl = $baseUrl . '/storage/' . $siteAppIcon;
+        try {
+            $headers = @get_headers($iconUrl);
+            $checks['icons']['custom_app_icon']['accessible'] = $headers && strpos($headers[0], '200') !== false;
+        } catch (\Exception $e) {
+            $checks['icons']['custom_app_icon']['accessible'] = false;
+            $checks['icons']['custom_app_icon']['error'] = $e->getMessage();
+        }
+    }
     
     return response()->json($checks, JSON_PRETTY_PRINT);
 })->name('pwa.debug');
