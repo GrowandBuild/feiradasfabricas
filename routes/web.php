@@ -28,66 +28,116 @@ use App\Http\Controllers\AlbumPublicController;
 // Dynamic manifest so theme_color can reflect admin-chosen theme in session
 // IMPORTANTE: Esta rota deve retornar JSON puro, sem BOM ou caracteres extras
 Route::get('/site.webmanifest', function(Request $request) {
-    // Garantir que não há output buffer ou caracteres extras
-    if (ob_get_level()) {
-        ob_clean();
-    }
-    $deptSlug = session('current_department_slug');
-    $dept_setting = function($key, $default = null) use ($deptSlug) {
-        if ($deptSlug) {
-            $deptKey = 'dept_' . $deptSlug . '_' . $key;
-            $val = setting($deptKey);
-            if ($val !== null && $val !== '') return $val;
+    try {
+        // Garantir que não há output buffer ou caracteres extras
+        while (ob_get_level()) {
+            ob_end_clean();
         }
-        return setting($key, $default);
-    };
+        
+        $deptSlug = session('current_department_slug');
+        $dept_setting = function($key, $default = null) use ($deptSlug) {
+            if ($deptSlug) {
+                $deptKey = 'dept_' . $deptSlug . '_' . $key;
+                $val = setting($deptKey);
+                if ($val !== null && $val !== '') return $val;
+            }
+            return setting($key, $default);
+        };
 
-    $sessionTheme = session('current_department_theme', null);
-    $themeSecondary = $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff6b35');
+        $sessionTheme = session('current_department_theme', null);
+        $themeSecondary = $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff6b35');
 
-    // Usar URL absoluta para os ícones (necessário para PWA no mobile)
-    $baseUrl = $request->getSchemeAndHttpHost();
-    
-    // Usar helper dedicado para gerenciar ícones do PWA
-    $icons = \App\Helpers\PwaIconHelper::getManifestIcons($baseUrl);
-    
-    $manifest = [
-        'id' => '/',
-        'name' => setting('site_name', 'Feira das Fábricas'),
-        'short_name' => setting('site_short_name', 'Feira'),
-        'description' => setting('site_description', 'Sua Loja Online Completa'),
-        'start_url' => '/?source=pwa',
-        'scope' => '/',
-        'display' => 'standalone',
-        'display_override' => ['standalone', 'minimal-ui', 'browser'],
-        'orientation' => 'portrait-primary',
-        'theme_color' => $themeSecondary,
-        'background_color' => $dept_setting('theme_background', '#ffffff'),
-        'dir' => 'ltr',
-        'lang' => 'pt-BR',
-        'categories' => ['shopping', 'ecommerce'],
-        'icons' => $icons,
-        'prefer_related_applications' => false
-    ];
+        // Usar URL absoluta para os ícones (necessário para PWA no mobile)
+        $baseUrl = $request->getSchemeAndHttpHost();
+        
+        // Usar helper dedicado para gerenciar ícones do PWA
+        try {
+            $icons = \App\Helpers\PwaIconHelper::getManifestIcons($baseUrl);
+        } catch (\Exception $e) {
+            // Se houver erro ao buscar ícones, usar fallback
+            \Log::warning('Erro ao buscar ícones PWA: ' . $e->getMessage());
+            $icons = [
+                [
+                    'src' => $baseUrl . '/favicon.ico',
+                    'sizes' => '192x192',
+                    'type' => 'image/x-icon',
+                    'purpose' => 'any'
+                ]
+            ];
+        }
+        
+        // Garantir que temos pelo menos um ícone
+        if (empty($icons)) {
+            $icons = [
+                [
+                    'src' => $baseUrl . '/favicon.ico',
+                    'sizes' => '192x192',
+                    'type' => 'image/x-icon',
+                    'purpose' => 'any'
+                ]
+            ];
+        }
+        
+        $manifest = [
+            'id' => '/',
+            'name' => setting('site_name', 'Feira das Fábricas'),
+            'short_name' => setting('site_short_name', 'Feira'),
+            'description' => setting('site_description', 'Sua Loja Online Completa'),
+            'start_url' => '/?source=pwa',
+            'scope' => '/',
+            'display' => 'standalone',
+            'display_override' => ['standalone', 'minimal-ui', 'browser'],
+            'orientation' => 'portrait-primary',
+            'theme_color' => $themeSecondary,
+            'background_color' => $dept_setting('theme_background', '#ffffff'),
+            'dir' => 'ltr',
+            'lang' => 'pt-BR',
+            'categories' => ['shopping', 'ecommerce'],
+            'icons' => $icons,
+            'prefer_related_applications' => false
+        ];
 
-    // Garantir que retorna JSON puro, sem BOM ou caracteres extras
-    // Limpar qualquer output buffer antes de retornar
-    while (ob_get_level()) {
-        ob_end_clean();
+        // Gerar JSON sem BOM
+        $json = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        
+        // Verificar se o JSON é válido
+        if ($json === false || empty($json)) {
+            throw new \Exception('Erro ao gerar JSON do manifest');
+        }
+        
+        // Remover BOM se existir
+        $json = preg_replace('/^\xEF\xBB\xBF/', '', $json);
+        
+        // Cache mais curto para garantir que mudanças sejam refletidas rapidamente
+        return response($json, 200)
+            ->header('Content-Type', 'application/manifest+json; charset=utf-8')
+            ->header('Cache-Control', 'public, max-age=300')
+            ->header('X-Content-Type-Options', 'nosniff');
+            
+    } catch (\Exception $e) {
+        // Em caso de erro, retornar manifest mínimo válido
+        \Log::error('Erro ao gerar manifest: ' . $e->getMessage());
+        
+        $fallbackManifest = [
+            'name' => setting('site_name', 'Feira das Fábricas'),
+            'short_name' => setting('site_short_name', 'Feira'),
+            'start_url' => '/',
+            'display' => 'standalone',
+            'icons' => [
+                [
+                    'src' => '/favicon.ico',
+                    'sizes' => '192x192',
+                    'type' => 'image/x-icon'
+                ]
+            ]
+        ];
+        
+        $json = json_encode($fallbackManifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        
+        return response($json, 200)
+            ->header('Content-Type', 'application/manifest+json; charset=utf-8')
+            ->header('Cache-Control', 'no-cache');
     }
-    
-    // Gerar JSON sem BOM
-    $json = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-    
-    // Remover BOM se existir
-    $json = preg_replace('/^\xEF\xBB\xBF/', '', $json);
-    
-    // Cache mais curto para garantir que mudanças sejam refletidas rapidamente
-    // Mas ainda permite cache para performance
-    return response($json, 200)
-        ->header('Content-Type', 'application/manifest+json; charset=utf-8')
-        ->header('Cache-Control', 'public, max-age=300') // 5 minutos ao invés de 1 hora
-        ->header('X-Content-Type-Options', 'nosniff');
 })->name('site.manifest');
 
 // Rota de debug para verificar status do PWA (apenas em desenvolvimento ou com debug ativo)
