@@ -18,8 +18,8 @@ class PwaIconHelper
     public static function getManifestIcons(string $baseUrl): array
     {
         $icons = [];
-        // ONLY use admin-provided icons. No static/public fallback. This enforces
-        // that PWA icons come from the admin panel (site_app_icon or site_favicon).
+        
+        // 1. PRIORIDADE: Usar ícones customizados do admin (se existirem)
         $customIcons = self::getCustomIcons($baseUrl);
         if (!empty($customIcons)) {
             $icons = $customIcons;
@@ -30,15 +30,37 @@ class PwaIconHelper
                 ]);
             }
         } else {
+            // 2. FALLBACK: Usar ícones nativos se não houver customizados
+            // IMPORTANTE: Sempre retornar ícones válidos para o manifest funcionar
+            $icons = self::getRequiredIcons($baseUrl);
             if (config('app.debug')) {
-                \Log::warning('PWA: Nenhum ícone customizado encontrado no admin; manifest terá lista de ícones vazia');
+                \Log::info('PWA: Usando ícones nativos (fallback)', [
+                    'count' => count($icons)
+                ]);
             }
-            // Deliberately return empty icons array when admin did not provide icons.
-            return [];
         }
         
         // 3. Validar e garantir que temos os tamanhos obrigatórios (192x192 e 512x512)
         $icons = self::ensureRequiredSizes($icons, $baseUrl);
+        
+        // 4. GARANTIR que sempre retornamos pelo menos um ícone válido
+        if (empty($icons)) {
+            // Último recurso absoluto: usar favicon.ico
+            $icons = [
+                [
+                    'src' => $baseUrl . '/favicon.ico',
+                    'sizes' => '192x192',
+                    'type' => 'image/x-icon',
+                    'purpose' => 'any'
+                ],
+                [
+                    'src' => $baseUrl . '/favicon.ico',
+                    'sizes' => '512x512',
+                    'type' => 'image/x-icon',
+                    'purpose' => 'any'
+                ]
+            ];
+        }
         
         return $icons;
     }
@@ -150,19 +172,42 @@ class PwaIconHelper
         
         // 3. Se não encontrou nenhum ícone customizado
         if (!$iconPath) {
-            if (config('app.debug')) {
-                \Log::warning('PWA: Nenhum ícone customizado encontrado, usando nativos');
-            }
-            return []; // Sem ícones customizados - vai usar nativos
+            return []; // Sem ícones customizados - vai usar nativos no getManifestIcons
         }
         
         // 4. Construir versões 192x192 e 512x512 a partir do ícone customizado
+        // Tentar gerar versões redimensionadas primeiro
         $generated = self::generateResizedIcons($iconPath, $baseUrl);
-        if ($generated) {
-            foreach ($generated as $g) {
-                $icons[] = $g;
-            }
+        if (!empty($generated)) {
+            return $generated;
         }
+        
+        // Se não conseguiu gerar, usar o ícone original com os tamanhos declarados
+        $iconUrl = $baseUrl . '/storage/' . $iconPath;
+        $icons[] = [
+            'src' => $iconUrl,
+            'sizes' => '192x192',
+            'type' => 'image/png',
+            'purpose' => 'any'
+        ];
+        $icons[] = [
+            'src' => $iconUrl,
+            'sizes' => '192x192',
+            'type' => 'image/png',
+            'purpose' => 'maskable'
+        ];
+        $icons[] = [
+            'src' => $iconUrl,
+            'sizes' => '512x512',
+            'type' => 'image/png',
+            'purpose' => 'any'
+        ];
+        $icons[] = [
+            'src' => $iconUrl,
+            'sizes' => '512x512',
+            'type' => 'image/png',
+            'purpose' => 'maskable'
+        ];
         
         return $icons;
     }
@@ -240,6 +285,21 @@ class PwaIconHelper
         }
         
         // Se ainda não tiver ícones, usar último recurso absoluto
+        if (empty($icons)) {
+            $icons[] = [
+                'src' => $baseUrl . '/favicon.ico',
+                'sizes' => '192x192',
+                'type' => 'image/x-icon',
+                'purpose' => 'any'
+            ];
+            $icons[] = [
+                'src' => $baseUrl . '/favicon.ico',
+                'sizes' => '512x512',
+                'type' => 'image/x-icon',
+                'purpose' => 'any'
+            ];
+        }
+        
         return $icons;
     }
 
