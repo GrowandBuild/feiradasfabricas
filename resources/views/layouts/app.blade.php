@@ -2435,23 +2435,37 @@
     {{-- Service Worker registration for PWA (site-wide) --}}
     <script>
         if ('serviceWorker' in navigator) {
-            // Registrar service worker imediatamente (melhor para mobile)
-            window.addEventListener('load', function() {
+            // Registrar service worker assim que possível (não esperar load)
+            (function() {
                 navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
                     .then(function(reg) {
                         console.log('✅ ServiceWorker registrado com sucesso:', reg.scope);
+                        
+                        // Função para ativar service worker
+                        function activateSW(registration) {
+                            if (registration.waiting) {
+                                registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+                                registration.waiting.addEventListener('statechange', function() {
+                                    if (this.state === 'activated') {
+                                        console.log('✅ Service Worker ativado via SKIP_WAITING');
+                                        window.location.reload();
+                                    }
+                                });
+                            }
+                        }
                         
                         // Aguardar o service worker ficar ativo
                         if (reg.installing) {
                             console.log('📱 Service Worker instalando...');
                             reg.installing.addEventListener('statechange', function() {
+                                console.log('📱 Service Worker state:', this.state);
                                 if (this.state === 'activated') {
                                     console.log('✅ Service Worker ativado!');
                                 }
                             });
                         } else if (reg.waiting) {
                             console.log('📱 Service Worker aguardando...');
-                            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                            activateSW(reg);
                         } else if (reg.active) {
                             console.log('✅ Service Worker já está ativo:', reg.active.state);
                         }
@@ -2462,7 +2476,7 @@
                             const newWorker = reg.installing;
                             newWorker.addEventListener('statechange', function() {
                                 if (newWorker.state === 'activated') {
-                                    console.log('🔄 Nova versão ativada! Recarregue a página.');
+                                    console.log('🔄 Nova versão ativada!');
                                 }
                             });
                         });
@@ -2475,7 +2489,7 @@
                     .catch(function(err) {
                         console.error('❌ Falha ao registrar ServiceWorker:', err);
                     });
-            });
+            })();
         } else {
             console.warn('⚠️ Service Worker não suportado neste navegador');
         }

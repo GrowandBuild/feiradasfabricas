@@ -26,7 +26,12 @@ use App\Http\Controllers\AlbumPublicController;
 
 // Rotas públicas
 // Dynamic manifest so theme_color can reflect admin-chosen theme in session
+// IMPORTANTE: Esta rota deve retornar JSON puro, sem BOM ou caracteres extras
 Route::get('/site.webmanifest', function(Request $request) {
+    // Garantir que não há output buffer ou caracteres extras
+    if (ob_get_level()) {
+        ob_clean();
+    }
     $deptSlug = session('current_department_slug');
     $dept_setting = function($key, $default = null) use ($deptSlug) {
         if ($deptSlug) {
@@ -182,9 +187,22 @@ Route::get('/site.webmanifest', function(Request $request) {
         'icons' => $icons
     ];
 
-    return response()->json($manifest)
-        ->header('Content-Type', 'application/manifest+json')
-        ->header('Cache-Control', 'public, max-age=3600');
+    // Garantir que retorna JSON puro, sem BOM ou caracteres extras
+    // Limpar qualquer output buffer antes de retornar
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+    
+    // Gerar JSON sem BOM
+    $json = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    
+    // Remover BOM se existir
+    $json = preg_replace('/^\xEF\xBB\xBF/', '', $json);
+    
+    return response($json, 200)
+        ->header('Content-Type', 'application/manifest+json; charset=utf-8')
+        ->header('Cache-Control', 'public, max-age=3600')
+        ->header('X-Content-Type-Options', 'nosniff');
 })->name('site.manifest');
 
 // Rota de debug para verificar status do PWA (apenas em desenvolvimento ou com debug ativo)

@@ -801,7 +801,10 @@ class SettingController extends Controller
         ];
 
         $json = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        file_put_contents(public_path('site.webmanifest'), $json);
+        // Garantir que o arquivo é salvo sem BOM (Byte Order Mark)
+        // Remover BOM se existir e salvar como UTF-8 sem BOM
+        $json = preg_replace('/^\xEF\xBB\xBF/', '', $json);
+        file_put_contents(public_path('site.webmanifest'), $json, LOCK_EX);
     }
 
     /**

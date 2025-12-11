@@ -215,14 +215,61 @@
         showPrompt();
     });
     
+    // Verificar periodicamente se o PWA está pronto e forçar verificação
+    let checkInterval = null;
+    let checkCount = 0;
+    const maxChecks = 10; // Verificar por até 10 segundos
+    
+    function periodicCheck() {
+        checkCount++;
+        
+        // Verificar se service worker está ativo
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg && reg.active) {
+                    console.log('✅ Service Worker está ativo');
+                } else {
+                    console.warn('⚠️ Service Worker não está ativo ainda');
+                }
+            });
+        }
+        
+        // Se ainda não temos o prompt após várias verificações, mostrar manualmente no Android
+        if (!deferredPrompt && checkCount >= 5) {
+            const isAndroid = /Android/i.test(navigator.userAgent);
+            const isChrome = /Chrome/i.test(navigator.userAgent) && !/Edge/i.test(navigator.userAgent);
+            
+            if (isAndroid && isChrome) {
+                console.log('📱 Android Chrome detectado - verificando requisitos do PWA...');
+                checkPWARequirements();
+                
+                // Se todos os requisitos estão OK, mostrar instruções manuais
+                setTimeout(() => {
+                    const manifestLink = document.querySelector('link[rel="manifest"]');
+                    if (manifestLink && !deferredPrompt) {
+                        console.log('💡 Dica: O prompt pode aparecer automaticamente. Se não aparecer, use o menu do Chrome (3 pontos) → "Instalar app"');
+                    }
+                }, 2000);
+            }
+        }
+        
+        if (checkCount >= maxChecks) {
+            clearInterval(checkInterval);
+        }
+    }
+    
+    // Iniciar verificação periódica
+    checkInterval = setInterval(periodicCheck, 1000);
+    
     // Log se o evento não disparar após 5 segundos
     setTimeout(() => {
         if (!deferredPrompt) {
-            console.warn('⚠️ beforeinstallprompt não foi disparado. Verifique:');
+            console.warn('⚠️ beforeinstallprompt não foi disparado ainda. Verifique:');
             console.warn('  1. Manifest está acessível e válido?');
-            console.warn('  2. Service Worker está registrado?');
+            console.warn('  2. Service Worker está registrado e ativo?');
             console.warn('  3. Ícones estão acessíveis?');
-            console.warn('  4. Site está em HTTPS ou localhost?');
+            console.warn('  4. Site está em HTTPS?');
+            console.warn('  5. Você já visitou o site algumas vezes? (alguns navegadores exigem isso)');
             checkPWARequirements();
         }
     }, 5000);
