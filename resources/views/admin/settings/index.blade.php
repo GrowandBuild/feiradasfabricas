@@ -41,121 +41,130 @@
                             </div>
                         </div>
 
-                        {{-- Seção PWA - Ícones para Progressive Web App --}}
-                        <div class="col-12 mt-3">
-                            <hr>
-                            <div class="d-flex align-items-center mb-3">
-                                <i class="bi bi-phone me-2 text-primary"></i>
-                                <h6 class="mb-0">Ícones PWA (Progressive Web App)</h6>
-                                <span class="badge bg-primary ms-2">Obrigatório</span>
-                            </div>
-                            <p class="text-muted small mb-3">
-                                Configure os ícones para instalação do app no celular. O sistema gerará automaticamente os tamanhos necessários (192x192 e 512x512).
-                            </p>
-                            
-                            <div class="row g-3">
-                                {{-- App Icon (Principal para PWA) --}}
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">
-                                        <i class="bi bi-app me-1"></i>App Icon (PWA)
-                                        <small class="text-muted d-block">Ícone principal para instalação no celular</small>
-                                    </label>
-                                    <div class="card border">
-                                        <div class="card-body p-3">
-                                            <div class="d-flex gap-2 align-items-center mb-2">
-                                                <input type="file" id="identityAppIconFile" accept="image/png,image/jpeg,image/jpg,image/webp" class="form-control form-control-sm" />
-                                                <button type="button" id="identityAppIconUploadBtn" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-upload me-1"></i>Enviar
-                                                </button>
-                                            </div>
-                                            <div class="text-center mt-3 p-2 bg-light rounded">
-                                                <img id="identityAppIconPreview" 
-                                                     src="{{ setting('site_app_icon') ? asset('storage/' . setting('site_app_icon')) . '?v=' . time() : asset('android-chrome-192x192.png') }}" 
-                                                     alt="App Icon" 
-                                                     style="max-width: 128px; max-height: 128px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
-                                                <div class="mt-2">
-                                                    <small class="text-muted d-block">Recomendado: 512x512px</small>
-                                                    @if(setting('site_app_icon'))
-                                                        <span class="badge bg-success mt-1">
-                                                            <i class="bi bi-check-circle me-1"></i>Configurado
-                                                        </span>
-                                                    @else
-                                                        <span class="badge bg-warning mt-1">
-                                                            <i class="bi bi-exclamation-triangle me-1"></i>Usando padrão
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                {{-- Favicon (Secundário) --}}
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">
-                                        <i class="bi bi-star me-1"></i>Favicon
-                                        <small class="text-muted d-block">Ícone exibido na aba do navegador</small>
-                                    </label>
-                                    <div class="card border">
-                                        <div class="card-body p-3">
-                                            <div class="d-flex gap-2 align-items-center mb-2">
-                                                <input type="file" id="identityFaviconFile" accept="image/png,image/ico,image/x-icon" class="form-control form-control-sm" />
-                                                <button type="button" id="identityFaviconUploadBtn" class="btn btn-sm btn-primary">
-                                                    <i class="bi bi-upload me-1"></i>Enviar
-                                                </button>
-                                            </div>
-                                            <div class="text-center mt-3 p-2 bg-light rounded">
-                                                <img id="identityFaviconPreview" 
-                                                     src="{{ setting('site_favicon') ? asset('storage/' . setting('site_favicon')) . '?v=' . time() : asset('favicon-32x32.png') }}" 
-                                                     alt="Favicon" 
-                                                     style="max-width: 64px; max-height: 64px; border-radius: 4px;" />
-                                                <div class="mt-2">
-                                                    <small class="text-muted d-block">Recomendado: 32x32px ou 64x64px</small>
-                                                    @if(setting('site_favicon'))
-                                                        <span class="badge bg-success mt-1">
-                                                            <i class="bi bi-check-circle me-1"></i>Configurado
-                                                        </span>
-                                                    @else
-                                                        <span class="badge bg-warning mt-1">
-                                                            <i class="bi bi-exclamation-triangle me-1"></i>Usando padrão
-                                                        </span>
-                                                    @endif
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            {{-- Status do PWA --}}
-                            <div class="mt-3 p-3 bg-light rounded">
-                                <h6 class="mb-2"><i class="bi bi-info-circle me-2"></i>Status do PWA</h6>
-                                <div class="row g-2">
-                                    <div class="col-md-4">
-                                        <small class="text-muted d-block">Manifest</small>
-                                        <a href="{{ route('site.manifest') }}" target="_blank" class="text-decoration-none">
-                                            <span class="badge bg-info">
-                                                <i class="bi bi-link-45deg me-1"></i>Ver Manifest
-                                            </span>
-                                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- Seção PWA - Configuração de Ícones --}}
+        <div class="col-12 mt-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0"><i class="bi bi-phone me-2"></i>PWA - Progressive Web App</h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small mb-4">
+                        Configure os ícones para que seu site possa ser instalado como aplicativo no celular. 
+                        O botão de instalação aparecerá automaticamente quando todos os requisitos estiverem configurados.
+                    </p>
+                    
+                    <div class="row g-4">
+                        {{-- App Icon --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-app me-1"></i>App Icon (PWA)
+                                <small class="text-muted d-block">Ícone principal para instalação (mínimo 192x192px)</small>
+                            </label>
+                            <div class="card border">
+                                <div class="card-body p-3">
+                                    <div class="d-flex gap-2 mb-3">
+                                        <input type="file" id="appIconFile" accept="image/png,image/jpeg,image/jpg,image/webp" class="form-control form-control-sm" />
+                                        <button type="button" id="appIconUploadBtn" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-upload me-1"></i>Enviar
+                                        </button>
                                     </div>
-                                    <div class="col-md-4">
-                                        <small class="text-muted d-block">Service Worker</small>
-                                        <span class="badge bg-success">
-                                            <i class="bi bi-check-circle me-1"></i>Ativo
-                                        </span>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <small class="text-muted d-block">Ícones no Manifest</small>
-                                        <span class="badge bg-primary" id="pwa-icons-count">
-                                            <i class="bi bi-images me-1"></i>Carregando...
-                                        </span>
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <img id="appIconPreview" 
+                                             src="{{ setting('site_app_icon') ? asset('storage/' . setting('site_app_icon')) . '?v=' . time() : asset('images/no-image.svg') }}" 
+                                             alt="App Icon" 
+                                             style="max-width: 128px; max-height: 128px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);" />
+                                        <div class="mt-2">
+                                            <small class="text-muted d-block">Recomendado: 512x512px</small>
+                                            @if(setting('site_app_icon'))
+                                                <span class="badge bg-success mt-2">
+                                                    <i class="bi bi-check-circle me-1"></i>Configurado
+                                                </span>
+                                            @else
+                                                <span class="badge bg-warning mt-2">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>Não configurado
+                                                </span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
+                        {{-- Favicon --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-star me-1"></i>Favicon
+                                <small class="text-muted d-block">Ícone exibido na aba do navegador</small>
+                            </label>
+                            <div class="card border">
+                                <div class="card-body p-3">
+                                    <div class="d-flex gap-2 mb-3">
+                                        <input type="file" id="faviconFile" accept="image/png,image/ico,image/x-icon,image/svg+xml" class="form-control form-control-sm" />
+                                        <button type="button" id="faviconUploadBtn" class="btn btn-sm btn-primary">
+                                            <i class="bi bi-upload me-1"></i>Enviar
+                                        </button>
+                                    </div>
+                                    <div class="text-center p-3 bg-light rounded">
+                                        <img id="faviconPreview" 
+                                             src="{{ setting('site_favicon') ? asset('storage/' . setting('site_favicon')) . '?v=' . time() : asset('images/no-image.svg') }}" 
+                                             alt="Favicon" 
+                                             style="max-width: 64px; max-height: 64px; border-radius: 8px;" />
+                                        <div class="mt-2">
+                                            <small class="text-muted d-block">Recomendado: 32x32px ou 64x64px</small>
+                                            @if(setting('site_favicon'))
+                                                <span class="badge bg-success mt-2">
+                                                    <i class="bi bi-check-circle me-1"></i>Configurado
+                                                </span>
+                                            @else
+                                                <span class="badge bg-warning mt-2">
+                                                    <i class="bi bi-exclamation-triangle me-1"></i>Não configurado
+                                                </span>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
+                    {{-- Status do PWA --}}
+                    <div class="mt-4 p-3 bg-light rounded">
+                        <h6 class="mb-3"><i class="bi bi-info-circle me-2"></i>Status do PWA</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <small class="text-muted d-block mb-1">Manifest</small>
+                                <a href="{{ route('manifest') }}" target="_blank" class="btn btn-sm btn-outline-info">
+                                    <i class="bi bi-link-45deg me-1"></i>Ver Manifest
+                                </a>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted d-block mb-1">Service Worker</small>
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle me-1"></i>Ativo
+                                </span>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted d-block mb-1">HTTPS</small>
+                                <span class="badge {{ request()->getScheme() === 'https' ? 'bg-success' : 'bg-warning' }}">
+                                    <i class="bi bi-{{ request()->getScheme() === 'https' ? 'check' : 'exclamation-triangle' }}-circle me-1"></i>
+                                    {{ request()->getScheme() === 'https' ? 'Ativo' : 'Requerido' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <small class="text-muted">
+                                <i class="bi bi-lightbulb me-1"></i>
+                                <strong>Dica:</strong> Para o botão de instalação aparecer, você precisa: 
+                                HTTPS ativo, manifest.json válido, service worker registrado e ícones configurados.
+                            </small>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -506,138 +515,86 @@ document.addEventListener('DOMContentLoaded', function() {
             }).catch(err => { console.error(err); showAlert('Erro ao enviar logo.', 'danger'); });
     });
 
-    // Função para atualizar status do PWA
-    let pwaStatusCheckInProgress = false;
-    function updatePWAStatus() {
-        // Evitar múltiplas chamadas simultâneas
-        if (pwaStatusCheckInProgress) {
-            return;
-        }
-        
-        const countBadge = document.getElementById('pwa-icons-count');
-        if (!countBadge) {
-            return;
-        }
-        
-        pwaStatusCheckInProgress = true;
-        
-        // Criar um timeout para evitar requisições infinitas
-        const timeoutId = setTimeout(() => {
-            pwaStatusCheckInProgress = false;
-            if (countBadge) {
-                countBadge.innerHTML = `<i class="bi bi-images me-1"></i>Erro ao carregar`;
-                countBadge.className = 'badge bg-warning';
-            }
-        }, 10000); // 10 segundos de timeout
-        
-        fetch('{{ route("site.manifest") }}', {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/manifest+json, application/json',
-            },
-            cache: 'no-cache'
-        })
-        .then(response => {
-            clearTimeout(timeoutId);
-            
-            // Verificar se a resposta é OK
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            
-            // Verificar se o content-type é JSON
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-                // Tentar fazer parse mesmo assim, mas com cuidado
-                return response.text().then(text => {
-                    try {
-                        return JSON.parse(text);
-                    } catch (e) {
-                        throw new Error('Resposta não é JSON válido');
-                    }
-                });
-            }
-            
-            return response.json();
-        })
-        .then(manifest => {
-            pwaStatusCheckInProgress = false;
-            
-            if (!manifest || typeof manifest !== 'object') {
-                throw new Error('Manifest inválido');
-            }
-            
-            const iconsCount = manifest.icons && Array.isArray(manifest.icons) ? manifest.icons.length : 0;
-            
-            if (countBadge) {
-                if (iconsCount > 0) {
-                    countBadge.innerHTML = `<i class="bi bi-images me-1"></i>${iconsCount} ícones`;
-                    countBadge.className = 'badge bg-success';
-                } else {
-                    countBadge.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Sem ícones`;
-                    countBadge.className = 'badge bg-warning';
-                }
-            }
-        })
-        .catch(error => {
-            clearTimeout(timeoutId);
-            pwaStatusCheckInProgress = false;
-            
-            console.error('Erro ao verificar status do PWA:', error);
-            
-            if (countBadge) {
-                countBadge.innerHTML = `<i class="bi bi-exclamation-circle me-1"></i>Erro`;
-                countBadge.className = 'badge bg-danger';
-            }
+    // App Icon Upload
+    const appIconFile = document.getElementById('appIconFile');
+    const appIconPreview = document.getElementById('appIconPreview');
+    const appIconUploadBtn = document.getElementById('appIconUploadBtn');
+    if (appIconFile) {
+        appIconFile.addEventListener('change', function() {
+            const f = this.files && this.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = e => { appIconPreview.src = e.target.result; };
+            r.readAsDataURL(f);
         });
     }
-    
-    // Atualizar status ao carregar a página (com delay para garantir que o DOM está pronto)
-    if (document.getElementById('pwa-icons-count')) {
-        // Aguardar um pouco para garantir que tudo está carregado
-        setTimeout(updatePWAStatus, 500);
+    appIconUploadBtn && appIconUploadBtn.addEventListener('click', function() {
+        const f = appIconFile.files && appIconFile.files[0];
+        if (!f) { showAlert('Selecione um arquivo de App Icon.', 'danger'); return; }
+        const fd = new FormData();
+        fd.append('app_icon', f);
+        fetch('{{ route("admin.settings.upload-app-icon") }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': token },
+            body: fd
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.success) {
+                appIconPreview.src = data.url + '?v=' + Date.now();
+                showAlert(data.message || 'App Icon enviado com sucesso!', 'success');
+            } else if (data && data.errors) {
+                showAlert(Object.values(data.errors).flat().join(' '), 'danger');
+            } else {
+                showAlert(data.message || 'Erro ao enviar App Icon.', 'danger');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showAlert('Erro ao enviar App Icon.', 'danger');
+        });
+    });
+
+    // Favicon Upload
+    const faviconFile = document.getElementById('faviconFile');
+    const faviconPreview = document.getElementById('faviconPreview');
+    const faviconUploadBtn = document.getElementById('faviconUploadBtn');
+    if (faviconFile) {
+        faviconFile.addEventListener('change', function() {
+            const f = this.files && this.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = e => { faviconPreview.src = e.target.result; };
+            r.readAsDataURL(f);
+        });
     }
-
-    // Favicon
-    const favFile = document.getElementById('identityFaviconFile');
-    const favPreview = document.getElementById('identityFaviconPreview');
-    const favUploadBtn = document.getElementById('identityFaviconUploadBtn');
-    favFile && favFile.addEventListener('change', function() { const f = this.files && this.files[0]; if (!f) return; const r = new FileReader(); r.onload = e => { favPreview.src = e.target.result; }; r.readAsDataURL(f); });
-    favUploadBtn && favUploadBtn.addEventListener('click', function() {
-        const f = favFile.files && favFile.files[0]; if (!f) { showAlert('Selecione um arquivo de favicon.', 'danger'); return; }
-        const fd = new FormData(); fd.append('favicon', f);
-        fetch('{{ route("admin.settings.upload-favicon") }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': token }, body: fd })
-            .then(r => r.json()).then(data => {
-                if (data && data.success) { 
-                    favPreview.src = data.url + '?v=' + Date.now(); 
-                    showAlert(data.message || 'Favicon enviado.', 'success');
-                    // Atualizar status do PWA após upload
-                    setTimeout(updatePWAStatus, 1000);
-                }
-                else if (data && data.errors) showAlert(Object.values(data.errors).flat().join(' '), 'danger');
-                else showAlert(data.message || 'Erro ao enviar favicon.', 'danger');
-            }).catch(err => { console.error(err); showAlert('Erro ao enviar favicon.', 'danger'); });
+    faviconUploadBtn && faviconUploadBtn.addEventListener('click', function() {
+        const f = faviconFile.files && faviconFile.files[0];
+        if (!f) { showAlert('Selecione um arquivo de Favicon.', 'danger'); return; }
+        const fd = new FormData();
+        fd.append('favicon', f);
+        fetch('{{ route("admin.settings.upload-favicon") }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': token },
+            body: fd
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.success) {
+                faviconPreview.src = data.url + '?v=' + Date.now();
+                showAlert(data.message || 'Favicon enviado com sucesso!', 'success');
+            } else if (data && data.errors) {
+                showAlert(Object.values(data.errors).flat().join(' '), 'danger');
+            } else {
+                showAlert(data.message || 'Erro ao enviar Favicon.', 'danger');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showAlert('Erro ao enviar Favicon.', 'danger');
+        });
     });
 
-    // App icon
-    const appFile = document.getElementById('identityAppIconFile');
-    const appPreview = document.getElementById('identityAppIconPreview');
-    const appUploadBtn = document.getElementById('identityAppIconUploadBtn');
-    appFile && appFile.addEventListener('change', function() { const f = this.files && this.files[0]; if (!f) return; const r = new FileReader(); r.onload = e => { appPreview.src = e.target.result; }; r.readAsDataURL(f); });
-    appUploadBtn && appUploadBtn.addEventListener('click', function() {
-        const f = appFile.files && appFile.files[0]; if (!f) { showAlert('Selecione um arquivo de app icon.', 'danger'); return; }
-        const fd = new FormData(); fd.append('app_icon', f);
-        fetch('{{ route("admin.settings.upload-app-icon") }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': token }, body: fd })
-            .then(r => r.json()).then(data => {
-                if (data && data.success) { 
-                    appPreview.src = data.url + '?v=' + Date.now(); 
-                    showAlert(data.message || 'App icon enviado. O PWA será atualizado automaticamente.', 'success');
-                    setTimeout(updatePWAStatus, 1000);
-                }
-                else if (data && data.errors) showAlert(Object.values(data.errors).flat().join(' '), 'danger');
-                else showAlert(data.message || 'Erro ao enviar app icon.', 'danger');
-            }).catch(err => { console.error(err); showAlert('Erro ao enviar app icon.', 'danger'); });
-    });
 
     // Logo size save handler
     const saveLogoSizeBtn = document.getElementById('saveLogoSizeBtn');

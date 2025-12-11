@@ -25,187 +25,109 @@ use App\Http\Controllers\AlbumPublicController;
 */
 
 // Rotas públicas
-// Dynamic manifest so theme_color can reflect admin-chosen theme in session
-// IMPORTANTE: Esta rota deve retornar JSON puro, sem BOM ou caracteres extras
-Route::get('/site.webmanifest', function(Request $request) {
+
+// Manifest dinâmico para PWA
+Route::get('/manifest.json', function(Request $request) {
     try {
-        // Garantir que não há output buffer ou caracteres extras
+        // Limpar qualquer output buffer
         while (ob_get_level()) {
             ob_end_clean();
         }
         
-        $deptSlug = session('current_department_slug');
-        $dept_setting = function($key, $default = null) use ($deptSlug) {
-            if ($deptSlug) {
-                $deptKey = 'dept_' . $deptSlug . '_' . $key;
-                $val = setting($deptKey);
-                if ($val !== null && $val !== '') return $val;
-            }
-            return setting($key, $default);
-        };
-
-        $sessionTheme = session('current_department_theme', null);
-        $themeSecondary = $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff6b35');
-
-        // Usar URL absoluta para os ícones (necessário para PWA no mobile)
         $baseUrl = $request->getSchemeAndHttpHost();
+        $appIcon = setting('site_app_icon');
+        $favicon = setting('site_favicon');
         
-        // Usar helper dedicado para gerenciar ícones do PWA
-        try {
-            $icons = \App\Helpers\PwaIconHelper::getManifestIcons($baseUrl);
-        } catch (\Exception $e) {
-            // Se houver erro ao buscar ícones, usar fallback
-            \Log::warning('Erro ao buscar ícones PWA: ' . $e->getMessage());
-            $icons = [
-                [
-                    'src' => $baseUrl . '/favicon.ico',
-                    'sizes' => '192x192',
-                    'type' => 'image/x-icon',
-                    'purpose' => 'any'
-                ]
+        // Construir array de ícones
+        $icons = [];
+        
+        // Prioridade: App Icon (192x192 e 512x512)
+        if ($appIcon && file_exists(public_path('storage/' . $appIcon))) {
+            $iconUrl = $baseUrl . '/storage/' . $appIcon;
+            $icons[] = [
+                'src' => $iconUrl,
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+            $icons[] = [
+                'src' => $iconUrl,
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
             ];
         }
         
-        // Garantir que temos pelo menos um ícone
+        // Fallback: Favicon se não tiver App Icon
+        if (empty($icons) && $favicon && file_exists(public_path('storage/' . $favicon))) {
+            $iconUrl = $baseUrl . '/storage/' . $favicon;
+            $icons[] = [
+                'src' => $iconUrl,
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+            $icons[] = [
+                'src' => $iconUrl,
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+        }
+        
+        // Último fallback: favicon.ico
         if (empty($icons)) {
-            $icons = [
-                [
-                    'src' => $baseUrl . '/favicon.ico',
-                    'sizes' => '192x192',
-                    'type' => 'image/x-icon',
-                    'purpose' => 'any'
-                ]
+            $icons[] = [
+                'src' => $baseUrl . '/favicon.ico',
+                'sizes' => '192x192',
+                'type' => 'image/x-icon',
+                'purpose' => 'any'
+            ];
+            $icons[] = [
+                'src' => $baseUrl . '/favicon.ico',
+                'sizes' => '512x512',
+                'type' => 'image/x-icon',
+                'purpose' => 'any'
             ];
         }
         
         $manifest = [
-            'id' => '/',
             'name' => setting('site_name', 'Feira das Fábricas'),
             'short_name' => setting('site_short_name', 'Feira'),
-            'description' => setting('site_description', 'Sua Loja Online Completa'),
+            'description' => setting('site_description', 'Sua Loja Online'),
             'start_url' => '/?source=pwa',
             'scope' => '/',
             'display' => 'standalone',
-            'display_override' => ['standalone', 'minimal-ui', 'browser'],
-            'orientation' => 'portrait-primary',
-            'theme_color' => $themeSecondary,
-            'background_color' => $dept_setting('theme_background', '#ffffff'),
-            'dir' => 'ltr',
-            'lang' => 'pt-BR',
-            'categories' => ['shopping', 'ecommerce'],
-            'icons' => $icons,
-            'prefer_related_applications' => false
+            'orientation' => 'portrait',
+            'theme_color' => setting('theme_secondary', '#ff6b35'),
+            'background_color' => setting('theme_primary', '#ffffff'),
+            'icons' => $icons
         ];
-
-        // Gerar JSON sem BOM
+        
         $json = json_encode($manifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         
-        // Verificar se o JSON é válido
-        if ($json === false || empty($json)) {
-            throw new \Exception('Erro ao gerar JSON do manifest');
-        }
-        
-        // Remover BOM se existir
-        $json = preg_replace('/^\xEF\xBB\xBF/', '', $json);
-        
-        // Cache mais curto para garantir que mudanças sejam refletidas rapidamente
         return response($json, 200)
             ->header('Content-Type', 'application/manifest+json; charset=utf-8')
-            ->header('Cache-Control', 'public, max-age=300')
-            ->header('X-Content-Type-Options', 'nosniff');
+            ->header('Cache-Control', 'public, max-age=3600');
             
     } catch (\Exception $e) {
-        // Em caso de erro, retornar manifest mínimo válido
         \Log::error('Erro ao gerar manifest: ' . $e->getMessage());
         
-        // Usar URL absoluta no fallback também
-        $baseUrl = $request->getSchemeAndHttpHost();
-        
-        $fallbackManifest = [
+        // Fallback mínimo
+        $fallback = [
             'name' => setting('site_name', 'Feira das Fábricas'),
-            'short_name' => setting('site_short_name', 'Feira'),
+            'short_name' => 'App',
             'start_url' => '/',
             'display' => 'standalone',
             'icons' => [
-                [
-                    'src' => $baseUrl . '/favicon.ico',
-                    'sizes' => '192x192',
-                    'type' => 'image/x-icon'
-                ]
+                ['src' => '/favicon.ico', 'sizes' => '192x192', 'type' => 'image/x-icon']
             ]
         ];
         
-        $json = json_encode($fallbackManifest, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        
-        return response($json, 200)
-            ->header('Content-Type', 'application/manifest+json; charset=utf-8')
-            ->header('Cache-Control', 'no-cache');
+        return response()->json($fallback, 200)
+            ->header('Content-Type', 'application/manifest+json; charset=utf-8');
     }
-})->name('site.manifest');
-
-// Rota de debug para verificar status do PWA (apenas em desenvolvimento ou com debug ativo)
-Route::get('/pwa-debug', function(Request $request) {
-    if (!config('app.debug') && !app()->environment('local')) {
-        abort(404);
-    }
-    
-    $baseUrl = $request->getSchemeAndHttpHost();
-    $siteAppIcon = setting('site_app_icon');
-    $siteFavicon = setting('site_favicon');
-    
-    // Verificar quais ícones o helper retornaria
-    $manifestIcons = \App\Helpers\PwaIconHelper::getManifestIcons($baseUrl);
-    
-    $checks = [
-        'manifest_url' => route('site.manifest'),
-        'service_worker_url' => $baseUrl . '/service-worker.js',
-        'settings' => [
-            'site_app_icon' => $siteAppIcon,
-            'site_favicon' => $siteFavicon,
-        ],
-        'icons' => [
-            'custom_app_icon' => $siteAppIcon ? [
-                'setting_value' => $siteAppIcon,
-                'full_path' => public_path('storage/' . $siteAppIcon),
-                'exists' => file_exists(public_path('storage/' . $siteAppIcon)),
-                'url' => $baseUrl . '/storage/' . $siteAppIcon,
-                'accessible' => null // será testado
-            ] : null,
-            'custom_favicon' => $siteFavicon ? [
-                'setting_value' => $siteFavicon,
-                'full_path' => public_path('storage/' . $siteFavicon),
-                'exists' => file_exists(public_path('storage/' . $siteFavicon)),
-                'url' => $baseUrl . '/storage/' . $siteFavicon,
-            ] : null,
-            'android_chrome_192' => [
-                'exists' => file_exists(public_path('android-chrome-192x192.png')),
-                'url' => $baseUrl . '/android-chrome-192x192.png'
-            ],
-            'android_chrome_512' => [
-                'exists' => file_exists(public_path('android-chrome-512x512.png')),
-                'url' => $baseUrl . '/android-chrome-512x512.png'
-            ],
-        ],
-        'manifest_icons' => $manifestIcons, // Ícones que serão usados no manifest
-        'https' => $request->getScheme() === 'https',
-        'app_url' => config('app.url'),
-        'environment' => app()->environment()
-    ];
-    
-    // Testar se a URL do ícone customizado é acessível
-    if ($siteAppIcon) {
-        $iconUrl = $baseUrl . '/storage/' . $siteAppIcon;
-        try {
-            $headers = @get_headers($iconUrl);
-            $checks['icons']['custom_app_icon']['accessible'] = $headers && strpos($headers[0], '200') !== false;
-        } catch (\Exception $e) {
-            $checks['icons']['custom_app_icon']['accessible'] = false;
-            $checks['icons']['custom_app_icon']['error'] = $e->getMessage();
-        }
-    }
-    
-    return response()->json($checks, JSON_PRETTY_PRINT);
-})->name('pwa.debug');
+})->name('manifest');
 
 Route::get('/', [DepartmentController::class, 'index'])->name('home')->defaults('slug', 'eletronicos');
 Route::get('/vitrine-departamentos', [HomeController::class, 'index'])->name('landing.departments');

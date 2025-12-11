@@ -59,7 +59,7 @@ self.addEventListener('fetch', event => {
   // Never cache admin or API routes
   const isAdmin = url.pathname.startsWith('/admin');
   const isApi = url.pathname.startsWith('/api') || url.pathname.startsWith('/webhooks');
-  const isManifest = url.pathname === '/site.webmanifest';
+  const isManifest = url.pathname === '/manifest.json' || url.pathname === '/site.webmanifest';
 
   // For HTML navigation requests, NEVER cache - always fetch from server
   // This prevents serving stale pages when server is offline

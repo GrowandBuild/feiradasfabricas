@@ -106,8 +106,8 @@ class SettingController extends Controller
                 }
             }
 
-            // If site identity related settings changed, regenerate web manifest
-            $identityKeys = ['site_name', 'site_description', 'site_app_icon', 'site_favicon', 'theme_secondary'];
+            // If site identity related settings changed
+            $identityKeys = ['site_name', 'site_description', 'theme_secondary'];
             foreach ($identityKeys as $k) {
                 if (array_key_exists($k, $settings)) {
                     try { $this->generateWebManifest(); } catch (\Throwable $e) { Log::warning('generateWebManifest failed: '.$e->getMessage()); }
@@ -745,67 +745,6 @@ class SettingController extends Controller
                         ->with('success', 'Configuração criada com sucesso!');
     }
 
-    /**
-     * Generate a site.webmanifest file in public/ based on current settings.
-     */
-    private function generateWebManifest()
-    {
-        $name = setting('site_name', 'Feira das Fábricas');
-        $short = setting('site_short_name', str_replace(' ', '', substr($name, 0, 12)));
-        $description = setting('site_description', 'Loja online');
-        $startUrl = setting('site_start_url', '/?source=pwa');
-        $theme = setting('theme_secondary', '#ff9900');
-
-        $appIcon = setting('site_app_icon');
-        $fav = setting('site_favicon');
-
-        $icons = [];
-        // prefer storage URLs with cache-bust
-        if ($appIcon) {
-            $path = public_path('storage/' . $appIcon);
-            $ver = file_exists($path) ? filemtime($path) : time();
-            $url = asset('storage/' . $appIcon) . '?_=' . $ver;
-            $icons[] = [ 'src' => $url, 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ];
-            $icons[] = [ 'src' => $url, 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ];
-        }
-        if ($fav) {
-            $path = public_path('storage/' . $fav);
-            $ver = file_exists($path) ? filemtime($path) : time();
-            $url = asset('storage/' . $fav) . '?_=' . $ver;
-            $icons[] = [ 'src' => $url, 'sizes' => '32x32', 'type' => 'image/png' ];
-            $icons[] = [ 'src' => $url, 'sizes' => '16x16', 'type' => 'image/png' ];
-        }
-
-        // fallbacks to public assets
-        if (empty($icons)) {
-            $icons = [
-                [ 'src' => asset('android-chrome-192x192.png'), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any maskable' ],
-                [ 'src' => asset('android-chrome-512x512.png'), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any maskable' ],
-                [ 'src' => asset('favicon-32x32.png'), 'sizes' => '32x32', 'type' => 'image/png' ],
-                [ 'src' => asset('favicon-16x16.png'), 'sizes' => '16x16', 'type' => 'image/png' ],
-                [ 'src' => asset('apple-touch-icon.png'), 'sizes' => '180x180', 'type' => 'image/png' ],
-            ];
-        }
-
-        $manifest = [
-            'name' => $name,
-            'short_name' => $short,
-            'description' => $description,
-            'start_url' => $startUrl,
-            'scope' => '/',
-            'display' => 'standalone',
-            'orientation' => 'portrait',
-            'background_color' => setting('theme_primary', '#0f172a'),
-            'theme_color' => $theme,
-            'icons' => $icons,
-        ];
-
-        $json = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
-        // Garantir que o arquivo é salvo sem BOM (Byte Order Mark)
-        // Remover BOM se existir e salvar como UTF-8 sem BOM
-        $json = preg_replace('/^\xEF\xBB\xBF/', '', $json);
-        file_put_contents(public_path('site.webmanifest'), $json, LOCK_EX);
-    }
 
     /**
      * Upload da logo do site via painel admin (chamada AJAX)
@@ -835,9 +774,6 @@ class SettingController extends Controller
             // Salvar em settings (usa Setting::set helper em outro lugar)
             Setting::set('site_logo', $path, 'string', 'general');
 
-            // regenerate manifest if needed
-            try { $this->generateWebManifest(); } catch (\Throwable $e) { Log::warning('generateWebManifest failed: '.$e->getMessage()); }
-
             return response()->json([
                 'success' => true,
                 'path' => $path,
@@ -853,89 +789,6 @@ class SettingController extends Controller
     }
 
 
-    /**
-     * Upload do favicon do site via painel admin (chamada AJAX)
-     */
-    public function uploadFavicon(Request $request)
-    {
-        try {
-            $request->validate([
-                'favicon' => 'required|file|mimes:png,ico,svg,webp|dimensions:max_width=1024,max_height=1024|max:5120'
-            ]);
-
-            $file = $request->file('favicon');
-
-            // remove old favicon
-            $old = Setting::get('site_favicon');
-            if ($old) {
-                $oldPath = public_path('storage/' . $old);
-                try { if (file_exists($oldPath)) @unlink($oldPath); } catch (\Throwable $e) { Log::warning('Could not unlink old site_favicon: '.$e->getMessage()); }
-            }
-
-            $filename = 'site_favicon_' . time() . '.' . $file->getClientOriginalExtension();
-
-            // Armazenar em storage/app/public/site-logos (shared area)
-            $path = $file->storeAs('site-logos', $filename, 'public');
-
-            Setting::set('site_favicon', $path, 'string', 'general');
-
-            // regenerate manifest so favicon is reflected
-            try { $this->generateWebManifest(); } catch (\Throwable $e) { Log::warning('generateWebManifest failed: '.$e->getMessage()); }
-
-            return response()->json([
-                'success' => true,
-                'path' => $path,
-                'url' => asset('storage/' . $path),
-                'message' => 'Favicon atualizado com sucesso.'
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $ve) {
-            return response()->json([ 'success' => false, 'errors' => $ve->errors() ], 422);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao fazer upload do favicon: ' . $e->getMessage());
-            return response()->json([ 'success' => false, 'message' => 'Erro ao fazer upload do favicon.' ], 500);
-        }
-    }
-
-    /**
-     * Upload do app icon (ícone para instalação / apple-touch-icon)
-     */
-    public function uploadAppIcon(Request $request)
-    {
-        try {
-            $request->validate([
-                'app_icon' => 'required|image|mimes:png,jpg,jpeg,svg,webp|dimensions:max_width=2048,max_height=2048|max:10240'
-            ]);
-
-            $file = $request->file('app_icon');
-
-            // remove old app icon
-            $old = Setting::get('site_app_icon');
-            if ($old) {
-                $oldPath = public_path('storage/' . $old);
-                try { if (file_exists($oldPath)) @unlink($oldPath); } catch (\Throwable $e) { Log::warning('Could not unlink old site_app_icon: '.$e->getMessage()); }
-            }
-
-            $filename = 'site_app_icon_' . time() . '.' . $file->getClientOriginalExtension();
-            $path = $file->storeAs('site-logos', $filename, 'public');
-
-            Setting::set('site_app_icon', $path, 'string', 'general');
-
-            // regenerate manifest so app icon is reflected
-            try { $this->generateWebManifest(); } catch (\Throwable $e) { Log::warning('generateWebManifest failed: '.$e->getMessage()); }
-
-            return response()->json([
-                'success' => true,
-                'path' => $path,
-                'url' => asset('storage/' . $path),
-                'message' => 'App icon atualizado com sucesso.'
-            ]);
-        } catch (\Illuminate\Validation\ValidationException $ve) {
-            return response()->json([ 'success' => false, 'errors' => $ve->errors() ], 422);
-        } catch (\Exception $e) {
-            \Log::error('Erro ao fazer upload do app icon: ' . $e->getMessage());
-            return response()->json([ 'success' => false, 'message' => 'Erro ao fazer upload do app icon.' ], 500);
-        }
-    }
 
     /**
      * Store a theme map in the session so subsequent public pages can use it immediately.
@@ -972,6 +825,80 @@ class SettingController extends Controller
         } catch (\Exception $e) {
             \Log::error('Erro ao setSessionTheme: ' . $e->getMessage());
             return response()->json([ 'success' => false, 'message' => 'Erro ao salvar tema na sessão.' ], 500);
+        }
+    }
+
+    /**
+     * Upload do App Icon (ícone principal para PWA)
+     */
+    public function uploadAppIcon(Request $request)
+    {
+        try {
+            $request->validate([
+                'app_icon' => 'required|image|mimes:png,jpg,jpeg,webp|max:5120|dimensions:min_width=192,min_height=192'
+            ]);
+
+            $file = $request->file('app_icon');
+            
+            // Remover ícone antigo se existir
+            $old = Setting::get('site_app_icon');
+            if ($old && file_exists(public_path('storage/' . $old))) {
+                @unlink(public_path('storage/' . $old));
+            }
+
+            $filename = 'app_icon_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('site-logos', $filename, 'public');
+
+            Setting::set('site_app_icon', $path, 'string', 'general');
+
+            return response()->json([
+                'success' => true,
+                'path' => $path,
+                'url' => asset('storage/' . $path),
+                'message' => 'App Icon atualizado com sucesso!'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return response()->json(['success' => false, 'errors' => $ve->errors()], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao fazer upload do app icon: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Erro ao fazer upload do app icon.'], 500);
+        }
+    }
+
+    /**
+     * Upload do Favicon
+     */
+    public function uploadFavicon(Request $request)
+    {
+        try {
+            $request->validate([
+                'favicon' => 'required|image|mimes:png,ico,svg,webp|max:2048'
+            ]);
+
+            $file = $request->file('favicon');
+            
+            // Remover favicon antigo se existir
+            $old = Setting::get('site_favicon');
+            if ($old && file_exists(public_path('storage/' . $old))) {
+                @unlink(public_path('storage/' . $old));
+            }
+
+            $filename = 'favicon_' . time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('site-logos', $filename, 'public');
+
+            Setting::set('site_favicon', $path, 'string', 'general');
+
+            return response()->json([
+                'success' => true,
+                'path' => $path,
+                'url' => asset('storage/' . $path),
+                'message' => 'Favicon atualizado com sucesso!'
+            ]);
+        } catch (\Illuminate\Validation\ValidationException $ve) {
+            return response()->json(['success' => false, 'errors' => $ve->errors()], 422);
+        } catch (\Exception $e) {
+            \Log::error('Erro ao fazer upload do favicon: ' . $e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Erro ao fazer upload do favicon.'], 500);
         }
     }
 }

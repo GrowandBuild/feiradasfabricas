@@ -42,30 +42,28 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="msapplication-TileColor" content="{{ $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff9900') }}">
-    @php $siteFavicon = setting('site_favicon'); $siteAppIcon = setting('site_app_icon'); @endphp
-    @if($siteAppIcon)
-        @php
-            $appPath = public_path('storage/' . $siteAppIcon);
-            $appVer = file_exists($appPath) ? filemtime($appPath) : time();
-        @endphp
-        <link rel="apple-touch-icon" href="{{ asset('storage/' . $siteAppIcon) }}?_={{ $appVer }}">
-        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('storage/' . $siteAppIcon) }}?_={{ $appVer }}">
-    @else
-        <link rel="apple-touch-icon" href="{{ asset('apple-touch-icon.png') }}">
+    @php
+        $appIcon = setting('site_app_icon');
+        $favicon = setting('site_favicon');
+    @endphp
+    
+    {{-- App Icon / Apple Touch Icon --}}
+    @if($appIcon && file_exists(public_path('storage/' . $appIcon)))
+        @php $appVer = file_exists(public_path('storage/' . $appIcon)) ? filemtime(public_path('storage/' . $appIcon)) : time(); @endphp
+        <link rel="apple-touch-icon" href="{{ asset('storage/' . $appIcon) }}?_={{ $appVer }}">
+        <link rel="apple-touch-icon" sizes="180x180" href="{{ asset('storage/' . $appIcon) }}?_={{ $appVer }}">
     @endif
-    @if($siteFavicon)
-        @php
-            $favPath = public_path('storage/' . $siteFavicon);
-            $favVer = file_exists($favPath) ? filemtime($favPath) : time();
-        @endphp
-        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}">
-        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}">
-        <link rel="mask-icon" href="{{ asset('storage/' . $siteFavicon) }}?_={{ $favVer }}" color="{{ $dept_setting('theme_secondary', '#ff9900') }}">
+    
+    {{-- Favicon --}}
+    @if($favicon && file_exists(public_path('storage/' . $favicon)))
+        @php $favVer = file_exists(public_path('storage/' . $favicon)) ? filemtime(public_path('storage/' . $favicon)) : time(); @endphp
+        <link rel="icon" type="image/png" href="{{ asset('storage/' . $favicon) }}?_={{ $favVer }}">
     @else
-        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('favicon-32x32.png') }}">
-        <link rel="icon" type="image/png" sizes="16x16" href="{{ asset('favicon-16x16.png') }}">
+        <link rel="icon" href="{{ asset('favicon.ico') }}">
     @endif
-    <link rel="manifest" href="{{ route('site.manifest') }}">
+    
+    {{-- Manifest PWA --}}
+    <link rel="manifest" href="{{ route('manifest') }}">
     <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons (para a lupa da Busca Inteligente) -->
