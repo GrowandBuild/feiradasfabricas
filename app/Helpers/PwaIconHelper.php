@@ -18,12 +18,11 @@ class PwaIconHelper
     public static function getManifestIcons(string $baseUrl): array
     {
         $icons = [];
-        
-        // 1. PRIORIDADE: Usar ícones customizados do admin (se existirem)
+        // ONLY use admin-provided icons. No static/public fallback. This enforces
+        // that PWA icons come from the admin panel (site_app_icon or site_favicon).
         $customIcons = self::getCustomIcons($baseUrl);
         if (!empty($customIcons)) {
             $icons = $customIcons;
-            // Log para debug (apenas em desenvolvimento)
             if (config('app.debug')) {
                 \Log::info('PWA: Usando ícones customizados do admin', [
                     'count' => count($icons),
@@ -31,13 +30,11 @@ class PwaIconHelper
                 ]);
             }
         } else {
-            // 2. FALLBACK: Usar ícones nativos apenas se não houver customizados
-            $icons = self::getRequiredIcons($baseUrl);
             if (config('app.debug')) {
-                \Log::info('PWA: Usando ícones nativos (fallback)', [
-                    'count' => count($icons)
-                ]);
+                \Log::warning('PWA: Nenhum ícone customizado encontrado no admin; manifest terá lista de ícones vazia');
             }
+            // Deliberately return empty icons array when admin did not provide icons.
+            return [];
         }
         
         // 3. Validar e garantir que temos os tamanhos obrigatórios (192x192 e 512x512)
@@ -159,37 +156,13 @@ class PwaIconHelper
             return []; // Sem ícones customizados - vai usar nativos
         }
         
-        // 4. Construir URL do ícone customizado
-        $iconUrl = $baseUrl . '/storage/' . $iconPath;
-        
-        // Criar versões obrigatórias do ícone customizado
-        // 192x192 (obrigatório)
-        $icons[] = [
-            'src' => $iconUrl,
-            'sizes' => '192x192',
-            'type' => 'image/png',
-            'purpose' => 'any'
-        ];
-        $icons[] = [
-            'src' => $iconUrl,
-            'sizes' => '192x192',
-            'type' => 'image/png',
-            'purpose' => 'maskable'
-        ];
-        
-        // 512x512 (obrigatório)
-        $icons[] = [
-            'src' => $iconUrl,
-            'sizes' => '512x512',
-            'type' => 'image/png',
-            'purpose' => 'any'
-        ];
-        $icons[] = [
-            'src' => $iconUrl,
-            'sizes' => '512x512',
-            'type' => 'image/png',
-            'purpose' => 'maskable'
-        ];
+        // 4. Construir versões 192x192 e 512x512 a partir do ícone customizado
+        $generated = self::generateResizedIcons($iconPath, $baseUrl);
+        if ($generated) {
+            foreach ($generated as $g) {
+                $icons[] = $g;
+            }
+        }
         
         return $icons;
     }
@@ -267,16 +240,75 @@ class PwaIconHelper
         }
         
         // Se ainda não tiver ícones, usar último recurso absoluto
-        if (empty($icons)) {
-            $icons[] = [
-                'src' => $baseUrl . '/favicon.ico',
-                'sizes' => '192x192',
-                'type' => 'image/x-icon',
-                'purpose' => 'any'
+        return $icons;
+    }
+
+    /**
+     * Generate 192x192 and 512x512 PNGs from an admin-provided icon and
+     * store them under public/storage/pwa-icons/. Returns array of icon
+     * entries ready for the manifest, or empty array on failure.
+     */
+    private static function generateResizedIcons(string $iconPath, string $baseUrl): array
+    {
+        $srcFull = public_path('storage/' . $iconPath);
+        if (!file_exists($srcFull)) {
+            return [];
+        }
+
+        $destDir = public_path('storage/pwa-icons');
+        if (!is_dir($destDir)) {
+            @mkdir($destDir, 0755, true);
+        }
+
+        $basename = pathinfo($iconPath, PATHINFO_FILENAME);
+        $hash = md5_file($srcFull);
+        $dest192 = $destDir . '/' . $basename . '-' . $hash . '-192.png';
+        $dest512 = $destDir . '/' . $basename . '-' . $hash . '-512.png';
+
+        // If already generated, return immediately
+        if (file_exists($dest192) && file_exists($dest512)) {
+            return [
+                ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest192), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest192), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
+                ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest512), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest512), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
             ];
         }
-        
-        return $icons;
+
+        // Attempt to load source image
+        $data = @file_get_contents($srcFull);
+        if ($data === false) return [];
+        $srcImg = @imagecreatefromstring($data);
+        if ($srcImg === false) return [];
+
+        // Helper to resize and save PNG with alpha
+        $resizeAndSave = function($w, $h, $destPath) use ($srcImg) {
+            $dst = imagecreatetruecolor($w, $h);
+            imagesavealpha($dst, true);
+            $trans_colour = imagecolorallocatealpha($dst, 0, 0, 0, 127);
+            imagefill($dst, 0, 0, $trans_colour);
+            $srcW = imagesx($srcImg);
+            $srcH = imagesy($srcImg);
+            imagecopyresampled($dst, $srcImg, 0, 0, 0, 0, $w, $h, $srcW, $srcH);
+            @imagepng($dst, $destPath, 6);
+            imagedestroy($dst);
+            return file_exists($destPath);
+        };
+
+        $ok192 = $resizeAndSave(192, 192, $dest192);
+        $ok512 = $resizeAndSave(512, 512, $dest512);
+        imagedestroy($srcImg);
+
+        if ($ok192 && $ok512) {
+            return [
+                ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest192), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest192), 'sizes' => '192x192', 'type' => 'image/png', 'purpose' => 'maskable'],
+                ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest512), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'any'],
+                ['src' => $baseUrl . '/storage/pwa-icons/' . basename($dest512), 'sizes' => '512x512', 'type' => 'image/png', 'purpose' => 'maskable'],
+            ];
+        }
+
+        return [];
     }
     
     /**
