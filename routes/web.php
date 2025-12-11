@@ -54,73 +54,58 @@ Route::get('/site.webmanifest', function(Request $request) {
     
     $icons = [];
     
-    // Priorizar ícones customizados do admin
-    if ($siteAppIcon && file_exists(public_path('storage/' . $siteAppIcon))) {
-        $appIconUrl = $baseUrl . '/storage/' . $siteAppIcon;
+    // IMPORTANTE: Sempre usar os ícones padrão (192x192 e 512x512) como base
+    // Esses são OBRIGATÓRIOS para PWA instalável funcionar corretamente
+    $icon192Exists = file_exists(public_path('android-chrome-192x192.png'));
+    $icon512Exists = file_exists(public_path('android-chrome-512x512.png'));
+    
+    if ($icon192Exists) {
         $icons[] = [
-            'src' => $appIconUrl,
-            'sizes' => '512x512',
-            'type' => 'image/png',
-            'purpose' => 'any'
-        ];
-        $icons[] = [
-            'src' => $appIconUrl,
-            'sizes' => '512x512',
-            'type' => 'image/png',
-            'purpose' => 'maskable'
-        ];
-        $icons[] = [
-            'src' => $appIconUrl,
+            'src' => $baseUrl . '/android-chrome-192x192.png',
             'sizes' => '192x192',
             'type' => 'image/png',
             'purpose' => 'any'
         ];
         $icons[] = [
-            'src' => $appIconUrl,
+            'src' => $baseUrl . '/android-chrome-192x192.png',
             'sizes' => '192x192',
             'type' => 'image/png',
             'purpose' => 'maskable'
         ];
     }
     
-    // Fallback para ícones padrão na pasta public
+    if ($icon512Exists) {
+        $icons[] = [
+            'src' => $baseUrl . '/android-chrome-512x512.png',
+            'sizes' => '512x512',
+            'type' => 'image/png',
+            'purpose' => 'any'
+        ];
+        $icons[] = [
+            'src' => $baseUrl . '/android-chrome-512x512.png',
+            'sizes' => '512x512',
+            'type' => 'image/png',
+            'purpose' => 'maskable'
+        ];
+    }
+    
+    // Adicionar ícone customizado como adicional (se existir)
+    // Mas NÃO substituir os ícones padrão, pois eles são obrigatórios
+    if ($siteAppIcon && file_exists(public_path('storage/' . $siteAppIcon))) {
+        $appIconUrl = $baseUrl . '/storage/' . $siteAppIcon;
+        // Adicionar como ícone adicional (pode ser usado pelo sistema, mas não substitui os obrigatórios)
+        $icons[] = [
+            'src' => $appIconUrl,
+            'sizes' => '512x512',
+            'type' => 'image/png',
+            'purpose' => 'any'
+        ];
+    }
+    
+    // Se não tiver os ícones padrão, usar fallbacks
     if (empty($icons)) {
-        // Verificar se os ícones existem
-        $icon192Exists = file_exists(public_path('android-chrome-192x192.png'));
-        $icon512Exists = file_exists(public_path('android-chrome-512x512.png'));
-        
-        if ($icon192Exists) {
-            $icons[] = [
-                'src' => $baseUrl . '/android-chrome-192x192.png',
-                'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'any'
-            ];
-            $icons[] = [
-                'src' => $baseUrl . '/android-chrome-192x192.png',
-                'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'maskable'
-            ];
-        }
-        
-        if ($icon512Exists) {
-            $icons[] = [
-                'src' => $baseUrl . '/android-chrome-512x512.png',
-                'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'any'
-            ];
-            $icons[] = [
-                'src' => $baseUrl . '/android-chrome-512x512.png',
-                'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'maskable'
-            ];
-        }
-        
-        // Se ainda não tiver ícones, usar favicon como fallback
-        if (empty($icons) && $siteFavicon && file_exists(public_path('storage/' . $siteFavicon))) {
+        // Tentar usar favicon como fallback
+        if ($siteFavicon && file_exists(public_path('storage/' . $siteFavicon))) {
             $faviconUrl = $baseUrl . '/storage/' . $siteFavicon;
             $icons[] = [
                 'src' => $faviconUrl,
@@ -130,6 +115,21 @@ Route::get('/site.webmanifest', function(Request $request) {
             ];
             $icons[] = [
                 'src' => $faviconUrl,
+                'sizes' => '192x192',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+        } elseif ($siteAppIcon && file_exists(public_path('storage/' . $siteAppIcon))) {
+            // Usar app icon como último recurso
+            $appIconUrl = $baseUrl . '/storage/' . $siteAppIcon;
+            $icons[] = [
+                'src' => $appIconUrl,
+                'sizes' => '512x512',
+                'type' => 'image/png',
+                'purpose' => 'any maskable'
+            ];
+            $icons[] = [
+                'src' => $appIconUrl,
                 'sizes' => '192x192',
                 'type' => 'image/png',
                 'purpose' => 'any maskable'
@@ -173,71 +173,66 @@ Route::get('/site.webmanifest', function(Request $request) {
         }
     }
     
-    // Garantir que temos pelo menos um ícone de 192x192 e 512x512 (requisito mínimo para PWA instalável)
+    // Validar que temos os ícones obrigatórios (192x192 e 512x512)
+    // Esses são OBRIGATÓRIOS para PWA instalável
     $has192 = false;
     $has512 = false;
-    $validIcons = [];
     
     foreach ($icons as $icon) {
-        if (isset($icon['src']) && isset($icon['sizes'])) {
+        if (isset($icon['sizes'])) {
             $sizes = $icon['sizes'];
-            // Verificar se tem 192x192
-            if (preg_match('/192/', $sizes)) {
+            if (preg_match('/\b192\b/', $sizes)) {
                 $has192 = true;
             }
-            // Verificar se tem 512x512
-            if (preg_match('/512/', $sizes)) {
+            if (preg_match('/\b512\b/', $sizes)) {
                 $has512 = true;
             }
-            $validIcons[] = $icon;
         }
     }
     
-    // Se não tiver os tamanhos mínimos, usar os ícones padrão
+    // Se não tiver os tamanhos obrigatórios, adicionar fallbacks
     if (!$has192 || !$has512) {
-        // Tentar usar android-chrome-192x192.png e android-chrome-512x512.png
-        if (file_exists(public_path('android-chrome-192x192.png')) && !$has192) {
-            $validIcons[] = [
+        // Tentar usar os ícones padrão que já devem estar na lista
+        if (!$has192 && file_exists(public_path('android-chrome-192x192.png'))) {
+            array_unshift($icons, [
                 'src' => $baseUrl . '/android-chrome-192x192.png',
                 'sizes' => '192x192',
                 'type' => 'image/png',
                 'purpose' => 'any maskable'
-            ];
+            ]);
             $has192 = true;
         }
-        if (file_exists(public_path('android-chrome-512x512.png')) && !$has512) {
-            $validIcons[] = [
+        if (!$has512 && file_exists(public_path('android-chrome-512x512.png'))) {
+            array_unshift($icons, [
                 'src' => $baseUrl . '/android-chrome-512x512.png',
                 'sizes' => '512x512',
                 'type' => 'image/png',
                 'purpose' => 'any maskable'
-            ];
+            ]);
             $has512 = true;
         }
-    }
-    
-    // Se ainda não tiver, usar o primeiro ícone disponível como fallback
-    if ((!$has192 || !$has512) && !empty($validIcons)) {
-        $firstIcon = $validIcons[0]['src'];
-        if (!$has192) {
-            $validIcons[] = [
-                'src' => $firstIcon,
-                'sizes' => '192x192',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ];
+        
+        // Se ainda não tiver, usar o primeiro ícone disponível (último recurso)
+        if ((!$has192 || !$has512) && !empty($icons)) {
+            $firstIcon = $icons[0]['src'];
+            if (!$has192) {
+                array_unshift($icons, [
+                    'src' => $firstIcon,
+                    'sizes' => '192x192',
+                    'type' => 'image/png',
+                    'purpose' => 'any maskable'
+                ]);
+            }
+            if (!$has512) {
+                array_unshift($icons, [
+                    'src' => $firstIcon,
+                    'sizes' => '512x512',
+                    'type' => 'image/png',
+                    'purpose' => 'any maskable'
+                ]);
+            }
         }
-        if (!$has512) {
-            $validIcons[] = [
-                'src' => $firstIcon,
-                'sizes' => '512x512',
-                'type' => 'image/png',
-                'purpose' => 'any maskable'
-            ];
-        }
     }
-    
-    $icons = $validIcons;
     
     $manifest = [
         'id' => '/',
