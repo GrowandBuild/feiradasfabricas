@@ -38,6 +38,7 @@
     
     @php $sessionTheme = session('current_department_theme', null); @endphp
     <meta name="theme-color" content="{{ $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff9900') }}">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="msapplication-TileColor" content="{{ $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff9900') }}">
@@ -2434,23 +2435,43 @@
     {{-- Service Worker registration for PWA (site-wide) --}}
     <script>
         if ('serviceWorker' in navigator) {
-            // Registrar imediatamente, não esperar pelo load
-            navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
-                .then(function(reg) {
-                    console.log('✅ ServiceWorker registrado com sucesso:', reg.scope);
-                    console.log('📱 PWA Status:', {
-                        installing: reg.installing,
-                        waiting: reg.waiting,
-                        active: reg.active
-                    });
-                    // Verificar atualizações
-                    reg.addEventListener('updatefound', function() {
-                        console.log('🔄 Nova versão do Service Worker encontrada');
-                    });
-                })
-                .catch(function(err) {
-                    console.error('❌ Falha ao registrar ServiceWorker:', err);
-                });
+            // Limpar service workers antigos primeiro
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for(let registration of registrations) {
+                    registration.unregister();
+                }
+                
+                // Aguardar um pouco e então registrar novo
+                setTimeout(function() {
+                    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                        .then(function(reg) {
+                            console.log('✅ ServiceWorker registrado com sucesso:', reg.scope);
+                            
+                            // Aguardar o service worker ficar ativo
+                            if (reg.installing) {
+                                console.log('📱 Service Worker instalando...');
+                                reg.installing.addEventListener('statechange', function() {
+                                    if (this.state === 'activated') {
+                                        console.log('✅ Service Worker ativado!');
+                                    }
+                                });
+                            } else if (reg.waiting) {
+                                console.log('📱 Service Worker aguardando...');
+                                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                            } else if (reg.active) {
+                                console.log('✅ Service Worker já está ativo:', reg.active.state);
+                            }
+                            
+                            // Verificar atualizações
+                            reg.addEventListener('updatefound', function() {
+                                console.log('🔄 Nova versão do Service Worker encontrada');
+                            });
+                        })
+                        .catch(function(err) {
+                            console.error('❌ Falha ao registrar ServiceWorker:', err);
+                        });
+                }, 100);
+            });
         } else {
             console.warn('⚠️ Service Worker não suportado neste navegador');
         }

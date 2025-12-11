@@ -7,10 +7,4 @@ const app = createApp({});
 app.component('DepartmentsModal', DepartmentsModal);
 app.mount('#departments-modal-root');
 
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/service-worker.js').catch((error) => {
-            console.error('SW registration failed:', error);
-        });
-    });
-}
+// Service Worker registration removido - está sendo feito no layout principal para evitar duplicação

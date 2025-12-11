@@ -1,10 +1,11 @@
 const CACHE_PREFIX = 'feira-fabricas-cache';
 // Bump version to invalidate old caches
-const CACHE_VERSION = 'v2';
+// v4: Removed HTML page caching to prevent stale pages when server is offline
+const CACHE_VERSION = 'v4';
 const CACHE_NAME = `${CACHE_PREFIX}-${CACHE_VERSION}`;
 
 const CORE_ASSETS = [
-  '/',
+  // Only cache static assets, never HTML pages
   '/android-chrome-192x192.png',
   '/android-chrome-512x512.png',
   '/favicon-32x32.png',
@@ -26,15 +27,26 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
-          .map(key => caches.delete(key))
-      )
-    )
+    Promise.all([
+      // Limpar caches antigos
+      caches.keys().then(keys =>
+        Promise.all(
+          keys
+            .filter(key => key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME)
+            .map(key => caches.delete(key))
+        )
+      ),
+      // Tomar controle imediato de todas as páginas
+      self.clients.claim()
+    ])
   );
-  self.clients.claim();
+});
+
+// Escutar mensagem para forçar ativação
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener('fetch', event => {
@@ -48,23 +60,24 @@ self.addEventListener('fetch', event => {
   const isAdmin = url.pathname.startsWith('/admin');
   const isApi = url.pathname.startsWith('/api') || url.pathname.startsWith('/webhooks');
 
-  // For HTML navigation requests, prefer network-first to avoid stale pages
+  // For HTML navigation requests, NEVER cache - always fetch from server
+  // This prevents serving stale pages when server is offline
   const isHtmlRequest = acceptHeader.includes('text/html');
 
-  if (isAdmin || isApi) {
-    event.respondWith(fetch(event.request).catch(() => caches.match(event.request)));
-    return;
-  }
-
-  if (isHtmlRequest) {
+  if (isAdmin || isApi || isHtmlRequest) {
+    // Always fetch from network, never serve from cache for HTML/admin/API
     event.respondWith(
-      fetch(event.request)
-        .then(resp => {
-          const clone = resp.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-          return resp;
-        })
-        .catch(() => caches.match(event.request))
+      fetch(event.request).catch(() => {
+        // If offline and it's HTML, show error instead of stale cache
+        if (isHtmlRequest) {
+          return new Response('Servidor offline. Por favor, verifique sua conexão.', {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          });
+        }
+        return caches.match(event.request);
+      })
     );
     return;
   }
