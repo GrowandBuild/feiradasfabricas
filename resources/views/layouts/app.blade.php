@@ -2435,42 +2435,46 @@
     {{-- Service Worker registration for PWA (site-wide) --}}
     <script>
         if ('serviceWorker' in navigator) {
-            // Limpar service workers antigos primeiro
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-                for(let registration of registrations) {
-                    registration.unregister();
-                }
-                
-                // Aguardar um pouco e então registrar novo
-                setTimeout(function() {
-                    navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
-                        .then(function(reg) {
-                            console.log('✅ ServiceWorker registrado com sucesso:', reg.scope);
-                            
-                            // Aguardar o service worker ficar ativo
-                            if (reg.installing) {
-                                console.log('📱 Service Worker instalando...');
-                                reg.installing.addEventListener('statechange', function() {
-                                    if (this.state === 'activated') {
-                                        console.log('✅ Service Worker ativado!');
-                                    }
-                                });
-                            } else if (reg.waiting) {
-                                console.log('📱 Service Worker aguardando...');
-                                reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-                            } else if (reg.active) {
-                                console.log('✅ Service Worker já está ativo:', reg.active.state);
-                            }
-                            
-                            // Verificar atualizações
-                            reg.addEventListener('updatefound', function() {
-                                console.log('🔄 Nova versão do Service Worker encontrada');
+            // Registrar service worker imediatamente (melhor para mobile)
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('/service-worker.js', { scope: '/' })
+                    .then(function(reg) {
+                        console.log('✅ ServiceWorker registrado com sucesso:', reg.scope);
+                        
+                        // Aguardar o service worker ficar ativo
+                        if (reg.installing) {
+                            console.log('📱 Service Worker instalando...');
+                            reg.installing.addEventListener('statechange', function() {
+                                if (this.state === 'activated') {
+                                    console.log('✅ Service Worker ativado!');
+                                }
                             });
-                        })
-                        .catch(function(err) {
-                            console.error('❌ Falha ao registrar ServiceWorker:', err);
+                        } else if (reg.waiting) {
+                            console.log('📱 Service Worker aguardando...');
+                            reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+                        } else if (reg.active) {
+                            console.log('✅ Service Worker já está ativo:', reg.active.state);
+                        }
+                        
+                        // Verificar atualizações periodicamente
+                        reg.addEventListener('updatefound', function() {
+                            console.log('🔄 Nova versão do Service Worker encontrada');
+                            const newWorker = reg.installing;
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'activated') {
+                                    console.log('🔄 Nova versão ativada! Recarregue a página.');
+                                }
+                            });
                         });
-                }, 100);
+                        
+                        // Verificar atualizações a cada hora
+                        setInterval(function() {
+                            reg.update();
+                        }, 3600000); // 1 hora
+                    })
+                    .catch(function(err) {
+                        console.error('❌ Falha ao registrar ServiceWorker:', err);
+                    });
             });
         } else {
             console.warn('⚠️ Service Worker não suportado neste navegador');

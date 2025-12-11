@@ -39,6 +39,9 @@ Route::get('/site.webmanifest', function(Request $request) {
     $sessionTheme = session('current_department_theme', null);
     $themeSecondary = $sessionTheme['theme_secondary'] ?? $dept_setting('theme_secondary', '#ff6b35');
 
+    // Usar URL absoluta para os ícones (necessário para PWA no mobile)
+    $baseUrl = $request->getSchemeAndHttpHost();
+    
     $manifest = [
         'name' => setting('site_name', 'Feira das Fábricas'),
         'short_name' => setting('site_short_name', 'Feira'),
@@ -46,30 +49,31 @@ Route::get('/site.webmanifest', function(Request $request) {
         'start_url' => '/?source=pwa',
         'scope' => '/',
         'display' => 'standalone',
-        'orientation' => 'portrait',
+        'orientation' => 'portrait-primary',
         'theme_color' => $themeSecondary,
         'background_color' => $dept_setting('theme_background', '#ffffff'),
+        'categories' => ['shopping', 'ecommerce'],
         'icons' => [
             [
-                'src' => '/android-chrome-192x192.png',
+                'src' => $baseUrl . '/android-chrome-192x192.png',
                 'sizes' => '192x192',
                 'type' => 'image/png',
                 'purpose' => 'any'
             ],
             [
-                'src' => '/android-chrome-192x192.png',
+                'src' => $baseUrl . '/android-chrome-192x192.png',
                 'sizes' => '192x192',
                 'type' => 'image/png',
                 'purpose' => 'maskable'
             ],
             [
-                'src' => '/android-chrome-512x512.png',
+                'src' => $baseUrl . '/android-chrome-512x512.png',
                 'sizes' => '512x512',
                 'type' => 'image/png',
                 'purpose' => 'any'
             ],
             [
-                'src' => '/android-chrome-512x512.png',
+                'src' => $baseUrl . '/android-chrome-512x512.png',
                 'sizes' => '512x512',
                 'type' => 'image/png',
                 'purpose' => 'maskable'
