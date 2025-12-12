@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\RegionalShippingController;
 use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentBadgeController;
 use App\Http\Controllers\Admin\AlbumController as AdminAlbumController;
+use App\Http\Controllers\Admin\ProductFeedbackController;
 // use App\Http\Controllers\Admin\MelhorEnvioController; // removido (frete)
 use Illuminate\Support\Facades\Route;
 
@@ -126,6 +127,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     // Fragment endpoint to return a single banner HTML fragment (used by AJAX front-end updates)
     Route::get('banners/{banner}/fragment', [BannerController::class, 'fragment'])->name('banners.fragment');
         Route::patch('banners/{banner}/toggle-active', [BannerController::class, 'toggleActive'])->name('banners.toggle-active');
+
+        // Feedbacks de Produtos
+        Route::resource('feedbacks', ProductFeedbackController::class);
+        Route::patch('feedbacks/{feedback}/toggle-approval', [ProductFeedbackController::class, 'toggleApproval'])->name('feedbacks.toggle-approval');
 
         // Álbuns (novo sistema simples)
         Route::resource('albums', AdminAlbumController::class);

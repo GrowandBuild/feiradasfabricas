@@ -144,6 +144,10 @@ Route::middleware(['auth:customer,admin'])->group(function () {
     Route::post('/produto/{product}/favoritar', [App\Http\Controllers\WishlistController::class, 'store'])->name('wishlist.store');
     Route::delete('/produto/{product}/desfavoritar', [App\Http\Controllers\WishlistController::class, 'destroy'])->name('wishlist.destroy');
     Route::post('/produto/{product}/toggle-favorito', [App\Http\Controllers\WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    
+    // Feedbacks de Produtos
+    Route::post('/produto/{product}/feedback', [App\Http\Controllers\ProductFeedbackController::class, 'store'])->name('product.feedback.store');
+    Route::get('/produto/{product}/feedbacks', [App\Http\Controllers\ProductFeedbackController::class, 'getProductFeedbacks'])->name('product.feedbacks');
 });
 
 // Álbuns públicos (novo)

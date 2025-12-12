@@ -78,6 +78,10 @@
                     <i class="bi bi-people"></i> 
                     <span>Clientes</span>
                 </a>
+                <a class="nav-link {{ request()->routeIs('admin.feedbacks.*') ? 'active' : '' }}" href="{{ route('admin.feedbacks.index') }}">
+                    <i class="bi bi-chat-heart"></i>
+                    <span>Feedbacks</span>
+                </a>
                 <a class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">
                     <i class="bi bi-ticket-perforated"></i> 
                     <span>Cupons</span>

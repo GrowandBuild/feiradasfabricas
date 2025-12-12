@@ -35,11 +35,6 @@ class TinkerServiceProvider extends ServiceProvider implements DeferrableProvide
      */
     public function register()
     {
-        // Prevent Tinker from being available outside local environment.
-        if (! $this->app->environment('local')) {
-            return;
-        }
-
         $this->app->singleton('command.tinker', function () {
             return new TinkerCommand;
         });

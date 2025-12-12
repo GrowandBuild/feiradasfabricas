@@ -292,11 +292,14 @@
         </div>
     </div>
 
+    <!-- Seção de Feedbacks -->
+    @include('components.product-feedbacks', ['product' => $product])
+
     <!-- Produtos Relacionados -->
     @if($relatedProducts->count() > 0)
         <div class="related-products-section">
                 <h2 class="related-products-title">Produtos Relacionados</h2>
-                <div class="row">
+            <div class="row">
                     @php $linkDept = $currentDepartmentSlug ?? request()->get('department') ?? null; @endphp
                     @foreach($relatedProducts as $relatedProduct)
                         <div class="col-lg-3 col-md-4 col-sm-6 mb-4">

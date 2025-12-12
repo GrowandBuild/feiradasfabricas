@@ -133,6 +133,7 @@ return array(
     'App\\Services\\Shipping\\AddressService' => $baseDir . '/app/Services/Shipping/AddressService.php',
     'App\\Services\\VariationService' => $baseDir . '/app/Services/VariationService.php',
     'App\\View\\Components\\PromotionalBadge' => $baseDir . '/app/View/Components/PromotionalBadge.php',
+    'App\\View\\Components\\PwaInstallPrompt' => $baseDir . '/app/View/Components/PwaInstallPrompt.php',
     'Attribute' => $vendorDir . '/symfony/polyfill-php80/Resources/stubs/Attribute.php',
     'Brick\\Math\\BigDecimal' => $vendorDir . '/brick/math/src/BigDecimal.php',
     'Brick\\Math\\BigInteger' => $vendorDir . '/brick/math/src/BigInteger.php',

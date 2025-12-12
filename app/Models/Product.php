@@ -358,6 +358,22 @@ class Product extends Model
     }
 
     /**
+     * Relacionamento com feedbacks
+     */
+    public function feedbacks()
+    {
+        return $this->hasMany(ProductFeedback::class);
+    }
+
+    /**
+     * Relacionamento com feedbacks aprovados
+     */
+    public function approvedFeedbacks()
+    {
+        return $this->hasMany(ProductFeedback::class)->approved();
+    }
+
+    /**
      * Verifica se o produto está nos favoritos de um cliente
      */
     public function isFavoriteFor($customerId)
