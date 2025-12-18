@@ -1,6 +1,14 @@
 @auth('admin')
     <!-- Smart Search Flutuante (visível apenas para Admin logado) -->
     <style>
+        /* Wizard step animation */
+        .qp-step { transition: opacity .28s ease, transform .28s ease; }
+        .qp-step[style*="display: none"] { opacity: 0; transform: translateY(8px); pointer-events: none; }
+        .qp-step[style*="display: "] { opacity: 1; transform: translateY(0); }
+        /* Full-form mode: show all steps stacked and reveal save button */
+        .qp-full .qp-step { display: block !important; opacity: 1 !important; transform: none !important; }
+        .qp-full .ss-footer .ss-btn.ss-btn-primary { display: inline-block !important; }
+        .qp-full .qp-wizard-nav { display: none !important; }
     .smart-search-fab { position: fixed; bottom: 30px; right: 30px; z-index: 1101; display: flex; flex-direction: column; gap: 12px; align-items: flex-end; }
         .smart-search-trigger {
             width: 60px; height: 60px; border-radius: 50%; border: none; cursor: pointer;
@@ -79,12 +87,29 @@
     .qp-price-label { font-size:12px; color:#475569; font-weight:600; }
     .qp-price-value { font-size:16px; font-weight:700; color:var(--success-color, #10b981); }
     .qp-price-badge { font-size:11px; color:#334155; background:#eef2ff; padding:4px 8px; border-radius:999px; border:1px solid rgba(99,102,241,0.08); }
-    /* Modal: centered, scrollable body and responsive max width */
-    .ss-modal { width: 94%; max-width: 820px; background: #fff; border-radius: 12px; box-shadow: 0 30px 80px rgba(0,0,0,.45); overflow: hidden; display: flex; flex-direction: column; max-height: 90vh; margin: 0 12px; }
+    /* Modal: centered, scrollable body and responsive max width
+       Increased default size to be much larger on desktop while remaining responsive.
+    */
+    .ss-modal {
+        max-width: none;
+        width: 96vw;
+        padding: 18px 22px;
+        height: 92vh;
+        display: flex;
+        flex-direction: column;
+        border-radius: 14px;
+        position: relative;
+        background: var(--modal-surface, #0b1220);
+        border: 1px solid var(--modal-border, rgba(255,255,255,0.04));
+        backdrop-filter: blur(6px) saturate(110%);
+        box-shadow: 0 12px 40px rgba(2,6,23,0.36);
+        color: var(--modal-text-color, #fff);
+        overflow: hidden;
+    }
     .ss-modal-center { align-self: center; }
     .ss-modal .ss-header { padding: 10px 12px; font-weight: 600; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: space-between; gap:8px; }
-    .ss-modal .ss-body { padding: 12px; overflow: auto; flex: 1 1 auto; max-height: calc(85vh - 96px); }
-    .ss-modal .ss-footer { padding: 8px 12px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #e2e8f0; flex-shrink: 0; }
+    .ss-modal .ss-body { padding: 12px; overflow: auto; flex: 1 1 auto; max-height: none; }
+    .ss-modal .ss-footer { padding: 8px 12px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #e2e8f0; flex-shrink: 0; background: transparent; }
     /* Tab buttons inside modal header - compact */
     .ss-tab { padding: 6px 10px; font-size: 0.85rem; border-radius: 8px; background: #f3f4f6; color: #0f172a; border: none; cursor: pointer; }
     .ss-tab.active { background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%); color: #fff; }
@@ -345,6 +370,87 @@
                     <p>Digite algo para buscar produtos</p>
                 </div>
             </div>
+
+                <script>
+                    // Ensure modal uses site's CSS variables even on browsers without color-mix
+                    (function(){
+                        function hexToRgb(hex){
+                            if(!hex) return null;
+                            hex = hex.replace('#','').trim();
+                            if (hex.length === 3) hex = hex.split('').map(h=>h+h).join('');
+                            if (hex.length !== 6) return null;
+                            const r = parseInt(hex.substring(0,2),16);
+                            const g = parseInt(hex.substring(2,4),16);
+                            const b = parseInt(hex.substring(4,6),16);
+                            return r+','+g+','+b;
+                        }
+
+                        function applyThemeToModal(){
+                            try{
+                                const overlay = document.getElementById('ssQuickProductOverlay');
+                                if (!overlay) return;
+
+                                // traverse from overlay up to root to find page-specific CSS variables
+                                function findVarOnAncestors(el, varName){
+                                    let node = el;
+                                    while(node){
+                                        try{
+                                            const s = getComputedStyle(node);
+                                            const v = s.getPropertyValue(varName);
+                                            if (v && v.trim() !== '') return v.trim();
+                                        }catch(e){ /* ignore */ }
+                                        node = node.parentElement;
+                                    }
+                                    // fallback to body and documentElement
+                                    try{ const b = getComputedStyle(document.body).getPropertyValue(varName); if (b && b.trim() !== '') return b.trim(); }catch(e){}
+                                    try{ const r = getComputedStyle(document.documentElement).getPropertyValue(varName); if (r && r.trim() !== '') return r.trim(); }catch(e){}
+                                    return null;
+                                }
+
+                                const primary = findVarOnAncestors(overlay, '--primary-color') || '#0b1220';
+                                const primaryDark = findVarOnAncestors(overlay, '--primary-dark') || primary;
+                                const secondary = findVarOnAncestors(overlay, '--secondary-color') || findVarOnAncestors(overlay, '--accent-color') || '#ff7a3a';
+                                const cardBg = findVarOnAncestors(overlay, '--card-bg') || '#0b1220';
+
+                                // helper convert and luminance
+                                const primaryRgb = hexToRgb(primary.replace(/\s/g,'')) || '';
+                                const secRgb = hexToRgb(secondary.replace(/\s/g,'')) || null;
+                                function luminanceFromRgb(rgbStr){ if(!rgbStr) return 0; const parts = rgbStr.split(',').map(n=>parseInt(n,10)/255); for(let i=0;i<parts.length;i++){ const v = parts[i]; parts[i] = v <= 0.03928 ? v/12.92 : Math.pow((v+0.055)/1.055,2.4); } return 0.2126*parts[0] + 0.7152*parts[1] + 0.0722*parts[2]; }
+
+                                // choose modal surface and text for page-specific theme
+                                let modalSurface = '';
+                                let modalText = '#ffffff';
+                                let modalBorder = 'rgba(0,0,0,0.06)';
+                                if(primaryRgb){
+                                    modalSurface = `rgba(${primaryRgb}, 0.96)`;
+                                    const lum = luminanceFromRgb(primaryRgb);
+                                    modalText = lum > 0.65 ? '#071022' : '#ffffff';
+                                    modalBorder = secRgb ? `rgba(${secRgb},0.22)` : `rgba(${primaryRgb},0.14)`;
+                                } else if(secRgb){
+                                    modalSurface = `rgba(${secRgb}, 0.12)`;
+                                    modalText = '#ffffff';
+                                    modalBorder = `rgba(${secRgb},0.22)`;
+                                } else {
+                                    modalSurface = cardBg;
+                                    modalText = 'var(--text-primary, #0f172a)';
+                                }
+
+                                // expose computed vars on overlay
+                                overlay.style.setProperty('--qp-primary', primary);
+                                overlay.style.setProperty('--qp-dark', primaryDark);
+                                overlay.style.setProperty('--qp-secondary', secondary);
+                                overlay.style.setProperty('--qp-card-bg', cardBg);
+                                if(primaryRgb) overlay.style.setProperty('--qp-primary-rgb', primaryRgb);
+                                if(secRgb) overlay.style.setProperty('--qp-secondary-rgb', secRgb);
+                                overlay.style.setProperty('--modal-surface', modalSurface);
+                                overlay.style.setProperty('--modal-text-color', modalText);
+                                overlay.style.setProperty('--modal-border', modalBorder);
+                            }catch(e){ console.debug && console.debug('applyThemeToModal failed', e); }
+                        }
+
+                        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', applyThemeToModal); else applyThemeToModal();
+                    })();
+                </script>
         </div>
         
         <!-- Painel de Departamentos (ANTIGO) - comentado para substituição por versão mais simples -->
@@ -503,59 +609,217 @@
 
     <!-- Quick-create product overlay moved outside the search panel to avoid layout/overflow conflicts -->
     <style>
-        /* Keep quick-create modal fixed size across tabs and make panels scroll internally */
+        /* Modern, colorful quick-create modal styles using site theme vars */
+        #ssQuickProductOverlay {
+            /* prefer site variables if present */
+            --qp-primary: var(--primary-color, #06b6d4);
+            --qp-dark: var(--primary-dark, #7c3aed);
+            --qp-secondary: var(--secondary-color, #ff7a3a); /* used for action buttons */
+            --qp-accent: var(--accent-color, #10b981);
+            --qp-card-bg: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+            --qp-surface: #ffffff;
+            --qp-muted: #64748b;
+            --qp-radius: 12px;
+        }
+
         #ssQuickProductOverlay .ss-modal {
-            max-width: 920px !important;
-            width: calc(100% - 48px) !important;
-            height: 80vh !important;
+            /* Allow larger modal while keeping reasonable limits */
+            max-width: 1200px;
+            width: calc(100vw - 80px);
+            height: 80vh;
             box-sizing: border-box;
-            overflow: hidden !important;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            border-radius: var(--qp-radius);
+            /* Modal surface: prefer explicit --modal-surface set by JS */
+            background: var(--modal-surface, rgba(255,255,255,0.04));
+            color: var(--modal-text-color, var(--text-primary, #0f172a));
+            backdrop-filter: blur(10px) saturate(120%);
+            -webkit-backdrop-filter: blur(10px) saturate(120%);
+            box-shadow: 0 30px 80px rgba(2,6,23,0.28), 0 6px 32px rgba(2,6,23,0.12) inset;
+            border: 1px solid var(--modal-border, rgba(0,0,0,0.06));
+            position: relative;
+        }
+
+        /* Outer neon glow using secondary color if available */
+        #ssQuickProductOverlay::before {
+            content: '';
+            position: absolute; inset: -6px; border-radius: calc(var(--qp-radius) + 6px);
+            background: transparent; z-index: -2;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+        }
+        #ssQuickProductOverlay::after {
+            content: '';
+            position: absolute; inset: -1px; border-radius: calc(var(--qp-radius) + 1px);
+            z-index: -1; pointer-events: none;
+            background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+            box-shadow: 0 6px 30px rgba(0,0,0,0.12);
+        }
+
+        /* Header uses the site's primary gradient (keeps identity) */
+        #ssQuickProductOverlay .ss-header {
+            flex: 0 0 auto;
+            padding: 12px 16px;
+            display:flex; align-items:center; justify-content:space-between;
+            background: linear-gradient(90deg, var(--qp-primary), var(--qp-dark));
+            color: #fff;
+            border-top-left-radius: calc(var(--qp-radius) - 2px);
+            border-top-right-radius: calc(var(--qp-radius) - 2px);
+            gap: 12px;
+        }
+
+        /* Tabs as modern pills with icons */
+        #ssQuickProductOverlay .ss-tab {
+            background: transparent;
+            color: rgba(255,255,255,0.95);
+            border: none;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-weight:600;
+            cursor: pointer;
+            transition: all .18s ease;
+            box-shadow: none;
+            opacity: 0.95;
+        }
+        #ssQuickProductOverlay .ss-tab:hover { transform: translateY(-2px); opacity:1; }
+        #ssQuickProductOverlay .ss-tab.active {
+            background: rgba(255,255,255,0.12);
+            color: #fff;
+            box-shadow: 0 6px 20px rgba(2,6,23,0.12);
+        }
+
+        /* Body panels */
+        #ssQuickProductOverlay .qp-tab-panel { flex: 1 1 auto; display: block; overflow: hidden; }
+        #ssQuickProductOverlay .qp-tab-panel > .ss-body { height: 100% !important; overflow: auto !important; box-sizing: border-box; padding: 18px; }
+        #ssQuickProductOverlay .ss-body { flex: 1 1 auto; overflow: auto !important; padding-bottom: 120px; }
+
+        /* Make form controls friendlier */
+        #ssQuickProductOverlay .form-control, #ssQuickProductOverlay .form-select, #ssQuickProductOverlay textarea {
+            border-radius: 10px; border: 1px solid rgba(15,23,42,0.06);
+            padding: 10px 12px; box-shadow: none; background: #fff;
+        }
+        #ssQuickProductOverlay label.form-label { font-weight:700; color:#0f172a; }
+        #ssQuickProductOverlay .text-muted { color: var(--qp-muted); }
+
+        /* Footer positioned inside the overlay modal (absolute inside modal) */
+        #ssQuickProductOverlay .ss-footer {
+            position: absolute; left: 18px; right: 18px; bottom: 18px; z-index: 60;
+            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,251,255,0.98));
+            padding: 12px 16px; display:flex; gap:8px; justify-content:flex-end; align-items:center; border-radius: 10px;
+            box-shadow: 0 6px 24px rgba(2,6,23,0.18);
+        }
+        /* Compact footer appearance (dark / flat) */
+        #ssQuickProductOverlay.qp-compact .ss-footer {
+            background: rgba(6,8,12,0.86);
+            color: var(--modal-text-color, #e6eef8);
+            box-shadow: 0 6px 20px rgba(2,6,23,0.28);
+            border-radius: 8px;
+        }
+        #ssQuickProductOverlay.qp-compact .ss-footer .ss-btn { box-shadow: none; }
+
+        /* Primary button — uses site secondary/accent (keeps CTA consistent) */
+        #ssQuickProductOverlay .ss-btn.ss-btn-primary {
+            background: linear-gradient(90deg,var(--qp-secondary),var(--qp-accent));
+            color: #ffffff; border: none; padding: 10px 16px; border-radius: 10px; font-weight:700; box-shadow: 0 10px 26px rgba(15,23,42,0.12);
+            display:inline-flex; gap:8px; align-items:center;
+        }
+        #ssQuickProductOverlay .ss-btn.ss-btn-secondary {
+            background: transparent; border: 1px solid rgba(255,255,255,0.14); color: #fff; padding:8px 12px; border-radius:8px;
+        }
+
+        /* Floating actions: circular colorful buttons */
+        #ssQuickProductOverlay .qp-floating-actions { display: none; }
+        #ssQuickProductOverlay.active .qp-floating-actions { display: flex; position: fixed; right: 28px; bottom: 28px; gap: 12px; z-index: 4000; }
+        #ssQuickProductOverlay .qp-floating-actions .ss-btn { box-shadow: 0 12px 30px rgba(2,6,23,0.12); border-radius: 999px; padding:12px 14px; }
+
+        /* Category chips (use secondary color) */
+        .qp-cat-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:8px; }
+        .qp-cat-chips .qp-chip { padding:6px 10px; border-radius:999px; background: linear-gradient(90deg,var(--qp-secondary),var(--qp-accent)); color:#08112a; font-weight:600; box-shadow:0 8px 20px rgba(15,23,42,0.06); }
+
+        /* Price badges */
+        .qp-price-badge { display:inline-block; padding:6px 10px; border-radius:999px; background: linear-gradient(90deg,#06b6d4,#7c3aed); color:#fff; font-weight:700; font-size:0.85rem; }
+
+        /* Small responsive tweaks */
+        @media (max-width: 640px) {
+            /* Make modal responsive: allow max dimensions but avoid forcing fixed height (prevents fullscreen) */
+            #ssQuickProductOverlay .ss-modal { max-width: 96vw; max-height: 78vh; }
+            #ssQuickProductOverlay .ss-body { padding: 12px; }
+            #ssQuickProductOverlay .ss-header { padding: 10px; }
+        }
+
+        /* Subtle animations */
+        @keyframes qp-fade-in-up { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+        #ssQuickProductOverlay .ss-modal { animation: qp-fade-in-up .28s cubic-bezier(.2,.9,.2,1); }
+        .ss-tab .bi { margin-right:8px; transform: translateY(0); transition: transform .18s ease; }
+        .ss-tab:hover .bi { transform: translateY(-3px); }
+        /* Next button micro-move */
+        .qp-next-btn { transition: transform .12s ease, box-shadow .12s ease; }
+        .qp-next-btn:hover { transform: translateY(-3px); box-shadow: 0 12px 30px rgba(15,23,42,0.09); }
+        /* Compact header (icon-only) */
+        .ss-header-compact .ss-tab { padding:8px; width:44px; height:44px; display:inline-flex; align-items:center; justify-content:center; border-radius:10px; background:transparent; border:1px solid transparent; transition: transform .12s ease, background .12s ease, box-shadow .12s ease; }
+        .ss-header-compact .ss-tab i { font-size:18px; }
+        .ss-header-compact .ss-tab.active { background: linear-gradient(90deg, rgba(var(--qp-secondary-rgb,255,122,58),0.12), rgba(var(--qp-accent-rgb,124,58,237),0.10)); box-shadow: 0 8px 28px rgba(var(--qp-secondary-rgb,255,122,58),0.12); transform: translateY(-2px); }
+        .ss-btn-ghost { background:transparent; border:1px solid rgba(255,255,255,0.04); padding:8px; border-radius:10px; display:inline-flex; align-items:center; justify-content:center; height:40px; width:40px; }
+        /* Performance hints: prefer transform/opacity; avoid expensive filters on animated elements */
+        .ss-modal, .ss-header, .ss-body { will-change: transform, opacity; }
+
+        /* Make the header of this overlay visually invisible while keeping buttons functional */
+        #ssQuickProductOverlay .ss-header {
+            background: transparent !important;
+            box-shadow: none !important;
+            border-bottom: none !important;
+            color: var(--modal-text-color, #e6eef8) !important;
+            padding: 8px 12px !important;
+        }
+        /* Ensure the modal top corners remain visible without a colored header bar */
+        #ssQuickProductOverlay .ss-modal { overflow: visible; }
+        /* Full-screen modal variant */
+        #ssQuickProductOverlay .ss-modal.ss-modal-full {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: none !important;
+            max-height: none !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            padding: 18px !important;
             display: flex !important;
             flex-direction: column !important;
+            box-shadow: none !important;
+            background: linear-gradient(180deg, rgba(6,8,12,0.96), rgba(4,6,10,0.94));
         }
-        /* Header / Footer should not grow */
-        #ssQuickProductOverlay .ss-header { flex: 0 0 auto; }
-        #ssQuickProductOverlay .ss-footer { flex: 0 0 auto; }
-        /* Tab panels fill remaining space and scroll internally without resizing modal */
-        #ssQuickProductOverlay .qp-tab-panel { flex: 1 1 auto; display: block; overflow: hidden; }
-        #ssQuickProductOverlay .qp-tab-panel > .ss-body { height: 100% !important; overflow: auto !important; box-sizing: border-box; padding-right: 8px; }
-        /* Fallback for older markup where .ss-body sits directly under .ss-modal */
-        #ssQuickProductOverlay .ss-body { flex: 1 1 auto; overflow: auto !important; }
-
-        /* Ensure the modal footer (Salvar Produto) remains visible: make it sticky and add spacing in the body */
-        #ssQuickProductOverlay .ss-footer {
-            position: sticky;
-            bottom: 0;
-            background: #fff;
-            z-index: 30;
-            box-shadow: 0 -8px 20px rgba(2,6,23,0.06);
+        /* Fullscreen when applied on the overlay (more robust) */
+        #ssQuickProductOverlay.qp-fullscreen .ss-modal {
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-width: none !important;
+            max-height: none !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            padding: 18px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            box-shadow: none !important;
+            background: linear-gradient(180deg, rgba(6,8,12,0.96), rgba(4,6,10,0.94));
+            z-index: 3050;
         }
-        /* Prevent body content from being hidden behind the sticky footer */
-        #ssQuickProductOverlay .ss-body { padding-bottom: 72px; }
-
-        /* Small adjustment for mobile screens */
-        @media (max-width: 640px) {
-            #ssQuickProductOverlay .ss-modal { max-width: 96vw; height: 76vh !important; }
-            #ssQuickProductOverlay .qp-tab-panel > .ss-body, #ssQuickProductOverlay .ss-body { max-height: none !important; }
-            #ssQuickProductOverlay .ss-body { padding-bottom: 88px; }
-        }
-
-        /* Floating actions: fixed buttons shown while quick-create overlay active */
-        #ssQuickProductOverlay .qp-floating-actions { display: none; }
-        #ssQuickProductOverlay.active .qp-floating-actions { display: flex; position: fixed; right: 28px; bottom: 28px; gap: 8px; z-index: 4000; }
-        #ssQuickProductOverlay .qp-floating-actions .ss-btn { box-shadow: 0 8px 20px rgba(2,6,23,0.08); }
     </style>
 
     <div class="ss-overlay" id="ssQuickProductOverlay" aria-modal="true" role="dialog">
         <div class="ss-modal ss-modal-center" role="document">
-            <div class="ss-header" style="display:flex; align-items:center; justify-content:space-between;">
+            <div class="ss-header ss-header-compact" style="display:flex; align-items:center; justify-content:space-between;">
                 <div style="display:flex; gap:8px; align-items:center;">
-                    <button class="ss-tab active" data-tab="create" id="qpTabCreate">Criar</button>
-                    <button class="ss-tab" data-tab="manage" id="pmTabManage">Gerenciador</button>
-                    <button class="ss-tab" data-tab="latest" id="pmTabLatest">Últimos</button>
+                    <button class="ss-tab active" data-tab="create" id="qpTabCreate" aria-label="Criar" title="Criar"><i class="bi bi-plus-circle" aria-hidden="true"></i><span class="visually-hidden">Criar</span></button>
+                    <button class="ss-tab" data-tab="manage" id="pmTabManage" aria-label="Gerenciador" title="Gerenciador"><i class="bi bi-gear-fill" aria-hidden="true"></i><span class="visually-hidden">Gerenciador</span></button>
+                    <button class="ss-tab" data-tab="latest" id="pmTabLatest" aria-label="Últimos" title="Últimos"><i class="bi bi-clock-history" aria-hidden="true"></i><span class="visually-hidden">Últimos</span></button>
                 </div>
                 <div style="display:flex; gap:8px; align-items:center;">
-                    <button class="ss-btn ss-btn-secondary" id="ssQuickProductClose" type="button">Fechar</button>
+                    <button class="sp-btn sp-btn-ghost" id="qpToggleFullForm" title="Mostrar tudo" type="button" aria-label="Expandir"><i class="bi bi-layout-text-window-reverse" aria-hidden="true"></i></button>
+                    <button class="ss-btn ss-btn-ghost" id="ssQuickProductClose" type="button" aria-label="Fechar" title="Fechar"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
                 </div>
             </div>
             <div class="qp-tab-panel" data-panel="create">
@@ -661,49 +925,188 @@
                             <input type="number" id="qpMinStock" class="form-control" placeholder="Estoque mínimo" min="0" />
                         </div>
                     </div>
-                </div>
-                <div class="ss-footer">
-                    <button class="ss-btn ss-btn-secondary" id="ssQuickProductCancel" type="button">Cancelar</button>
-                    <button class="ss-btn ss-btn-primary" id="ssQuickProductSave" type="button">Salvar Produto</button>
-                </div>
-            </form>
-            </div>
+                    </div>
+                    <script>
+                        // Reorganize qp form into left (upload) / right (fields) layout and apply neon classes
+                        (function(){
+                            function domReady(fn){ if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
+                            domReady(function(){
+                                try{
+                                    const form = document.getElementById('qpForm');
+                                    const body = form && form.querySelector('.ss-body');
+                                    if (!body) return;
+                                    // create layout containers
+                                    const layout = document.createElement('div'); layout.className = 'qp-layout';
+                                    const left = document.createElement('div'); left.className = 'qp-left';
+                                    const right = document.createElement('div'); right.className = 'qp-right';
 
-            <!-- Product Manager panels moved into the quick-create modal as tabs -->
-            <div id="pmManagePanel" class="qp-tab-panel" data-panel="manage" style="display:none; padding:16px; max-height:64vh; overflow:auto;">
-                <div style="display:flex; gap:8px; align-items:center; margin-bottom:12px;">
-                    <input id="pmSearchInput" type="search" class="form-control" placeholder="Pesquisar produtos por nome, SKU ou ID..." aria-label="Pesquisar produtos" />
-                    <button id="pmNewProduct" class="ss-btn ss-btn-primary" type="button">Criar Rápido</button>
+                                    // find images block and stock block to move left
+                                    const imgInput = document.getElementById('qpImages');
+                                    const imgBlock = imgInput ? imgInput.closest('.mb-2') : null;
+                                    const stockBlock = document.getElementById('qpStockBlock');
+
+                                    // create a nicer upload card using existing input
+                                    if (imgBlock) {
+                                        const uploadCard = document.createElement('div'); uploadCard.className = 'qp-upload-card';
+                                        const lab = document.createElement('div'); lab.className = 'qp-upload-label';
+                                        lab.innerHTML = '<span class="qp-upload-plus">+</span><div>Upload Product Images</div>';
+                                        uploadCard.appendChild(lab);
+                                        // move original input into card (hide duplicate label)
+                                        const fileInput = imgBlock.querySelector('input[type=file]');
+                                        if (fileInput) {
+                                            uploadCard.appendChild(fileInput);
+                                        }
+                                        left.appendChild(uploadCard);
+                                        // move preview under upload
+                                        const preview = document.getElementById('qpPreview');
+                                        if (preview) left.appendChild(preview);
+                                    }
+
+                                    // move stock to left as small info
+                                    if (stockBlock) left.appendChild(stockBlock);
+
+                                    // now move remaining children into right
+                                    Array.from(body.children).forEach(ch => {
+                                        if (ch === imgBlock || ch === stockBlock) return; // already moved
+                                        // skip footer
+                                        if (ch.classList && ch.classList.contains('ss-footer')) return;
+                                        right.appendChild(ch);
+                                    });
+
+                                    // clear body and append layout
+                                    body.innerHTML = '';
+                                    layout.appendChild(left); layout.appendChild(right);
+                                    body.appendChild(layout);
+
+                                    // apply neon classes to inputs
+                                    right.querySelectorAll('input.form-control, textarea.form-control, select.form-select').forEach(i=>{ i.classList.add('neon'); });
+
+                                    // style save/cancel buttons
+                                    const save = document.getElementById('ssQuickProductSave');
+                                    const cancel = document.getElementById('ssQuickProductCancel');
+                                    if (save) save.classList.add('neon-primary');
+                                    if (cancel) cancel.classList.add('neon-secondary');
+
+                                    // wire clicking uploadCard to open file input if file input moved
+                                    const uploadCard = left.querySelector('.qp-upload-card');
+                                    if (uploadCard) uploadCard.addEventListener('click', function(){ const f = uploadCard.querySelector('input[type=file]'); if (f) f.click(); });
+                                }catch(e){ console.debug && console.debug('qp layout fail', e); }
+                            });
+                        })();
+                    </script>
                 </div>
-                <div id="pmResults" style="max-height:52vh; overflow:auto;"></div>
-            </div>
+                <style>
+                    /* Frosted / Neon product modal layout (full redesign)
+                       - Removed stray comment rendering outside of <style>
+                       - Enlarged modal, increased contrast, stronger neon + animated border
+                    */
+                        /* Layout */
+                        #ssQuickProductOverlay .qp-layout { display:grid; grid-template-columns: minmax(300px, 420px) 1fr; gap:28px; align-items:start; }
+                        #ssQuickProductOverlay .qp-left { display:flex; flex-direction:column; gap:14px; }
+                        #ssQuickProductOverlay .qp-right { display:flex; flex-direction:column; gap:12px; }
 
-            <div id="pmLatestPanel" class="qp-tab-panel" data-panel="latest" style="display:none; padding:16px; max-height:64vh; overflow:auto;">
-                <div style="margin-bottom:12px; color:#64748b;">Últimos produtos registrados (últimas 20 entradas)</div>
-                <div id="pmLatestResults" style="max-height:52vh; overflow:auto;"></div>
-            </div>
+                        /* Modal shell - larger, darker, frosted with animated neon border */
+                        #ssQuickProductOverlay .ss-modal {
+                            max-width: none;
+                            width: 100vw;
+                            max-width: none;
+                            padding: 22px 26px;
+                            height: 100vh;
+                            border-radius: 14px;
+                            position: relative;
+                            background: linear-gradient(180deg, rgba(12,14,20,0.86), rgba(8,10,14,0.80));
+                            border: 1px solid rgba(255,255,255,0.04);
+                            backdrop-filter: blur(10px) saturate(120%);
+                            box-shadow: 0 18px 60px rgba(2,6,23,0.45);
+                            overflow: visible;
+                        }
+                        /* animated soft, blurred halo */
+                        /* Halo disabled: remove ::after entirely for cleaner look */
+                        #ssQuickProductOverlay .ss-modal::after{ display:none !important; }
 
-        </div>
-    </div>
+                        /* Static animated border highlight using opacity pulse (lighter on GPU) */
+                        #ssQuickProductOverlay .ss-modal::before{
+                            content:""; position:absolute; inset:-1.5px; border-radius:15px; z-index:-1;
+                            background: linear-gradient(90deg, rgba(var(--qp-secondary-rgb,255,122,58),0.32) 0%, rgba(var(--qp-accent-rgb,124,58,237),0.28) 50%, rgba(var(--qp-secondary-rgb,255,122,58),0.18) 100%);
+                            filter: blur(8px); pointer-events:none; opacity:0.9; transition: opacity .3s ease;
+                            animation: qpBorderPulse 5s ease-in-out infinite alternate;
+                        }
+                        @keyframes qpBorderPulse{0%{opacity:0.7}50%{opacity:1}100%{opacity:0.7}}
 
-    <!-- Departments confirm overlay (moved out of panel) -->
-    <div class="ss-overlay" id="dpConfirmOverlay" aria-modal="true" role="dialog" style="display:none; align-items:center; justify-content:center; z-index:1500;">
-        <div class="ss-modal" style="max-width:520px;">
-            <div class="ss-header">
-                <span>Desativar departamento</span>
-                <button class="ss-btn ss-btn-secondary" id="dpConfirmClose" type="button">Fechar</button>
-            </div>
-            <div class="ss-body">
-                <div id="dpConfirmText" class="mb-3" style="color:#334155; font-size:14px;"></div>
-                <div id="dpConfirmDanger" class="border rounded p-2" style="border-color:#fecaca; background:#fef2f2;">
-                    <div style="font-size:13px; color:#7f1d1d;" class="mb-2">Para confirmar, digite exatamente: <strong id="dpConfirmPhrase"></strong></div>
-                    <input type="text" id="dpConfirmInput" class="form-control" placeholder="Digite a frase de confirmação" />
-                </div>
-                <small class="text-muted d-block mt-2">Os produtos continuarão disponíveis e poderão ser encontrados via busca.</small>
-            </div>
-            <div class="ss-footer">
-                <button class="ss-btn ss-btn-secondary" id="dpConfirmCancel" type="button">Cancelar</button>
-                <button class="ss-btn ss-btn-primary" id="dpConfirmApply" type="button">Confirmar</button>
+                        /* Upload card */
+                        .qp-upload-card { min-height:300px; border-radius:12px; border:2px dashed rgba(var(--qp-secondary-rgb, 255,122,58),0.62); display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); color:var(--modal-text-color, #e6eef8); position:relative; cursor:pointer; }
+                        .qp-upload-card .qp-upload-label { text-align:center; opacity:0.95; }
+                        .qp-upload-card .qp-upload-plus { font-size:28px; display:block; margin-bottom:8px; color:rgba(var(--qp-secondary-rgb,255,122,58),0.98); text-shadow:0 6px 18px rgba(var(--qp-secondary-rgb,255,122,58),0.09); }
+                        .qp-upload-card input[type=file] { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+
+                        /* Neon inputs */
+                        #ssQuickProductOverlay .form-control.neon {
+                            background: rgba(6,8,12,0.62); border:1px solid rgba(var(--qp-secondary-rgb,255,122,58),0.34); color:var(--modal-text-color, #e6eef8);
+                            box-shadow: 0 10px 30px rgba(var(--qp-secondary-rgb,255,122,58),0.10) inset, 0 16px 48px rgba(2,6,23,0.36);
+                            border-radius:10px; transition: box-shadow .18s ease, transform .12s ease;
+                            padding:10px 12px;
+                        }
+                        /* Compact / flat variant for a tight modern layout */
+                        #ssQuickProductOverlay.qp-compact .qp-layout { grid-template-columns: minmax(220px, 320px) 1fr; gap:16px; }
+                        #ssQuickProductOverlay.qp-compact .qp-upload-card { min-height:180px; border-radius:8px; border-width:1px; background: transparent; box-shadow: none; }
+                        #ssQuickProductOverlay.qp-compact .qp-upload-card .qp-upload-plus { font-size:20px; }
+                        #ssQuickProductOverlay.qp-compact .ss-header, #ssQuickProductOverlay.qp-compact .ss-footer { padding:8px 10px; }
+                        #ssQuickProductOverlay.qp-compact .form-control, #ssQuickProductOverlay.qp-compact .form-select, #ssQuickProductOverlay.qp-compact textarea { padding:8px 10px; border-radius:8px; }
+                        #ssQuickProductOverlay.qp-compact .ss-modal { border-radius:8px; padding:12px 14px; }
+                        #ssQuickProductOverlay .form-control.neon:focus { outline:none; box-shadow: 0 22px 70px rgba(var(--qp-secondary-rgb,255,122,58),0.32); transform: translateY(-2px); }
+                        #ssQuickProductOverlay textarea.neon { min-height:120px; }
+
+                        /* Labels lighter */
+                        #ssQuickProductOverlay label.form-label { color: rgba(230,238,248,0.9); }
+
+                        /* Toggle look */
+                        .qp-toggle { width:48px; height:26px; border-radius:26px; background: rgba(255,255,255,0.08); position:relative; display:inline-block; vertical-align:middle; }
+                        .qp-toggle .qp-knob { position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left .12s ease, background .12s ease; }
+                        .qp-toggle.on { background: linear-gradient(90deg, rgba(var(--qp-secondary-rgb,255,122,58),0.9), rgba(var(--qp-accent-rgb,124,58,237),0.9)); }
+                        .qp-toggle.on .qp-knob { left:25px; background:#fff; }
+
+                        /* Buttons */
+                        .ss-btn.neon-primary { background: var(--qp-secondary, #ff7a3a); color: var(--modal-button-text, #fff); border-radius:10px; padding:12px 20px; box-shadow: 0 18px 48px rgba(var(--qp-secondary-rgb,255,122,58),0.22); border: none; transition: transform .12s ease, filter .12s ease; }
+                        .ss-btn.neon-primary:hover{ transform: translateY(-2px); filter: brightness(1.06); }
+                        .ss-btn.neon-secondary { background: transparent; border:1px solid rgba(255,255,255,0.06); color:var(--modal-text-color); border-radius:10px; padding:10px 16px; }
+
+                        /* Small form grid on right — two columns */
+                        .qp-right .two-col { display:grid; grid-template-columns: 1fr 180px; gap:12px; align-items:center; }
+                        .qp-right .field-row { display:flex; gap:12px; align-items:center; }
+
+                        /* Make chips glow subtly */
+                        .qp-cat-chips .qp-chip { background: rgba(var(--qp-secondary-rgb,255,122,58),0.14); color:var(--modal-text-color); border:1px solid rgba(var(--qp-secondary-rgb,255,122,58),0.26); box-shadow: 0 8px 30px rgba(var(--qp-secondary-rgb,255,122,58),0.06); }
+                        /* small visual polish for scrollbar inside modal body */
+                        #ssQuickProductOverlay .ss-body::-webkit-scrollbar{ width:10px; }
+                        #ssQuickProductOverlay .ss-body::-webkit-scrollbar-thumb{ background:linear-gradient(180deg, rgba(var(--qp-secondary-rgb,255,122,58),0.28), rgba(var(--qp-accent-rgb,124,58,237),0.26)); border-radius:8px; }
+                    </style>
+                    <script>
+                        // Toggle full-screen modal when clicking the expand button
+                        (function(){
+                            document.addEventListener('DOMContentLoaded', function(){
+                                try{
+                                    const btn = document.getElementById('qpToggleFullForm');
+                                    const overlay = document.getElementById('ssQuickProductOverlay');
+                                    const modal = overlay && overlay.querySelector('.ss-modal');
+                                    if(!btn || !overlay) return;
+                                    btn.addEventListener('click', function(e){
+                                        e.preventDefault();
+                                        const isFull = overlay.classList.toggle('qp-fullscreen');
+                                        document.body.style.overflow = isFull ? 'hidden' : '';
+                                        btn.title = isFull ? 'Sair do modo tela cheia' : 'Mostrar tudo';
+                                    });
+                                    // Exit fullscreen on ESC
+                                    document.addEventListener('keydown', function(ev){
+                                        if(ev.key === 'Escape' && overlay.classList.contains('qp-fullscreen')){
+                                            overlay.classList.remove('qp-fullscreen');
+                                            document.body.style.overflow = '';
+                                            btn.title = 'Mostrar tudo';
+                                        }
+                                    });
+                                }catch(err){ console.debug && console.debug('qp full toggle err', err); }
+                            });
+                        })();
+                    </script>
             </div>
         </div>
         <!-- Floating actions (duplicate of modal footer) kept visible while overlay is active -->
@@ -856,8 +1259,34 @@
                     qpOverlay.style.pointerEvents = qpOverlay.style.pointerEvents || 'auto';
                     const modalEl = qpOverlay.querySelector('.ss-modal');
                     if (modalEl) {
-                        modalEl.style.maxWidth = modalEl.style.maxWidth || '820px';
+                        // Remove JS-imposed maxWidth so CSS/fullscreen class controls sizing
+                        modalEl.style.maxWidth = '';
                         modalEl.style.margin = modalEl.style.margin || '0 auto';
+                        // Add fullscreen class by default so modal uses fullscreen layout when opened
+                        if (qpOverlay && !qpOverlay.classList.contains('qp-fullscreen')) {
+                            qpOverlay.classList.add('qp-fullscreen');
+                        }
+                        // apply compact flat variant by default
+                        if (qpOverlay && !qpOverlay.classList.contains('qp-compact')) {
+                            qpOverlay.classList.add('qp-compact');
+                        }
+                        // Ensure there is a visible footer inside the modal — create if missing
+                        try {
+                            let footer = modalEl.querySelector('.ss-footer');
+                            if (!footer) {
+                                footer = document.createElement('div');
+                                footer.className = 'ss-footer';
+                                footer.innerHTML = '<button class="ss-btn ss-btn-secondary" id="ssQuickProductCancel" type="button">Cancelar</button> <button class="ss-btn ss-btn-danger" id="ssQuickProductRemove" type="button">Remover</button> <button class="ss-btn ss-btn-primary" id="ssQuickProductSave" type="button">Salvar Produto</button>';
+                                modalEl.appendChild(footer);
+                            } else {
+                                // ensure footer buttons have expected IDs
+                                if (!footer.querySelector('#ssQuickProductSave')) footer.insertAdjacentHTML('beforeend',' <button class="ss-btn ss-btn-primary" id="ssQuickProductSave" type="button">Salvar Produto</button>');
+                                if (!footer.querySelector('#ssQuickProductCancel')) footer.insertAdjacentHTML('afterbegin','<button class="ss-btn ss-btn-secondary" id="ssQuickProductCancel" type="button">Cancelar</button>');
+                            }
+                            // also ensure floating actions mirror footer and are hidden
+                            const floating = document.getElementById('qpFloatingActions');
+                            if (floating) floating.style.display = 'none';
+                        } catch(e) { console.debug && console.debug('ensure footer failed', e); }
                     }
                 }
             } catch(e) { console.debug && console.debug('overlay placement guard failed', e); }
@@ -869,7 +1298,8 @@
                 productsManagerTrigger?.addEventListener('click', function(e){
                     e && e.stopPropagation();
                     if (typeof openQuickProduct === 'function') openQuickProduct(); else if (qpOverlay) { qpOverlay.style.display = 'flex'; qpOverlay.classList && qpOverlay.classList.add('active'); }
-                    setTimeout(function(){ const btn = document.querySelector('.ss-tab[data-tab="manage"]'); if (btn) btn.click(); try { pmSearchInput && pmSearchInput.focus(); } catch(e){} }, 60);
+                    // Abrir diretamente na aba de criação para fluxo rápido
+                    setTimeout(function(){ const btn = document.querySelector('.ss-tab[data-tab="create"]'); if (btn) btn.click(); try { qpNameField && qpNameField.focus(); } catch(e){} }, 60);
                 });
             } catch(e) {}
 
@@ -1010,6 +1440,225 @@
                     });
                 }
             });
+
+            // === Quick-create form wizard (step-by-step) ===
+            (function initQuickProductWizard(){
+                try {
+                    const form = document.getElementById('qpForm');
+                    if (!form) return;
+                    const footer = form.querySelector('.ss-footer');
+                    const saveBtn = document.getElementById('ssQuickProductSave');
+                    const cancelBtn = document.getElementById('ssQuickProductCancel');
+
+                    // Define steps by selectors (order matters)
+                    const steps = [
+                        ['#qpDeptCombo','#qpDeptSwatch','#qpDepartment','#qpDeptHelp','#qpName','#qpSku','#qpActive'],
+                        ['#qpCategoriesWrapper','#qpCatSearchInput','#qpShortDesc','#qpDescription'],
+                        ['#qpPrice','#qpComparePrice','#qpCostPrice','#qpProductType','#qpSellB2C','#qpSellB2B','#qpUseMargins','#qpPricePreview'],
+                        ['#qpImages','#qpPreview','#qpStock','#qpMinStock']
+                    ];
+
+                    // Create step containers
+                    const body = form.querySelector('.ss-body');
+                    if (!body) return;
+                    // Move existing children into step wrappers based on selector matching
+                    const stepEls = [];
+                    steps.forEach((selList, idx) => {
+                        const stepWrap = document.createElement('div');
+                        stepWrap.className = 'qp-step';
+                        stepWrap.dataset.step = idx+1;
+                        stepWrap.style.display = idx === 0 ? '' : 'none';
+                        stepWrap.style.minHeight = '180px';
+                        stepWrap.style.paddingBottom = '8px';
+                        stepEls.push(stepWrap);
+                    });
+
+                    // Helper to find parent node of element and move it
+                    const moveElementToStep = (el, stepWrap) => {
+                        if (!el) return;
+                        // find nearest ancestor that is direct child of .ss-body (e.g., .mb-2 or similar)
+                        let candidate = el;
+                        while (candidate && candidate.parentElement && candidate.parentElement !== body) {
+                            candidate = candidate.parentElement;
+                        }
+                        if (candidate && candidate.parentElement === body) {
+                            stepWrap.appendChild(candidate);
+                        } else {
+                            // fallback: append the element itself
+                            stepWrap.appendChild(el.cloneNode(true));
+                        }
+                    };
+
+                    // For each selector in steps, try to find element and move it
+                    steps.forEach((selList, idx) => {
+                        selList.forEach(sel => {
+                            try {
+                                const el = document.querySelector(sel);
+                                if (el) moveElementToStep(el, stepEls[idx]);
+                            } catch(e){}
+                        });
+                    });
+
+                    // If some children of body are not yet moved (extras), put them in last step
+                    const remaining = Array.from(body.children).filter(ch => !stepEls.includes(ch));
+                    // Clear body
+                    body.innerHTML = '';
+                    // Append step wrappers that have content; if empty, append original remaining into first step
+                    stepEls.forEach((wrap, idx) => {
+                        if (wrap.children.length > 0) {
+                            body.appendChild(wrap);
+                        }
+                    });
+                    if (body.children.length === 0) {
+                        // fallback: restore original children
+                        remaining.forEach(r => body.appendChild(r));
+                    } else {
+                        // append any leftover controls into last step
+                        const last = body.querySelector('.qp-step:last-child');
+                        remaining.forEach(r => last.appendChild(r));
+                    }
+
+                    // Create navigation controls
+                    const nav = document.createElement('div');
+                    nav.className = 'qp-wizard-nav';
+                    nav.style.display = 'flex';
+                    nav.style.gap = '8px';
+                    nav.style.alignItems = 'center';
+                    nav.style.marginLeft = 'auto';
+
+                    const backBtn = document.createElement('button');
+                    backBtn.type = 'button';
+                    backBtn.className = 'ss-btn ss-btn-secondary';
+                    backBtn.id = 'qpWizardBack';
+                    backBtn.textContent = 'Voltar';
+                    backBtn.style.display = 'none';
+
+                    const nextBtn = document.createElement('button');
+                    nextBtn.type = 'button';
+                    nextBtn.className = 'ss-btn ss-btn-primary';
+                    nextBtn.id = 'qpWizardNext';
+                    nextBtn.textContent = 'Próximo';
+
+                    // Ensure Save button is only visible on last step
+                    if (saveBtn) saveBtn.style.display = 'none';
+
+                    nav.appendChild(backBtn);
+                    nav.appendChild(nextBtn);
+
+                    // Insert nav into footer before Cancel/Save
+                    if (footer) {
+                        // hide original cancel/save temporarily and append nav
+                        footer.insertBefore(nav, footer.lastElementChild);
+                    }
+
+                    let currentStep = 1;
+                    const totalSteps = body.querySelectorAll('.qp-step').length || 1;
+
+                    const showStep = (n) => {
+                        const all = body.querySelectorAll('.qp-step');
+                        all.forEach((s, i) => s.style.display = (i === n-1) ? '' : 'none');
+                        currentStep = n;
+                        backBtn.style.display = (n > 1) ? '' : 'none';
+                        nextBtn.style.display = (n < totalSteps) ? '' : 'none';
+                        if (saveBtn) saveBtn.style.display = (n === totalSteps) ? '' : 'none';
+                        // focus first input in step
+                        try { const first = body.querySelector('.qp-step[data-step="'+n+'"] input, .qp-step[data-step="'+n+'"] textarea, .qp-step[data-step="'+n+'"] select'); if (first) first.focus(); } catch(e){}
+                    };
+
+                    // Validation per step before moving next
+                    const validators = [];
+                    // Step 1: department (or name) required
+                    validators[1] = function(){
+                        const name = document.getElementById('qpName');
+                        const dept = document.getElementById('qpDepartment');
+                        if (!name || !name.value || name.value.trim().length < 2) {
+                            name && name.classList.add('is-invalid');
+                            window.ssShowToast('Preencha o nome do produto (mínimo 2 caracteres).', 'warning');
+                            return false;
+                        }
+                        if (dept && dept.value === '') {
+                            window.ssShowToast('Selecione um departamento.', 'warning');
+                            return false;
+                        }
+                        // clean
+                        name && name.classList.remove('is-invalid');
+                        return true;
+                    };
+                    // Step 2: either short description or categories
+                    validators[2] = function(){
+                        const catSel = document.getElementById('qpCategories');
+                        const shortDesc = document.getElementById('qpShortDesc');
+                        const haveCat = catSel && catSel.options && catSel.options.length > 0 && Array.from(catSel.options).some(o=>o.selected);
+                        if ((!shortDesc || shortDesc.value.trim().length === 0) && !haveCat) {
+                            window.ssShowToast('Adicione uma breve descrição ou selecione ao menos uma categoria.', 'warning');
+                            return false;
+                        }
+                        return true;
+                    };
+                    // Step 3: price required for physical products
+                    validators[3] = function(){
+                        const price = document.getElementById('qpPrice');
+                        const type = document.getElementById('qpProductType');
+                        if (type && type.value === 'physical') {
+                            if (!price || price.value === '' || Number(price.value) <= 0) {
+                                window.ssShowToast('Informe um preço válido para produtos físicos.', 'warning');
+                                price && price.classList.add('is-invalid');
+                                return false;
+                            }
+                        }
+                        price && price.classList.remove('is-invalid');
+                        return true;
+                    };
+
+                    backBtn.addEventListener('click', () => { if (currentStep > 1) showStep(currentStep-1); });
+                    nextBtn.addEventListener('click', () => {
+                        // run validation for current step
+                        const valid = (typeof validators[currentStep] === 'function') ? validators[currentStep]() : true;
+                        if (!valid) return;
+                        if (currentStep < totalSteps) showStep(currentStep+1);
+                    });
+
+                    // Initialize
+                    showStep(1);
+
+                    // When modal opens, ensure it starts at first step and reacts to 'Mostrar tudo'
+                    const observer = new MutationObserver(function(m){
+                        if (qpOverlay && qpOverlay.style.display !== 'none' && qpOverlay.classList.contains('active')) {
+                            showStep(1);
+                            // reset full-form
+                            if (qpOverlay.classList.contains('qp-full-mode')) {
+                                qpOverlay.classList.remove('qp-full-mode');
+                            }
+                        }
+                    });
+                    observer.observe(qpOverlay || document.body, { attributes: true, attributeFilter: ['style', 'class'] });
+
+                    // Toggle full-form (mostrar tudo)
+                    const qpToggleFull = document.getElementById('qpToggleFullForm');
+                    qpToggleFull && qpToggleFull.addEventListener('click', function(){
+                        const modal = qpOverlay && qpOverlay.querySelector('.ss-modal');
+                        if (!modal) return;
+                        // toggle a class on modal to show all steps stacked
+                        if (modal.classList.contains('qp-full')) {
+                            modal.classList.remove('qp-full');
+                            // ensure wizard header nav visible
+                        } else {
+                            modal.classList.add('qp-full');
+                        }
+                        // toggle save/nav visibility
+                        const saveBtn = document.getElementById('ssQuickProductSave');
+                        const navEl = modal.querySelector('.qp-wizard-nav');
+                        if (modal.classList.contains('qp-full')) {
+                            if (saveBtn) saveBtn.style.display = '';
+                            if (navEl) navEl.style.display = 'none';
+                        } else {
+                            if (saveBtn) saveBtn.style.display = 'none';
+                            if (navEl) navEl.style.display = '';
+                        }
+                    });
+
+                } catch(e){ console.debug && console.debug('qp wizard init failed', e); }
+            })();
 
             presetButtons.forEach(btn => {
                 btn?.addEventListener('click', () => {
@@ -2953,29 +3602,66 @@
                     // Ensure price exists (server requires price)
                     if (!payload.price && payload.price !== 0) payload.price = 0;
 
-                    if (useForm) {
-                        const fd = new FormData();
-                        Object.keys(payload).forEach(k => {
-                            const val = payload[k];
-                            if (Array.isArray(val)) {
-                                fd.append(k, JSON.stringify(val));
-                            } else if (val !== null && val !== undefined) {
-                                fd.append(k, String(val));
-                            }
-                        });
-                        Array.from(files).slice(0,10).forEach((f, idx) => fd.append('images[]', f));
-                        // send
-                        fetch('/admin/products', { method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: fd })
-                            .then(r => r.json())
-                                .then(handleCreateResponse)
-                                .catch(err => { window.ssShowToast && ssShowToast(err.message || 'Erro ao criar produto', 'error'); });
-                    } else {
-                        // JSON submit
-                            fetch('/admin/products', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: JSON.stringify(payload) })
-                                .then(r => r.json())
-                                .then(handleCreateResponse)
-                                .catch(err => { window.ssShowToast && ssShowToast(err.message || 'Erro ao criar produto', 'error'); });
+                    // helper: slugify and random suffix for SKU generation
+                    function slugify(str){ return (str||'').toString().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/(^-|-$)/g,''); }
+                    function randomSuffix(len){ const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'; let s=''; for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)]; return s; }
+
+                    // Ensure there's a SKU (server requires unique). If empty, generate one from name.
+                    if (!payload.sku) {
+                        const base = slugify(payload.name || 'prod');
+                        payload.sku = (base ? base.toUpperCase().slice(0,50) : 'PROD') + '-' + randomSuffix(4);
                     }
+
+                    // Submit with retry logic on duplicate SKU conflict
+                    function submitProduct(payloadObj, fileList, attempt){
+                        attempt = attempt || 0;
+                        const MAX_ATTEMPTS = 3;
+                        if (fileList && fileList.length > 0) {
+                            const fd = new FormData();
+                            Object.keys(payloadObj).forEach(k => {
+                                const val = payloadObj[k];
+                                if (Array.isArray(val)) {
+                                    val.forEach(v => { if (v === null || typeof v === 'undefined') return; fd.append(k + '[]', String(v)); });
+                                } else if (val !== null && val !== undefined) {
+                                    fd.append(k, String(val));
+                                }
+                            });
+                            Array.from(fileList).slice(0,10).forEach(f => fd.append('images[]', f));
+                            return fetch('/admin/products', { method: 'POST', headers: { 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: fd })
+                                .then(r => r.json().catch(()=>({ success:false, message: 'Resposta inválida do servidor' })))
+                                .then(data => {
+                                    if (data && data.success) return handleCreateResponse(data);
+                                    const msg = data && (data.message || (data.errors && Object.values(data.errors).flat().join('\n')) ) || 'Erro ao criar produto';
+                                    // detect duplicate sku error
+                                    if (attempt < MAX_ATTEMPTS && /duplicate entry|products_sku_unique|1062/i.test(msg)){
+                                        // generate new sku and retry
+                                        payloadObj.sku = (slugify(payloadObj.sku||payloadObj.name||'PROD').toUpperCase().slice(0,40)) + '-' + randomSuffix(3);
+                                        if (attempt === 0) window.ssShowToast && ssShowToast('SKU em uso. Tentando um SKU alternativo automaticamente...', 'warning');
+                                        return submitProduct(payloadObj, fileList, attempt+1);
+                                    }
+                                    // otherwise show message
+                                    window.ssShowToast ? ssShowToast(msg, 'error') : alert(msg);
+                                })
+                                .catch(err => { window.ssShowToast && ssShowToast(err.message || 'Erro ao criar produto', 'error'); });
+                        } else {
+                            return fetch('/admin/products', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': CSRF, 'Accept': 'application/json' }, body: JSON.stringify(payloadObj) })
+                                .then(r => r.json().catch(()=>({ success:false, message: 'Resposta inválida do servidor' })))
+                                .then(data => {
+                                    if (data && data.success) return handleCreateResponse(data);
+                                    const msg = data && (data.message || (data.errors && Object.values(data.errors).flat().join('\n')) ) || 'Erro ao criar produto';
+                                    if (attempt < MAX_ATTEMPTS && /duplicate entry|products_sku_unique|1062/i.test(msg)){
+                                        payloadObj.sku = (slugify(payloadObj.sku||payloadObj.name||'PROD').toUpperCase().slice(0,40)) + '-' + randomSuffix(3);
+                                        if (attempt === 0) window.ssShowToast && ssShowToast('SKU em uso. Tentando um SKU alternativo automaticamente...', 'warning');
+                                        return submitProduct(payloadObj, fileList, attempt+1);
+                                    }
+                                    window.ssShowToast ? ssShowToast(msg, 'error') : alert(msg);
+                                })
+                                .catch(err => { window.ssShowToast && ssShowToast(err.message || 'Erro ao criar produto', 'error'); });
+                        }
+                    }
+
+                    // start submission
+                    submitProduct(Object.assign({}, payload), files, 0);
                 } catch(ex) { window.ssShowToast ? ssShowToast(ex.message || 'Erro inesperado', 'error') : alert(ex.message || 'Erro inesperado'); }
             });
 
@@ -3480,14 +4166,14 @@
                 safeToggle('productsTrigger', 'ssQuickProductOverlay', true, function(){ if (typeof openQuickProduct === 'function') { try { openQuickProduct(); } catch(e){ console.debug('openQuickProduct threw', e); throw e; } } else { throw new Error('openQuickProduct not defined'); } });
                 safeToggle('productsManagerTrigger', 'ssQuickProductOverlay', true, function(){
                     try {
-                        // open quick modal and switch to manager tab
+                        // open quick modal and switch to create tab (prefer creation flow)
                         if (typeof openQuickProduct === 'function') openQuickProduct();
                         else { const qp = document.getElementById('ssQuickProductOverlay'); if (qp) { qp.style.display = 'flex'; qp.classList && qp.classList.add('active'); } }
                         setTimeout(()=>{
-                            const btn = document.querySelector('.ss-tab[data-tab="manage"]'); if (btn) btn.click();
-                            try { pmSearchInput && pmSearchInput.focus(); } catch(e){}
-                        }, 80);
-                    } catch(e) { console.debug && console.debug('open pmManager (tab) failed', e); }
+                            const btn = document.querySelector('.ss-tab[data-tab="create"]'); if (btn) btn.click();
+                            try { const name = document.getElementById('qpName'); if (name) name.focus(); } catch(e){}
+                        }, 60);
+                    } catch(e) { console.debug && console.debug('open pmCreate (tab) failed', e); }
                 });
                 safeToggle('departmentsTrigger', 'departmentsPanel');
                 safeToggle('sectionsTrigger', 'sectionsPanel');
