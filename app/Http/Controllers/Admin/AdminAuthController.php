@@ -36,6 +36,11 @@ class AdminAuthController extends Controller
         Auth::guard('admin')->login($admin);
         $admin->update(['last_login_at' => now()]);
 
+        // Se for atendente de caixa, redirecionar direto para o PDV
+        if ($admin->isCashier()) {
+            return redirect()->route('admin.cashier.pdv.index');
+        }
+
         return redirect()->intended(route('admin.dashboard'));
     }
 

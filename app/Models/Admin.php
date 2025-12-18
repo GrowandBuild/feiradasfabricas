@@ -37,6 +37,11 @@ class Admin extends Authenticatable
         return $this->role === 'super_admin';
     }
 
+    public function isCashier()
+    {
+        return $this->role === 'cashier';
+    }
+
     public function hasPermission($permission)
     {
         if ($this->isSuperAdmin()) {

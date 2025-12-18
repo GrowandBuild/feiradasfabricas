@@ -79,6 +79,49 @@ class SettingsSeeder extends Seeder
             ['key' => 'two_factor_auth', 'value' => false, 'type' => 'boolean', 'group' => 'security'],
             ['key' => 'session_timeout', 'value' => 120, 'type' => 'number', 'group' => 'security'],
             ['key' => 'max_login_attempts', 'value' => 5, 'type' => 'number', 'group' => 'security'],
+
+            // Configurações de Loja Física / PDV (Sincronização)
+            ['key' => 'enable_physical_store_sync', 'value' => false, 'type' => 'boolean', 'group' => 'physical_store', 'description' => 'Ativa/desativa sincronização entre e-commerce e loja física'],
+            ['key' => 'physical_store_name', 'value' => '', 'type' => 'string', 'group' => 'physical_store', 'description' => 'Nome da loja física'],
+            ['key' => 'sync_inventory', 'value' => false, 'type' => 'boolean', 'group' => 'physical_store', 'description' => 'Sincronizar estoque entre e-commerce e loja física'],
+            ['key' => 'sync_sales', 'value' => false, 'type' => 'boolean', 'group' => 'physical_store', 'description' => 'Sincronizar vendas entre e-commerce e loja física'],
+            ['key' => 'sync_coupons', 'value' => false, 'type' => 'boolean', 'group' => 'physical_store', 'description' => 'Sincronizar cupons entre e-commerce e loja física'],
+            ['key' => 'inventory_reservation_time', 'value' => 15, 'type' => 'number', 'group' => 'physical_store', 'description' => 'Tempo de reserva de estoque em minutos'],
+            ['key' => 'auto_sync_interval', 'value' => 5, 'type' => 'number', 'group' => 'physical_store', 'description' => 'Intervalo de sincronização automática em minutos'],
+            ['key' => 'pos_payment_mode', 'value' => 'manual', 'type' => 'string', 'group' => 'physical_store', 'description' => 'Modo de pagamento no PDV: manual (operador processa na maquininha), tef (integração TEF), api (gateway API).'],
+            ['key' => 'pos_api_gateway', 'value' => 'mercadopago', 'type' => 'string', 'group' => 'physical_store', 'description' => 'Gateway de pagamento para modo API: mercadopago, cielo, pagseguro, ton, sumup, getnet, yelly, magalu, turbopay, infinity'],
+            
+            // Configurações Mercado Pago
+            ['key' => 'mercadopago_access_token', 'value' => '', 'type' => 'string', 'group' => 'payment', 'description' => 'Token de acesso Mercado Pago para PDV'],
+            
+            // Configurações Cielo
+            ['key' => 'cielo_merchant_id', 'value' => '', 'type' => 'string', 'group' => 'payment', 'description' => 'Merchant ID Cielo'],
+            ['key' => 'cielo_merchant_key', 'value' => '', 'type' => 'string', 'group' => 'payment', 'description' => 'Merchant Key Cielo'],
+            ['key' => 'cielo_environment', 'value' => 'sandbox', 'type' => 'string', 'group' => 'payment', 'description' => 'Ambiente Cielo: sandbox ou production'],
+            
+            // Configurações GetNet
+            ['key' => 'getnet_client_id', 'value' => '', 'type' => 'string', 'group' => 'payment', 'description' => 'Client ID GetNet'],
+            ['key' => 'getnet_client_secret', 'value' => '', 'type' => 'string', 'group' => 'payment', 'description' => 'Client Secret GetNet'],
+            ['key' => 'getnet_seller_id', 'value' => '', 'type' => 'string', 'group' => 'payment', 'description' => 'Seller ID GetNet'],
+            ['key' => 'getnet_environment', 'value' => 'sandbox', 'type' => 'string', 'group' => 'payment', 'description' => 'Ambiente GetNet: sandbox ou production'],
+            
+            // Configurações SumUp
+            ['key' => 'sumup_access_token', 'value' => '', 'type' => 'string', 'group' => 'payment', 'description' => 'Token de acesso SumUp'],
+            
+            // Integrações ERP e Fiscal
+            ['key' => 'plugnotas_enabled', 'value' => false, 'type' => 'boolean', 'group' => 'integrations', 'description' => 'Ativar integração com PlugNotas (emissão de notas fiscais)'],
+            ['key' => 'plugnotas_api_key', 'value' => '', 'type' => 'string', 'group' => 'integrations', 'description' => 'API Key PlugNotas'],
+            ['key' => 'plugnotas_environment', 'value' => 'sandbox', 'type' => 'string', 'group' => 'integrations', 'description' => 'Ambiente PlugNotas: sandbox ou production'],
+            
+            ['key' => 'bling_enabled', 'value' => false, 'type' => 'boolean', 'group' => 'integrations', 'description' => 'Ativar integração com Bling ERP'],
+            ['key' => 'bling_api_key', 'value' => '', 'type' => 'string', 'group' => 'integrations', 'description' => 'API Key Bling'],
+            
+            ['key' => 'omie_enabled', 'value' => false, 'type' => 'boolean', 'group' => 'integrations', 'description' => 'Ativar integração com Omie ERP'],
+            ['key' => 'omie_app_key', 'value' => '', 'type' => 'string', 'group' => 'integrations', 'description' => 'App Key Omie'],
+            ['key' => 'omie_app_secret', 'value' => '', 'type' => 'string', 'group' => 'integrations', 'description' => 'App Secret Omie'],
+            
+            ['key' => 'contaazul_enabled', 'value' => false, 'type' => 'boolean', 'group' => 'integrations', 'description' => 'Ativar integração com ContaAzul ERP'],
+            ['key' => 'contaazul_access_token', 'value' => '', 'type' => 'string', 'group' => 'integrations', 'description' => 'Access Token ContaAzul'],
         ];
 
         foreach ($settings as $setting) {

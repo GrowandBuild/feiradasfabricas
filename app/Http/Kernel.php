@@ -67,5 +67,6 @@ class Kernel extends HttpKernel
         'migrate.cart' => \App\Http\Middleware\MigrateCart::class,
         'permission' => \App\Http\Middleware\CheckPermission::class,
         'verify.webhook' => \App\Http\Middleware\VerifyWebhookSignature::class,
+        'block.cashier' => \App\Http\Middleware\BlockCashierFromAdmin::class,
     ];
 }

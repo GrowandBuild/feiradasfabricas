@@ -465,6 +465,144 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Loja Física / PDV - Sincronização -->
+            <div class="col-12 mb-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header d-flex align-items-center justify-content-between bg-primary text-white">
+                        <div>
+                            <h6 class="card-title mb-0"><i class="bi bi-shop me-2"></i>Loja Física / PDV</h6>
+                            <small class="text-white-50">Sincronização entre e-commerce e loja física</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable_physical_store_sync" 
+                                   {{ setting('enable_physical_store_sync', false) ? 'checked' : '' }}
+                                   onchange="togglePhysicalStoreSync()"
+                                   style="transform: scale(1.3);">
+                            <label class="form-check-label text-white" for="enable_physical_store_sync">
+                                <strong>Ativar Sincronização</strong>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="card-body" id="physicalStoreConfig" style="{{ !setting('enable_physical_store_sync', false) ? 'opacity: 0.5; pointer-events: none;' : '' }}">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Importante:</strong> Ao ativar a sincronização, o estoque será unificado entre e-commerce e loja física. 
+                            Você pode desativar a qualquer momento sem perder dados.
+                        </div>
+
+                        <div class="row g-3">
+                            <!-- Nome da Loja Física -->
+                            <div class="col-md-6">
+                                <label for="physical_store_name" class="form-label">
+                                    <i class="bi bi-shop me-1"></i> Nome da Loja Física
+                                </label>
+                                <input type="text" class="form-control" id="physical_store_name" 
+                                       value="{{ setting('physical_store_name', '') }}" 
+                                       placeholder="Ex: Loja Centro">
+                                <small class="form-text text-muted">Nome identificador da loja física</small>
+                            </div>
+
+                            <!-- Tempo de Reserva de Estoque -->
+                            <div class="col-md-6">
+                                <label for="inventory_reservation_time" class="form-label">
+                                    <i class="bi bi-clock me-1"></i> Tempo de Reserva (minutos)
+                                </label>
+                                <input type="number" class="form-control" id="inventory_reservation_time" 
+                                       value="{{ setting('inventory_reservation_time', 15) }}" 
+                                       min="5" max="60">
+                                <small class="form-text text-muted">Tempo que o estoque fica reservado no carrinho</small>
+                            </div>
+
+                            <!-- Intervalo de Sincronização -->
+                            <div class="col-md-6">
+                                <label for="auto_sync_interval" class="form-label">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Intervalo de Sincronização (minutos)
+                                </label>
+                                <input type="number" class="form-control" id="auto_sync_interval" 
+                                       value="{{ setting('auto_sync_interval', 5) }}" 
+                                       min="1" max="60">
+                                <small class="form-text text-muted">Intervalo para sincronização automática</small>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Opções de Sincronização -->
+                        <h6 class="mb-3"><i class="bi bi-sliders me-2"></i>Opções de Sincronização</h6>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <div class="card border">
+                                    <div class="card-body">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="sync_inventory" 
+                                                   {{ setting('sync_inventory', false) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="sync_inventory">
+                                                <strong><i class="bi bi-box-seam me-1"></i> Sincronizar Estoque</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            Estoque unificado entre e-commerce e loja física
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="card border">
+                                    <div class="card-body">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="sync_sales" 
+                                                   {{ setting('sync_sales', false) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="sync_sales">
+                                                <strong><i class="bi bi-cart-check me-1"></i> Sincronizar Vendas</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            Vendas da loja física aparecem no e-commerce
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <div class="card border">
+                                    <div class="card-body">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox" id="sync_coupons" 
+                                                   {{ setting('sync_coupons', false) ? 'checked' : '' }}>
+                                            <label class="form-check-label" for="sync_coupons">
+                                                <strong><i class="bi bi-ticket-perforated me-1"></i> Sincronizar Cupons</strong>
+                                            </label>
+                                        </div>
+                                        <small class="text-muted d-block mt-2">
+                                            Cupons válidos em ambos os canais
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Status da Sincronização -->
+                        <div class="mt-4 p-3 bg-light rounded" id="syncStatus">
+                            <h6 class="mb-2"><i class="bi bi-activity me-2"></i>Status da Sincronização</h6>
+                            <div id="syncStatusContent">
+                                <p class="text-muted mb-0">Carregando...</p>
+                            </div>
+                        </div>
+
+                        <!-- Botões de Ação -->
+                        <div class="mt-4 d-flex gap-2">
+                            <button type="button" class="btn btn-primary" onclick="savePhysicalStoreConfig()">
+                                <i class="bi bi-save me-1"></i> Salvar Configurações
+                            </button>
+                            <button type="button" class="btn btn-outline-info" onclick="checkSyncStatus()">
+                                <i class="bi bi-arrow-clockwise me-1"></i> Verificar Status
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -1296,5 +1434,150 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 @endif
+
+// ============================================
+// FUNÇÕES PARA LOJA FÍSICA / PDV
+// ============================================
+
+// Toggle do master switch
+function togglePhysicalStoreSync() {
+    const checkbox = document.getElementById('enable_physical_store_sync');
+    const configDiv = document.getElementById('physicalStoreConfig');
+    
+    if (checkbox.checked) {
+        configDiv.style.opacity = '1';
+        configDiv.style.pointerEvents = 'auto';
+    } else {
+        configDiv.style.opacity = '0.5';
+        configDiv.style.pointerEvents = 'none';
+    }
+    
+    // Salvar imediatamente
+    savePhysicalStoreConfig();
+}
+
+// Salvar configurações da loja física
+function savePhysicalStoreConfig() {
+    const formData = new FormData();
+    formData.append('_token', '{{ csrf_token() }}');
+    formData.append('_method', 'PUT');
+    
+    const fields = [
+        'enable_physical_store_sync',
+        'physical_store_name',
+        'sync_inventory',
+        'sync_sales',
+        'sync_coupons',
+        'inventory_reservation_time',
+        'auto_sync_interval'
+    ];
+    
+    fields.forEach(field => {
+        const element = document.getElementById(field);
+        if (element) {
+            formData.append(field, element.type === 'checkbox' ? (element.checked ? '1' : '0') : element.value);
+        }
+    });
+
+    fetch('{{ route("admin.settings.update") }}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showAlert('Configurações da loja física salvas com sucesso!', 'success');
+            checkSyncStatus(); // Atualizar status
+        } else {
+            showAlert('Erro ao salvar configurações: ' + (data.message || 'Erro desconhecido'), 'danger');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        showAlert('Erro ao salvar configurações.', 'danger');
+    });
+}
+
+// Verificar status da sincronização
+function checkSyncStatus() {
+    const statusDiv = document.getElementById('syncStatusContent');
+    if (!statusDiv) return;
+    
+    statusDiv.innerHTML = '<p class="text-muted mb-0"><i class="bi bi-hourglass-split me-1"></i> Verificando...</p>';
+    
+    // Usar o SyncService via uma rota ou endpoint
+    fetch('/admin/settings/sync-status', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status) {
+            const status = data.status;
+            let html = '';
+            
+            if (!status.enabled) {
+                html = '<div class="alert alert-secondary mb-0"><i class="bi bi-pause-circle me-2"></i>Sincronização desativada</div>';
+            } else {
+                html = `
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <div class="card border ${status.inventory_sync ? 'border-success' : 'border-secondary'}">
+                                <div class="card-body p-2">
+                                    <small class="d-block"><strong>Estoque:</strong></small>
+                                    <span class="badge ${status.inventory_sync ? 'bg-success' : 'bg-secondary'}">
+                                        ${status.inventory_sync ? 'Ativo' : 'Inativo'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border ${status.sales_sync ? 'border-success' : 'border-secondary'}">
+                                <div class="card-body p-2">
+                                    <small class="d-block"><strong>Vendas:</strong></small>
+                                    <span class="badge ${status.sales_sync ? 'bg-success' : 'bg-secondary'}">
+                                        ${status.sales_sync ? 'Ativo' : 'Inativo'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card border ${status.coupons_sync ? 'border-success' : 'border-secondary'}">
+                                <div class="card-body p-2">
+                                    <small class="d-block"><strong>Cupons:</strong></small>
+                                    <span class="badge ${status.coupons_sync ? 'bg-success' : 'bg-secondary'}">
+                                        ${status.coupons_sync ? 'Ativo' : 'Inativo'}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    ${status.pending_syncs > 0 ? `<div class="alert alert-warning mt-2 mb-0"><i class="bi bi-exclamation-triangle me-1"></i>${status.pending_syncs} sincronizações pendentes</div>` : ''}
+                    ${status.recent_failures > 0 ? `<div class="alert alert-danger mt-2 mb-0"><i class="bi bi-x-circle me-1"></i>${status.recent_failures} falhas recentes</div>` : ''}
+                `;
+            }
+            
+            statusDiv.innerHTML = html;
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        statusDiv.innerHTML = '<p class="text-danger mb-0"><i class="bi bi-exclamation-triangle me-1"></i>Erro ao verificar status</p>';
+    });
+}
+
+// Carregar status ao abrir a página
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('syncStatus')) {
+        setTimeout(checkSyncStatus, 500);
+    }
+});
 </script>
 @endsection

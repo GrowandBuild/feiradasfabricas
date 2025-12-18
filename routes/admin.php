@@ -35,11 +35,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
 
     // Rotas protegidas
-    Route::middleware('auth:admin')->group(function () {
+    Route::middleware(['auth:admin', 'block.cashier'])->group(function () {
         // Teste de controller
         Route::get('test-department', [App\Http\Controllers\Admin\TestDepartmentController::class, 'index']);
         // Dashboard
         Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+
+        // Instruções / Guia do Sistema
+        Route::get('instructions', [App\Http\Controllers\Admin\InstructionsController::class, 'index'])->name('instructions.index');
 
         // Produtos
         Route::resource('products', ProductController::class);
@@ -132,6 +135,15 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::resource('feedbacks', ProductFeedbackController::class);
         Route::patch('feedbacks/{feedback}/toggle-approval', [ProductFeedbackController::class, 'toggleApproval'])->name('feedbacks.toggle-approval');
 
+        // PDV - Rotas compartilhadas (Admin e Atendente podem usar)
+        Route::get('pdv/search-products', [App\Http\Controllers\Admin\PDVController::class, 'searchProducts'])->name('pdv.search-products');
+        Route::get('pdv/product/{id}', [App\Http\Controllers\Admin\PDVController::class, 'getProduct'])->name('pdv.get-product');
+        Route::post('pdv/create-sale', [App\Http\Controllers\Admin\PDVController::class, 'createSale'])->name('pdv.create-sale');
+        Route::post('pdv/sales/{sale}/confirm-payment', [App\Http\Controllers\Admin\PDVController::class, 'confirmPayment'])->name('pdv.confirm-payment');
+        
+        // PDV - Ponto de Venda (Admin) - Apenas admins (bloqueado para cashier)
+        Route::get('pdv', [App\Http\Controllers\Admin\PDVController::class, 'index'])->name('pdv.index');
+
         // Álbuns (novo sistema simples)
         Route::resource('albums', AdminAlbumController::class);
         Route::delete('albums/{album}/images/{image}', [AdminAlbumController::class, 'destroyImage'])->name('albums.images.destroy');
@@ -155,6 +167,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
+        Route::get('settings/sync-status', [SettingController::class, 'syncStatus'])->name('settings.sync-status');
         
         // Efeitos de Hover
         Route::get('hover-effects', [App\Http\Controllers\Admin\HoverEffectsController::class, 'index'])->name('hover-effects.index');
@@ -249,5 +262,17 @@ Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('analytics/products/{product}', [App\Http\Controllers\Admin\ProductAnalyticsController::class, 'getProductDetails'])->name('analytics.product-details');
         Route::get('analytics/products/export', [App\Http\Controllers\Admin\ProductAnalyticsController::class, 'exportAnalytics'])->name('analytics.export');
         
+    });
+
+    // Rotas para Atendente de Caixa (SEM middleware block.cashier)
+    Route::middleware('auth:admin')->group(function () {
+        // PDV - Ponto de Venda (Atendente de Caixa)
+        Route::get('cashier/pdv', [App\Http\Controllers\Cashier\PDVController::class, 'index'])->name('cashier.pdv.index');
+        
+        // Rotas compartilhadas do PDV (também acessíveis para cashier)
+        Route::get('pdv/search-products', [App\Http\Controllers\Admin\PDVController::class, 'searchProducts'])->name('pdv.search-products');
+        Route::get('pdv/product/{id}', [App\Http\Controllers\Admin\PDVController::class, 'getProduct'])->name('pdv.get-product');
+        Route::post('pdv/create-sale', [App\Http\Controllers\Admin\PDVController::class, 'createSale'])->name('pdv.create-sale');
+        Route::post('pdv/sales/{sale}/confirm-payment', [App\Http\Controllers\Admin\PDVController::class, 'confirmPayment'])->name('pdv.confirm-payment');
     });
 });

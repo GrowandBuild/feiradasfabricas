@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Services\FiscalService;
 use App\Services\EmailService;
+use App\Services\SyncService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -94,8 +95,16 @@ class SettingController extends Controller
                     $value = filter_var($value, FILTER_VALIDATE_BOOLEAN);
                 }
                 
+                // Determinar tipo baseado no key
+                $type = 'string';
+                if (in_array($key, ['enable_physical_store_sync', 'sync_inventory', 'sync_sales', 'sync_coupons', 'auto_stock_management', 'email_notifications', 'sms_notifications', 'two_factor_auth'], true)) {
+                    $type = 'boolean';
+                } elseif (in_array($key, ['inventory_reservation_time', 'auto_sync_interval', 'stock_alert_threshold', 'stock_reserve_time', 'session_timeout', 'max_login_attempts', 'smtp_port', 'smtp_timeout'], true)) {
+                    $type = 'number';
+                }
+                
                 try {
-                    Setting::set($key, $value);
+                    Setting::set($key, $value, $type ?? 'string', $this->getSettingGroup($key));
                 } catch (\Exception $e) {
                     \Log::error('Error saving setting', [
                         'key' => $key,
@@ -900,5 +909,60 @@ class SettingController extends Controller
             \Log::error('Erro ao fazer upload do favicon: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Erro ao fazer upload do favicon.'], 500);
         }
+    }
+
+    /**
+     * Obter status da sincronização
+     */
+    public function syncStatus()
+    {
+        try {
+            $syncService = app(SyncService::class);
+            $status = $syncService->getSyncStatus();
+            
+            return response()->json([
+                'success' => true,
+                'status' => $status,
+            ]);
+        } catch (\Exception $e) {
+            Log::error('Erro ao obter status da sincronização: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'status' => [
+                    'enabled' => false,
+                    'message' => 'Erro ao verificar status',
+                ],
+            ], 500);
+        }
+    }
+
+    /**
+     * Determinar grupo de uma setting baseado na key
+     */
+    private function getSettingGroup($key)
+    {
+        if (str_starts_with($key, 'physical_store') || str_starts_with($key, 'sync_') || str_starts_with($key, 'inventory_reservation') || str_starts_with($key, 'auto_sync')) {
+            return 'physical_store';
+        }
+        if (str_starts_with($key, 'site_') || str_starts_with($key, 'theme_')) {
+            return 'site';
+        }
+        if (str_starts_with($key, 'stripe_') || str_starts_with($key, 'pagseguro_') || str_starts_with($key, 'paypal_') || str_starts_with($key, 'mercadopago_')) {
+            return 'payment';
+        }
+        if (str_starts_with($key, 'correios_') || str_starts_with($key, 'total_express_') || str_starts_with($key, 'jadlog_') || str_starts_with($key, 'loggi_') || str_starts_with($key, 'melhor_envio_')) {
+            return 'delivery';
+        }
+        if (str_starts_with($key, 'stock_') || str_starts_with($key, 'auto_stock')) {
+            return 'stock';
+        }
+        if (str_starts_with($key, 'email_') || str_starts_with($key, 'smtp_') || str_starts_with($key, 'notification_')) {
+            return 'notification';
+        }
+        if (str_starts_with($key, 'two_factor_') || str_starts_with($key, 'session_') || str_starts_with($key, 'max_login_')) {
+            return 'security';
+        }
+        
+        return 'general';
     }
 }

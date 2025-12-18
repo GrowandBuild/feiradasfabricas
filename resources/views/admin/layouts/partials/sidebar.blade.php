@@ -82,6 +82,12 @@
                     <i class="bi bi-chat-heart"></i>
                     <span>Feedbacks</span>
                 </a>
+                @if(setting('enable_physical_store_sync', false))
+                    <a class="nav-link {{ request()->routeIs('admin.pdv.*') ? 'active' : '' }}" href="{{ route('admin.pdv.index') }}">
+                        <i class="bi bi-cash-register"></i>
+                        <span>PDV</span>
+                    </a>
+                @endif
                 <a class="nav-link {{ request()->routeIs('admin.coupons.*') ? 'active' : '' }}" href="{{ route('admin.coupons.index') }}">
                     <i class="bi bi-ticket-perforated"></i> 
                     <span>Cupons</span>
@@ -100,6 +106,10 @@
 
             <div class="nav-section">
                 <div class="nav-section-title">Sistema</div>
+                <a class="nav-link {{ request()->routeIs('admin.instructions.*') ? 'active' : '' }}" href="{{ route('admin.instructions.index') }}">
+                    <i class="bi bi-book"></i>
+                    <span>Guia Completo</span>
+                </a>
                 <a class="nav-link {{ request()->routeIs('admin.homepage-sections.*') ? 'active' : '' }}" href="{{ route('admin.homepage-sections.index') }}">
                     <i class="bi bi-layout-three-columns"></i>
                     <span>Sessões</span>
