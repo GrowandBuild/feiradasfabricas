@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Department;
 
 class DepartmentSeeder extends Seeder
@@ -12,6 +13,13 @@ class DepartmentSeeder extends Seeder
      */
     public function run()
     {
+        // Verificar se a tabela departments existe antes de tentar seedar
+        if (!Schema::hasTable('departments')) {
+            $this->command->warn('⚠️  Tabela "departments" não existe. Execute as migrations primeiro.');
+            $this->command->line('   Execute: php artisan migrate');
+            return;
+        }
+
         // Apenas os departamentos que realmente têm views criadas
         $departments = [
             [

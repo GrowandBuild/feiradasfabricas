@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Verificar se a tabela existe antes de tentar alterá-la
+        if (!Schema::hasTable('product_variations')) {
+            return;
+        }
+
         // Adicionar apenas o campo compare_price que não existe na migration CREATE
         Schema::table('product_variations', function (Blueprint $table) {
             if (!Schema::hasColumn('product_variations', 'compare_price')) {
@@ -24,6 +29,11 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Verificar se a tabela existe antes de tentar alterá-la
+        if (!Schema::hasTable('product_variations')) {
+            return;
+        }
+
         Schema::table('product_variations', function (Blueprint $table) {
             if (Schema::hasColumn('product_variations', 'compare_price')) {
                 $table->dropColumn('compare_price');
