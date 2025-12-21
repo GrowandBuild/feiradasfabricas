@@ -4,11 +4,224 @@
 @section('page-title', 'Criar Novo Produto')
 
 @section('content')
+<style>
+/* Estilos Modernos para Create Product - SMART SEARCH */
+.form-control, .form-select {
+    border: 2px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    padding: 14px 18px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    background: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    color: #1f2937 !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 8px 25px rgba(102, 126, 234, 0.2) !important;
+    outline: none !important;
+    transform: translateY(-2px) !important;
+}
+
+.form-control:hover, .form-select:hover {
+    border-color: #667eea !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.15) !important;
+}
+
+.form-label {
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+    margin-bottom: 10px !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.input-group {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.input-group-text {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    font-weight: 700 !important;
+    color: white !important;
+    padding: 14px 18px !important;
+}
+
+.input-group .form-control {
+    border-left: none !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+.input-group:focus-within {
+    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15), 0 8px 25px rgba(102, 126, 234, 0.2) !important;
+}
+
+.input-group:focus-within .input-group-text {
+    background: linear-gradient(135deg, #5a67d8 0%, #667eea 100%) !important;
+}
+
+textarea.form-control {
+    resize: vertical !important;
+    min-height: 140px !important;
+    line-height: 1.6 !important;
+}
+
+textarea.form-control:focus {
+    min-height: 160px !important;
+}
+
+.form-check-input {
+    width: 22px !important;
+    height: 22px !important;
+    border: 2px solid #d1d5db !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+.form-check-input:checked {
+    background-color: #667eea !important;
+    border-color: #667eea !important;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3) !important;
+}
+
+.form-check-input:hover {
+    border-color: #667eea !important;
+    transform: scale(1.1) !important;
+}
+
+.form-check-label {
+    font-weight: 600 !important;
+    color: #4b5563 !important;
+    cursor: pointer !important;
+    margin-left: 10px !important;
+}
+
+.card {
+    border: none !important;
+    border-radius: 20px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 24px !important;
+}
+
+.card:hover {
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.16) !important;
+    transform: translateY(-4px) !important;
+}
+
+.card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    border: none !important;
+    padding: 24px 28px !important;
+    border-bottom: none !important;
+}
+
+.card-header h5 {
+    color: white !important;
+    font-weight: 800 !important;
+    font-size: 20px !important;
+    margin: 0 !important;
+}
+
+.card-body {
+    padding: 32px 28px !important;
+}
+
+.btn {
+    border-radius: 12px !important;
+    padding: 14px 28px !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.btn:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn:active {
+    transform: translateY(0) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4) !important;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4) !important;
+}
+
+.btn-outline-secondary {
+    background: transparent !important;
+    border: 2px solid #e5e7eb !important;
+    color: #6b7280 !important;
+}
+
+.btn-outline-secondary:hover {
+    background: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    color: #4b5563 !important;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeInUp 0.6s ease-out !important;
+}
+
+@media (max-width: 768px) {
+    .form-control, .form-select {
+        padding: 16px 18px !important;
+        font-size: 16px !important;
+    }
+    
+    .card-body {
+        padding: 24px !important;
+    }
+    
+    .btn {
+        padding: 16px 24px !important;
+        font-size: 15px !important;
+    }
+}
+</style>
+
 <div class="row">
     <div class="col-lg-8">
         <div class="card">
             <div class="card-header">
-                <h5 class="card-title mb-0">Informações do Produto</h5>
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-plus-circle me-3"></i>Criar Novo Produto
+                </h5>
             </div>
             <div class="card-body">
                 <form action="{{ route('admin.products.store') }}" method="POST" enctype="multipart/form-data">
@@ -18,9 +231,12 @@
                     <div class="row">
                         <div class="col-md-8">
                             <div class="mb-3">
-                                <label for="name" class="form-label">Nome do Produto *</label>
+                                <label for="name" class="form-label">
+                                    <i class="bi bi-tag me-2"></i>Nome do Produto *
+                                </label>
                                 <input type="text" class="form-control @error('name') is-invalid @enderror" 
-                                       id="name" name="name" value="{{ old('name') }}" required>
+                                       id="name" name="name" value="{{ old('name') }}" required
+                                       placeholder="Digite o nome do produto">
                                 @error('name')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -28,9 +244,12 @@
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="sku" class="form-label">SKU *</label>
+                                <label for="sku" class="form-label">
+                                    <i class="bi bi-upc me-2"></i>SKU *
+                                </label>
                                 <input type="text" class="form-control @error('sku') is-invalid @enderror" 
-                                       id="sku" name="sku" value="{{ old('sku') }}" required>
+                                       id="sku" name="sku" value="{{ old('sku') }}" required
+                                       placeholder="Ex: PROD-001">
                                 @error('sku')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -39,9 +258,12 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="description" class="form-label">Descrição *</label>
+                        <label for="description" class="form-label">
+                            <i class="bi bi-text-paragraph me-2"></i>Descrição *
+                        </label>
                         <textarea class="form-control @error('description') is-invalid @enderror" 
-                                  id="description" name="description" rows="4" required>{{ old('description') }}</textarea>
+                                  id="description" name="description" rows="4" required
+                                  placeholder="Descreva detalhes importantes sobre o produto...">{{ old('description') }}</textarea>
                         @error('description')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -51,11 +273,14 @@
                     <div class="row">
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="price" class="form-label">Preço (B2C) *</label>
+                                <label for="price" class="form-label">
+                                    <i class="bi bi-currency-dollar me-2"></i>Preço (B2C) *
+                                </label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
                                     <input type="number" step="0.01" class="form-control @error('price') is-invalid @enderror" 
-                                           id="price" name="price" value="{{ old('price') }}" required>
+                                           id="price" name="price" value="{{ old('price') }}" required
+                                           placeholder="0.00">
                                 </div>
                                 @error('price')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -64,11 +289,14 @@
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="b2b_price" class="form-label">Preço (B2B)</label>
+                                <label for="b2b_price" class="form-label">
+                                    <i class="bi bi-briefcase me-2"></i>Preço (B2B)
+                                </label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
                                     <input type="number" step="0.01" class="form-control @error('b2b_price') is-invalid @enderror" 
-                                           id="b2b_price" name="b2b_price" value="{{ old('b2b_price') }}">
+                                           id="b2b_price" name="b2b_price" value="{{ old('b2b_price') }}"
+                                           placeholder="0.00">
                                 </div>
                                 @error('b2b_price')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -77,11 +305,14 @@
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="cost_price" class="form-label">Preço de Custo</label>
+                                <label for="cost_price" class="form-label">
+                                    <i class="bi bi-receipt me-2"></i>Preço de Custo
+                                </label>
                                 <div class="input-group">
                                     <span class="input-group-text">R$</span>
                                     <input type="number" step="0.01" class="form-control @error('cost_price') is-invalid @enderror" 
-                                           id="cost_price" name="cost_price" value="{{ old('cost_price') }}">
+                                           id="cost_price" name="cost_price" value="{{ old('cost_price') }}"
+                                           placeholder="0.00">
                                 </div>
                                 @error('cost_price')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -93,9 +324,12 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="mb-3">
-                                <label for="stock_quantity" class="form-label">Quantidade em Estoque *</label>
+                                <label for="stock_quantity" class="form-label">
+                                    <i class="bi bi-box-seam me-2"></i>Quantidade em Estoque *
+                                </label>
                                 <input type="number" class="form-control @error('stock_quantity') is-invalid @enderror" 
-                                       id="stock_quantity" name="stock_quantity" value="{{ old('stock_quantity', 0) }}" required>
+                                       id="stock_quantity" name="stock_quantity" value="{{ old('stock_quantity', 0) }}" required
+                                       placeholder="0">
                                 @error('stock_quantity')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror

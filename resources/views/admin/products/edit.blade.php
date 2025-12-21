@@ -53,6 +53,230 @@
         position: static;
     }
 }
+
+/* Estilos Modernos para Inputs e Formulários - COM !IMPORTANT */
+.form-control, .form-select {
+    border: 2px solid #e5e7eb !important;
+    border-radius: 12px !important;
+    padding: 14px 18px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    background: #ffffff !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    color: #1f2937 !important;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 8px 25px rgba(59, 130, 246, 0.2) !important;
+    outline: none !important;
+    transform: translateY(-2px) !important;
+}
+
+.form-control:hover, .form-select:hover {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.15) !important;
+}
+
+.form-label {
+    font-weight: 700 !important;
+    color: #1f2937 !important;
+    margin-bottom: 10px !important;
+    font-size: 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+}
+
+.input-group {
+    border-radius: 12px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+}
+
+.input-group-text {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+    border: 2px solid #e5e7eb !important;
+    border-right: none !important;
+    font-weight: 700 !important;
+    color: #6b7280 !important;
+    padding: 14px 18px !important;
+}
+
+.input-group .form-control {
+    border-left: none !important;
+    border-top-left-radius: 0 !important;
+    border-bottom-left-radius: 0 !important;
+}
+
+.input-group:focus-within {
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 8px 25px rgba(59, 130, 246, 0.2) !important;
+}
+
+.input-group:focus-within .input-group-text {
+    border-color: #3b82f6 !important;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+    color: #3b82f6 !important;
+}
+
+/* Estilos para Textarea */
+textarea.form-control {
+    resize: vertical !important;
+    min-height: 140px !important;
+    line-height: 1.6 !important;
+}
+
+textarea.form-control:focus {
+    min-height: 160px !important;
+}
+
+/* Estilos para Checkbox */
+.form-check-input {
+    width: 22px !important;
+    height: 22px !important;
+    border: 2px solid #d1d5db !important;
+    border-radius: 6px !important;
+    transition: all 0.2s ease !important;
+    cursor: pointer !important;
+}
+
+.form-check-input:checked {
+    background-color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3) !important;
+}
+
+.form-check-input:hover {
+    border-color: #3b82f6 !important;
+    transform: scale(1.1) !important;
+}
+
+.form-check-label {
+    font-weight: 600 !important;
+    color: #4b5563 !important;
+    cursor: pointer !important;
+    margin-left: 10px !important;
+}
+
+/* Cards Modernos */
+.card-modern {
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12) !important;
+    background: #ffffff !important;
+    overflow: hidden !important;
+    transition: all 0.3s ease !important;
+    margin-bottom: 24px !important;
+}
+
+.card-modern:hover {
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.16) !important;
+    transform: translateY(-4px) !important;
+}
+
+.card-modern .card-header {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+    border: none !important;
+    padding: 24px 28px !important;
+    border-bottom: 1px solid #e5e7eb !important;
+}
+
+.card-modern .card-header h6 {
+    color: #1f2937 !important;
+    font-weight: 800 !important;
+    font-size: 18px !important;
+    margin: 0 !important;
+}
+
+.card-modern .card-body {
+    padding: 28px !important;
+}
+
+/* Botões Modernos */
+.btn {
+    border-radius: 12px !important;
+    padding: 14px 28px !important;
+    font-weight: 700 !important;
+    font-size: 15px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    border: none !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+}
+
+.btn:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2) !important;
+}
+
+.btn:active {
+    transform: translateY(0) !important;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4) !important;
+}
+
+.btn-secondary {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(107, 114, 128, 0.4) !important;
+}
+
+.btn-outline-secondary {
+    background: transparent !important;
+    border: 2px solid #e5e7eb !important;
+    color: #6b7280 !important;
+}
+
+.btn-outline-secondary:hover {
+    background: #f3f4f6 !important;
+    border-color: #d1d5db !important;
+    color: #4b5563 !important;
+}
+
+.btn-accent {
+    background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), black 12%) 100%) !important;
+    color: white !important;
+    box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4) !important;
+}
+
+/* Animações */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card-modern {
+    animation: fadeInUp 0.6s ease-out !important;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .form-control, .form-select {
+        padding: 16px 18px !important;
+        font-size: 16px !important;
+    }
+    
+    .card-modern .card-body {
+        padding: 24px !important;
+    }
+    
+    .btn {
+        padding: 16px 24px !important;
+        font-size: 15px !important;
+    }
+}
 </style>
 
 <div class="product-edit-wrapper">
@@ -713,9 +937,6 @@
                     <a href="{{ route('admin.products.clone', $product) }}" class="btn btn-outline-info">
                         <i class="bi bi-files me-2"></i> Clonar Produto
                     </a>
-                    <a href="{{ route('admin.products.index') }}" class="btn btn-light">
-                        <i class="bi bi-arrow-left me-2"></i> Voltar à lista
-                    </a>
                 </div>
             </div>
         </div>
@@ -723,97 +944,129 @@
 </div>
 
 @push('modals')
-<!-- Modal para Adicionar/Editar Variação -->
+<!-- Modal para Adicionar/Editar Variação - DESIGN MODERNO -->
 <div class="modal fade" id="addVariationModal" tabindex="-1" aria-labelledby="addVariationModalLabel" aria-hidden="true" data-bs-backdrop="false">
-    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" style="max-height: 90vh;">
-        <div class="modal-content" style="max-height: 90vh; display: flex; flex-direction: column;">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="variationModalTitle">Adicionar Variação</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar"></button>
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable" style="max-height: 95vh;">
+        <div class="modal-content" style="max-height: 95vh; display: flex; flex-direction: column; border: none; border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; padding: 24px 28px;">
+                <h5 class="modal-title" id="variationModalTitle" style="color: white; font-weight: 800; font-size: 20px; margin: 0;">
+                    <i class="bi bi-layers me-3"></i>Adicionar Variação
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Fechar" style="filter: brightness(0) invert(1); opacity: 0.8;"></button>
             </div>
             <form id="variation-form" style="display: flex; flex-direction: column; height: 100%;">
-                <div class="modal-body" style="flex: 1; overflow-y: auto; max-height: calc(90vh - 200px);">
+                <div class="modal-body" style="flex: 1; overflow-y: auto; max-height: calc(95vh - 200px); padding: 32px 28px; background: #fafbfc;">
                     <input type="hidden" id="variation_id" name="variation_id">
                     
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        Selecione os atributos que compõem esta variação. Ex: Cor + Tamanho
+                    <div class="alert" style="background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%); border: none; border-radius: 16px; padding: 20px; margin-bottom: 28px;">
+                        <div style="display: flex; align-items: center;">
+                            <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; display: flex; align-items: center; justify-content: center; margin-right: 16px;">
+                                <i class="bi bi-info-circle" style="color: white; font-size: 20px;"></i>
+                            </div>
+                            <div>
+                                <strong style="color: #1a237e; font-size: 16px;">Atributos da Variação</strong>
+                                <p style="margin: 4px 0 0 0; color: #5e35b1; font-size: 14px;">Selecione os atributos que compõem esta variação. Ex: Cor + Tamanho</p>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Seleção de Atributos -->
-                    <div class="mb-3" id="attributes-selection">
-                        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                            <label class="form-label fw-bold mb-0">Atributos da Variação *</label>
-                            <button type="button" class="btn btn-sm btn-primary" id="generate-all-combinations-btn" style="display: none; white-space: nowrap;">
-                                <i class="bi bi-magic me-1"></i>
+                    <div class="mb-4" id="attributes-selection">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <label class="form-label" style="font-weight: 800; color: #1f2937; font-size: 16px; margin: 0;">
+                                <i class="bi bi-tags me-2" style="color: #667eea;"></i>Atributos da Variação *
+                            </label>
+                            <button type="button" class="btn" id="generate-all-combinations-btn" style="display: none; white-space: nowrap; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; padding: 10px 20px; font-weight: 700;">
+                                <i class="bi bi-magic me-2"></i>
                                 Gerar Combinações
                             </button>
                         </div>
-                        <div id="attributes-container">
-                            <p class="text-muted">Carregando atributos...</p>
+                        <div id="attributes-container" style="background: white; border-radius: 16px; padding: 20px; border: 2px solid #e5e7eb; min-height: 120px;">
+                            <p class="text-muted" style="margin: 0; display: flex; align-items: center;">
+                                <i class="bi bi-hourglass-split me-2"></i>Carregando atributos...
+                            </p>
                         </div>
-                        <div id="combinations-preview" class="mt-2" style="display: none;">
-                            <div class="alert alert-info py-2 mb-0">
-                                <i class="bi bi-info-circle me-2"></i>
-                                <strong id="combinations-count">0</strong> combinações serão criadas
+                        <div id="combinations-preview" class="mt-3" style="display: none;">
+                            <div class="alert" style="background: linear-gradient(135deg, #e8f5e8 0%, #f0f8ff 100%); border: none; border-radius: 12px; padding: 16px; margin: 0;">
+                                <div style="display: flex; align-items: center;">
+                                    <i class="bi bi-calculator" style="color: #2e7d32; font-size: 20px; margin-right: 12px;"></i>
+                                    <span style="color: #2e7d32; font-weight: 600;">
+                                        <strong id="combinations-count">0</strong> combinações serão criadas
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <div class="row g-2">
+                    <div class="row g-3">
                         <div class="col-md-6">
-                            <div class="mb-2">
-                                <label class="form-label small">Preço (B2C) *</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">R$</span>
+                            <div class="mb-3">
+                                <label class="form-label" style="font-weight: 700; color: #374151; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <i class="bi bi-currency-dollar me-2" style="color: #667eea;"></i>Preço (B2C) *
+                                </label>
+                                <div class="input-group" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
+                                    <span class="input-group-text" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; font-weight: 700; padding: 14px 18px;">R$</span>
                                     <input type="number" step="0.01" class="form-control" id="variation_price" 
-                                           name="price" value="{{ $product->price }}" required>
+                                           name="price" value="{{ $product->price }}" required 
+                                           style="border: none; padding: 14px 18px; font-size: 16px; font-weight: 600; background: white;">
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-2">
-                                <label class="form-label small">Estoque *</label>
-                                <input type="number" class="form-control form-control-sm" id="variation_stock" 
-                                       name="stock_quantity" value="0" min="0" required>
+                            <div class="mb-3">
+                                <label class="form-label" style="font-weight: 700; color: #374151; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <i class="bi bi-box-seam me-2" style="color: #667eea;"></i>Estoque *
+                                </label>
+                                <input type="number" class="form-control" id="variation_stock" 
+                                       name="stock_quantity" value="0" min="0" required 
+                                       style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 14px 18px; font-size: 16px; font-weight: 600; background: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-2">
-                                <label class="form-label small">Preço (B2B)</label>
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">R$</span>
+                            <div class="mb-3">
+                                <label class="form-label" style="font-weight: 700; color: #374151; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <i class="bi bi-briefcase me-2" style="color: #667eea;"></i>Preço (B2B)
+                                </label>
+                                <div class="input-group" style="border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
+                                    <span class="input-group-text" style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; border: none; font-weight: 700; padding: 14px 18px;">R$</span>
                                     <input type="number" step="0.01" class="form-control" id="variation_b2b_price" 
-                                           name="b2b_price" value="{{ $product->b2b_price ?? '' }}">
+                                           name="b2b_price" value="{{ $product->b2b_price ?? '' }}"
+                                           style="border: none; padding: 14px 18px; font-size: 16px; font-weight: 600; background: white;">
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="mb-2">
-                                <label class="form-label small">Variação Padrão</label>
-                                <div class="form-check mt-2">
-                                    <input class="form-check-input" type="checkbox" id="variation_is_default" name="is_default">
-                                    <label class="form-check-label small" for="variation_is_default">
-                                        Marcar como padrão
+                            <div class="mb-3">
+                                <label class="form-label" style="font-weight: 700; color: #374151; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <i class="bi bi-star me-2" style="color: #667eea;"></i>Variação Padrão
+                                </label>
+                                <div class="form-check" style="background: white; border: 2px solid #e5e7eb; border-radius: 12px; padding: 16px 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
+                                    <input class="form-check-input" type="checkbox" id="variation_is_default" name="is_default" 
+                                           style="width: 24px; height: 24px; border: 2px solid #667eea; border-radius: 6px;">
+                                    <label class="form-check-label" for="variation_is_default" style="font-weight: 600; color: #4b5563; margin-left: 12px; cursor: pointer;">
+                                        <i class="bi bi-check-circle me-2"></i>Marcar como padrão
                                     </label>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="alert alert-secondary py-2 mb-0 mt-2">
-                        <small class="text-muted">
-                            <i class="bi bi-info-circle me-1"></i>
-                            SKU e Nome serão gerados automaticamente baseados nos atributos selecionados
-                        </small>
+                    <div class="alert" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: none; border-radius: 12px; padding: 16px; margin-top: 20px;">
+                        <div style="display: flex; align-items: center;">
+                            <i class="bi bi-lightbulb" style="color: #d97706; font-size: 20px; margin-right: 12px;"></i>
+                            <div>
+                                <strong style="color: #92400e; font-size: 14px;">Geração Automática</strong>
+                                <p style="margin: 4px 0 0 0; color: #78350f; font-size: 13px;">SKU e Nome serão gerados automaticamente baseados nos atributos selecionados</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-footer" style="flex-shrink: 0; border-top: 1px solid #dee2e6;">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
-                        <i class="bi bi-x-circle me-1"></i> Cancelar
+                <div class="modal-footer" style="flex-shrink: 0; border: none; padding: 24px 28px; background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);">
+                    <button type="button" class="btn" data-bs-dismiss="modal" style="background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%); color: white; border: none; border-radius: 12px; padding: 14px 28px; font-weight: 700; box-shadow: 0 8px 25px rgba(107, 114, 128, 0.3);">
+                        <i class="bi bi-x-circle me-2"></i> Cancelar
                     </button>
-                    <button type="submit" class="btn btn-primary btn-sm" id="save-variation-btn">
-                        <i class="bi bi-check-circle me-1"></i> Salvar Variação
+                    <button type="submit" class="btn" id="save-variation-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 12px; padding: 14px 28px; font-weight: 700; box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);">
+                        <i class="bi bi-check-circle me-2"></i> Salvar Variação
                     </button>
                 </div>
             </form>
@@ -1315,22 +1568,24 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Botões editar variação (CORRIGIDO: remove listeners anteriores para evitar duplicação)
-    document.querySelectorAll('.edit-variation').forEach(btn => {
-        // Remover listener anterior se existir (evita duplicação em navegação SPA)
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        newBtn.addEventListener('click', async function() {
-            const variationId = this.dataset.variationId;
-            const modalEl = document.getElementById('addVariationModal');
-            let modal = bootstrap.Modal.getInstance(modalEl);
-            if (!modal) {
-                modal = new bootstrap.Modal(modalEl);
-            }
-            
-            try {
-                const response = await fetch(`/admin/products/variations/${variationId}`);
-                const data = await response.json();
+    // Botões editar variação (EVENT DELEGATION - evita múltiplos listeners)
+    document.addEventListener('click', async function(e) {
+        const editBtn = e.target.closest('.edit-variation');
+        if (!editBtn) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const variationId = editBtn.dataset.variationId;
+        const modalEl = document.getElementById('addVariationModal');
+        let modal = bootstrap.Modal.getInstance(modalEl);
+        if (!modal) {
+            modal = new bootstrap.Modal(modalEl);
+        }
+        
+        try {
+            const response = await fetch(`/admin/products/variations/${variationId}`);
+            const data = await response.json();
                 
                 if (data.success && data.variation) {
                     const v = data.variation;
@@ -1387,70 +1642,72 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Botões excluir variação (CORRIGIDO: remove listeners anteriores)
-    document.querySelectorAll('.delete-variation').forEach(btn => {
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        newBtn.addEventListener('click', function() {
-            if (!confirm('Tem certeza que deseja excluir esta variação?')) return;
-            
-            const variationId = this.dataset.variationId;
-            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            
-            fetch(`/admin/products/variations/${variationId}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': csrf,
-                    'Accept': 'application/json'
+    // Botões excluir variação (EVENT DELEGATION - evita múltiplos listeners)
+    document.addEventListener('click', function(e) {
+        const deleteBtn = e.target.closest('.delete-variation');
+        if (!deleteBtn) return;
+        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        const variationId = deleteBtn.dataset.variationId;
+        if (!confirm('Tem certeza que deseja excluir esta variação?')) return;
+        
+        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+        
+        fetch(`/admin/products/variations/${variationId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRF-TOKEN': csrf,
+                'Accept': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.success) {
+                document.querySelector(`[data-variation-id="${variationId}"]`)?.remove();
+                // Atualizar contador
+                const count = variationsList.querySelectorAll('.variation-item').length;
+                const countEl = document.getElementById('variations-count');
+                if (countEl) {
+                    countEl.textContent = `${count} variação(ões)`;
                 }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    document.querySelector(`[data-variation-id="${variationId}"]`)?.remove();
-                    // Atualizar contador
-                    const count = variationsList.querySelectorAll('.variation-item').length;
-                    const countEl = document.getElementById('variations-count');
-                    if (countEl) {
-                        countEl.textContent = `${count} variação(ões)`;
+                
+                // CORRIGIDO: Atualizar flag has_variations se não houver mais variações
+                if (count === 0) {
+                    const hasVariationsCheckbox = document.getElementById('has_variations');
+                    if (hasVariationsCheckbox) {
+                        hasVariationsCheckbox.checked = false;
                     }
-                    
-                    // CORRIGIDO: Atualizar flag has_variations se não houver mais variações
-                    if (count === 0) {
-                        const hasVariationsCheckbox = document.getElementById('has_variations');
-                        if (hasVariationsCheckbox) {
-                            hasVariationsCheckbox.checked = false;
-                        }
-                        const variationsManagement = document.getElementById('variations-management');
-                        if (variationsManagement) {
-                            variationsManagement.style.display = 'none';
-                        }
+                    const variationsManagement = document.getElementById('variations-management');
+                    if (variationsManagement) {
+                        variationsManagement.style.display = 'none';
                     }
-                    
-                    // Atualizar visibilidade do botão "Apagar Todas"
-                    const deleteAllBtn = document.getElementById('delete-all-variations-btn');
-                    if (deleteAllBtn) {
-                        deleteAllBtn.style.display = count > 0 ? 'inline-block' : 'none';
-                    }
-                    
-                    // Se não houver mais variações, mostrar mensagem
-                    if (count === 0) {
-                        variationsList.innerHTML = `
-                            <div class="text-center py-4 text-muted">
-                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                <p class="mb-0">Nenhuma variação cadastrada ainda.</p>
-                                <small>Clique em "Adicionar Variação" para começar.</small>
-                            </div>
-                        `;
-                    }
-                } else {
-                    alert(data.message || 'Erro ao excluir variação');
                 }
-            })
-            .catch(err => {
-                console.error(err);
-                alert('Erro ao excluir variação');
-            });
+                
+                // Atualizar visibilidade do botão "Apagar Todas"
+                const deleteAllBtn = document.getElementById('delete-all-variations-btn');
+                if (deleteAllBtn) {
+                    deleteAllBtn.style.display = count > 0 ? 'inline-block' : 'none';
+                }
+                
+                // Se não houver mais variações, mostrar mensagem
+                if (count === 0) {
+                    variationsList.innerHTML = `
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                            <p class="mb-0">Nenhuma variação cadastrada ainda.</p>
+                            <small>Clique em "Adicionar Variação" para começar.</small>
+                        </div>
+                    `;
+                }
+            } else {
+                alert(data.message || 'Erro ao excluir variação');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            alert('Erro ao excluir variação');
         });
     });
 

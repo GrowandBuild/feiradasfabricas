@@ -106,17 +106,304 @@
         color: var(--modal-text-color, #fff);
         overflow: hidden;
     }
-    .ss-modal-center { align-self: center; }
-    .ss-modal .ss-header { padding: 10px 12px; font-weight: 600; background: #0f172a; color: #fff; display: flex; align-items: center; justify-content: space-between; gap:8px; }
-    .ss-modal .ss-body { padding: 12px; overflow: auto; flex: 1 1 auto; max-height: none; }
-    .ss-modal .ss-footer { padding: 8px 12px; display: flex; gap: 8px; justify-content: flex-end; border-top: 1px solid #e2e8f0; flex-shrink: 0; background: transparent; }
-    /* Tab buttons inside modal header - compact */
-    .ss-tab { padding: 6px 10px; font-size: 0.85rem; border-radius: 8px; background: #f3f4f6; color: #0f172a; border: none; cursor: pointer; }
-    .ss-tab.active { background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%); color: #fff; }
-    .ss-btn { border: none; border-radius: 8px; padding: 8px 12px; font-weight: 600; cursor: pointer; }
-    .ss-btn-primary { background: linear-gradient(135deg, var(--secondary-color) 0%, color-mix(in srgb, var(--secondary-color), white 12%) 100%); color: #fff; }
-    .ss-btn-secondary { background: #e5e7eb; color: #111827; }
-    .ss-btn-danger { background: #ef4444; color: #fff; }
+    .ss-modal-center { 
+        align-self: center; 
+        border-radius: 16px !important;
+        overflow: visible !important;
+        box-shadow: 0 0 60px rgba(6, 182, 212, 0.15), 0 0 120px rgba(139, 92, 246, 0.1) !important;
+        border: 1px solid rgba(139, 92, 246, 0.2) !important;
+        backdrop-filter: blur(20px) !important;
+        position: relative !important;
+    }
+    .ss-modal-center::before {
+        content: '' !important;
+        position: absolute !important;
+        inset: -2px !important;
+        background: linear-gradient(45deg, #06b6d4, #8b5cf6, #ec4899, #06b6d4) !important;
+        border-radius: 16px !important;
+        z-index: -1 !important;
+        opacity: 0.5 !important;
+        animation: borderRotate 4s linear infinite !important;
+    }
+    @keyframes borderRotate {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+    
+    .ss-modal { 
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95)) !important;
+        border-radius: 16px !important;
+        overflow: hidden !important;
+        max-width: 520px !important;
+        width: 90vw !important;
+        max-height: 85vh !important;
+        display: grid !important;
+        grid-template-rows: auto 1fr auto !important;
+        position: relative !important;
+        backdrop-filter: blur(20px) !important;
+    }
+    
+    .ss-modal::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 1px !important;
+        background: linear-gradient(90deg, transparent, #06b6d4, #8b5cf6, transparent) !important;
+        animation: shimmer 3s ease-in-out infinite !important;
+    }
+    
+    @keyframes shimmer {
+        0%, 100% { opacity: 0.3; transform: translateX(-100%); }
+        50% { opacity: 1; transform: translateX(100%); }
+    }
+    
+    .ss-modal .ss-header { 
+        padding: 20px 24px !important; 
+        font-weight: 600 !important; 
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.8)) !important; 
+        color: #f1f5f9 !important; 
+        display: flex !important; 
+        align-items: center !important; 
+        justify-content: space-between !important; 
+        gap: 16px !important;
+        border: none !important;
+        backdrop-filter: blur(10px) !important;
+        position: relative !important;
+        font-size: 15px !important;
+    }
+    
+    .ss-modal .ss-header::before {
+        content: '' !important;
+        position: absolute !important;
+        bottom: 0 !important;
+        left: 24px !important;
+        right: 24px !important;
+        height: 2px !important;
+        background: linear-gradient(90deg, #06b6d4, #8b5cf6) !important;
+        border-radius: 1px !important;
+    }
+    
+    .ss-modal .ss-body { 
+        padding: 24px !important; 
+        overflow: auto !important; 
+        max-height: calc(85vh - 140px) !important;
+        background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.6)) !important;
+        backdrop-filter: blur(10px) !important;
+        position: relative !important;
+    }
+    
+    .ss-modal .ss-body::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        background: radial-gradient(circle at 20% 50%, rgba(6, 182, 212, 0.1) 0%, transparent 50%), 
+                    radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%) !important;
+        pointer-events: none !important;
+    }
+    
+    .ss-modal .ss-footer { 
+        padding: 20px 24px !important; 
+        display: flex !important; 
+        gap: 12px !important; 
+        justify-content: flex-end !important; 
+        border: none !important; 
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.8)) !important;
+        backdrop-filter: blur(10px) !important;
+        position: relative !important;
+    }
+    
+    .ss-modal .ss-footer::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 24px !important;
+        right: 24px !important;
+        height: 2px !important;
+        background: linear-gradient(90deg, #8b5cf6, #06b6d4) !important;
+        border-radius: 1px !important;
+    }
+    /* Tab buttons - FUTURISTIC 2026 */
+    .ss-tab { 
+        padding: 10px 16px !important; 
+        font-size: 13px !important; 
+        font-weight: 600 !important;
+        border-radius: 12px !important; 
+        background: linear-gradient(135deg, rgba(51, 65, 85, 0.6), rgba(71, 85, 105, 0.6)) !important; 
+        color: #cbd5e1 !important; 
+        border: 1px solid rgba(139, 92, 246, 0.2) !important; 
+        cursor: pointer !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        backdrop-filter: blur(10px) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .ss-tab::before {
+        content: '' !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: -100% !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3), transparent) !important;
+        transition: left 0.5s !important;
+    }
+    
+    .ss-tab:hover::before {
+        left: 100% !important;
+    }
+    
+    .ss-tab:hover {
+        background: linear-gradient(135deg, rgba(71, 85, 105, 0.8), rgba(100, 116, 139, 0.8)) !important;
+        color: #f1f5f9 !important;
+        border-color: rgba(139, 92, 246, 0.4) !important;
+        transform: translateY(-2px) !important;
+        box-shadow: 0 8px 25px rgba(139, 92, 246, 0.2) !important;
+    }
+    
+    .ss-tab.active { 
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.8), rgba(139, 92, 246, 0.8)) !important; 
+        color: #ffffff !important;
+        border-color: rgba(6, 182, 212, 0.5) !important;
+        box-shadow: 0 0 20px rgba(6, 182, 212, 0.3) !important;
+    }
+    
+    /* Buttons - FUTURISTIC 2026 */
+    .ss-btn { 
+        border: 1px solid rgba(139, 92, 246, 0.3) !important; 
+        border-radius: 10px !important; 
+        padding: 10px 18px !important; 
+        font-weight: 600 !important; 
+        font-size: 13px !important;
+        cursor: pointer !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        background: linear-gradient(135deg, rgba(51, 65, 85, 0.7), rgba(71, 85, 105, 0.7)) !important;
+        color: #f1f5f9 !important;
+        backdrop-filter: blur(10px) !important;
+        position: relative !important;
+        overflow: hidden !important;
+    }
+    
+    .ss-btn::after {
+        content: '' !important;
+        position: absolute !important;
+        top: 50% !important;
+        left: 50% !important;
+        width: 0 !important;
+        height: 0 !important;
+        border-radius: 50% !important;
+        background: rgba(255, 255, 255, 0.2) !important;
+        transform: translate(-50%, -50%) !important;
+        transition: width 0.6s, height 0.6s !important;
+    }
+    
+    .ss-btn:hover::after {
+        width: 300px !important;
+        height: 300px !important;
+    }
+    
+    .ss-btn:hover {
+        transform: translateY(-2px) !important;
+        box-shadow: 0 10px 30px rgba(139, 92, 246, 0.3) !important;
+        border-color: rgba(139, 92, 246, 0.5) !important;
+    }
+    
+    .ss-btn-primary { 
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.8), rgba(139, 92, 246, 0.8)) !important; 
+        color: white !important; 
+        border-color: rgba(6, 182, 212, 0.5) !important;
+        box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3) !important;
+    }
+    
+    .ss-btn-primary:hover {
+        box-shadow: 0 8px 35px rgba(6, 182, 212, 0.4) !important;
+        border-color: rgba(6, 182, 212, 0.7) !important;
+    }
+    
+    .ss-btn-secondary { 
+        background: linear-gradient(135deg, rgba(71, 85, 105, 0.8), rgba(100, 116, 139, 0.8)) !important; 
+        color: #f1f5f9 !important; 
+        border-color: rgba(139, 92, 246, 0.3) !important;
+    }
+    
+    .ss-btn-danger { 
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.8), rgba(220, 38, 38, 0.8)) !important; 
+        color: white !important; 
+        border-color: rgba(239, 68, 68, 0.5) !important;
+        box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3) !important;
+    }
+    
+    .ss-btn-ghost {
+        background: rgba(51, 65, 85, 0.5) !important;
+        color: #cbd5e1 !important;
+        border-color: rgba(139, 92, 246, 0.2) !important;
+    }
+    
+    .ss-btn-ghost:hover {
+        background: rgba(71, 85, 105, 0.7) !important;
+        color: #f1f5f9 !important;
+    }
+    
+    /* Form controls - FUTURISTIC 2026 */
+    .ss-modal .form-control,
+    .ss-modal .form-select {
+        border: 1px solid rgba(139, 92, 246, 0.3) !important;
+        border-radius: 10px !important;
+        padding: 12px 16px !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.8)) !important;
+        color: #f1f5f9 !important;
+        backdrop-filter: blur(10px) !important;
+        position: relative !important;
+    }
+    
+    .ss-modal .form-control::placeholder,
+    .ss-modal .form-select::placeholder {
+        color: #94a3b8 !important;
+        font-style: italic !important;
+    }
+    
+    .ss-modal .form-control:focus,
+    .ss-modal .form-select:focus {
+        border-color: rgba(6, 182, 212, 0.6) !important;
+        outline: none !important;
+        background: linear-gradient(135deg, rgba(51, 65, 85, 0.9), rgba(71, 85, 105, 0.9)) !important;
+        box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2), 0 8px 25px rgba(6, 182, 212, 0.15) !important;
+        transform: translateY(-1px) !important;
+    }
+    
+    .ss-modal .form-label {
+        font-weight: 600 !important;
+        color: #e2e8f0 !important;
+        margin-bottom: 8px !important;
+        font-size: 13px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
+        position: relative !important;
+        display: inline-block !important;
+    }
+    
+    .ss-modal .form-label::after {
+        content: '' !important;
+        position: absolute !important;
+        bottom: -2px !important;
+        left: 0 !important;
+        width: 0 !important;
+        height: 2px !important;
+        background: linear-gradient(90deg, #06b6d4, #8b5cf6) !important;
+        transition: width 0.3s ease !important;
+    }
+    
+    .ss-modal .form-label:hover::after {
+        width: 100% !important;
+    }
         /* Painel de Tema */
     .theme-panel { position: fixed; bottom: 90px; right: 30px; width: 360px; max-height: 520px; overflow: hidden; background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.3); display: none; flex-direction: column; z-index: 1100; animation: ss-slideUp .3s cubic-bezier(.4,0,.2,1); }
         .theme-panel.active { display: flex; }
@@ -607,126 +894,416 @@
         </div>
     </div>
 
-    <!-- Quick-create product overlay moved outside the search panel to avoid layout/overflow conflicts -->
+    <!-- MODAL RACIONAL 2026 - CRIAÇÃO DE PRODUTOS -->
     <style>
-        /* Modern, colorful quick-create modal styles using site theme vars */
-        #ssQuickProductOverlay {
-            /* prefer site variables if present */
-            --qp-primary: var(--primary-color, #06b6d4);
-            --qp-dark: var(--primary-dark, #7c3aed);
-            --qp-secondary: var(--secondary-color, #ff7a3a); /* used for action buttons */
-            --qp-accent: var(--accent-color, #10b981);
-            --qp-card-bg: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
-            --qp-surface: #ffffff;
-            --qp-muted: #64748b;
-            --qp-radius: 12px;
+        /* Reset completo - do zero */
+        .modal-2026 {
+            --primary: #06b6d4;
+            --secondary: #8b5cf6;
+            --accent: #ec4899;
+            --dark: #0f172a;
+            --light: #f1f5f9;
+            --glass: rgba(255, 255, 255, 0.1);
         }
 
-        #ssQuickProductOverlay .ss-modal {
-            /* Allow larger modal while keeping reasonable limits */
-            max-width: 1200px;
-            width: calc(100vw - 80px);
-            height: 80vh;
-            box-sizing: border-box;
-            overflow: hidden;
+        .modal-2026-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            z-index: 99999;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-2026-overlay.active {
             display: flex;
-            flex-direction: column;
-            border-radius: var(--qp-radius);
-            /* Modal surface: prefer explicit --modal-surface set by JS */
-            background: var(--modal-surface, rgba(255,255,255,0.04));
-            color: var(--modal-text-color, var(--text-primary, #0f172a));
-            backdrop-filter: blur(10px) saturate(120%);
-            -webkit-backdrop-filter: blur(10px) saturate(120%);
-            box-shadow: 0 30px 80px rgba(2,6,23,0.28), 0 6px 32px rgba(2,6,23,0.12) inset;
-            border: 1px solid var(--modal-border, rgba(0,0,0,0.06));
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-2026-container {
+            width: 90%;
+            max-width: 1400px;
+            height: 90vh;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            border-radius: 24px;
+            box-shadow: 0 0 120px rgba(6, 182, 212, 0.3);
+            border: 2px solid transparent;
+            background-clip: padding-box;
             position: relative;
+            overflow: hidden;
+            animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        /* Outer neon glow using secondary color if available */
-        #ssQuickProductOverlay::before {
+        .modal-2026-container::before {
             content: '';
-            position: absolute; inset: -6px; border-radius: calc(var(--qp-radius) + 6px);
-            background: transparent; z-index: -2;
-            box-shadow: 0 8px 40px rgba(0,0,0,0.18);
-        }
-        #ssQuickProductOverlay::after {
-            content: '';
-            position: absolute; inset: -1px; border-radius: calc(var(--qp-radius) + 1px);
-            z-index: -1; pointer-events: none;
-            background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
-            box-shadow: 0 6px 30px rgba(0,0,0,0.12);
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent), var(--primary));
+            border-radius: 24px;
+            z-index: -1;
+            animation: rotate 8s linear infinite;
         }
 
-        /* Header uses the site's primary gradient (keeps identity) */
-        #ssQuickProductOverlay .ss-header {
-            flex: 0 0 auto;
-            padding: 12px 16px;
-            display:flex; align-items:center; justify-content:space-between;
-            background: linear-gradient(90deg, var(--qp-primary), var(--qp-dark));
-            color: #fff;
-            border-top-left-radius: calc(var(--qp-radius) - 2px);
-            border-top-right-radius: calc(var(--qp-radius) - 2px);
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(50px) scale(0.9);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .modal-2026-header {
+            padding: 32px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(139, 92, 246, 0.1));
+            border-bottom: 1px solid rgba(139, 92, 246, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .modal-2026-title {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--light);
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .modal-2026-tabs {
+            display: flex;
             gap: 12px;
         }
 
-        /* Tabs as modern pills with icons */
-        #ssQuickProductOverlay .ss-tab {
-            background: transparent;
-            color: rgba(255,255,255,0.95);
-            border: none;
-            padding: 8px 14px;
-            border-radius: 999px;
-            font-weight:600;
+        .modal-2026-tab {
+            padding: 12px 24px;
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: var(--light);
+            font-weight: 600;
             cursor: pointer;
-            transition: all .18s ease;
-            box-shadow: none;
-            opacity: 0.95;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
         }
-        #ssQuickProductOverlay .ss-tab:hover { transform: translateY(-2px); opacity:1; }
-        #ssQuickProductOverlay .ss-tab.active {
+
+        .modal-2026-tab:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .modal-2026-tab.active {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-color: transparent;
+            box-shadow: 0 8px 32px rgba(6, 182, 212, 0.4);
+        }
+
+        .modal-2026-close {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--glass);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 20px;
+        }
+
+        .modal-2026-close:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+            transform: rotate(90deg);
+        }
+
+        .modal-2026-body {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            height: calc(90vh - 140px);
+        }
+
+        .modal-2026-sidebar {
+            background: rgba(30, 41, 59, 0.5);
+            border-right: 1px solid rgba(139, 92, 246, 0.2);
+            padding: 32px 24px;
+            overflow-y: auto;
+        }
+
+        .modal-2026-nav-section {
+            margin-bottom: 32px;
+        }
+
+        .modal-2026-nav-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #64748b;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .modal-2026-nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            color: #cbd5e1;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 8px;
+        }
+
+        .modal-2026-nav-item:hover {
+            background: rgba(139, 92, 246, 0.2);
+            color: var(--light);
+            transform: translateX(8px);
+        }
+
+        .modal-2026-nav-item.active {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.3), rgba(139, 92, 246, 0.3));
+            color: var(--light);
+            border: 1px solid rgba(139, 92, 246, 0.3);
+        }
+
+        .modal-2026-content {
+            padding: 32px;
+            overflow-y: auto;
+            background: rgba(15, 23, 42, 0.3);
+        }
+
+        .modal-2026-section {
+            background: rgba(30, 41, 59, 0.4);
+            border-radius: 20px;
+            padding: 32px;
+            margin-bottom: 32px;
+            border: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        .modal-2026-section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--light);
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .modal-2026-section-title::after {
+            content: '';
+            flex: 1;
+            height: 2px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+        }
+
+        .modal-2026-form-group {
+            margin-bottom: 24px;
+        }
+
+        .modal-2026-label {
+            display: block;
+            font-weight: 600;
+            color: var(--light);
+            margin-bottom: 8px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .modal-2026-input,
+        .modal-2026-select,
+        .modal-2026-textarea {
+            width: 100%;
+            padding: 16px 20px;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(51, 65, 85, 0.8));
+            border: 2px solid rgba(139, 92, 246, 0.3);
+            border-radius: 12px;
+            color: var(--light);
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .modal-2026-input:focus,
+        .modal-2026-select:focus,
+        .modal-2026-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(51, 65, 85, 0.9), rgba(71, 85, 105, 0.9));
+            box-shadow: 0 0 0 4px rgba(6, 182, 212, 0.2);
+        }
+
+        .modal-2026-preview {
+            background: rgba(30, 41, 59, 0.5);
+            border-left: 1px solid rgba(139, 92, 246, 0.2);
+            padding: 32px 24px;
+            overflow-y: auto;
+        }
+
+        .modal-2026-preview-card {
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.1), rgba(139, 92, 246, 0.1));
+            border-radius: 20px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid rgba(139, 92, 246, 0.2);
+        }
+
+        .modal-2026-preview-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--light);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .modal-2026-preview-image {
+            width: 100%;
+            height: 200px;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #64748b;
+            margin-bottom: 20px;
+            border: 2px dashed rgba(139, 92, 246, 0.3);
+        }
+
+        .modal-2026-preview-info {
+            color: #cbd5e1;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .modal-2026-preview-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+        }
+
+        .modal-2026-preview-item:last-child {
+            border-bottom: none;
+        }
+
+        .modal-2026-footer {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 24px 32px;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.95), rgba(30, 41, 59, 0.95));
+            border-top: 1px solid rgba(139, 92, 246, 0.2);
+            display: flex;
+            justify-content: flex-end;
+            gap: 16px;
+            backdrop-filter: blur(20px);
+        }
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        #ssQuickProductOverlay .ss-footer .ss-btn i {
+            font-size: 14px;
+        }
+        
+        /* Cancel Button - Modern Secondary */
+        #ssQuickProductOverlay .ss-footer .ss-btn-secondary,
+        #ssQuickProductOverlay .ss-footer .neon-secondary {
+            background: rgba(255,255,255,0.08);
+            color: var(--text-light, #e6eef8);
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+        
+        #ssQuickProductOverlay .ss-footer .ss-btn-secondary:hover,
+        #ssQuickProductOverlay .ss-footer .neon-secondary:hover {
             background: rgba(255,255,255,0.12);
+            border-color: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        /* Remove Button - Modern Danger */
+        #ssQuickProductOverlay .ss-footer .ss-btn-danger {
+            background: linear-gradient(135deg, rgba(239,68,68,0.9) 0%, rgba(220,38,38,0.9) 100%);
             color: #fff;
-            box-shadow: 0 6px 20px rgba(2,6,23,0.12);
+            box-shadow: 0 4px 16px rgba(239,68,68,0.3);
         }
-
-        /* Body panels */
-        #ssQuickProductOverlay .qp-tab-panel { flex: 1 1 auto; display: block; overflow: hidden; }
-        #ssQuickProductOverlay .qp-tab-panel > .ss-body { height: 100% !important; overflow: auto !important; box-sizing: border-box; padding: 18px; }
-        #ssQuickProductOverlay .ss-body { flex: 1 1 auto; overflow: auto !important; padding-bottom: 120px; }
-
-        /* Make form controls friendlier */
-        #ssQuickProductOverlay .form-control, #ssQuickProductOverlay .form-select, #ssQuickProductOverlay textarea {
-            border-radius: 10px; border: 1px solid rgba(15,23,42,0.06);
-            padding: 10px 12px; box-shadow: none; background: #fff;
+        
+        #ssQuickProductOverlay .ss-footer .ss-btn-danger:hover {
+            background: linear-gradient(135deg, rgba(239,68,68,1) 0%, rgba(220,38,38,1) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(239,68,68,0.4);
         }
-        #ssQuickProductOverlay label.form-label { font-weight:700; color:#0f172a; }
-        #ssQuickProductOverlay .text-muted { color: var(--qp-muted); }
-
-        /* Footer positioned inside the overlay modal (absolute inside modal) */
-        #ssQuickProductOverlay .ss-footer {
-            position: absolute; left: 18px; right: 18px; bottom: 18px; z-index: 60;
-            background: linear-gradient(180deg, rgba(255,255,255,0.95), rgba(248,251,255,0.98));
-            padding: 12px 16px; display:flex; gap:8px; justify-content:flex-end; align-items:center; border-radius: 10px;
-            box-shadow: 0 6px 24px rgba(2,6,23,0.18);
+        
+        /* Save Button - Modern Primary with Dynamic Color and Glow */
+        #ssQuickProductOverlay .ss-footer .ss-btn-primary,
+        #ssQuickProductOverlay .ss-footer .neon-primary {
+            background: linear-gradient(135deg, var(--secondary-color, #ff7a3a) 0%, color-mix(in srgb, var(--secondary-color, #ff7a3a), white 14%) 100%);
+            color: #fff;
+            box-shadow: 0 8px 24px color-mix(in srgb, var(--secondary-color, #ff7a3a), transparent 65%),
+                        0 0 0 1px color-mix(in srgb, var(--secondary-color, #ff7a3a), transparent 40%);
+            position: relative;
         }
-        /* Compact footer appearance (dark / flat) */
+        
+        #ssQuickProductOverlay .ss-footer .ss-btn-primary:hover,
+        #ssQuickProductOverlay .ss-footer .neon-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 32px color-mix(in srgb, var(--secondary-color, #ff7a3a), transparent 55%),
+                        0 0 0 1px color-mix(in srgb, var(--secondary-color, #ff7a3a), transparent 50%);
+            filter: brightness(1.1);
+        }
+        
+        #ssQuickProductOverlay .ss-footer .ss-btn-primary:active,
+        #ssQuickProductOverlay .ss-footer .neon-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 16px color-mix(in srgb, var(--secondary-color, #ff7a3a), transparent 50%);
+        }
+        
+        /* Compact footer - fully transparent */
         #ssQuickProductOverlay.qp-compact .ss-footer {
-            background: rgba(6,8,12,0.86);
-            color: var(--modal-text-color, #e6eef8);
-            box-shadow: 0 6px 20px rgba(2,6,23,0.28);
-            border-radius: 8px;
+            padding: 12px 16px;
+            background: transparent;
+            backdrop-filter: blur(20px) saturate(120%);
+            border-top: 1px solid rgba(255,255,255,0.05);
         }
-        #ssQuickProductOverlay.qp-compact .ss-footer .ss-btn { box-shadow: none; }
 
-        /* Primary button — uses site secondary/accent (keeps CTA consistent) */
-        #ssQuickProductOverlay .ss-btn.ss-btn-primary {
-            background: linear-gradient(90deg,var(--qp-secondary),var(--qp-accent));
-            color: #ffffff; border: none; padding: 10px 16px; border-radius: 10px; font-weight:700; box-shadow: 0 10px 26px rgba(15,23,42,0.12);
-            display:inline-flex; gap:8px; align-items:center;
-        }
-        #ssQuickProductOverlay .ss-btn.ss-btn-secondary {
-            background: transparent; border: 1px solid rgba(255,255,255,0.14); color: #fff; padding:8px 12px; border-radius:8px;
-        }
+        /* Button styles are now defined in footer section above */
 
         /* Floating actions: circular colorful buttons */
         #ssQuickProductOverlay .qp-floating-actions { display: none; }
@@ -809,217 +1386,924 @@
         }
     </style>
 
-    <div class="ss-overlay" id="ssQuickProductOverlay" aria-modal="true" role="dialog">
-        <div class="ss-modal ss-modal-center" role="document">
-            <div class="ss-header ss-header-compact" style="display:flex; align-items:center; justify-content:space-between;">
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <button class="ss-tab active" data-tab="create" id="qpTabCreate" aria-label="Criar" title="Criar"><i class="bi bi-plus-circle" aria-hidden="true"></i><span class="visually-hidden">Criar</span></button>
-                    <button class="ss-tab" data-tab="manage" id="pmTabManage" aria-label="Gerenciador" title="Gerenciador"><i class="bi bi-gear-fill" aria-hidden="true"></i><span class="visually-hidden">Gerenciador</span></button>
-                    <button class="ss-tab" data-tab="latest" id="pmTabLatest" aria-label="Últimos" title="Últimos"><i class="bi bi-clock-history" aria-hidden="true"></i><span class="visually-hidden">Últimos</span></button>
+@push('modals')
+<!-- MODAL 2026 - ESTRUTURA COMPLETAMENTE NOVA (rendered at end of body) -->
+<div class="modal-2026-overlay" id="modal2026" style="position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important; z-index: 999999 !important; display: none; align-items: center; justify-content: center;">
+    <div class="modal-2026-container">
+        <!-- Header -->
+        <div class="modal-2026-header">
+            <div class="modal-2026-title">
+                <i class="bi bi-rocket-takeoff"></i>
+                <span>Criação Racional de Produtos</span>
+            </div>
+            
+            <div class="modal-2026-tabs">
+                <button class="modal-2026-tab active" data-tab="create">
+                    <i class="bi bi-plus-circle me-2"></i>Criar
+                </button>
+                <button class="modal-2026-tab" data-tab="manage">
+                    <i class="bi bi-gear me-2"></i>Gerenciar
+                </button>
+                <button class="modal-2026-tab" data-tab="analytics">
+                    <i class="bi bi-graph-up me-2"></i>Análise
+                </button>
+            </div>
+            
+            <button class="modal-2026-close" id="modal2026Close">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        
+        <!-- Body Grid Layout -->
+        <div class="modal-2026-body">
+            <!-- Sidebar Esquerda - Navegação -->
+            <div class="modal-2026-sidebar">
+                <div class="modal-2026-nav-section">
+                    <div class="modal-2026-nav-title">
+                        <i class="bi bi-info-circle"></i>
+                        <span>Informações Essenciais</span>
+                    </div>
+                    <div class="modal-2026-nav-item active" data-section="basic">
+                        <i class="bi bi-tag"></i>
+                        <span>Dados Básicos</span>
+                    </div>
+                    <div class="modal-2026-nav-item" data-section="pricing">
+                        <i class="bi bi-currency-dollar"></i>
+                        <span>Estratégia de Preços</span>
+                    </div>
+                    <div class="modal-2026-nav-item" data-section="inventory">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Gestão de Estoque</span>
+                    </div>
                 </div>
-                <div style="display:flex; gap:8px; align-items:center;">
-                    <button class="sp-btn sp-btn-ghost" id="qpToggleFullForm" title="Mostrar tudo" type="button" aria-label="Expandir"><i class="bi bi-layout-text-window-reverse" aria-hidden="true"></i></button>
-                    <button class="ss-btn ss-btn-ghost" id="ssQuickProductClose" type="button" aria-label="Fechar" title="Fechar"><i class="bi bi-x-lg" aria-hidden="true"></i></button>
+                
+                <div class="modal-2026-nav-section">
+                    <div class="modal-2026-nav-title">
+                        <i class="bi bi-sliders"></i>
+                        <span>Configurações Avançadas</span>
+                    </div>
+                    <div class="modal-2026-nav-item" data-section="categories">
+                        <i class="bi bi-folder"></i>
+                        <span>Categorias</span>
+                    </div>
+                    <div class="modal-2026-nav-item" data-section="attributes">
+                        <i class="bi bi-palette"></i>
+                        <span>Atributos</span>
+                    </div>
+                    <div class="modal-2026-nav-item" data-section="shipping">
+                        <i class="bi bi-truck"></i>
+                        <span>Envio</span>
+                    </div>
+                    <div class="modal-2026-nav-item" data-section="seo">
+                        <i class="bi bi-search"></i>
+                        <span>SEO</span>
+                    </div>
                 </div>
             </div>
-            <div class="qp-tab-panel" data-panel="create">
-            <form id="qpForm" onsubmit="return false;">
-                <div class="ss-body">
-                    <div class="mb-3">
-                        <label class="form-label">Departamento</label>
-                        <div style="display:flex; gap:8px; align-items:center; position:relative;">
-                            <div style="position:relative; width:100%;">
-                                <div class="qp-dept-swatch" id="qpDeptSwatch" title="Departamento" style="display:none;"></div>
-                                <input id="qpDeptCombo" class="form-control qp-dept-combobox" type="text" placeholder="Abrir lista de departamentos..." aria-label="Selecionar departamento" autocomplete="off" role="button" readonly onclick="toggleDepartmentsDropdown(); return false;" />
-                                <div id="qpDeptList" class="qp-dept-list" style="display:none; position:absolute; left:0; right:0; z-index:40;" role="listbox"></div>
+            
+            <!-- Conteúdo Principal - Formulários -->
+            <div class="modal-2026-content">
+                <!-- Seção: Dados Básicos -->
+                <div class="modal-2026-section" data-content="basic">
+                    <div class="modal-2026-section-title">
+                        <i class="bi bi-tag"></i>
+                        <span>Informações do Produto</span>
+                    </div>
+                    
+                    <div class="modal-2026-form-group">
+                        <label class="modal-2026-label">
+                            <i class="bi bi-box me-2"></i>Nome do Produto
+                        </label>
+                        <input type="text" class="modal-2026-input" placeholder="Ex: Smartphone XYZ Pro 256GB" />
+                    </div>
+                    
+                    <div class="modal-2026-form-group">
+                        <label class="modal-2026-label">
+                            <i class="bi bi-upc me-2"></i>SKU
+                        </label>
+                        <input type="text" class="modal-2026-input" placeholder="Ex: SMARTPHONE-XYZ-256" />
+                    </div>
+                    
+                    <div class="modal-2026-form-group">
+                        <label class="modal-2026-label">
+                            <i class="bi bi-card-text me-2"></i>Descrição Curta
+                        </label>
+                        <textarea class="modal-2026-textarea" rows="3" placeholder="Resumo rápido do produto..."></textarea>
+                    </div>
+                    
+                    <div class="modal-2026-form-group">
+                        <label class="modal-2026-label">
+                            <i class="bi bi-file-text me-2"></i>Descrição Completa
+                        </label>
+                        <textarea class="modal-2026-textarea" rows="6" placeholder="Descrição detalhada com especificações..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Seção: Preços -->
+                <div class="modal-2026-section" data-content="pricing" style="display: none;">
+                    <div class="modal-2026-section-title">
+                        <i class="bi bi-currency-dollar"></i>
+                        <span>Estratégia de Preços</span>
+                    </div>
+                    
+                    <div class="modal-2026-form-group">
+                        <label class="modal-2026-label">
+                            <i class="bi bi-cash me-2"></i>Preço de Venda
+                        </label>
+                        <input type="number" class="modal-2026-input" placeholder="0.00" step="0.01" />
+                    </div>
+                    
+                    <div class="modal-2026-form-group">
+                        <label class="modal-2026-label">
+                            <i class="bi bi-percent me-2"></i>Preço Comparativo
+                        </label>
+                        <input type="number" class="modal-2026-input" placeholder="0.00" step="0.01" />
+                    </div>
+                    
+                    <div class="modal-2026-form-group">
+                        <label class="modal-2026-label">
+                            <i class="bi bi-receipt me-2"></i>Custo
+                        </label>
+                        <input type="number" class="modal-2026-input" placeholder="0.00" step="0.01" />
+                    </div>
+                </div>
+                
+                <!-- Seção: Estoque -->
+                <div class="modal-2026-section" data-content="inventory" style="display: none;">
+                    <div class="modal-2026-section-title">
+                        <i class="bi bi-box-seam"></i>
+                        <span>Gestão de Estoque</span>
+                    </div>
+                    
+                    <div class="modal-2026-form-group">
+                        <label class="modal-2026-label">
+                            <i class="bi bi-archive me-2"></i>Quantidade em Estoque
+                        </label>
+                        <input type="number" class="modal-2026-input" placeholder="0" min="0" />
+                    </div>
+                    
+                    <div class="modal-2026-form-group">
+                        <label class="modal-2026-label">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Estoque Mínimo
+                        </label>
+                        <input type="number" class="modal-2026-input" placeholder="5" min="0" />
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar Direita - Preview -->
+            <div class="modal-2026-preview">
+                <div class="modal-2026-preview-card">
+                    <div class="modal-2026-preview-title">
+                        <i class="bi bi-eye me-2"></i>Preview em Tempo Real
+                    </div>
+                    
+                    <div class="modal-2026-preview-image">
+                        <div>
+                            <i class="bi bi-image" style="font-size: 48px;"></i>
+                            <p class="mt-3">Sem imagem</p>
+                        </div>
+                    </div>
+                    
+                    <div class="modal-2026-preview-info">
+                        <div class="modal-2026-preview-item">
+                            <span>Nome:</span>
+                            <strong id="previewName">-</strong>
+                        </div>
+                        <div class="modal-2026-preview-item">
+                            <span>SKU:</span>
+                            <strong id="previewSku">-</strong>
+                        </div>
+                        <div class="modal-2026-preview-item">
+                            <span>Preço:</span>
+                            <strong id="previewPrice">R$ 0,00</strong>
+                        </div>
+                        <div class="modal-2026-preview-item">
+                            <span>Estoque:</span>
+                            <strong id="previewStock">0 unidades</strong>
+                        </div>
+                        <div class="modal-2026-preview-item">
+                            <span>Status:</span>
+                            <strong style="color: #10b981;">Ativo</strong>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Ações Rápidas -->
+                <div class="modal-2026-preview-card">
+                    <div class="modal-2026-preview-title">
+                        <i class="bi bi-lightning me-2"></i>Ações Rápidas
+                    </div>
+                    
+                    <button class="modal-2026-btn modal-2026-btn-primary" style="width: 100%; margin-bottom: 12px;">
+                        <i class="bi bi-save me-2"></i>Salvar Produto
+                    </button>
+                    
+                    <button class="modal-2026-btn modal-2026-btn-secondary" style="width: 100%; margin-bottom: 12px;">
+                        <i class="bi bi-eye me-2"></i>Visualizar
+                    </button>
+                    
+                    <button class="modal-2026-btn modal-2026-btn-secondary" style="width: 100%;">
+                        <i class="bi bi-clipboard me-2"></i>Duplicar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="modal-2026-footer">
+            <button class="modal-2026-btn modal-2026-btn-secondary">
+                <i class="bi bi-x me-2"></i>Cancelar
+            </button>
+            <button class="modal-2026-btn modal-2026-btn-primary">
+                <i class="bi bi-rocket-takeoff me-2"></i>Lançar Produto
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- JAVASCRIPT RACIONAL 2026 -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Modal 2026 Controller
+    class Modal2026 {
+        constructor() {
+            this.overlay = document.getElementById('modal2026');
+            this.closeBtn = document.getElementById('modal2026Close');
+            this.navItems = document.querySelectorAll('.modal-2026-nav-item');
+            this.sections = document.querySelectorAll('.modal-2026-section');
+            this.tabs = document.querySelectorAll('.modal-2026-tab');
+            
+            this.init();
+        }
+        
+        init() {
+            // Close button
+            if (this.closeBtn) {
+                this.closeBtn.addEventListener('click', () => this.close());
+            }
+            
+            // Click outside to close
+            this.overlay.addEventListener('click', (e) => {
+                if (e.target === this.overlay) {
+                    this.close();
+                }
+            });
+            
+            // Navigation items
+            this.navItems.forEach(item => {
+                item.addEventListener('click', () => {
+                    const section = item.dataset.section;
+                    this.showSection(section);
+                    this.setActiveNav(item);
+                });
+            });
+            
+            // Tabs
+            this.tabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabName = tab.dataset.tab;
+                    this.setActiveTab(tab);
+                });
+            });
+            
+            // Form inputs - live preview
+            const inputs = document.querySelectorAll('.modal-2026-input, .modal-2026-textarea');
+            inputs.forEach(input => {
+                input.addEventListener('input', () => this.updatePreview());
+            });
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && this.overlay.classList.contains('active')) {
+                    this.close();
+                }
+            });
+        }
+        
+        open() {
+            this.overlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+            
+            // Focus first input
+            setTimeout(() => {
+                const firstInput = document.querySelector('.modal-2026-input');
+                if (firstInput) firstInput.focus();
+            }, 300);
+        }
+        
+        close() {
+            this.overlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+        
+        showSection(sectionName) {
+            this.sections.forEach(section => {
+                if (section.dataset.content === sectionName) {
+                    section.style.display = 'block';
+                    // Animate section appearance
+                    section.style.opacity = '0';
+                    section.style.transform = 'translateY(20px)';
+                    
+                    setTimeout(() => {
+                        section.style.transition = 'all 0.3s ease';
+                        section.style.opacity = '1';
+                        section.style.transform = 'translateY(0)';
+                    }, 50);
+                } else {
+                    section.style.display = 'none';
+                }
+            });
+        }
+        
+        setActiveNav(activeItem) {
+            this.navItems.forEach(item => item.classList.remove('active'));
+            activeItem.classList.add('active');
+        }
+        
+        setActiveTab(activeTab) {
+            this.tabs.forEach(tab => tab.classList.remove('active'));
+            activeTab.classList.add('active');
+        }
+        
+        updatePreview() {
+            // Update preview in real-time
+            const nameInput = document.querySelector('input[placeholder*="Smartphone"]');
+            const skuInput = document.querySelector('input[placeholder*="SMARTPHONE"]');
+            const priceInput = document.querySelector('input[type="number"][placeholder="0.00"]');
+            const stockInput = document.querySelector('input[placeholder="0"][min="0"]');
+            
+            const previewName = document.getElementById('previewName');
+            const previewSku = document.getElementById('previewSku');
+            const previewPrice = document.getElementById('previewPrice');
+            const previewStock = document.getElementById('previewStock');
+            
+            if (previewName && nameInput) {
+                previewName.textContent = nameInput.value || '-';
+            }
+            
+            if (previewSku && skuInput) {
+                previewSku.textContent = skuInput.value || '-';
+            }
+            
+            if (previewPrice && priceInput) {
+                const price = parseFloat(priceInput.value) || 0;
+                previewPrice.textContent = `R$ ${price.toFixed(2).replace('.', ',')}`;
+            }
+            
+            if (previewStock && stockInput) {
+                const stock = parseInt(stockInput.value) || 0;
+                previewStock.textContent = `${stock} unidades`;
+            }
+        }
+        
+        // Save product
+        async saveProduct() {
+            const formData = this.collectFormData();
+            
+            try {
+                // Show loading state
+                const saveBtn = document.querySelector('.modal-2026-btn-primary');
+                const originalText = saveBtn.innerHTML;
+                saveBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Salvando...';
+                saveBtn.disabled = true;
+                
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Success feedback
+                this.showNotification('Produto salvo com sucesso!', 'success');
+                this.close();
+                
+            } catch (error) {
+                this.showNotification('Erro ao salvar produto', 'error');
+            } finally {
+                // Reset button
+                const saveBtn = document.querySelector('.modal-2026-btn-primary');
+                saveBtn.innerHTML = '<i class="bi bi-rocket-takeoff me-2"></i>Lançar Produto';
+                saveBtn.disabled = false;
+            }
+        }
+        
+        collectFormData() {
+            const inputs = document.querySelectorAll('.modal-2026-input, .modal-2026-textarea');
+            const data = {};
+            
+            inputs.forEach(input => {
+                const name = input.placeholder || input.name;
+                data[name] = input.value;
+            });
+            
+            return data;
+        }
+        
+        showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `modal-2026-notification modal-2026-notification-${type}`;
+            notification.innerHTML = `
+                <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                ${message}
+            `;
+            
+            // Style notification
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 16px 24px;
+                background: ${type === 'success' ? 'linear-gradient(135deg, #10b981, #059669)' : 'linear-gradient(135deg, #ef4444, #dc2626)'};
+                color: white;
+                border-radius: 12px;
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                z-index: 10000;
+                animation: slideInRight 0.3s ease;
+                font-weight: 600;
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOutRight 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+    }
+    
+    // Initialize modal
+    const modal2026 = new Modal2026();
+    
+    // Global function to open modal (for existing triggers)
+    window.openModal2026 = () => modal2026.open();
+    
+    // Add CSS animations
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Connect to existing triggers
+    const existingTriggers = document.querySelectorAll('[id*="productsTrigger"], [data-action*="product"]');
+    existingTriggers.forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            modal2026.open();
+        });
+    });
+});
+</script>
+@endpush
+                                <div id="qpPreview" class="qp-preview-container-compact"></div>
                             </div>
-                            <select id="qpDepartment" name="department_id" class="form-select qp-dept-select visually-hidden" aria-hidden="true" style="display:none;">
-                                <option value="">— Selecione o departamento —</option>
-                            </select>
-                            <button type="button" id="qpDeptHelp" class="ss-btn ss-btn-secondary" title="Ajuda">?</button>
-                        </div>
-                        <small class="text-muted">Escolha o departamento principal deste produto. Pode ser alterado depois.</small>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Nome do produto</label>
-                        <input type="text" id="qpName" class="form-control" placeholder="Nome do produto" />
-                    </div>
-                    <div class="mb-2 d-flex gap-2">
-                        <div style="flex:1">
-                            <label class="form-label">SKU</label>
-                            <input type="text" id="qpSku" class="form-control" placeholder="SKU" />
-                        </div>
-                        <div style="width:120px">
-                            <label class="form-label">Ativo</label>
-                            <div><input type="checkbox" id="qpActive" checked /> Ativo</div>
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Categorias</label>
-                        <div id="qpCategoriesWrapper" class="qp-cat-wrapper">
-                            <div id="qpCatChips" class="qp-cat-chips" aria-hidden="false"></div>
-                            <input id="qpCatSearchInput" class="form-control" type="search" placeholder="Buscar/Adicionar categoria..." aria-label="Pesquisar categorias" autocomplete="off" />
-                            <div id="qpCatDropdown" class="qp-cat-dropdown" style="display:none; max-height:200px; overflow:auto; margin-top:6px; border:1px solid #e6edf3; border-radius:8px; background:#fff; box-shadow:0 8px 18px rgba(15,23,42,0.06);"></div>
-                            <select id="qpCategories" name="categories[]" class="form-select visually-hidden" multiple style="display:none; min-height:80px;"></select>
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Breve descrição</label>
-                        <textarea id="qpShortDesc" class="form-control" rows="2"></textarea>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Descrição completa (HTML opcional)</label>
-                        <textarea id="qpDescription" class="form-control" rows="6"></textarea>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Preço</label>
-                        <input type="number" id="qpPrice" class="form-control" placeholder="Preço" step="0.01" min="0" />
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Preço de comparação</label>
-                        <input type="number" id="qpComparePrice" class="form-control" placeholder="Preço de comparação" step="0.01" min="0" />
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Preço de custo</label>
-                        <input type="number" id="qpCostPrice" class="form-control" placeholder="Preço de custo" step="0.01" min="0" />
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">Tipo de produto</label>
-                        <select id="qpProductType" class="form-select">
-                            <option value="physical">Físico</option>
-                            <option value="service">Serviço</option>
-                        </select>
-                        <small class="text-muted">Escolha "Serviço" para produtos que não possuem estoque.</small>
-                    </div>
-                    <div class="mb-2 d-flex gap-3 align-items-center" style="align-items:center">
-                        <label class="form-label" style="min-width:120px; margin-bottom:0;">Canais de venda</label>
-                        <div style="display:flex; gap:10px; align-items:center;">
-                            <label style="font-weight:500; font-size:0.95rem;"><input type="checkbox" id="qpSellB2C" checked style="margin-right:6px;" /> Vender em B2C</label>
-                            <label style="font-weight:500; font-size:0.95rem;"><input type="checkbox" id="qpSellB2B" checked style="margin-right:6px;" /> Vender em B2B</label>
-                        </div>
-                        <div style="margin-left:auto; display:flex; align-items:center; gap:8px;">
-                            <label style="font-size:0.9rem; color:#475569;"><input type="checkbox" id="qpUseMargins" style="margin-right:6px;" /> Calcular preços a partir do custo</label>
-                        </div>
-                    </div>
-                    <div class="mb-2">
-                        <div id="qpPricePreview" class="qp-price-preview" style="display:none;">
-                            <div style="display:flex; flex-direction:column; gap:6px;">
-                                <div style="display:flex; gap:8px; align-items:center;"><span class="qp-price-badge">B2B</span><div class="qp-price-row"><span class="qp-price-label">Preço B2B</span><span id="qpPriceB2bValue" class="qp-price-value">R$ 0,00</span></div></div>
-                                <div style="display:flex; gap:8px; align-items:center;"><span class="qp-price-badge">B2C</span><div class="qp-price-row"><span class="qp-price-label">Preço B2C</span><span id="qpPriceB2cValue" class="qp-price-value">R$ 0,00</span></div></div>
+                            <div class="qp-field-group" id="qpStockBlock">
+                                <label class="qp-label-compact">
+                                    <i class="bi bi-box-seam me-2"></i>Estoque
+                                </label>
+                                <div class="qp-grid-2cols">
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(139, 92, 246, 0.3); color: #e2e8f0;">
+                                            <i class="bi bi-box-seam"></i>
+                                        </span>
+                                        <input type="number" id="qpStock" class="form-control neon qp-input-compact" placeholder="Qtd atual" min="0" />
+                                    </div>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(139, 92, 246, 0.3); color: #e2e8f0;">
+                                            <i class="bi bi-exclamation-triangle"></i>
+                                        </span>
+                                        <input type="number" id="qpMinStock" class="form-control neon qp-input-compact" placeholder="Mínimo" min="0" />
+                                    </div>
+                                </div>
                             </div>
-                            <div style="margin-left:auto; font-size:12px; color:#64748b;">Calculado</div>
+                        </div>
+
+                        <!-- Right Column: Form Fields in Grid -->
+                        <div class="qp-right-compact">
+                            <!-- Row 1: Departamento e Nome -->
+                            <div class="qp-grid-row">
+                                <div class="qp-field-group">
+                                    <label class="qp-label-compact">Departamento</label>
+                                    <div class="qp-dept-selector">
+                                        <div class="qp-dept-swatch" id="qpDeptSwatch" title="Departamento" style="display:none;"></div>
+                                        <input id="qpDeptCombo" class="form-control qp-dept-combobox neon qp-input-compact" type="text" placeholder="Selecione..." aria-label="Selecionar departamento" autocomplete="off" role="button" readonly />
+                                        <div id="qpDeptList" class="qp-dept-list" style="display:none;" role="listbox"></div>
+                                    </div>
+                                    <select id="qpDepartment" name="department_id" class="form-select visually-hidden" aria-hidden="true">
+                                        <option value="">— Selecione o departamento —</option>
+                                    </select>
+                                </div>
+                                <div class="qp-field-group qp-field-group-flex">
+                                    <label class="qp-label-compact">
+                                        <i class="bi bi-tag me-2"></i>Nome do produto
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(139, 92, 246, 0.3); color: #e2e8f0;">
+                                            <i class="bi bi-tag"></i>
+                                        </span>
+                                        <input type="text" id="qpName" class="form-control neon qp-input-compact" placeholder="Ex: iPhone 15 Pro" required />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 2: SKU, Ativo, Tipo -->
+                            <div class="qp-grid-row">
+                                <div class="qp-field-group">
+                                    <label class="qp-label-compact">
+                                        <i class="bi bi-upc me-2"></i>SKU
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(139, 92, 246, 0.3); color: #e2e8f0;">
+                                            <i class="bi bi-upc"></i>
+                                        </span>
+                                        <input type="text" id="qpSku" class="form-control neon qp-input-compact" placeholder="Ex: IPHONE15-128" />
+                                    </div>
+                                </div>
+                                <div class="qp-field-group">
+                                    <label class="qp-label-compact">Ativo</label>
+                                    <div class="qp-checkbox-inline">
+                                        <input type="checkbox" id="qpActive" class="form-check-input" checked />
+                                        <label class="form-check-label" for="qpActive">Sim</label>
+                                    </div>
+                                </div>
+                                <div class="qp-field-group">
+                                    <label class="qp-label-compact">Tipo</label>
+                                    <select id="qpProductType" class="form-select neon qp-input-compact">
+                                        <option value="physical">Físico</option>
+                                        <option value="service">Serviço</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Row 3: Categorias -->
+                            <div class="qp-grid-row">
+                                <div class="qp-field-group qp-field-group-full">
+                                    <label class="qp-label-compact">Categorias</label>
+                                    <div id="qpCategoriesWrapper" class="qp-cat-wrapper">
+                                        <div id="qpCatChips" class="qp-cat-chips-compact"></div>
+                                        <input id="qpCatSearchInput" class="form-control neon qp-input-compact" type="search" placeholder="Buscar/Adicionar..." aria-label="Pesquisar categorias" autocomplete="off" />
+                                        <div id="qpCatDropdown" class="qp-cat-dropdown" style="display:none;"></div>
+                                        <select id="qpCategories" name="categories[]" class="form-select visually-hidden" multiple></select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 4: Preços em Grid -->
+                            <div class="qp-grid-row">
+                                <div class="qp-field-group">
+                                    <label class="qp-label-compact">
+                                        <i class="bi bi-currency-dollar me-2"></i>Preço
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(139, 92, 246, 0.3); color: #e2e8f0;">
+                                            <i class="bi bi-currency-dollar"></i>
+                                        </span>
+                                        <input type="number" id="qpPrice" class="form-control neon qp-input-compact" placeholder="0.00" step="0.01" min="0" />
+                                    </div>
+                                </div>
+                                <div class="qp-field-group">
+                                    <label class="qp-label-compact">
+                                        <i class="bi bi-percent me-2"></i>Comparação
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(139, 92, 246, 0.3); color: #e2e8f0;">
+                                            <i class="bi bi-percent"></i>
+                                        </span>
+                                        <input type="number" id="qpComparePrice" class="form-control neon qp-input-compact" placeholder="0.00" step="0.01" min="0" />
+                                    </div>
+                                </div>
+                                <div class="qp-field-group">
+                                    <label class="qp-label-compact">
+                                        <i class="bi bi-receipt me-2"></i>Custo
+                                    </label>
+                                    <div class="input-group">
+                                        <span class="input-group-text" style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.2), rgba(139, 92, 246, 0.2)); border: 1px solid rgba(139, 92, 246, 0.3); color: #e2e8f0;">
+                                            <i class="bi bi-receipt"></i>
+                                        </span>
+                                        <input type="number" id="qpCostPrice" class="form-control neon qp-input-compact" placeholder="0.00" step="0.01" min="0" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 5: Canais de venda e Margens -->
+                            <div class="qp-grid-row">
+                                <div class="qp-field-group">
+                                    <label class="qp-label-compact">
+                                        <i class="bi bi-shop me-2"></i>Canais
+                                    </label>
+                                    <div class="qp-checkbox-group">
+                                        <div class="qp-checkbox-inline">
+                                            <input type="checkbox" id="qpSellB2C" class="form-check-input" checked />
+                                            <label class="form-check-label" for="qpSellB2C">
+                                                <i class="bi bi-person me-1"></i>B2C
+                                            </label>
+                                        </div>
+                                        <div class="qp-checkbox-inline">
+                                            <input type="checkbox" id="qpSellB2B" class="form-check-input" />
+                                            <label class="form-check-label" for="qpSellB2B">
+                                                <i class="bi bi-briefcase me-1"></i>B2B
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="qp-field-group qp-field-group-flex">
+                                    <label class="qp-label-compact">Calcular por margem</label>
+                                    <div class="qp-checkbox-inline">
+                                        <input type="checkbox" id="qpUseMargins" class="form-check-input" />
+                                        <label class="form-check-label" for="qpUseMargins">Ativar</label>
+                                    </div>
+                                </div>
+                                <div class="qp-field-group qp-field-group-flex" id="qpPricePreviewContainer">
+                                    <div id="qpPricePreview" class="qp-price-preview-compact" style="display:none;">
+                                        <div class="qp-price-preview-compact-content">
+                                            <span class="qp-price-badge-compact">B2B</span>
+                                            <span id="qpPriceB2bValue" class="qp-price-value-compact">R$ 0,00</span>
+                                            <span class="qp-price-badge-compact">B2C</span>
+                                            <span id="qpPriceB2cValue" class="qp-price-value-compact">R$ 0,00</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Row 6: Descrições -->
+                            <div class="qp-grid-row">
+                                <div class="qp-field-group">
+                                    <label class="qp-label-compact">Breve descrição</label>
+                                    <textarea id="qpShortDesc" class="form-control neon qp-textarea-compact" rows="2" placeholder="Descrição curta..."></textarea>
+                                </div>
+                                <div class="qp-field-group qp-field-group-flex">
+                                    <label class="qp-label-compact">Descrição completa</label>
+                                    <textarea id="qpDescription" class="form-control neon qp-textarea-compact" rows="2" placeholder="Descrição completa (HTML opcional)..."></textarea>
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <div class="mb-2">
-                        <label class="form-label">Imagens</label>
-                        <input type="file" id="qpImages" class="form-control" multiple accept="image/*" />
-                        <div id="qpPreview" class="d-flex gap-2 mt-2"></div>
-                    </div>
-                    <div class="mb-2 d-flex gap-2" id="qpStockBlock">
-                        <div style="flex:1">
-                            <label class="form-label">Estoque</label>
-                            <input type="number" id="qpStock" class="form-control" placeholder="Quantidade em estoque" min="0" />
-                        </div>
-                        <div style="width:160px">
-                            <label class="form-label">Estoque mínimo</label>
-                            <input type="number" id="qpMinStock" class="form-control" placeholder="Estoque mínimo" min="0" />
-                        </div>
-                    </div>
-                    </div>
-                    <script>
-                        // Reorganize qp form into left (upload) / right (fields) layout and apply neon classes
-                        (function(){
-                            function domReady(fn){ if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fn); else fn(); }
-                            domReady(function(){
-                                try{
-                                    const form = document.getElementById('qpForm');
-                                    const body = form && form.querySelector('.ss-body');
-                                    if (!body) return;
-                                    // create layout containers
-                                    const layout = document.createElement('div'); layout.className = 'qp-layout';
-                                    const left = document.createElement('div'); left.className = 'qp-left';
-                                    const right = document.createElement('div'); right.className = 'qp-right';
-
-                                    // find images block and stock block to move left
-                                    const imgInput = document.getElementById('qpImages');
-                                    const imgBlock = imgInput ? imgInput.closest('.mb-2') : null;
-                                    const stockBlock = document.getElementById('qpStockBlock');
-
-                                    // create a nicer upload card using existing input
-                                    if (imgBlock) {
-                                        const uploadCard = document.createElement('div'); uploadCard.className = 'qp-upload-card';
-                                        const lab = document.createElement('div'); lab.className = 'qp-upload-label';
-                                        lab.innerHTML = '<span class="qp-upload-plus">+</span><div>Upload Product Images</div>';
-                                        uploadCard.appendChild(lab);
-                                        // move original input into card (hide duplicate label)
-                                        const fileInput = imgBlock.querySelector('input[type=file]');
-                                        if (fileInput) {
-                                            uploadCard.appendChild(fileInput);
-                                        }
-                                        left.appendChild(uploadCard);
-                                        // move preview under upload
-                                        const preview = document.getElementById('qpPreview');
-                                        if (preview) left.appendChild(preview);
-                                    }
-
-                                    // move stock to left as small info
-                                    if (stockBlock) left.appendChild(stockBlock);
-
-                                    // now move remaining children into right
-                                    Array.from(body.children).forEach(ch => {
-                                        if (ch === imgBlock || ch === stockBlock) return; // already moved
-                                        // skip footer
-                                        if (ch.classList && ch.classList.contains('ss-footer')) return;
-                                        right.appendChild(ch);
-                                    });
-
-                                    // clear body and append layout
-                                    body.innerHTML = '';
-                                    layout.appendChild(left); layout.appendChild(right);
-                                    body.appendChild(layout);
-
-                                    // apply neon classes to inputs
-                                    right.querySelectorAll('input.form-control, textarea.form-control, select.form-select').forEach(i=>{ i.classList.add('neon'); });
-
-                                    // style save/cancel buttons
-                                    const save = document.getElementById('ssQuickProductSave');
-                                    const cancel = document.getElementById('ssQuickProductCancel');
-                                    if (save) save.classList.add('neon-primary');
-                                    if (cancel) cancel.classList.add('neon-secondary');
-
-                                    // wire clicking uploadCard to open file input if file input moved
-                                    const uploadCard = left.querySelector('.qp-upload-card');
-                                    if (uploadCard) uploadCard.addEventListener('click', function(){ const f = uploadCard.querySelector('input[type=file]'); if (f) f.click(); });
-                                }catch(e){ console.debug && console.debug('qp layout fail', e); }
-                            });
-                        })();
-                    </script>
                 </div>
                 <style>
                     /* Frosted / Neon product modal layout (full redesign)
                        - Removed stray comment rendering outside of <style>
                        - Enlarged modal, increased contrast, stronger neon + animated border
                     */
-                        /* Layout */
-                        #ssQuickProductOverlay .qp-layout { display:grid; grid-template-columns: minmax(300px, 420px) 1fr; gap:28px; align-items:start; }
-                        #ssQuickProductOverlay .qp-left { display:flex; flex-direction:column; gap:14px; }
-                        #ssQuickProductOverlay .qp-right { display:flex; flex-direction:column; gap:12px; }
+                        /* Compact Layout - Grid System */
+                        #ssQuickProductOverlay .qp-layout-compact { 
+                            display: grid; 
+                            grid-template-columns: 200px 1fr; 
+                            gap: 16px; 
+                            align-items: start;
+                            height: 100%;
+                            max-height: calc(100vh - 120px);
+                        }
+                        
+                        /* Left Column - Compact */
+                        #ssQuickProductOverlay .qp-left-compact { 
+                            display: flex; 
+                            flex-direction: column; 
+                            gap: 8px;
+                            height: 100%;
+                        }
+                        
+                        /* Right Column - Grid Rows */
+                        #ssQuickProductOverlay .qp-right-compact { 
+                            display: flex; 
+                            flex-direction: column; 
+                            gap: 6px;
+                            height: 100%;
+                            overflow-y: visible;
+                            overflow-x: hidden;
+                        }
+                        
+                        /* Grid Rows */
+                        .qp-grid-row {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+                            gap: 8px;
+                            align-items: start;
+                        }
+                        
+                        .qp-grid-2cols {
+                            display: grid;
+                            grid-template-columns: 1fr 80px;
+                            gap: 6px;
+                        }
+                        
+                        /* Field Groups */
+                        .qp-field-group {
+                            display: flex;
+                            flex-direction: column;
+                            gap: 4px;
+                        }
+                        
+                        .qp-field-group-flex {
+                            flex: 1;
+                            min-width: 0;
+                        }
+                        
+                        .qp-field-group-full {
+                            grid-column: 1 / -1;
+                        }
+                        
+                        /* Compact Labels */
+                        .qp-label-compact {
+                            font-size: 11px;
+                            font-weight: 600;
+                            color: rgba(230,238,248,0.85);
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            margin: 0;
+                            line-height: 1.2;
+                        }
+                        
+                        /* Compact Inputs */
+                        .qp-input-compact {
+                            padding: 6px 10px !important;
+                            font-size: 13px !important;
+                            height: 32px !important;
+                            border-radius: 6px !important;
+                        }
+                        
+                        .qp-textarea-compact {
+                            padding: 6px 10px !important;
+                            font-size: 13px !important;
+                            min-height: 48px !important;
+                            resize: vertical;
+                            border-radius: 6px !important;
+                        }
+                        
+                        /* Compact Upload Card */
+                        .qp-upload-card-compact {
+                            min-height: 120px;
+                            border-radius: 8px;
+                            border: 2px dashed rgba(var(--qp-secondary-rgb, 255,122,58),0.5);
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+                            color: var(--modal-text-color, #e6eef8);
+                            position: relative;
+                            cursor: pointer;
+                            transition: border-color 0.2s ease;
+                        }
+                        
+                        .qp-upload-card-compact:hover {
+                            border-color: rgba(var(--qp-secondary-rgb, 255,122,58),0.8);
+                        }
+                        
+                        .qp-upload-label-compact {
+                            text-align: center;
+                            pointer-events: none;
+                        }
+                        
+                        .qp-upload-plus-compact {
+                            font-size: 24px;
+                            display: block;
+                            color: rgba(var(--qp-secondary-rgb,255,122,58),0.98);
+                        }
+                        
+                        .qp-upload-card-compact input[type=file] {
+                            position: absolute;
+                            inset: 0;
+                            width: 100%;
+                            height: 100%;
+                            opacity: 0;
+                            cursor: pointer;
+                        }
+                        
+                        /* Compact Preview */
+                        .qp-preview-container-compact {
+                            display: grid;
+                            grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+                            gap: 4px;
+                            margin-top: 6px;
+                        }
+                        
+                        .qp-preview-container-compact img {
+                            width: 100%;
+                            aspect-ratio: 1;
+                            object-fit: cover;
+                            border-radius: 4px;
+                            border: 1px solid rgba(255,255,255,0.1);
+                        }
+                        
+                        /* Department selector */
+                        .qp-dept-selector {
+                            position: relative;
+                            width: 100%;
+                        }
+                        
+                        /* Compact Checkboxes */
+                        .qp-checkbox-group {
+                            display: flex;
+                            gap: 12px;
+                            align-items: center;
+                        }
+                        
+                        .qp-checkbox-inline {
+                            display: flex;
+                            align-items: center;
+                            gap: 4px;
+                        }
+                        
+                        .qp-checkbox-inline .form-check-input {
+                            margin: 0;
+                            width: 16px;
+                            height: 16px;
+                        }
+                        
+                        .qp-checkbox-inline .form-check-label {
+                            font-size: 12px;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        
+                        /* Compact Categories Chips */
+                        .qp-cat-chips-compact {
+                            display: flex;
+                            gap: 4px;
+                            flex-wrap: wrap;
+                            margin-bottom: 4px;
+                            max-height: 60px;
+                            overflow-y: auto;
+                        }
+                        
+                        .qp-cat-chips-compact .qp-chip {
+                            font-size: 11px;
+                            padding: 3px 6px;
+                            border-radius: 4px;
+                        }
+                        
+                        /* Compact Price Preview */
+                        .qp-price-preview-compact {
+                            background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+                            border: 1px solid rgba(148,163,184,0.1);
+                            padding: 6px 8px;
+                            border-radius: 6px;
+                            font-size: 11px;
+                        }
+                        
+                        .qp-price-preview-compact-content {
+                            display: flex;
+                            gap: 8px;
+                            align-items: center;
+                            flex-wrap: wrap;
+                        }
+                        
+                        .qp-price-badge-compact {
+                            font-size: 10px;
+                            padding: 2px 6px;
+                            border-radius: 4px;
+                            background: rgba(var(--qp-secondary-rgb,255,122,58),0.2);
+                            color: var(--modal-text-color);
+                        }
+                        
+                        .qp-price-value-compact {
+                            font-size: 12px;
+                            font-weight: 700;
+                            color: var(--success-color, #10b981);
+                        }
 
                         /* Modal shell - larger, darker, frosted with animated neon border */
                         #ssQuickProductOverlay .ss-modal {
                             max-width: none;
-                            width: 100vw;
-                            max-width: none;
-                            padding: 22px 26px;
-                            height: 100vh;
-                            border-radius: 14px;
+                            width: 98vw;
+                            max-height: 96vh;
+                            padding: 12px 16px;
+                            height: auto;
+                            border-radius: 12px;
                             position: relative;
                             background: linear-gradient(180deg, rgba(12,14,20,0.86), rgba(8,10,14,0.80));
                             border: 1px solid rgba(255,255,255,0.04);
                             backdrop-filter: blur(10px) saturate(120%);
                             box-shadow: 0 18px 60px rgba(2,6,23,0.45);
-                            overflow: visible;
+                            overflow: hidden;
+                            display: flex;
+                            flex-direction: column;
                         }
+                        
+                        /* Modal body - no scroll, fits content */
+                        #ssQuickProductOverlay .ss-body {
+                            flex: 1;
+                            overflow: visible;
+                            padding: 8px;
+                            display: flex;
+                            flex-direction: column;
+                            min-height: 0;
+                        }
+                        
+                        /* Modal header - compact */
+                        #ssQuickProductOverlay .ss-header {
+                            padding: 8px 12px;
+                            flex-shrink: 0;
+                        }
+                        
+                        /* Modal footer styles are defined in main CSS section above */
                         /* animated soft, blurred halo */
                         /* Halo disabled: remove ::after entirely for cleaner look */
                         #ssQuickProductOverlay .ss-modal::after{ display:none !important; }
@@ -1033,11 +2317,33 @@
                         }
                         @keyframes qpBorderPulse{0%{opacity:0.7}50%{opacity:1}100%{opacity:0.7}}
 
-                        /* Upload card */
-                        .qp-upload-card { min-height:300px; border-radius:12px; border:2px dashed rgba(var(--qp-secondary-rgb, 255,122,58),0.62); display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01)); color:var(--modal-text-color, #e6eef8); position:relative; cursor:pointer; }
-                        .qp-upload-card .qp-upload-label { text-align:center; opacity:0.95; }
-                        .qp-upload-card .qp-upload-plus { font-size:28px; display:block; margin-bottom:8px; color:rgba(var(--qp-secondary-rgb,255,122,58),0.98); text-shadow:0 6px 18px rgba(var(--qp-secondary-rgb,255,122,58),0.09); }
-                        .qp-upload-card input[type=file] { position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; }
+                        /* Dropdowns compact */
+                        .qp-cat-dropdown {
+                            max-height: 200px;
+                            overflow-y: auto;
+                            margin-top: 4px;
+                            border: 1px solid rgba(255,255,255,0.1);
+                            border-radius: 6px;
+                            background: rgba(6,8,12,0.95);
+                            box-shadow: 0 8px 18px rgba(15,23,42,0.2);
+                            font-size: 12px;
+                        }
+                        
+                        .qp-dept-list {
+                            max-height: 200px;
+                            overflow-y: auto;
+                            font-size: 12px;
+                        }
+                        
+                        .qp-dept-item {
+                            padding: 6px 10px;
+                            font-size: 12px;
+                        }
+                        
+                        .qp-cat-row {
+                            padding: 6px 10px;
+                            font-size: 12px;
+                        }
 
                         /* Neon inputs */
                         #ssQuickProductOverlay .form-control.neon {
@@ -1046,15 +2352,17 @@
                             border-radius:10px; transition: box-shadow .18s ease, transform .12s ease;
                             padding:10px 12px;
                         }
-                        /* Compact / flat variant for a tight modern layout */
-                        #ssQuickProductOverlay.qp-compact .qp-layout { grid-template-columns: minmax(220px, 320px) 1fr; gap:16px; }
-                        #ssQuickProductOverlay.qp-compact .qp-upload-card { min-height:180px; border-radius:8px; border-width:1px; background: transparent; box-shadow: none; }
-                        #ssQuickProductOverlay.qp-compact .qp-upload-card .qp-upload-plus { font-size:20px; }
-                        #ssQuickProductOverlay.qp-compact .ss-header, #ssQuickProductOverlay.qp-compact .ss-footer { padding:8px 10px; }
-                        #ssQuickProductOverlay.qp-compact .form-control, #ssQuickProductOverlay.qp-compact .form-select, #ssQuickProductOverlay.qp-compact textarea { padding:8px 10px; border-radius:8px; }
-                        #ssQuickProductOverlay.qp-compact .ss-modal { border-radius:8px; padding:12px 14px; }
-                        #ssQuickProductOverlay .form-control.neon:focus { outline:none; box-shadow: 0 22px 70px rgba(var(--qp-secondary-rgb,255,122,58),0.32); transform: translateY(-2px); }
-                        #ssQuickProductOverlay textarea.neon { min-height:120px; }
+                        /* Compact variant - already applied by default */
+                        #ssQuickProductOverlay.qp-compact .qp-layout-compact { grid-template-columns: 180px 1fr; gap: 12px; }
+                        #ssQuickProductOverlay.qp-compact .qp-upload-card-compact { min-height: 100px; }
+                        #ssQuickProductOverlay.qp-compact .qp-upload-plus-compact { font-size: 20px; }
+                        #ssQuickProductOverlay .form-control.neon:focus { 
+                            outline: none; 
+                            box-shadow: 0 0 0 2px rgba(var(--qp-secondary-rgb,255,122,58),0.4); 
+                        }
+                        #ssQuickProductOverlay textarea.neon.qp-textarea-compact { 
+                            min-height: 48px; 
+                        }
 
                         /* Labels lighter */
                         #ssQuickProductOverlay label.form-label { color: rgba(230,238,248,0.9); }
@@ -1065,10 +2373,7 @@
                         .qp-toggle.on { background: linear-gradient(90deg, rgba(var(--qp-secondary-rgb,255,122,58),0.9), rgba(var(--qp-accent-rgb,124,58,237),0.9)); }
                         .qp-toggle.on .qp-knob { left:25px; background:#fff; }
 
-                        /* Buttons */
-                        .ss-btn.neon-primary { background: var(--qp-secondary, #ff7a3a); color: var(--modal-button-text, #fff); border-radius:10px; padding:12px 20px; box-shadow: 0 18px 48px rgba(var(--qp-secondary-rgb,255,122,58),0.22); border: none; transition: transform .12s ease, filter .12s ease; }
-                        .ss-btn.neon-primary:hover{ transform: translateY(-2px); filter: brightness(1.06); }
-                        .ss-btn.neon-secondary { background: transparent; border:1px solid rgba(255,255,255,0.06); color:var(--modal-text-color); border-radius:10px; padding:10px 16px; }
+                        /* Button styles are now in footer section - using dynamic colors */
 
                         /* Small form grid on right — two columns */
                         .qp-right .two-col { display:grid; grid-template-columns: 1fr 180px; gap:12px; align-items:center; }
@@ -1080,40 +2385,9 @@
                         #ssQuickProductOverlay .ss-body::-webkit-scrollbar{ width:10px; }
                         #ssQuickProductOverlay .ss-body::-webkit-scrollbar-thumb{ background:linear-gradient(180deg, rgba(var(--qp-secondary-rgb,255,122,58),0.28), rgba(var(--qp-accent-rgb,124,58,237),0.26)); border-radius:8px; }
                     </style>
-                    <script>
-                        // Toggle full-screen modal when clicking the expand button
-                        (function(){
-                            document.addEventListener('DOMContentLoaded', function(){
-                                try{
-                                    const btn = document.getElementById('qpToggleFullForm');
-                                    const overlay = document.getElementById('ssQuickProductOverlay');
-                                    const modal = overlay && overlay.querySelector('.ss-modal');
-                                    if(!btn || !overlay) return;
-                                    btn.addEventListener('click', function(e){
-                                        e.preventDefault();
-                                        const isFull = overlay.classList.toggle('qp-fullscreen');
-                                        document.body.style.overflow = isFull ? 'hidden' : '';
-                                        btn.title = isFull ? 'Sair do modo tela cheia' : 'Mostrar tudo';
-                                    });
-                                    // Exit fullscreen on ESC
-                                    document.addEventListener('keydown', function(ev){
-                                        if(ev.key === 'Escape' && overlay.classList.contains('qp-fullscreen')){
-                                            overlay.classList.remove('qp-fullscreen');
-                                            document.body.style.overflow = '';
-                                            btn.title = 'Mostrar tudo';
-                                        }
-                                    });
-                                }catch(err){ console.debug && console.debug('qp full toggle err', err); }
-                            });
-                        })();
-                    </script>
             </div>
         </div>
-        <!-- Floating actions (duplicate of modal footer) kept visible while overlay is active -->
-        <div class="qp-floating-actions" id="qpFloatingActions" style="display:none;">
-            <button class="ss-btn ss-btn-secondary" id="qpFloatingCancel" type="button">Cancelar</button>
-            <button class="ss-btn ss-btn-primary" id="qpFloatingSave" type="button">Salvar Produto</button>
-        </div>
+        <!-- Floating actions removidos para evitar duplicação com footer buttons -->
     </div>
 
     <!-- Sections confirm overlay (moved out of panel) -->
@@ -1233,7 +2507,10 @@
             const departmentsPanel = document.getElementById('departmentsPanel');
             const departmentsClose = document.getElementById('departmentsClose');
             const productsTriggerBtn = document.getElementById('productsTrigger');
-            const qpOverlay = document.getElementById('ssQuickProductOverlay');
+            // Try legacy id first, then fall back to the newer modal id or the overlay class.
+            const qpOverlay = document.getElementById('ssQuickProductOverlay') ||
+                              document.getElementById('modal2026') ||
+                              document.querySelector('.modal-2026-overlay');
             const productsManagerTrigger = document.getElementById('productsManagerTrigger');
             const qpNameField = document.getElementById('qpName');
             const qpSkuField = document.getElementById('qpSku');
@@ -1270,19 +2547,53 @@
                         if (qpOverlay && !qpOverlay.classList.contains('qp-compact')) {
                             qpOverlay.classList.add('qp-compact');
                         }
-                        // Ensure there is a visible footer inside the modal — create if missing
+                        // Ensure there is a visible footer inside the modal — create if missing (only once)
                         try {
                             let footer = modalEl.querySelector('.ss-footer');
+                            
+                            // Ensure footer exists
                             if (!footer) {
                                 footer = document.createElement('div');
                                 footer.className = 'ss-footer';
-                                footer.innerHTML = '<button class="ss-btn ss-btn-secondary" id="ssQuickProductCancel" type="button">Cancelar</button> <button class="ss-btn ss-btn-danger" id="ssQuickProductRemove" type="button">Remover</button> <button class="ss-btn ss-btn-primary" id="ssQuickProductSave" type="button">Salvar Produto</button>';
                                 modalEl.appendChild(footer);
-                            } else {
-                                // ensure footer buttons have expected IDs
-                                if (!footer.querySelector('#ssQuickProductSave')) footer.insertAdjacentHTML('beforeend',' <button class="ss-btn ss-btn-primary" id="ssQuickProductSave" type="button">Salvar Produto</button>');
-                                if (!footer.querySelector('#ssQuickProductCancel')) footer.insertAdjacentHTML('afterbegin','<button class="ss-btn ss-btn-secondary" id="ssQuickProductCancel" type="button">Cancelar</button>');
                             }
+                            
+                            // Remove ALL existing buttons with these IDs from anywhere in the document to prevent duplicates
+                            const existingCancel = document.getElementById('ssQuickProductCancel');
+                            const existingSave = document.getElementById('ssQuickProductSave');
+                            const existingRemove = document.getElementById('ssQuickProductRemove');
+                            
+                            if (existingCancel) existingCancel.remove();
+                            if (existingSave) existingSave.remove();
+                            if (existingRemove) existingRemove.remove();
+                            
+                            // Clear footer completely
+                            footer.innerHTML = '';
+                            
+                            // Create buttons once - fresh instances
+                            const cancelBtn = document.createElement('button');
+                            cancelBtn.className = 'ss-btn ss-btn-secondary neon-secondary';
+                            cancelBtn.id = 'ssQuickProductCancel';
+                            cancelBtn.type = 'button';
+                            cancelBtn.innerHTML = '<i class="bi bi-x-lg me-1"></i> Cancelar';
+                            
+                            const removeBtn = document.createElement('button');
+                            removeBtn.className = 'ss-btn ss-btn-danger';
+                            removeBtn.id = 'ssQuickProductRemove';
+                            removeBtn.type = 'button';
+                            removeBtn.innerHTML = '<i class="bi bi-trash me-1"></i> Remover';
+                            
+                            const saveBtn = document.createElement('button');
+                            saveBtn.className = 'ss-btn ss-btn-primary neon-primary';
+                            saveBtn.id = 'ssQuickProductSave';
+                            saveBtn.type = 'button';
+                            saveBtn.innerHTML = '<i class="bi bi-check-lg me-1"></i> Salvar Produto';
+                            
+                            // Append buttons in order
+                            footer.appendChild(cancelBtn);
+                            footer.appendChild(removeBtn);
+                            footer.appendChild(saveBtn);
+                            
                             // also ensure floating actions mirror footer and are hidden
                             const floating = document.getElementById('qpFloatingActions');
                             if (floating) floating.style.display = 'none';
@@ -1297,7 +2608,23 @@
             try {
                 productsManagerTrigger?.addEventListener('click', function(e){
                     e && e.stopPropagation();
-                    if (typeof openQuickProduct === 'function') openQuickProduct(); else if (qpOverlay) { qpOverlay.style.display = 'flex'; qpOverlay.classList && qpOverlay.classList.add('active'); }
+                    try {
+                        // Ensure overlay is attached to body and above other elements
+                        if (qpOverlay) {
+                            if (qpOverlay.parentElement !== document.body) document.body.appendChild(qpOverlay);
+                            qpOverlay.style.position = 'fixed';
+                            qpOverlay.style.left = '0';
+                            qpOverlay.style.top = '0';
+                            qpOverlay.style.right = '0';
+                            qpOverlay.style.bottom = '0';
+                            qpOverlay.style.inset = qpOverlay.style.inset || '0';
+                            qpOverlay.style.zIndex = qpOverlay.style.zIndex || '1000000';
+                            qpOverlay.style.display = 'flex';
+                            qpOverlay.classList && qpOverlay.classList.add('active');
+                        }
+                        if (typeof openQuickProduct === 'function') openQuickProduct();
+                    } catch(err) { console.debug && console.debug('open quick product error', err); }
+
                     // Abrir diretamente na aba de criação para fluxo rápido
                     setTimeout(function(){ const btn = document.querySelector('.ss-tab[data-tab="create"]'); if (btn) btn.click(); try { qpNameField && qpNameField.focus(); } catch(e){} }, 60);
                 });
@@ -1423,23 +2750,44 @@
                 broadcastTheme();
             };
 
+            // Initialize theme values and apply immediately
             setThemeValues(themeState);
+            
+            // Ensure theme is applied on page load
+            applyThemeLocally(getThemePayload());
 
             Object.entries(colorFields).forEach(([key, refs]) => {
                 if (refs.picker) {
-                    refs.picker?.addEventListener('input', () => setThemeValue(key, refs.picker.value, 'picker'));
+                    refs.picker?.addEventListener('input', () => {
+                        setThemeValue(key, refs.picker.value, 'picker');
+                        // Force immediate update
+                        applyThemeLocally(getThemePayload());
+                    });
                 }
                 if (refs.hex) {
-                    refs.hex?.addEventListener('input', () => refs.hex.classList.remove('is-invalid'));
-                    refs.hex?.addEventListener('blur', () => setThemeValue(key, refs.hex.value, 'hex'));
+                    refs.hex?.addEventListener('input', () => {
+                        refs.hex.classList.remove('is-invalid');
+                        // Apply on input for real-time preview
+                        const normalized = normalizeHex(refs.hex.value);
+                        if (normalized) {
+                            themeState[key] = normalized;
+                            applyThemeLocally(getThemePayload());
+                        }
+                    });
+                    refs.hex?.addEventListener('blur', () => {
+                        setThemeValue(key, refs.hex.value, 'hex');
+                        applyThemeLocally(getThemePayload());
+                    });
                     refs.hex?.addEventListener('keydown', (ev) => {
                         if (ev.key === 'Enter') {
                             ev.preventDefault();
                             setThemeValue(key, refs.hex.value, 'hex');
+                            applyThemeLocally(getThemePayload());
                         }
                     });
                 }
             });
+            
 
             // === Quick-create form wizard (step-by-step) ===
             (function initQuickProductWizard(){
@@ -1794,7 +3142,14 @@
             // Abertura/fechamento do painel de tema
             if (themeTrigger && themePanel) {
                 themeTrigger?.addEventListener('click', function(){
+                    const willOpen = !themePanel.classList.contains('active');
                     themePanel.classList.toggle('active');
+                    // Apply current theme when panel opens
+                    if (willOpen) {
+                        setTimeout(() => {
+                            applyThemeLocally(getThemePayload());
+                        }, 10);
+                    }
                 });
                 themeClose && themeClose.addEventListener('click', () => themePanel.classList.remove('active'));
                 themeCancel && themeCancel.addEventListener('click', () => themePanel.classList.remove('active'));
@@ -2307,15 +3662,42 @@
 
             function applyThemeLocally(values){
                 const root = document.documentElement;
-                if (values.primary) root.style.setProperty('--primary-color', values.primary);
-                if (values.secondary) root.style.setProperty('--secondary-color', values.secondary);
-                if (values.accent) root.style.setProperty('--accent-color', values.accent);
-                if (values.dark_bg) root.style.setProperty('--dark-bg', values.dark_bg);
-                if (values.text_light) root.style.setProperty('--text-light', values.text_light);
-                if (values.text_dark) root.style.setProperty('--text-dark', values.text_dark);
+                // Apply all theme colors to root element
+                if (values.primary) {
+                    root.style.setProperty('--primary-color', values.primary);
+                }
+                if (values.secondary) {
+                    root.style.setProperty('--secondary-color', values.secondary);
+                }
+                if (values.accent) {
+                    root.style.setProperty('--accent-color', values.accent);
+                }
+                if (values.dark_bg) {
+                    root.style.setProperty('--dark-bg', values.dark_bg);
+                }
+                if (values.text_light) {
+                    root.style.setProperty('--text-light', values.text_light);
+                }
+                if (values.text_dark) {
+                    root.style.setProperty('--text-dark', values.text_dark);
+                }
+                
+                // Also apply to body for better compatibility
+                if (values.primary) document.body.style.setProperty('--primary-color', values.primary);
+                if (values.secondary) document.body.style.setProperty('--secondary-color', values.secondary);
+                if (values.accent) document.body.style.setProperty('--accent-color', values.accent);
+                if (values.dark_bg) document.body.style.setProperty('--dark-bg', values.dark_bg);
+                if (values.text_light) document.body.style.setProperty('--text-light', values.text_light);
+                if (values.text_dark) document.body.style.setProperty('--text-dark', values.text_dark);
+                
                 // Atualiza meta theme-color para mobile
                 const metaTheme = document.querySelector('meta[name="theme-color"]');
-                if (metaTheme && values.secondary) metaTheme.setAttribute('content', values.secondary);
+                if (metaTheme && values.secondary) {
+                    metaTheme.setAttribute('content', values.secondary);
+                }
+                
+                // Force repaint to ensure changes are visible
+                void root.offsetHeight;
             }
 
             function getCurrentDepartmentSlug() {
@@ -3125,19 +4507,58 @@
                 });
             } catch(e) {}
 
-            // Image preview
+            // Image preview and upload card initialization
             const qpImagesInput = document.getElementById('qpImages');
             const qpPreview = document.getElementById('qpPreview');
+            const qpUploadCard = document.querySelector('.qp-upload-card-compact');
+            
+            // Initialize upload card click handler
+            if (qpUploadCard && qpImagesInput) {
+                qpUploadCard.addEventListener('click', function(e) {
+                    // Only trigger if clicking on the card itself, not the input
+                    if (e.target === qpUploadCard || e.target.closest('.qp-upload-label-compact')) {
+                        qpImagesInput.click();
+                    }
+                });
+            }
+            
             function renderImagePreviews(files){
                 if (!qpPreview) return;
                 qpPreview.innerHTML = '';
                 Array.from(files || []).slice(0,10).forEach(f => {
                     const url = URL.createObjectURL(f);
-                    const img = document.createElement('img'); img.src = url; img.style.width = '96px'; img.style.height = '96px'; img.style.objectFit = 'cover'; img.style.borderRadius = '6px';
+                    const img = document.createElement('img');
+                    img.src = url;
+                    img.style.width = '100%';
+                    img.style.aspectRatio = '1';
+                    img.style.objectFit = 'cover';
+                    img.style.borderRadius = '4px';
+                    img.style.border = '1px solid rgba(255,255,255,0.1)';
                     qpPreview.appendChild(img);
                 });
             }
             qpImagesInput?.addEventListener('change', function(){ renderImagePreviews(this.files); });
+            
+            // Toggle fullscreen modal
+            const qpToggleFullBtn = document.getElementById('qpToggleFullForm');
+            const qpOverlayForToggle = document.getElementById('ssQuickProductOverlay');
+            if (qpToggleFullBtn && qpOverlayForToggle) {
+                qpToggleFullBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const isFull = qpOverlayForToggle.classList.toggle('qp-fullscreen');
+                    document.body.style.overflow = isFull ? 'hidden' : '';
+                    qpToggleFullBtn.title = isFull ? 'Sair do modo tela cheia' : 'Mostrar tudo';
+                });
+                
+                // Exit fullscreen on ESC
+                document.addEventListener('keydown', function(ev) {
+                    if (ev.key === 'Escape' && qpOverlayForToggle.classList.contains('qp-fullscreen')) {
+                        qpOverlayForToggle.classList.remove('qp-fullscreen');
+                        document.body.style.overflow = '';
+                        qpToggleFullBtn.title = 'Mostrar tudo';
+                    }
+                });
+            }
 
             function clearQuickForm(){
                 const form = document.getElementById('qpForm');
@@ -3456,6 +4877,13 @@
                 const combo = document.getElementById('qpDeptCombo');
                 const listEl = document.getElementById('qpDeptList');
                 if (!combo || !listEl) return;
+                // Handle readonly input click to open dropdown
+                combo.addEventListener('click', function(e){
+                    if (this.readOnly) {
+                        e.preventDefault();
+                        renderDeptList(this.value || '');
+                    }
+                });
                 combo.addEventListener('input', function(){ renderDeptList(this.value || ''); });
                 combo.addEventListener('focus', function(){ renderDeptList(this.value || ''); });
                 combo.addEventListener('blur', function(){ setTimeout(()=>{ listEl.style.display = 'none'; }, 180); });

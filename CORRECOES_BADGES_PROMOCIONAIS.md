@@ -217,3 +217,4 @@ if (!this.canDisplayBadge(badge)) {
 **Status:** ✅ COMPLETO E FUNCIONAL
 
 
+

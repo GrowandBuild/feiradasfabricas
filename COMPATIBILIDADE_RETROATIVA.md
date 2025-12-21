@@ -220,3 +220,4 @@ Todos os pontos críticos foram verificados e possuem proteções adequadas para
 **Versão do sistema:** 1.0.0
 
 
+
