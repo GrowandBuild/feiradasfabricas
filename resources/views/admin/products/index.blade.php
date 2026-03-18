@@ -7,7 +7,7 @@
 @endsection
 
 @section('styles')
-<link rel="stylesheet" href="{{ asset('css/admin-products-index.css') }}">
+<link rel="stylesheet" href="{{ asset('css/admin-products-index.css') }}?v={{ date('YmdHis') }}">
 @endsection
 
 @section('content')
@@ -54,15 +54,15 @@
                     </p>
                 </div>
             </div>
-            <div class="d-flex gap-2 flex-column flex-md-row w-100 w-md-auto justify-content-md-end">
+            <div class="d-flex gap-2 flex-column flex-md-row align-items-md-end">
                 <button type="button" class="btn btn-sm hero-btn-outline section-toggle-btn d-flex align-items-center gap-2" data-section-target="products-hero" aria-expanded="true" title="Recolher sessão">
                     <span class="section-toggle-label">Recolher</span>
                     <i class="bi bi-chevron-up"></i>
                 </button>
-                <a href="{{ route('admin.products.import') }}" class="hero-btn-outline w-100 w-md-auto text-center">
+                <a href="{{ route('admin.products.import') }}" class="hero-btn-outline text-center">
                     <i class="bi bi-upload me-1"></i> Importar
                 </a>
-                <a href="{{ route('admin.products.create') }}" class="hero-btn w-100 w-md-auto text-center">
+                <a href="{{ route('admin.products.create') }}" class="hero-btn text-center">
                     <i class="bi bi-plus-circle me-1"></i> Novo Produto
                 </a>
             </div>
@@ -618,7 +618,7 @@
         .table-responsive tbody tr td:nth-child(5),
         .table-responsive tbody tr td:nth-child(6) { display: none !important; }
 
-        .product-thumbnail { width: 56px !important; height: 56px !important; }
+        .product-thumbnail { width: 56px; height: 56px; }
         .product-row .flex-grow-1 { min-width: 0; }
 
         /* Actions: make touch-friendly and wrap if needed */
@@ -842,98 +842,6 @@ document.addEventListener('click', function(e){
 </script>
 @endif
 @endpush
-
-@section('styles')
-<style>
-    /* Estilos específicos para os modais de produtos */
-    #imagesModal .modal-body {
-        max-height: calc(100vh - 200px);
-        overflow-y: auto;
-    }
-    
-    /* Estilos para linhas de produtos clicáveis */
-    .product-row {
-        transition: all 0.2s ease;
-        border-bottom: 1px solid #f3f4f6;
-    }
-    
-    .product-row:hover {
-        background: linear-gradient(to right, rgba(249, 115, 22, 0.04) 0%, rgba(249, 115, 22, 0.01) 100%) !important;
-        box-shadow: 0 1px 3px rgba(249, 115, 22, 0.1);
-        transform: translateX(2px);
-    }
-    
-    .product-row:active {
-        background-color: rgba(249, 115, 22, 0.08) !important;
-    }
-    
-    /* Checkboxes maiores e mais clicáveis */
-    .product-checkbox {
-        cursor: pointer;
-        width: 18px;
-        height: 18px;
-    }
-    
-    .product-checkbox:checked {
-        background-color: #f97316;
-        border-color: #f97316;
-    }
-    
-    /* Botões de ação com hover suave */
-    .btn-group .btn {
-        transition: all 0.2s ease;
-    }
-    
-    .btn-group .btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    }
-    
-    /* Cards com sombra suave */
-    .card {
-        transition: box-shadow 0.3s ease;
-    }
-    
-    /* Inputs com foco laranja */
-    .form-control:focus,
-    .form-select:focus {
-        border-color: #f97316;
-        box-shadow: 0 0 0 0.2rem rgba(249, 115, 22, 0.15);
-    }
-    
-    /* Badges modernos */
-    .badge {
-        font-weight: 500;
-        letter-spacing: 0.3px;
-        padding: 0.35em 0.65em;
-    }
-    
-    /* Animação no contador de seleção */
-    #selectedCount {
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* Paginação personalizada */
-    .pagination .page-link {
-        color: #f97316;
-        border-color: #dee2e6;
-        transition: all 0.2s ease;
-    }
-    
-    .pagination .page-link:hover {
-        color: #fff;
-        background-color: #f97316;
-        border-color: #f97316;
-        transform: translateY(-1px);
-    }
-    
-    .pagination .page-item.active .page-link {
-        background-color: #f97316;
-        border-color: #f97316;
-    }
-
-</style>
-@endsection
 
 @push('scripts')
 <script>

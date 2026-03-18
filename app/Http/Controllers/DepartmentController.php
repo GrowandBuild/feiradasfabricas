@@ -8,6 +8,7 @@ use App\Models\Product;
 use App\Models\Category;
 use App\Models\DepartmentBadge;
 use App\Helpers\BannerHelper;
+use App\Http\Controllers\Admin\HighlightsController;
 
 class DepartmentController extends Controller
 {
@@ -90,6 +91,9 @@ class DepartmentController extends Controller
                 ->take(8)
                 ->get();
 
+            // Carregar highlights configurados no painel admin
+            $highlights = HighlightsController::getHighlights();
+
             return view('department.eletronicos', compact(
                 'department',
                 'featuredProducts',
@@ -105,7 +109,8 @@ class DepartmentController extends Controller
                 'categories',
                 'latestProducts',
                 'heroBanners',
-                'departmentBadges'
+                'departmentBadges',
+                'highlights'
             ));
         }
 

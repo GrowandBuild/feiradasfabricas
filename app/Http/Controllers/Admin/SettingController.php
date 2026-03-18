@@ -97,7 +97,7 @@ class SettingController extends Controller
                 
                 // Determinar tipo baseado no key
                 $type = 'string';
-                if (in_array($key, ['enable_physical_store_sync', 'sync_inventory', 'sync_sales', 'sync_coupons', 'auto_stock_management', 'email_notifications', 'sms_notifications', 'two_factor_auth'], true)) {
+                if (in_array($key, ['enable_physical_store_sync', 'sync_inventory', 'sync_sales', 'sync_coupons', 'auto_stock_management', 'email_notifications', 'sms_notifications', 'two_factor_auth', 'b2b_enabled'], true)) {
                     $type = 'boolean';
                 } elseif (in_array($key, ['inventory_reservation_time', 'auto_sync_interval', 'stock_alert_threshold', 'stock_reserve_time', 'session_timeout', 'max_login_attempts', 'smtp_port', 'smtp_timeout'], true)) {
                     $type = 'number';
@@ -961,6 +961,9 @@ class SettingController extends Controller
         }
         if (str_starts_with($key, 'two_factor_') || str_starts_with($key, 'session_') || str_starts_with($key, 'max_login_')) {
             return 'security';
+        }
+        if (str_starts_with($key, 'b2b_')) {
+            return 'b2b';
         }
         
         return 'general';

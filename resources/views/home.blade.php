@@ -580,36 +580,8 @@
 </div>
 @endif
 
-<!-- Departamentos -->
-<section class="section section-light">
-    <div class="container">
-        <h2 class="section-title">Nossos Departamentos</h2>
-        <p class="section-subtitle">
-            Explore nossa ampla variedade de produtos organizados por departamentos especializados
-        </p>
-
-        <div class="row">
-            @foreach($departments as $department)
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="department-card">
-                        <div class="department-image" style="background-image: url('{{ asset($department->icon ?? 'images/no-image.svg') }}'); background-size: cover; background-position: center;">
-                        </div>
-                        <div class="department-overlay">
-                            <h3 class="department-title">{{ $department->name }}</h3>
-                            <p class="department-description">
-                                {{ $department->description ?? 'Produtos selecionados para você.' }}
-                            </p>
-                            <a href="{{ route('department.index', $department->slug) }}" class="department-btn">
-                                <i class="fas fa-shopping-bag me-2"></i>
-                                Explorar {{ $department->name }}
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            @endforeach
-        </div>
-    </div>
-</section>
+<!-- Instagram Embed Section -->
+<x-instagram-embed />
 
 <!-- Por que escolher a Feira das Fábricas -->
 <section class="section section-white">

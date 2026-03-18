@@ -24,26 +24,43 @@ class CategoryController extends Controller
 
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'is_active' => 'boolean',
-            'sort_order' => 'nullable|integer|min:0',
-        ]);
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'sort_order' => 'nullable|integer|min:0',
+            ]);
 
-        $data = $request->all();
-        $data['slug'] = Str::slug($request->name);
-        $data['is_active'] = $request->has('is_active');
+            // Handle image separately
+            $imagePath = null;
+            if ($request->hasFile('image')) {
+                $imagePath = $request->file('image')->store('categories', 'public');
+            }
 
-        if ($request->hasFile('image')) {
-            $data['image'] = $request->file('image')->store('categories', 'public');
+            // Create category data
+            $data = [
+                'name' => $validated['name'],
+                'slug' => Str::slug($validated['name']),
+                'description' => $validated['description'] ?? null,
+                'image' => $imagePath,
+                'is_active' => $request->has('is_active'),
+                'sort_order' => $validated['sort_order'] ?? 0,
+            ];
+
+            Category::create($data);
+
+            return redirect()->route('admin.categories.index')
+                            ->with('success', 'Categoria criada com sucesso!');
+        } catch (\Exception $e) {
+            \Log::error('Error creating category', [
+                'error' => $e->getMessage(),
+                'request_data' => $request->all()
+            ]);
+            
+            return redirect()->back()
+                            ->with('error', 'Erro ao criar categoria: ' . $e->getMessage())
+                            ->withInput();
         }
-
-        Category::create($data);
-
-        return redirect()->route('admin.categories.index')
-                        ->with('success', 'Categoria criada com sucesso!');
     }
 
     public function show(Category $category)

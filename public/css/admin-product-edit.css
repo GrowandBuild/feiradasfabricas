@@ -36,6 +36,7 @@
     padding: 1px;
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     mask-composite: exclude;
     pointer-events: none;
     background: linear-gradient(90deg, rgba(79,70,229,0.08), rgba(6,182,212,0.06));
@@ -114,6 +115,115 @@ form .form-label{ font-size:0.9rem; margin-bottom:0.25rem }
 /* image manager helpers */
 .dropzone { cursor: pointer }
 .dropzone .py-4 { pointer-events: none }
+
+/* Estilos aprimorados para zona de colar imagens */
+.paste-zone {
+    border: 2px dashed #dee2e6 !important;
+    border-radius: 12px !important;
+    padding: 24px !important;
+    text-align: center !important;
+    margin-bottom: 16px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    cursor: pointer !important;
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%) !important;
+    position: relative !important;
+    overflow: hidden !important;
+}
+
+.paste-zone::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(16, 185, 129, 0.05) 100%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+}
+
+.paste-zone:hover {
+    border-color: #3b82f6 !important;
+    background: linear-gradient(135deg, #eff6ff 0%, #f0f9ff 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15) !important;
+}
+
+.paste-zone:hover::before {
+    opacity: 1;
+}
+
+.paste-zone.dragover {
+    border-color: #10b981 !important;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+    transform: scale(1.02) !important;
+    box-shadow: 0 12px 32px rgba(16, 185, 129, 0.25) !important;
+}
+
+.paste-zone.paste-success {
+    border-color: #10b981 !important;
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%) !important;
+    animation: pasteSuccess 0.6s ease-out !important;
+}
+
+.paste-content {
+    pointer-events: none;
+    position: relative;
+    z-index: 1;
+}
+
+.paste-content i {
+    font-size: 2.5rem !important;
+    color: #6b7280 !important;
+    margin-bottom: 12px !important;
+    transition: all 0.3s ease !important;
+}
+
+.paste-zone:hover .paste-content i {
+    color: #3b82f6 !important;
+    transform: scale(1.1) !important;
+}
+
+.paste-zone.dragover .paste-content i {
+    color: #10b981 !important;
+    transform: scale(1.2) !important;
+}
+
+@keyframes pasteSuccess {
+    0% {
+        transform: scale(1);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+    }
+    50% {
+        transform: scale(1.05);
+        box-shadow: 0 16px 48px rgba(16, 185, 129, 0.3);
+    }
+    100% {
+        transform: scale(1);
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.15);
+    }
+}
+
+/* Melhorias para preview de imagens */
+.new-image-preview {
+    animation: fadeInUp 0.4s ease-out !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+}
+
+.new-image-preview:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
 
 /* small utility */
 .badge-circle { border-radius: 8px; padding: 0.25rem 0.45rem }

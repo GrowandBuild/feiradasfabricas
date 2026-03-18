@@ -40,6 +40,25 @@ class HomepageSection extends Model
                 $q->where('in_stock', true);
             }]);
 
+        // Lógica 1: NOVA - Buscar produtos que têm esta seção em homepage_section_ids (PRIORIDADE)
+        $productsWithThisSection = Product::where(function($q) {
+            $q->whereNotNull('homepage_section_ids')
+              ->whereJsonContains('homepage_section_ids', $this->id);
+        })
+        ->where('is_active', true)
+        ->where('in_stock', true)
+        ->with(['variations' => function($q) {
+            $q->where('in_stock', true);
+        }])
+        ->limit($this->limit ?? 4)
+        ->get();
+
+        // Se encontrou produtos pela nova lógica, retornar eles
+        if ($productsWithThisSection->count() > 0) {
+            return $productsWithThisSection;
+        }
+
+        // Lógica 2: Se há product_ids específicos (mantido para compatibilidade)
         if (is_array($this->product_ids) && count($this->product_ids) > 0) {
             $ids = $this->product_ids;
             // preserve order
@@ -54,10 +73,13 @@ class HomepageSection extends Model
             return $ordered->take($this->limit ?? 4);
         }
 
+        // Lógica 3: Se há department_id (mantido para compatibilidade)
         if ($this->department_id) {
             $query->where('department_id', $this->department_id);
+            return $query->limit($this->limit ?? 4)->get();
         }
 
-        return $query->limit($this->limit ?? 4)->get();
+        // Se não encontrou nada, retornar coleção vazia
+        return collect();
     }
 }

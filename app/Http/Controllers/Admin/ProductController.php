@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\ProductAttribute;
 use App\Models\ProductVariation;
 use App\Models\InventoryLog;
+use App\Models\Album;
 use App\Models\AlbumImage;
 use App\Services\VariationService;
 use Illuminate\Http\Request;
@@ -58,6 +59,8 @@ class ProductController extends Controller
     {
         $categories = Category::all();
         $departments = Department::all();
+        $brands = \App\Models\Brand::orderBy('name')->get();
+        $homepageSections = \App\Models\HomepageSection::orderBy('position')->get();
         
         // Processar imagens selecionadas do álbum
         $preselectedImages = [];
@@ -75,20 +78,33 @@ class ProductController extends Controller
             }
         }
         
-        return view('admin.products.create', compact('categories', 'departments', 'preselectedImages'));
+        return view('admin.products.create', compact('categories', 'departments', 'brands', 'homepageSections', 'preselectedImages'));
     }
 
     public function store(Request $request)
     {
-        $request->validate([
+        $validationRules = [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
+            'sku' => 'nullable|string|max:255|unique:products,sku',
             'categories' => 'required|array|min:1',
             'categories.*' => 'exists:categories,id',
-        ]);
+        ];
+        
+        // Adicionar validação B2B apenas se estiver ativado
+        if (setting('b2b_enabled', false)) {
+            $validationRules['b2b_price'] = 'nullable|numeric|min:0';
+        }
+        
+        $request->validate($validationRules);
 
         $data = $request->all();
+        
+        // Gerar SKU automaticamente se não fornecido
+        if (empty($data['sku'])) {
+            $data['sku'] = $this->generateUniqueSKU();
+        }
         
         // CORRIGIDO: Garantir que o slug seja único
         $baseSlug = Str::slug($request->name);
@@ -102,6 +118,15 @@ class ProductController extends Controller
         }
         
         $data['slug'] = $slug;
+
+        // Processar seções da homepage
+        $homepageSectionIds = $request->get('homepage_section_ids', []);
+        // Remover valores vazios e converter para array de inteiros
+        $homepageSectionIds = array_filter($homepageSectionIds, function($value) {
+            return $value !== '' && $value !== null;
+        });
+        $homepageSectionIds = array_map('intval', $homepageSectionIds);
+        $data['homepage_section_ids'] = $homepageSectionIds;
 
         $uploaded = [];
         
@@ -167,6 +192,8 @@ class ProductController extends Controller
     {
         $categories = Category::all();
         $departments = Department::all();
+        $brands = \App\Models\Brand::orderBy('name')->get();
+        $homepageSections = \App\Models\HomepageSection::orderBy('position')->get();
         $productCategories = $product->categories->pluck('id')->toArray();
         
         // Carregar variações e atributos
@@ -174,20 +201,33 @@ class ProductController extends Controller
         $variations = $product->variations ?? collect();
         $attributes = $this->variationService->getGlobalAttributes();
         
-        return view('admin.products.edit', compact('product', 'categories', 'productCategories', 'departments', 'variations', 'attributes'));
+        return view('admin.products.edit', compact('product', 'categories', 'productCategories', 'departments', 'brands', 'homepageSections', 'variations', 'attributes'));
     }
 
     public function update(Request $request, Product $product)
     {
-        $request->validate([
+        $validationRules = [
             'name' => 'required|string|max:255',
             'description' => 'required|string',
             'price' => 'required|numeric|min:0',
+            'sku' => 'nullable|string|max:255|unique:products,sku,' . $product->id,
             'categories' => 'required|array|min:1',
             'categories.*' => 'exists:categories,id',
-        ]);
+        ];
+        
+        // Adicionar validação B2B apenas se estiver ativado
+        if (setting('b2b_enabled', false)) {
+            $validationRules['b2b_price'] = 'nullable|numeric|min:0';
+        }
+        
+        $request->validate($validationRules);
 
         $data = $request->all();
+        
+        // Gerar SKU automaticamente se estiver vazio
+        if (empty($data['sku'])) {
+            $data['sku'] = $this->generateUniqueSKU();
+        }
         
         // CORRIGIDO: Garantir que o slug seja único ao atualizar
         $baseSlug = Str::slug($request->name);
@@ -201,6 +241,15 @@ class ProductController extends Controller
         }
         
         $data['slug'] = $slug;
+
+        // Processar seções da homepage
+        $homepageSectionIds = $request->get('homepage_section_ids', []);
+        // Remover valores vazios e converter para array de inteiros
+        $homepageSectionIds = array_filter($homepageSectionIds, function($value) {
+            return $value !== '' && $value !== null;
+        });
+        $homepageSectionIds = array_map('intval', $homepageSectionIds);
+        $data['homepage_section_ids'] = $homepageSectionIds;
 
         $images = [];
         if ($request->has('existing_images') && is_array($request->existing_images)) {
@@ -675,6 +724,26 @@ class ProductController extends Controller
     }
 
     /**
+     * Generate a unique SKU for a new product
+     */
+    private function generateUniqueSKU()
+    {
+        $prefix = 'PROD';
+        $number = 1;
+        
+        // Find the highest existing SKU number
+        $lastProduct = Product::where('sku', 'like', $prefix . '%')
+                            ->orderByRaw('CAST(SUBSTRING(sku, 5) AS UNSIGNED) DESC')
+                            ->first();
+        
+        if ($lastProduct && preg_match('/' . $prefix . '(\d+)/', $lastProduct->sku, $matches)) {
+            $number = (int) $matches[1] + 1;
+        }
+        
+        return $prefix . str_pad($number, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
      * Buscar imagens de álbuns para usar em produtos/variações
      */
     public function getAlbumImages(Request $request)
@@ -701,5 +770,13 @@ class ProductController extends Controller
             'success' => true,
             'albums' => $formattedAlbums
         ]);
+    }
+
+    /**
+     * Display the specified product.
+     */
+    public function show(Product $product)
+    {
+        return view('admin.products.show', compact('product'));
     }
 }

@@ -138,6 +138,9 @@ Route::get('/sitemap.xml', [App\Http\Controllers\SitemapController::class, 'inde
 Route::get('/contato', [ContactController::class, 'index'])->name('contact');
 Route::post('/contato', [ContactController::class, 'send'])->name('contact.send');
 
+// Instagram Embed API Public
+Route::get('/api/instagram-embed/embeds', [App\Http\Controllers\Admin\InstagramEmbedController::class, 'getEmbeds'])->name('instagram-embed.embeds.api');
+
 // Lista de Desejos (Wishlist) - Disponível para customer e admin
 Route::middleware(['auth:customer,admin'])->group(function () {
     Route::get('/lista-desejos', [App\Http\Controllers\WishlistController::class, 'index'])->name('wishlist.index');

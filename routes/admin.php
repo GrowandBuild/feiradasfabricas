@@ -15,6 +15,9 @@ use App\Http\Controllers\Admin\DepartmentController;
 use App\Http\Controllers\Admin\DepartmentBadgeController;
 use App\Http\Controllers\Admin\AlbumController as AdminAlbumController;
 use App\Http\Controllers\Admin\ProductFeedbackController;
+use App\Http\Controllers\Admin\InstagramEmbedController;
+use App\Http\Controllers\Admin\HighlightsController;
+use App\Http\Controllers\Admin\MediaLibraryController;
 // use App\Http\Controllers\Admin\MelhorEnvioController; // removido (frete)
 use Illuminate\Support\Facades\Route;
 
@@ -103,6 +106,25 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('departments/{department}/sections', [App\Http\Controllers\Admin\DepartmentSectionController::class, 'index'])->name('departments.sections.index');
     Route::put('departments/{department}/sections', [App\Http\Controllers\Admin\DepartmentSectionController::class, 'sync'])->name('departments.sections.sync');
     Route::resource('departments', DepartmentController::class);
+
+    // Instagram Embed Integration
+    Route::get('instagram-embed/settings', [InstagramEmbedController::class, 'settings'])->name('instagram-embed.settings');
+    Route::post('instagram-embed/save-urls', [InstagramEmbedController::class, 'saveUrls'])->name('instagram-embed.save-urls');
+    Route::post('instagram-embed/test-url', [InstagramEmbedController::class, 'testUrl'])->name('instagram-embed.test-url');
+    Route::post('instagram-embed/clear-embeds', [InstagramEmbedController::class, 'clearEmbeds'])->name('instagram-embed.clear-embeds');
+
+    // Highlights Configuration
+    Route::get('highlights', [HighlightsController::class, 'index'])->name('highlights.index');
+    Route::put('highlights', [HighlightsController::class, 'update'])->name('highlights.update');
+    Route::post('highlights/upload/{number}', [HighlightsController::class, 'uploadVideo'])->name('highlights.upload');
+    Route::post('highlights/add-from-url/{number}', [HighlightsController::class, 'addVideoFromUrl'])->name('highlights.add-from-url');
+    Route::delete('highlights/{number}', [HighlightsController::class, 'deleteVideo'])->name('highlights.delete');
+
+    // Media Library
+    Route::get('media-library/videos', [MediaLibraryController::class, 'index'])->name('media-library.videos');
+    Route::post('media-library/upload', [MediaLibraryController::class, 'upload'])->name('media-library.upload');
+    Route::delete('media-library/{filename}', [MediaLibraryController::class, 'delete'])->name('media-library.delete');
+    Route::post('media-library/assign-to-highlight', [MediaLibraryController::class, 'assignToHighlight'])->name('media-library.assign-to-highlight');
 
         // Pedidos
         Route::resource('orders', OrderController::class)->only(['index', 'show']);

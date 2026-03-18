@@ -1,4 +1,4 @@
-﻿@extends('admin.layouts.app')
+@extends('admin.layouts.app')
 
 @section('title', 'Editar Produto')
 @section('page-title', 'Editar Produto')
@@ -305,9 +305,9 @@ textarea.form-control:focus {
                         </div>
                         <div class="col-md-4">
                             <div class="mb-3">
-                                <label for="sku" class="form-label">SKU *</label>
+                                <label for="sku" class="form-label">SKU</label>
                                 <input type="text" class="form-control @error('sku') is-invalid @enderror" 
-                                       id="sku" name="sku" value="{{ old('sku', $product->sku) }}" required>
+                                       id="sku" name="sku" value="{{ old('sku', $product->sku) }}">
                                 @error('sku')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -346,6 +346,7 @@ textarea.form-control:focus {
                                 @enderror
                             </div>
                         </div>
+                        @if(setting('b2b_enabled', false))
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="b2b_price" class="form-label">Preço (B2B)</label>
@@ -359,6 +360,7 @@ textarea.form-control:focus {
                                 @enderror
                             </div>
                         </div>
+                        @endif
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="cost_price" class="form-label">Preço de Custo</label>
@@ -442,6 +444,55 @@ textarea.form-control:focus {
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
+
+                    <div class="mb-3">
+                        <label for="homepage_section_ids" class="form-label">
+                            <i class="bi bi-house-door me-2"></i>Seções da Homepage
+                        </label>
+                        <select class="form-select @error('homepage_section_ids') is-invalid @enderror" 
+                                id="homepage_section_ids" 
+                                name="homepage_section_ids[]" 
+                                multiple 
+                                size="4"
+                                style="min-height: 100px;">
+                            <option value="">— Nenhuma seção selecionada —</option>
+                            @foreach($homepageSections ?? [] as $section)
+                                <option value="{{ $section->id }}" 
+                                        @if(old('homepage_section_ids', $product->homepage_section_ids ?? []))
+                                            {{ in_array($section->id, old('homepage_section_ids', $product->homepage_section_ids ?? [])) ? 'selected' : '' }}
+                                        @endif>
+                                    {{ $section->title }}
+                                    @if(!$section->enabled)
+                                        <small class="text-muted">(Inativo)</small>
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Selecione as seções da homepage onde este produto deve aparecer. 
+                            Mantenha Ctrl/Cmd pressionado para selecionar múltiplas seções.
+                        </small>
+                        @error('homepage_section_ids')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="brand_id" class="form-label">Marca</label>
+                        <select class="form-select @error('brand_id') is-invalid @enderror" id="brand_id" name="brand_id">
+                            <option value="">— Nenhuma marca selecionada —</option>
+                            @foreach($brands ?? [] as $brand)
+                                <option value="{{ $brand->id }}" {{ old('brand_id', $product->brand_id) == $brand->id ? 'selected' : '' }}>
+                                    {{ $brand->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">Selecione a marca do produto (opcional)</small>
+                        @error('brand_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
                 </div>
             </div>
 
@@ -453,9 +504,22 @@ textarea.form-control:focus {
                 <div class="card-body">
                     <div class="mb-3">
                         <label for="images" class="form-label">Adicionar Imagens</label>
-                        <input type="file" class="form-control @error('images') is-invalid @enderror" 
-                               id="images" name="images[]" multiple accept="image/*">
-                        <div class="form-text">Formatos: JPG, PNG, GIF, WEBP, AVIF (máx. 10MB cada)</div>
+                        
+                        <!-- Zona de colar imagens -->
+                        <div class="paste-zone" id="editProductPasteZone">
+                            <div class="paste-content">
+                                <i class="bi bi-cloud-upload" style="font-size: 2.5rem; color: #6b7280; margin-bottom: 12px;"></i>
+                                <p class="mb-2" style="color: #374151; font-weight: 600; font-size: 1.1rem;">Arraste imagens aqui ou cole com Ctrl+V</p>
+                                <small class="text-muted d-block">Ou clique para selecionar arquivos (múltiplo permitido)</small>
+                                <small class="text-muted d-block mt-2">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Formatos: JPG, PNG, GIF, WEBP, AVIF (máx. 10MB cada)
+                                </small>
+                            </div>
+                            <input type="file" class="form-control @error('images') is-invalid @enderror" 
+                                   id="images" name="images[]" multiple accept="image/*" style="display: none;">
+                        </div>
+                        
                         @error('images')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -1022,6 +1086,7 @@ textarea.form-control:focus {
                                        style="border: 2px solid #e5e7eb; border-radius: 12px; padding: 14px 18px; font-size: 16px; font-weight: 600; background: white; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);">
                             </div>
                         </div>
+                        @if(setting('b2b_enabled', false))
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label" style="font-weight: 700; color: #374151; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -1035,6 +1100,7 @@ textarea.form-control:focus {
                                 </div>
                             </div>
                         </div>
+                        @endif
                         <div class="col-md-6">
                             <div class="mb-3">
                                 <label class="form-label" style="font-weight: 700; color: #374151; font-size: 14px; text-transform: uppercase; letter-spacing: 0.5px;">
@@ -1247,63 +1313,67 @@ textarea.form-control:focus {
 </style>
 @endpush
 
-@push('scripts')
-@endpush
-
-<script src="{{ asset('js/admin-product-edit.js') }}"></script>
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Preview de imagens (CORRIGIDO: valida tipo e tamanho)
-    const imageInput = document.getElementById('images');
-    const container = document.getElementById('images-container');
+window.adminProductEditConfig = {
+    productId: {{ $product->id }},
+    csrfToken: '{{ csrf_token() }}',
+    productIsActive: {{ $product->is_active ? 'true' : 'false' }}
+};
+</script>
+
+<script src="{{ asset('js/admin-product-edit.js') }}?v={{ filemtime(public_path('js/admin-product-edit.js')) }}"></script>
+
+<script>
+// Handler para remover imagem existente do produto
+document.addEventListener('click', function(e) {
+    // Debug: mostrar qual elemento foi clicado
+    console.log('Elemento clicado:', e.target);
+    console.log('Classes do elemento clicado:', e.target.className);
     
-    if (imageInput && container) {
-        imageInput.addEventListener('change', function(e) {
-            const files = e.target.files;
-            if (!files || files.length === 0) return;
-            
-            // Limpar previews anteriores de novas imagens
-            container.querySelectorAll('.new-image-preview').forEach(el => el.remove());
-            
-            Array.from(files).forEach((file, index) => {
-                // Validar tipo de arquivo
-                if (!file.type.startsWith('image/')) {
-                    alert(`Arquivo "${file.name}" não é uma imagem válida. Será ignorado.`);
-                    return;
-                }
-                
-                // Validar tamanho (10MB = 10485760 bytes)
-                const maxSize = 10 * 1024 * 1024;
-                if (file.size > maxSize) {
-                    alert(`Arquivo "${file.name}" é muito grande (${(file.size / 1024 / 1024).toFixed(2)}MB). Máximo permitido: 10MB. Será ignorado.`);
-                    return;
-                }
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const col = document.createElement('div');
-                    col.className = 'col-md-3 mb-2 new-image-preview';
-                    col.setAttribute('data-file-name', file.name);
-                    col.innerHTML = `
-                        <div class="position-relative">
-                            <img src="${e.target.result}" class="img-thumbnail w-100" style="height: 100px; object-fit: cover;">
-                            <span class="badge bg-success position-absolute top-0 start-0 m-1">Nova</span>
-                            <button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0 remove-new-image" data-file-name="${file.name}">
-                                <i class="bi bi-x"></i>
-                            </button>
-                        </div>
-                    `;
-                    container.appendChild(col);
-                };
-                reader.readAsDataURL(file);
-            });
-        });
+    // Verificar se é o botão ou filho do botão
+    const removeBtn = e.target.closest('.remove-existing-image');
+    if (removeBtn) {
+        console.log('Botão de remover encontrado!');
+        e.stopPropagation();
+        e.preventDefault();
+        
+        const imagePath = removeBtn.dataset.imagePath;
+        console.log('Caminho da imagem:', imagePath);
+        
+        const item = removeBtn.closest('.existing-image-item');
+        console.log('Item encontrado:', item);
+        
+        if (!confirm('Tem certeza que deseja remover esta imagem?')) {
+            return;
+        }
+        
+        // Remover do DOM
+        if (item) {
+            item.remove();
+            console.log('Item removido do DOM');
+        }
+        
+        // Remover hidden input
+        const hiddenInput = document.querySelector(`input[value="${imagePath}"][name="existing_images[]"]`);
+        if (hiddenInput) {
+            hiddenInput.remove();
+            console.log('Hidden input removido');
+        }
     }
+});
+
+// Alternativa: bind direto nos botões
+document.addEventListener('DOMContentLoaded', function() {
+    const removeButtons = document.querySelectorAll('.remove-existing-image');
+    console.log('Botões de remover encontrados:', removeButtons.length);
     
-    // Handler para remover imagem existente do produto
-    document.querySelectorAll('.remove-existing-image').forEach(btn => {
+    removeButtons.forEach((btn, index) => {
+        console.log(`Botão ${index}:`, btn);
         btn.addEventListener('click', function(e) {
+            console.log('Clique direto no botão funcionando!');
             e.stopPropagation();
+            e.preventDefault();
+            
             const imagePath = this.dataset.imagePath;
             const item = this.closest('.existing-image-item');
             
@@ -1311,1364 +1381,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Remover do DOM
             if (item) {
                 item.remove();
             }
             
-            // Atualizar preview do carousel se necessário
-            const carousel = document.getElementById('productCarousel');
-            if (carousel) {
-                // O carousel será atualizado no próximo reload, mas podemos forçar atualização se necessário
+            const hiddenInput = document.querySelector(`input[value="${imagePath}"][name="existing_images[]"]`);
+            if (hiddenInput) {
+                hiddenInput.remove();
             }
         });
-    });
-    
-    // Handler para remover preview de nova imagem
-    document.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-new-image')) {
-            const btn = e.target.closest('.remove-new-image');
-            const fileName = btn.dataset.fileName;
-            const preview = document.querySelector(`[data-file-name="${fileName}"]`);
-            
-            if (preview) {
-                preview.remove();
-                
-                // Remover arquivo do input também
-                const dataTransfer = new DataTransfer();
-                const files = Array.from(imageInput.files).filter(f => f.name !== fileName);
-                files.forEach(f => dataTransfer.items.add(f));
-                imageInput.files = dataTransfer.files;
-            }
-        }
-    });
-
-    // Quick toggle active (CORRIGIDO: atualiza checkbox principal e trata erros)
-    const quickToggle = document.getElementById('quickToggleActive');
-    if (quickToggle) {
-        quickToggle.addEventListener('click', function() {
-            const newState = {{ $product->is_active ? '0' : '1' }};
-            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            quickToggle.disabled = true;
-            quickToggle.textContent = 'Aguarde...';
-            
-            fetch(`/admin/products/{{ $product->id }}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrf,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ _method: 'PUT', is_active: newState })
-            })
-            .then(async r => {
-                if (!r.ok) {
-                    const errorText = await r.text();
-                    throw new Error(`HTTP ${r.status}: ${errorText}`);
-                }
-                return r.json();
-            })
-            .then(data => {
-                if (data && data.success) {
-                    const badge = document.getElementById('statusBadge');
-                    if (badge) {
-                        badge.className = newState == '1' ? 'badge bg-success' : 'badge bg-danger';
-                        badge.textContent = newState == '1' ? 'Ativo' : 'Inativo';
-                    }
-                    
-                    // CORRIGIDO: Atualizar checkbox principal também
-                    const isActiveCheckbox = document.getElementById('is_active');
-                    if (isActiveCheckbox) {
-                        isActiveCheckbox.checked = newState == '1';
-                    }
-                    
-                    quickToggle.textContent = newState == '1' ? 'Desativar' : 'Ativar';
-                } else {
-                    throw new Error(data.message || 'Erro ao atualizar status');
-                }
-            })
-            .catch(err => {
-                console.error('Erro ao alternar status:', err);
-                alert('Erro ao atualizar status do produto: ' + (err.message || 'Erro desconhecido'));
-            })
-            .finally(() => { 
-                quickToggle.disabled = false; 
-            });
-        });
-    }
-
-    // Gerenciamento de Variações
-    const hasVariationsToggle = document.getElementById('has_variations');
-    const variationsManagement = document.getElementById('variations-management');
-    const addVariationBtn = document.getElementById('add-variation-btn');
-    const variationsList = document.getElementById('variations-list');
-    const productId = {{ $product->id }};
-
-    // Toggle para mostrar/ocultar seção de variações (CORRIGIDO: valida se há variações ao desmarcar)
-    if (hasVariationsToggle && variationsManagement) {
-        hasVariationsToggle.addEventListener('change', function() {
-            const variationsCount = variationsList.querySelectorAll('.variation-item').length;
-            
-            // Se desmarcar mas houver variações, avisar
-            if (!this.checked && variationsCount > 0) {
-                if (!confirm(`Este produto possui ${variationsCount} variação(ões) cadastrada(s).\n\nAo desmarcar esta opção, as variações não serão excluídas, mas o produto não será exibido como tendo variações.\n\nDeseja continuar?`)) {
-                    // Reverter checkbox
-                    this.checked = true;
-                    return;
-                }
-            }
-            
-            variationsManagement.style.display = this.checked ? 'block' : 'none';
-        });
-    }
-
-    // AbortController para cancelar requisições anteriores (CORRIGIDO)
-    let attributesFetchController = null;
-    
-    // Função para carregar atributos disponíveis (CORRIGIDO: cancela requisições anteriores)
-    function loadAttributesForVariation() {
-        // Cancelar requisição anterior se existir
-        if (attributesFetchController) {
-            attributesFetchController.abort();
-        }
-        attributesFetchController = new AbortController();
-        
-        const container = document.getElementById('attributes-container');
-        container.innerHTML = '<p class="text-muted"><i class="bi bi-hourglass-split me-2"></i>Carregando atributos...</p>';
-        
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        
-        return fetch('{{ route("admin.attributes.list") }}', {
-            method: 'GET',
-            headers: {
-                'Accept': 'application/json',
-                'X-CSRF-TOKEN': csrf
-            },
-            signal: attributesFetchController.signal
-        })
-            .then(async r => {
-                if (!r.ok) {
-                    const errorText = await r.text();
-                    throw new Error(`HTTP ${r.status}: ${errorText}`);
-                }
-                return r.json();
-            })
-            .then(data => {
-                console.log('Atributos carregados:', data);
-                if (data && data.success && data.attributes && data.attributes.length > 0) {
-                    container.innerHTML = '';
-                    data.attributes.forEach(attr => {
-                        const attrDiv = document.createElement('div');
-                        attrDiv.className = 'mb-3';
-                        attrDiv.innerHTML = `
-                            <label class="form-label fw-semibold">
-                                <i class="bi bi-tag me-1"></i>${attr.name}
-                                <small class="text-muted">(Selecione um ou mais)</small>
-                            </label>
-                            <select class="form-select form-select-sm attribute-select" 
-                                    data-attribute-id="${attr.id}" 
-                                    name="attribute_values[]" 
-                                    multiple 
-                                    size="3"
-                                    style="min-height: 80px;"
-                                    required>
-                            </select>
-                            <small class="text-muted">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Mantenha Ctrl/Cmd pressionado para selecionar múltiplos valores
-                            </small>
-                        `;
-                        const select = attrDiv.querySelector('select');
-                        if (attr.values && attr.values.length > 0) {
-                            attr.values.forEach(value => {
-                                const option = document.createElement('option');
-                                option.value = value.id;
-                                option.textContent = value.display_value || value.value;
-                                select.appendChild(option);
-                            });
-                        } else {
-                            const option = document.createElement('option');
-                            option.value = '';
-                            option.textContent = 'Nenhum valor disponível';
-                            option.disabled = true;
-                            select.appendChild(option);
-                        }
-                        container.appendChild(attrDiv);
-                    });
-                    
-                    // Mostrar botão de gerar combinações se houver atributos
-                    const attributeSelects = container.querySelectorAll('.attribute-select');
-                    const generateBtn = document.getElementById('generate-all-combinations-btn');
-                    if (attributeSelects.length > 0 && generateBtn) {
-                        generateBtn.style.display = 'block';
-                        // Atualizar preview quando seleções mudarem
-                        attributeSelects.forEach(select => {
-                            select.addEventListener('change', updateCombinationsPreview);
-                        });
-                        updateCombinationsPreview();
-                    }
-                } else {
-                    container.innerHTML = `
-                        <div class="alert alert-warning">
-                            <i class="bi bi-exclamation-triangle me-2"></i>
-                            <strong>Nenhum atributo encontrado.</strong><br>
-                            Crie atributos globais primeiro em 
-                            <a href="{{ route('admin.attributes.create') }}" target="_blank" class="alert-link">
-                                <i class="bi bi-box-arrow-up-right me-1"></i>Atributos
-                            </a>
-                        </div>
-                    `;
-                }
-            })
-            .catch(err => {
-                // CORRIGIDO: Não mostrar erro se foi cancelado intencionalmente
-                if (err.name === 'AbortError') {
-                    return; // Requisição foi cancelada, não mostrar erro
-                }
-                
-                console.error('Erro ao carregar atributos:', err);
-                container.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        <strong>Erro ao carregar atributos</strong><br>
-                        <small>${err.message || 'Erro desconhecido'}</small><br>
-                        <button type="button" class="btn btn-sm btn-outline-primary mt-2" onclick="loadAttributesForVariation()">
-                            <i class="bi bi-arrow-clockwise me-1"></i>Tentar novamente
-                        </button>
-                    </div>
-                `;
-            });
-    }
-
-    // Botão adicionar variação - abrir modal
-    if (addVariationBtn) {
-        addVariationBtn.addEventListener('click', function() {
-            const modalEl = document.getElementById('addVariationModal');
-            let modal = bootstrap.Modal.getInstance(modalEl);
-            if (!modal) {
-                modal = new bootstrap.Modal(modalEl);
-            }
-            // Limpar formulário (CORRIGIDO: limpa selects múltiplos corretamente)
-            document.getElementById('variation-form').reset();
-            document.getElementById('variation_id').value = '';
-            document.getElementById('variationModalTitle').textContent = 'Adicionar Variação';
-            document.getElementById('variation_price').value = '{{ $product->price }}';
-            document.getElementById('variation_b2b_price').value = '{{ $product->b2b_price ?? "" }}';
-            document.getElementById('variation_stock').value = '0';
-            document.getElementById('variation_is_default').checked = false;
-            
-            // CORRIGIDO: Limpar seleções de selects múltiplos
-            document.querySelectorAll('.attribute-select').forEach(select => {
-                Array.from(select.options).forEach(opt => opt.selected = false);
-            });
-            
-            // Carregar atributos disponíveis
-            loadAttributesForVariation();
-            modal.show();
-        });
-    }
-
-    // Botões editar variação (EVENT DELEGATION - evita múltiplos listeners)
-    document.addEventListener('click', async function(e) {
-        const editBtn = e.target.closest('.edit-variation');
-        if (!editBtn) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const variationId = editBtn.dataset.variationId;
-        const modalEl = document.getElementById('addVariationModal');
-        let modal = bootstrap.Modal.getInstance(modalEl);
-        if (!modal) {
-            modal = new bootstrap.Modal(modalEl);
-        }
-        
-        try {
-            const response = await fetch(`/admin/products/variations/${variationId}`);
-            const data = await response.json();
-                
-                if (data.success && data.variation) {
-                    const v = data.variation;
-                    document.getElementById('variation_id').value = variationId;
-                    document.getElementById('variationModalTitle').textContent = 'Editar Variação';
-                    // REMOVIDO: variation_sku e variation_name não existem no formulário (são gerados automaticamente)
-                    document.getElementById('variation_price').value = v.price || '';
-                    document.getElementById('variation_b2b_price').value = v.b2b_price || '';
-                    document.getElementById('variation_stock').value = v.stock_quantity || 0;
-                    document.getElementById('variation_is_default').checked = v.is_default || false;
-                    
-                    loadAttributesForVariation().then(() => {
-                        // Selecionar valores dos atributos (CORRIGIDO: seleciona TODOS os valores múltiplos corretamente)
-                        if (v.attribute_values && v.attribute_values.length > 0) {
-                            // Agrupar por attribute_id para selecionar múltiplos valores do mesmo atributo
-                            const valuesByAttribute = {};
-                            v.attribute_values.forEach(av => {
-                                if (!valuesByAttribute[av.attribute_id]) {
-                                    valuesByAttribute[av.attribute_id] = [];
-                                }
-                                valuesByAttribute[av.attribute_id].push(av.attribute_value_id);
-                            });
-                            
-                            // Selecionar todos os valores de cada atributo
-                            Object.keys(valuesByAttribute).forEach(attributeId => {
-                                const select = document.querySelector(`select[data-attribute-id="${attributeId}"]`);
-                                if (select) {
-                                    // Limpar seleções anteriores
-                                    Array.from(select.options).forEach(opt => opt.selected = false);
-                                    
-                                    // Selecionar todos os valores deste atributo
-                                    valuesByAttribute[attributeId].forEach(valueId => {
-                                        const option = select.querySelector(`option[value="${valueId}"]`);
-                                        if (option) {
-                                            option.selected = true;
-                                        }
-                                    });
-                                    
-                                    // Disparar evento change para atualizar preview
-                                    select.dispatchEvent(new Event('change'));
-                                }
-                            });
-                        }
-                    });
-                    
-                    modal.show();
-                } else {
-                    alert('Erro ao carregar variação');
-                }
-            } catch (error) {
-                console.error(error);
-                alert('Erro ao carregar variação');
-            }
-        });
-    });
-
-    // Botões excluir variação (EVENT DELEGATION - evita múltiplos listeners)
-    document.addEventListener('click', function(e) {
-        const deleteBtn = e.target.closest('.delete-variation');
-        if (!deleteBtn) return;
-        
-        e.preventDefault();
-        e.stopPropagation();
-        
-        const variationId = deleteBtn.dataset.variationId;
-        if (!confirm('Tem certeza que deseja excluir esta variação?')) return;
-        
-        const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-        
-        fetch(`/admin/products/variations/${variationId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRF-TOKEN': csrf,
-                'Accept': 'application/json'
-            }
-        })
-        .then(r => r.json())
-        .then(data => {
-            if (data.success) {
-                document.querySelector(`[data-variation-id="${variationId}"]`)?.remove();
-                // Atualizar contador
-                const count = variationsList.querySelectorAll('.variation-item').length;
-                const countEl = document.getElementById('variations-count');
-                if (countEl) {
-                    countEl.textContent = `${count} variação(ões)`;
-                }
-                
-                // CORRIGIDO: Atualizar flag has_variations se não houver mais variações
-                if (count === 0) {
-                    const hasVariationsCheckbox = document.getElementById('has_variations');
-                    if (hasVariationsCheckbox) {
-                        hasVariationsCheckbox.checked = false;
-                    }
-                    const variationsManagement = document.getElementById('variations-management');
-                    if (variationsManagement) {
-                        variationsManagement.style.display = 'none';
-                    }
-                }
-                
-                // Atualizar visibilidade do botão "Apagar Todas"
-                const deleteAllBtn = document.getElementById('delete-all-variations-btn');
-                if (deleteAllBtn) {
-                    deleteAllBtn.style.display = count > 0 ? 'inline-block' : 'none';
-                }
-                
-                // Se não houver mais variações, mostrar mensagem
-                if (count === 0) {
-                    variationsList.innerHTML = `
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                            <p class="mb-0">Nenhuma variação cadastrada ainda.</p>
-                            <small>Clique em "Adicionar Variação" para começar.</small>
-                        </div>
-                    `;
-                }
-            } else {
-                alert(data.message || 'Erro ao excluir variação');
-            }
-        })
-        .catch(err => {
-            console.error(err);
-            alert('Erro ao excluir variação');
-        });
-    });
-
-    // Botão apagar todas as variações
-    const deleteAllVariationsBtn = document.getElementById('delete-all-variations-btn');
-    if (deleteAllVariationsBtn) {
-        deleteAllVariationsBtn.addEventListener('click', function() {
-            const variationItems = variationsList.querySelectorAll('.variation-item');
-            const totalVariations = variationItems.length;
-            
-            if (totalVariations === 0) {
-                alert('Não há variações para excluir');
-                return;
-            }
-            
-            if (!confirm(`Tem certeza que deseja excluir TODAS as ${totalVariations} variação(ões)?\n\nEsta ação não pode ser desfeita!`)) {
-                return;
-            }
-            
-            // Confirmar novamente para evitar exclusão acidental
-            if (!confirm('ATENÇÃO: Esta ação irá excluir TODAS as variações permanentemente!\n\nDeseja continuar?')) {
-                return;
-            }
-            
-            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
-            const btn = this;
-            const originalText = btn.innerHTML;
-            btn.disabled = true;
-            btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Excluindo...';
-            
-            // Coletar todos os IDs das variações
-            const variationIds = Array.from(variationItems).map(item => item.dataset.variationId);
-            let deleted = 0;
-            let errors = 0;
-            
-            // Deletar todas as variações sequencialmente
-            const deleteNext = (index) => {
-                if (index >= variationIds.length) {
-                    // Todas foram processadas
-                    if (errors > 0) {
-                        alert(`Concluído! ${deleted} variação(ões) excluída(s), ${errors} erro(s).`);
-                    } else {
-                        alert(`Todas as ${deleted} variação(ões) foram excluídas com sucesso!`);
-                    }
-                    
-                    // Atualizar interface
-                    variationsList.innerHTML = `
-                        <div class="text-center py-4 text-muted">
-                            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                            <p class="mb-0">Nenhuma variação cadastrada ainda.</p>
-                            <small>Clique em "Adicionar Variação" para começar.</small>
-                        </div>
-                    `;
-                    
-                    // CORRIGIDO: Atualizar flag has_variations
-                    const hasVariationsCheckbox = document.getElementById('has_variations');
-                    if (hasVariationsCheckbox) {
-                        hasVariationsCheckbox.checked = false;
-                    }
-                    const variationsManagement = document.getElementById('variations-management');
-                    if (variationsManagement) {
-                        variationsManagement.style.display = 'none';
-                    }
-                    
-                    // Atualizar contador
-                    const countEl = document.getElementById('variations-count');
-                    if (countEl) {
-                        countEl.textContent = '0 variação(ões)';
-                    }
-                    
-                    // Ocultar botão de apagar todas
-                    if (deleteAllVariationsBtn) {
-                        deleteAllVariationsBtn.style.display = 'none';
-                    }
-                    
-                    // Recarregar página para garantir sincronização
-                    setTimeout(() => {
-                        location.reload();
-                    }, 1000);
-                    
-                    return;
-                }
-                
-                const variationId = variationIds[index];
-                
-                fetch(`/admin/products/variations/${variationId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'X-CSRF-TOKEN': csrf,
-                        'Accept': 'application/json'
-                    }
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        deleted++;
-                        // Remover elemento da lista
-                        const item = document.querySelector(`[data-variation-id="${variationId}"]`);
-                        if (item) {
-                            item.remove();
-                        }
-                    } else {
-                        errors++;
-                        console.error(`Erro ao excluir variação ${variationId}:`, data.message);
-                    }
-                    // Continuar com a próxima
-                    deleteNext(index + 1);
-                })
-                .catch(err => {
-                    errors++;
-                    console.error(`Erro ao excluir variação ${variationId}:`, err);
-                    // Continuar com a próxima mesmo em caso de erro
-                    deleteNext(index + 1);
-                });
-            };
-            
-            // Iniciar exclusão
-            deleteNext(0);
-        });
-    }
-
-    // Função para atualizar preview de combinações (CORRIGIDO: lógica mais clara)
-    function updateCombinationsPreview() {
-        const selects = document.querySelectorAll('.attribute-select');
-        const preview = document.getElementById('combinations-preview');
-        const countEl = document.getElementById('combinations-count');
-        
-        if (selects.length < 2) {
-            if (preview) preview.style.display = 'none';
-            return;
-        }
-        
-        let totalCombinations = 1;
-        let hasSelectedValues = false;
-        let allAttributesHaveValues = true;
-        
-        selects.forEach(select => {
-            const selectedCount = Array.from(select.selectedOptions)
-                .filter(opt => opt.value && opt.value !== '' && !opt.disabled).length;
-            const totalOptions = Array.from(select.options)
-                .filter(opt => opt.value && opt.value !== '' && !opt.disabled).length;
-            
-            if (totalOptions === 0) {
-                allAttributesHaveValues = false;
-                return; // Pular atributos sem valores
-            }
-            
-            if (selectedCount > 0) {
-                hasSelectedValues = true;
-                totalCombinations *= selectedCount;
-            } else if (selectedCount === 0 && totalOptions > 0) {
-                // CORRIGIDO: Se nenhum selecionado mas há opções, contar todas (para preview)
-                totalCombinations *= totalOptions;
-            }
-        });
-        
-        // Mostrar preview apenas se houver pelo menos 2 atributos com valores e combinações > 1
-        if (allAttributesHaveValues && hasSelectedValues && totalCombinations > 1) {
-            if (preview) preview.style.display = 'block';
-            if (countEl) countEl.textContent = totalCombinations;
-        } else {
-            if (preview) preview.style.display = 'none';
-        }
-    }
-
-    // Função para gerar todas as combinações (CORRIGIDO: validações e limites)
-    function generateAllCombinations() {
-        const selects = document.querySelectorAll('.attribute-select');
-        const combinations = [];
-        
-        // Coletar valores selecionados de cada atributo (CORRIGIDO: valida se cada atributo tem valores)
-        const attributeValues = [];
-        selects.forEach(select => {
-            const selectedValues = Array.from(select.selectedOptions)
-                .map(opt => opt.value)
-                .filter(v => v && v !== '');
-            if (selectedValues.length > 0) {
-                attributeValues.push(selectedValues);
-            } else {
-                // Se nenhum selecionado, usar todos os valores disponíveis
-                const allValues = Array.from(select.options)
-                    .map(opt => opt.value)
-                    .filter(v => v && v !== '' && !opt.disabled);
-                if (allValues.length > 0) {
-                    attributeValues.push(allValues);
-                }
-            }
-        });
-        
-        // Verificar se há pelo menos um atributo com valores selecionados
-        const hasMultipleValues = attributeValues.some(arr => arr.length > 1);
-        const totalAttributes = attributeValues.length;
-        
-        if (totalAttributes === 0) {
-            alert('Selecione pelo menos um atributo com valores para gerar combinações');
-            return;
-        }
-        
-        // Se há apenas um atributo, deve ter múltiplos valores para gerar combinações
-        if (totalAttributes === 1 && !hasMultipleValues) {
-            alert('Para gerar combinações com um único atributo, selecione múltiplos valores desse atributo.\n\nExemplo: Selecione P, M e G no atributo Tamanho para criar 3 variações.');
-            return;
-        }
-        
-        // CORRIGIDO: Validar se algum atributo não tem valores
-        const emptyAttributes = [];
-        selects.forEach((select, index) => {
-            const hasValues = Array.from(select.options).some(opt => opt.value && opt.value !== '' && !opt.disabled);
-            const selectedCount = Array.from(select.selectedOptions).filter(opt => opt.value && opt.value !== '').length;
-            if (hasValues && selectedCount === 0 && attributeValues[index] && attributeValues[index].length === 0) {
-                emptyAttributes.push(select.previousElementSibling?.textContent || `Atributo ${index + 1}`);
-            }
-        });
-        
-        if (emptyAttributes.length > 0) {
-            if (!confirm(`Os seguintes atributos não têm valores selecionados:\n${emptyAttributes.join(', ')}\n\nDeseja continuar mesmo assim?`)) {
-                return;
-            }
-        }
-        
-        // Gerar todas as combinações
-        function generateCombos(arrays, index = 0, current = []) {
-            if (index === arrays.length) {
-                combinations.push([...current]);
-                return;
-            }
-            arrays[index].forEach(value => {
-                current.push(value);
-                generateCombos(arrays, index + 1, current);
-                current.pop();
-            });
-        }
-        
-        generateCombos(attributeValues);
-        
-        if (combinations.length === 0) {
-            alert('Nenhuma combinação encontrada');
-            return;
-        }
-        
-        // CORRIGIDO: Validar limite de combinações (máximo 100)
-        const MAX_COMBINATIONS = 100;
-        if (combinations.length > MAX_COMBINATIONS) {
-            alert(`Muitas combinações geradas (${combinations.length}). O limite é ${MAX_COMBINATIONS} variações por vez.\n\nPor favor, selecione menos valores de atributos ou crie as variações manualmente.`);
-            return;
-        }
-        
-        if (!confirm(`Deseja criar ${combinations.length} variação(ões) automaticamente?\n\nIsso criará uma variação para cada combinação de atributos selecionados.\n\nEsta operação pode levar alguns segundos.`)) {
-            return;
-        }
-        
-        // Coletar dados do formulário
-        const formData = {
-            price: document.getElementById('variation_price').value,
-            b2b_price: document.getElementById('variation_b2b_price').value,
-            stock_quantity: document.getElementById('variation_stock').value,
-            is_default: document.getElementById('variation_is_default').checked
-        };
-        
-        const csrf = document.querySelector('meta[name="csrf-token"]').content;
-        let created = 0;
-        let errors = 0;
-        
-        // CORRIGIDO: Coletar dados do formulário antes de iniciar
-        const variationForm = document.getElementById('variation-form');
-        const formDataObj = new FormData(variationForm);
-        const basePrice = parseFloat(formDataObj.get('price')) || parseFloat(document.getElementById('variation_price').value) || 0;
-        const baseB2bPrice = formDataObj.get('b2b_price') || document.getElementById('variation_b2b_price').value || null;
-        const baseStock = parseInt(formDataObj.get('stock_quantity')) || parseInt(document.getElementById('variation_stock').value) || 0;
-        
-        // Validar preço base
-        if (basePrice <= 0) {
-            alert('Defina um preço válido antes de gerar combinações');
-            return;
-        }
-        
-        // CORRIGIDO: Mostrar progresso
-        const generateBtn = document.getElementById('generate-all-combinations-btn');
-        const originalBtnText = generateBtn.innerHTML;
-        generateBtn.disabled = true;
-        
-        // Criar cada combinação (CORRIGIDO: mostra progresso)
-        const createNext = (index) => {
-            if (index >= combinations.length) {
-                generateBtn.disabled = false;
-                generateBtn.innerHTML = originalBtnText;
-                alert(`Concluído! ${created} variação(ões) criada(s)${errors > 0 ? `, ${errors} erro(s)` : ''}`);
-                bootstrap.Modal.getInstance(document.getElementById('addVariationModal')).hide();
-                location.reload();
-                return;
-            }
-            
-            // Atualizar progresso
-            generateBtn.innerHTML = `<i class="bi bi-hourglass-split me-1"></i> Criando ${index + 1}/${combinations.length}...`;
-            
-            const data = {
-                price: basePrice,
-                b2b_price: baseB2bPrice ? parseFloat(baseB2bPrice) : null,
-                stock_quantity: baseStock,
-                is_default: false, // Não marcar como padrão ao gerar múltiplas variações
-                attribute_values: combinations[index],
-                _token: csrf
-            };
-            
-            fetch(`/admin/products/{{ $product->slug }}/variations`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': csrf,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify(data)
-            })
-            .then(async r => {
-                if (!r.ok) {
-                    const errorData = await r.json().catch(() => ({ message: 'Erro desconhecido' }));
-                    throw new Error(errorData.message || `HTTP ${r.status}`);
-                }
-                return r.json();
-            })
-            .then(result => {
-                if (result.success) {
-                    created++;
-                } else {
-                    errors++;
-                    console.error('Erro ao criar variação:', result.message);
-                }
-                createNext(index + 1);
-            })
-            .catch(err => {
-                errors++;
-                console.error('Erro:', err);
-                createNext(index + 1);
-            });
-        };
-        
-        createNext(0);
-    }
-
-    // Botão gerar todas as combinações
-    const generateAllBtn = document.getElementById('generate-all-combinations-btn');
-    if (generateAllBtn) {
-        generateAllBtn.addEventListener('click', generateAllCombinations);
-    }
-
-    // Submeter formulário de variação
-    const variationForm = document.getElementById('variation-form');
-    if (variationForm) {
-        variationForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            const variationId = document.getElementById('variation_id').value;
-            const formData = new FormData(this);
-            const attributeValues = [];
-            
-            // Coletar valores dos atributos selecionados (CORRIGIDO: coleta TODOS os valores de selects múltiplos)
-            document.querySelectorAll('.attribute-select').forEach(select => {
-                const selectedValues = Array.from(select.selectedOptions)
-                    .map(opt => opt.value)
-                    .filter(v => v && v !== '');
-                
-                if (selectedValues.length === 0) {
-                    return; // Pular se nenhum valor selecionado neste atributo
-                }
-                
-                // Validar se não há valores duplicados do mesmo atributo
-                const attributeId = select.dataset.attributeId;
-                selectedValues.forEach(valueId => {
-                    // Verificar se já existe este attribute_id + value_id
-                    const exists = attributeValues.some(av => 
-                        av.attribute_id === attributeId && av.attribute_value_id === valueId
-                    );
-                    if (!exists) {
-                        attributeValues.push({
-                            attribute_id: attributeId,
-                            attribute_value_id: valueId
-                        });
-                    }
-                });
-            });
-            
-            // CORRIGIDO: Validar que não há múltiplos valores do mesmo atributo
-            const attributeIdsCount = {};
-            attributeValues.forEach(av => {
-                if (!attributeIdsCount[av.attribute_id]) {
-                    attributeIdsCount[av.attribute_id] = [];
-                }
-                attributeIdsCount[av.attribute_id].push(av.attribute_value_id);
-            });
-            
-            // Verificar se algum atributo tem múltiplos valores selecionados
-            const attributesWithMultipleValues = [];
-            Object.keys(attributeIdsCount).forEach(attrId => {
-                if (attributeIdsCount[attrId].length > 1) {
-                    const select = document.querySelector(`select[data-attribute-id="${attrId}"]`);
-                    const attrName = select?.previousElementSibling?.textContent?.split('(')[0]?.trim() || `Atributo ${attrId}`;
-                    attributesWithMultipleValues.push({
-                        id: attrId,
-                        name: attrName,
-                        count: attributeIdsCount[attrId].length
-                    });
-                }
-            });
-            
-            if (attributesWithMultipleValues.length > 0) {
-                const attrNames = attributesWithMultipleValues.map(a => `${a.name} (${a.count} valores)`).join('\n');
-                const generateBtn = document.getElementById('generate-all-combinations-btn');
-                const btnVisible = generateBtn && generateBtn.style.display !== 'none';
-                
-                let message = `ERRO: Você selecionou múltiplos valores do mesmo atributo:\n\n${attrNames}\n\nUma variação só pode ter UM valor por atributo.`;
-                
-                if (btnVisible) {
-                    message += `\n\nPara criar múltiplas variações automaticamente, use o botão "Gerar Combinações" acima que criará uma variação para cada combinação possível.`;
-                } else {
-                    message += `\n\nPor favor, selecione apenas um valor por atributo ou use o botão "Gerar Combinações" se disponível.`;
-                }
-                
-                alert(message);
-                return;
-            }
-            
-            // Validar se pelo menos um atributo tem valores selecionados
-            const uniqueAttributeIds = [...new Set(attributeValues.map(av => av.attribute_id))];
-            if (attributeValues.length === 0 || uniqueAttributeIds.length === 0) {
-                alert('Selecione pelo menos um valor de atributo para a variação');
-                return;
-            }
-            
-            // Validar se cada atributo tem pelo menos um valor
-            const allSelects = document.querySelectorAll('.attribute-select');
-            let hasEmptyAttribute = false;
-            allSelects.forEach(select => {
-                const selectedCount = Array.from(select.selectedOptions)
-                    .filter(opt => opt.value && opt.value !== '').length;
-                const hasValues = Array.from(select.options)
-                    .some(opt => opt.value && opt.value !== '' && !opt.disabled);
-                
-                if (hasValues && selectedCount === 0) {
-                    hasEmptyAttribute = true;
-                }
-            });
-            
-            if (hasEmptyAttribute) {
-                if (!confirm('Alguns atributos não têm valores selecionados. Deseja continuar mesmo assim?')) {
-                    return;
-                }
-            }
-            
-            // CORRIGIDO: Validar se is_default está sendo definido e garantir unicidade
-            const isDefault = formData.get('is_default') === 'on';
-            
-            // Se marcando como padrão, verificar se já existe outra variação padrão
-            if (isDefault && !variationId) {
-                // Verificar no DOM se há outra variação marcada como padrão
-                const existingDefault = variationsList.querySelector('.variation-item .badge.bg-primary[title*="Padrão"]');
-                if (existingDefault) {
-                    if (!confirm('Já existe uma variação padrão. Ao criar esta como padrão, a outra será desmarcada automaticamente.\n\nDeseja continuar?')) {
-                        return;
-                    }
-                }
-            }
-            
-            const data = {
-                _token: document.querySelector('meta[name="csrf-token"]').content,
-                sku: formData.get('sku') || null, // SKU é gerado automaticamente se não fornecido
-                name: formData.get('name') || null, // Nome é gerado automaticamente se não fornecido
-                price: formData.get('price') || 0,
-                b2b_price: formData.get('b2b_price') || null,
-                stock_quantity: formData.get('stock_quantity') || 0,
-                is_default: isDefault,
-                attribute_values: attributeValues.map(av => av.attribute_value_id)
-            };
-            
-            // Validações adicionais
-            if (!data.price || parseFloat(data.price) <= 0) {
-                alert('O preço deve ser maior que zero');
-                return;
-            }
-            
-            if (data.stock_quantity < 0) {
-                alert('A quantidade em estoque não pode ser negativa');
-                return;
-            }
-            
-            const url = variationId 
-                ? `/admin/products/variations/${variationId}`
-                : `/admin/products/{{ $product->slug }}/variations`;
-            const method = variationId ? 'PUT' : 'POST';
-            
-            const submitBtn = this.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Salvando...';
-            
-            try {
-                const response = await fetch(url, {
-                    method: method,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': data._token,
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(data)
-                });
-                
-                const result = await response.json();
-                
-                if (result.success) {
-                    bootstrap.Modal.getInstance(document.getElementById('addVariationModal'))?.hide();
-                    // CORRIGIDO: Atualizar contador antes de recarregar
-                    const countEl = document.getElementById('variations-count');
-                    if (countEl && !variationId) {
-                        const currentCount = parseInt(countEl.textContent) || 0;
-                        countEl.textContent = `${currentCount + 1} variação(ões)`;
-                    }
-                    location.reload(); // Recarregar para mostrar nova variação
-                } else {
-                    alert(result.message || 'Erro ao salvar variação');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                }
-            } catch (error) {
-                console.error('Erro ao salvar variação:', error);
-                alert('Erro ao salvar variação: ' + (error.message || 'Erro desconhecido'));
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalText;
-            }
-        });
-    }
-    
-    // ============================================
-    // GERENCIAMENTO DE IMAGENS DE VARIAÇÕES
-    // ============================================
-    
-    let currentVariationId = null;
-    
-    // Função global para abrir modal de imagens
-    window.openVariationImagesModal = function(variationId) {
-        currentVariationId = variationId;
-        document.getElementById('variation_images_id').value = variationId;
-        loadVariationImages(variationId);
-        
-        const modalEl = document.getElementById('variationImagesModal');
-        let modal = bootstrap.Modal.getInstance(modalEl);
-        if (!modal) {
-            modal = new bootstrap.Modal(modalEl);
-        }
-        modal.show();
-    };
-    
-    // Event listeners para botões de gerenciar imagens (CORRIGIDO: remove listeners anteriores)
-    document.querySelectorAll('.manage-variation-images').forEach(btn => {
-        const newBtn = btn.cloneNode(true);
-        btn.parentNode.replaceChild(newBtn, btn);
-        newBtn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const variationId = this.dataset.variationId;
-            openVariationImagesModal(variationId);
-        });
-    });
-    
-    // Event listener para imagem da variação (clique na imagem) (CORRIGIDO: remove listeners anteriores)
-    document.querySelectorAll('.variation-preview-img').forEach(img => {
-        const newImg = img.cloneNode(true);
-        img.parentNode.replaceChild(newImg, img);
-        newImg.addEventListener('click', function(e) {
-            e.stopPropagation();
-            const variationId = this.dataset.variationId;
-            if (variationId) {
-                openVariationImagesModal(variationId);
-            }
-        });
-    });
-    
-    // Carregar imagens da variação (CORRIGIDO: trata erro 404 e outros erros)
-    async function loadVariationImages(variationId) {
-        const grid = document.getElementById('variation-images-grid');
-        const countBadge = document.getElementById('variation-images-count');
-        const noImages = document.getElementById('no-variation-images');
-        const productGrid = document.getElementById('product-images-grid');
-        
-        if (!grid || !countBadge || !noImages || !productGrid) {
-            console.error('Elementos do modal de imagens não encontrados');
-            return;
-        }
-        
-        grid.innerHTML = '<div class="col-12 text-center py-3"><i class="bi bi-hourglass-split"></i> Carregando...</div>';
-        
-        try {
-            const response = await fetch(`/admin/products/variations/${variationId}/images`);
-            
-            // CORRIGIDO: Tratar erro 404 (variação deletada)
-            if (response.status === 404) {
-                grid.innerHTML = '<div class="col-12 text-center py-3 text-danger">Variação não encontrada. Ela pode ter sido deletada.</div>';
-                setTimeout(() => {
-                    bootstrap.Modal.getInstance(document.getElementById('variationImagesModal'))?.hide();
-                }, 2000);
-                return;
-            }
-            
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                // Atualizar info da variação
-                const variationItem = document.querySelector(`[data-variation-id="${variationId}"]`);
-                if (variationItem) {
-                    const name = variationItem.querySelector('strong')?.textContent || 'Variação';
-                    const sku = variationItem.querySelector('.small.text-muted span')?.textContent || '';
-                    document.getElementById('variation_images_name').textContent = name;
-                    document.getElementById('variation_images_sku').textContent = sku;
-                }
-                
-                // Renderizar imagens da variação
-                if (data.images && data.images.length > 0) {
-                    noImages.style.display = 'none';
-                    countBadge.textContent = data.images.length;
-                    
-                    grid.innerHTML = data.images.map((img, index) => `
-                        <div class="col-4 col-md-3">
-                            <div class="variation-image-item">
-                                ${index === 0 ? '<span class="primary-badge">Principal</span>' : ''}
-                                <img src="${img.url}" alt="Imagem ${index + 1}" onclick="viewFullImage('${img.url}')">
-                                <div class="image-actions">
-                                    ${index !== 0 ? `
-                                        <button type="button" class="btn btn-xs btn-success" onclick="setPrimaryImage('${img.path}')" title="Definir como principal">
-                                            <i class="bi bi-star-fill"></i>
-                                        </button>
-                                    ` : ''}
-                                    <button type="button" class="btn btn-xs btn-danger" onclick="removeVariationImage('${img.path}')" title="Remover">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    `).join('');
-                } else {
-                    noImages.style.display = 'block';
-                    countBadge.textContent = '0';
-                    grid.innerHTML = '';
-                    grid.appendChild(noImages);
-                }
-                
-                // Renderizar imagens do produto (referência)
-                if (data.product_images && data.product_images.length > 0) {
-                    productGrid.innerHTML = data.product_images.map(img => `
-                        <div class="col-auto">
-                            <img src="${img.url}" alt="Imagem do produto" class="product-ref-image">
-                        </div>
-                    `).join('');
-                } else {
-                    productGrid.innerHTML = '<p class="text-muted mb-0">Nenhuma imagem no produto principal</p>';
-                }
-            } else {
-                grid.innerHTML = '<div class="col-12 text-center py-3 text-danger">Erro ao carregar imagens</div>';
-            }
-        } catch (error) {
-            console.error('Erro ao carregar imagens:', error);
-            grid.innerHTML = '<div class="col-12 text-center py-3 text-danger">Erro ao carregar imagens</div>';
-        }
-    }
-    
-    // Upload de imagem (CORRIGIDO: valida tamanho antes de enviar)
-    document.getElementById('variation-image-upload-form')?.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const fileInput = document.getElementById('variation_image_file');
-        const variationId = document.getElementById('variation_images_id').value;
-        
-        if (!fileInput.files || fileInput.files.length === 0) {
-            alert('Selecione uma imagem para fazer upload');
-            return;
-        }
-        
-        const file = fileInput.files[0];
-        const maxSize = 5 * 1024 * 1024; // 5MB
-        
-        // CORRIGIDO: Validar tamanho antes de enviar
-        if (file.size > maxSize) {
-            alert(`Arquivo muito grande (${(file.size / 1024 / 1024).toFixed(2)}MB). O tamanho máximo permitido é 5MB.`);
-            return;
-        }
-        
-        // Validar tipo
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
-        if (!allowedTypes.includes(file.type)) {
-            alert('Tipo de arquivo não permitido. Use JPEG, PNG, GIF ou WebP.');
-            return;
-        }
-        
-        const formData = new FormData();
-        formData.append('image', fileInput.files[0]);
-        
-        const btn = document.getElementById('upload-variation-image-btn');
-        const originalText = btn.innerHTML;
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Enviando...';
-        
-        try {
-            const response = await fetch(`/admin/products/variations/${variationId}/images`, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: formData
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                fileInput.value = '';
-                loadVariationImages(variationId);
-                
-                // Atualizar thumbnail na lista de variações
-                updateVariationThumbnail(variationId, data.images);
-                
-                // Feedback visual
-                btn.innerHTML = '<i class="bi bi-check-circle me-1"></i> Enviado!';
-                btn.classList.remove('btn-primary');
-                btn.classList.add('btn-success');
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                    btn.classList.remove('btn-success');
-                    btn.classList.add('btn-primary');
-                    btn.disabled = false;
-                }, 1500);
-            } else {
-                alert(data.message || 'Erro ao fazer upload');
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
-        } catch (error) {
-            console.error('Erro no upload:', error);
-            alert('Erro ao fazer upload da imagem');
-            btn.disabled = false;
-            btn.innerHTML = originalText;
-        }
-    });
-    
-    // Remover imagem (CORRIGIDO: valida se é a última imagem)
-    window.removeVariationImage = async function(imagePath) {
-        const variationId = document.getElementById('variation_images_id').value;
-        const grid = document.getElementById('variation-images-grid');
-        
-        // Verificar quantas imagens existem
-        const currentImages = grid.querySelectorAll('.variation-image-item').length;
-        
-        if (currentImages <= 1) {
-            if (!confirm('Esta é a última imagem da variação. Ao removê-la, a variação usará as imagens do produto principal.\n\nDeseja continuar?')) {
-                return;
-            }
-        } else {
-            if (!confirm('Tem certeza que deseja remover esta imagem?')) {
-                return;
-            }
-        }
-        
-        try {
-            const response = await fetch(`/admin/products/variations/${variationId}/images`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ image_path: imagePath })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                loadVariationImages(variationId);
-                updateVariationThumbnail(variationId, data.images);
-            } else {
-                alert(data.message || 'Erro ao remover imagem');
-            }
-        } catch (error) {
-            console.error('Erro ao remover:', error);
-            alert('Erro ao remover imagem');
-        }
-    };
-    
-    // Definir imagem principal
-    window.setPrimaryImage = async function(imagePath) {
-        const variationId = document.getElementById('variation_images_id').value;
-        
-        try {
-            const response = await fetch(`/admin/products/variations/${variationId}/images/primary`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                    'Accept': 'application/json'
-                },
-                body: JSON.stringify({ image_path: imagePath })
-            });
-            
-            const data = await response.json();
-            
-            if (data.success) {
-                loadVariationImages(variationId);
-                updateVariationThumbnail(variationId, data.images);
-            } else {
-                alert(data.message || 'Erro ao definir imagem principal');
-            }
-        } catch (error) {
-            console.error('Erro:', error);
-            alert('Erro ao definir imagem principal');
-        }
-    };
-    
-    // Atualizar thumbnail na lista de variações (CORRIGIDO: trata erro se variação não existe)
-    function updateVariationThumbnail(variationId, images) {
-        const variationItem = document.querySelector(`[data-variation-id="${variationId}"]`);
-        if (!variationItem) {
-            console.warn(`Variação ${variationId} não encontrada na lista. Ela pode ter sido deletada.`);
-            return;
-        }
-        
-        const img = variationItem.querySelector('.variation-preview-img');
-        const badge = variationItem.querySelector('.variation-thumb .badge');
-        
-        if (!img) {
-            console.warn('Imagem de preview não encontrada');
-            return;
-        }
-        
-        if (images && images.length > 0) {
-            img.src = images[0].url;
-            if (badge) {
-                badge.textContent = images.length;
-                badge.classList.remove('bg-secondary');
-                badge.classList.add('bg-success');
-            }
-        } else {
-            // Se não há imagens, usar imagem do produto ou padrão
-            const productImage = document.querySelector('#productCarousel .carousel-item.active img')?.src;
-            if (productImage) {
-                img.src = productImage;
-            }
-            if (badge) {
-                badge.innerHTML = '<i class="bi bi-link-45deg"></i>';
-                badge.classList.remove('bg-success');
-                badge.classList.add('bg-secondary');
-            }
-        }
-    }
-    
-    // Visualizar imagem em tamanho completo
-    window.viewFullImage = function(url) {
-        window.open(url, '_blank');
-    };
-    
-    // Botão para selecionar imagem do produto principal
-    document.getElementById('select-from-product-btn')?.addEventListener('click', async function() {
-        const variationId = document.getElementById('variation_images_id').value;
-        
-        // Carregar imagens da variação para pegar as imagens do produto
-        try {
-            const response = await fetch(`/admin/products/variations/${variationId}/images`);
-            const data = await response.json();
-            
-            if (data.success && data.product_images && data.product_images.length > 0) {
-                // Criar modal simples para selecionar imagem do produto
-                const modalHtml = `
-                    <div class="modal fade" id="productImagesSelectModal" tabindex="-1">
-                        <div class="modal-dialog modal-lg">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title">Selecionar Imagem do Produto Principal</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                                </div>
-                                <div class="modal-body">
-                                    <p class="text-muted mb-3">Clique em uma imagem para adicioná-la à variação:</p>
-                                    <div class="row g-3">
-                                        ${data.product_images.map(img => `
-                                            <div class="col-4 col-md-3">
-                                                <div class="position-relative border rounded p-2 product-image-select" 
-                                                     data-image-path="${img.path}"
-                                                     style="cursor: pointer; transition: all 0.2s;">
-                                                    <img src="${img.url}" class="w-100" style="height: 120px; object-fit: cover; border-radius: 4px;">
-                                                    <div class="position-absolute top-0 end-0 m-1">
-                                                        <span class="badge bg-primary d-none selected-badge">
-                                                            <i class="bi bi-check-circle"></i>
-                                                        </span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        `).join('')}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                `;
-                
-                // Remover modal anterior se existir
-                const existingModal = document.getElementById('productImagesSelectModal');
-                if (existingModal) {
-                    existingModal.remove();
-                }
-                
-                // Adicionar modal ao body
-                document.body.insertAdjacentHTML('beforeend', modalHtml);
-                
-                // Mostrar modal
-                const modal = new bootstrap.Modal(document.getElementById('productImagesSelectModal'));
-                modal.show();
-                
-                // Adicionar event listeners para seleção
-                document.querySelectorAll('.product-image-select').forEach(el => {
-                    el.addEventListener('click', function() {
-                        const imagePath = this.dataset.imagePath;
-                        
-                        // Adicionar imagem à variação
-                        fetch(`/admin/products/variations/${variationId}/images`, {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                                'Accept': 'application/json'
-                            },
-                            body: JSON.stringify({ product_image_path: imagePath })
-                        })
-                        .then(r => r.json())
-                        .then(data => {
-                            if (data.success) {
-                                bootstrap.Modal.getInstance(document.getElementById('productImagesSelectModal'))?.hide();
-                                loadVariationImages(variationId);
-                                updateVariationThumbnail(variationId, data.images);
-                            } else {
-                                alert(data.message || 'Erro ao adicionar imagem');
-                            }
-                        })
-                        .catch(err => {
-                            console.error('Erro:', err);
-                            alert('Erro ao adicionar imagem do produto');
-                        });
-                    });
-                    
-                    el.addEventListener('mouseenter', function() {
-                        this.style.transform = 'scale(1.05)';
-                        this.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                    });
-                    
-                    el.addEventListener('mouseleave', function() {
-                        this.style.transform = 'scale(1)';
-                        this.style.boxShadow = 'none';
-                    });
-                });
-            } else {
-                alert('O produto principal não possui imagens para selecionar');
-            }
-        } catch (error) {
-            console.error('Erro ao carregar imagens do produto:', error);
-            alert('Erro ao carregar imagens do produto');
-        }
     });
 });
 </script>

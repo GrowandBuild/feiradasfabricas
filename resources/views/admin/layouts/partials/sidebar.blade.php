@@ -62,6 +62,14 @@
                     <i class="bi bi-images"></i>
                     <span>Álbuns</span>
                 </a>
+                <a class="nav-link {{ request()->routeIs('admin.highlights.*') ? 'active' : '' }}" href="{{ route('admin.highlights.index') }}">
+                    <i class="bi bi-instagram"></i>
+                    <span>Destaques</span>
+                </a>
+                <a class="nav-link {{ request()->routeIs('admin.media-library.*') ? 'active' : '' }}" href="{{ route('admin.media-library.videos') }}">
+                    <i class="bi bi-collection-play"></i>
+                    <span>Biblioteca</span>
+                </a>
                 <a class="nav-link {{ request()->routeIs('admin.department-badges.*') ? 'active' : '' }}" href="{{ route('admin.department-badges.index') }}">
                     <i class="bi bi-award"></i>
                     <span>Selos</span>

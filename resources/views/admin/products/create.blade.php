@@ -198,6 +198,19 @@ textarea.form-control:focus {
     animation: fadeInUp 0.6s ease-out !important;
 }
 
+/* Estilos para o álbum de imagens */
+.album-image-item:hover .position-absolute {
+    opacity: 1 !important;
+}
+
+.album-image-item {
+    transition: transform 0.2s ease;
+}
+
+.album-image-item:hover {
+    transform: scale(1.05);
+}
+
 @media (max-width: 768px) {
     .form-control, .form-select {
         padding: 16px 18px !important;
@@ -245,10 +258,11 @@ textarea.form-control:focus {
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="sku" class="form-label">
-                                    <i class="bi bi-upc me-2"></i>SKU *
+                                    <i class="bi bi-upc me-2"></i>SKU
+                                    <small class="text-muted">(será gerado automaticamente se deixado em branco)</small>
                                 </label>
                                 <input type="text" class="form-control @error('sku') is-invalid @enderror" 
-                                       id="sku" name="sku" value="{{ old('sku') }}" required
+                                       id="sku" name="sku" value="{{ old('sku') }}"
                                        placeholder="Ex: PROD-001">
                                 @error('sku')
                                     <div class="invalid-feedback">{{ $message }}</div>
@@ -287,6 +301,7 @@ textarea.form-control:focus {
                                 @enderror
                             </div>
                         </div>
+                        @if(setting('b2b_enabled', false))
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="b2b_price" class="form-label">
@@ -303,6 +318,7 @@ textarea.form-control:focus {
                                 @enderror
                             </div>
                         </div>
+                        @endif
                         <div class="col-md-4">
                             <div class="mb-3">
                                 <label for="cost_price" class="form-label">
@@ -385,25 +401,57 @@ textarea.form-control:focus {
                                     {{ $brand->name }}
                                 </option>
                             @endforeach
-
-                                            <div class="mb-3">
-                                                <label for="department_id" class="form-label">Departamento</label>
-                                                <select class="form-select @error('department_id') is-invalid @enderror" id="department_id" name="department_id">
-                                                    <option value="">— Nenhum departamento selecionado —</option>
-                                                    @foreach($departments as $department)
-                                                        <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
-                                                            {{ $department->name }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
-                                                <small class="form-text text-muted">Selecione o departamento do produto (opcional)</small>
-                                                @error('department_id')
-                                                    <div class="invalid-feedback">{{ $message }}</div>
-                                                @enderror
-                                            </div>
                         </select>
-                        <small class="form-text text-muted">Selecione a marca do produto (opcional)</small>
                         @error('brand_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="department_id" class="form-label">Departamento</label>
+                        <select class="form-select @error('department_id') is-invalid @enderror" id="department_id" name="department_id">
+                            <option value="">— Nenhum departamento selecionado —</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department->id }}" {{ old('department_id') == $department->id ? 'selected' : '' }}>
+                                    {{ $department->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">Selecione o departamento do produto (opcional)</small>
+                        @error('department_id')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="homepage_section_ids" class="form-label">
+                            <i class="bi bi-house-door me-2"></i>Seções da Homepage
+                        </label>
+                        <select class="form-select @error('homepage_section_ids') is-invalid @enderror" 
+                                id="homepage_section_ids" 
+                                name="homepage_section_ids[]" 
+                                multiple 
+                                size="4"
+                                style="min-height: 100px;">
+                            <option value="">— Nenhuma seção selecionada —</option>
+                            @foreach($homepageSections as $section)
+                                <option value="{{ $section->id }}" 
+                                        @if(old('homepage_section_ids', []))
+                                            {{ in_array($section->id, old('homepage_section_ids', [])) ? 'selected' : '' }}
+                                        @endif>
+                                    {{ $section->title }}
+                                    @if(!$section->enabled)
+                                        <small class="text-muted">(Inativo)</small>
+                                    @endif
+                                </option>
+                            @endforeach
+                        </select>
+                        <small class="form-text text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Selecione as seções da homepage onde este produto deve aparecer. 
+                            Mantenha Ctrl/Cmd pressionado para selecionar múltiplas seções.
+                        </small>
+                        @error('homepage_section_ids')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -411,8 +459,26 @@ textarea.form-control:focus {
                     <!-- Imagens -->
                     <div class="mb-3">
                         <label for="images" class="form-label">Imagens do Produto</label>
-                        <input type="file" class="form-control @error('images') is-invalid @enderror" 
-                               id="images" name="images[]" multiple accept="image/*">
+                        
+                        <!-- Zona de colar imagens -->
+                        <div class="paste-zone" id="createProductPasteZone" style="border: 2px dashed #dee2e6; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 15px; transition: all 0.3s ease; cursor: pointer;">
+                            <div class="paste-content">
+                                <i class="bi bi-clipboard2-pulse" style="font-size: 2rem; color: #6c757d; margin-bottom: 10px;"></i>
+                                <p class="mb-2" style="color: #6c757d; font-weight: 500;">Arraste imagens aqui ou cole com Ctrl+V</p>
+                                <small class="text-muted">Ou clique para selecionar arquivos (múltiplo permitido)</small>
+                            </div>
+                            <input type="file" class="form-control @error('images') is-invalid @enderror" 
+                                   id="images" name="images[]" multiple accept="image/*"
+                                   style="display: none;">
+                        </div>
+                        
+                        <!-- Botões de seleção de imagens -->
+                        <div class="d-flex gap-2 mb-3">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="select-from-album-btn">
+                                <i class="bi bi-images me-1"></i> Selecionar do Álbum
+                            </button>
+                        </div>
+                        
                         @if(!empty($preselectedImages ?? []))
                             <div class="mt-2" id="preselected-images">
                                 <div class="small text-muted mb-2">Imagens selecionadas do álbum:</div>
@@ -433,6 +499,11 @@ textarea.form-control:focus {
                         @error('images')
                             <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
+                        
+                        <!-- Preview Container -->
+                        <div id="images-container" class="row g-2 mt-2">
+                            <!-- Preview images will be inserted here -->
+                        </div>
                     </div>
 
                     <!-- Informações Adicionais (Marca removida) -->
@@ -515,7 +586,7 @@ textarea.form-control:focus {
                 <div class="alert alert-info">
                     <h6><i class="bi bi-info-circle"></i> Informações Importantes</h6>
                     <ul class="mb-0">
-                        <li>O SKU deve ser único para cada produto</li>
+                        <li>O SKU será gerado automaticamente se não informado</li>
                         <li>Selecione pelo menos uma categoria</li>
                         <li>O preço B2B é opcional</li>
                         <li>As imagens devem ter boa qualidade</li>
@@ -527,26 +598,176 @@ textarea.form-control:focus {
     </div>
     @endsection
 
+    <!-- Modal para selecionar imagens do álbum -->
+    <div class="modal fade" id="albumImagesModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selecionar Imagem do Álbum</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="album-images-container" class="row g-3">
+                        <div class="col-12 text-center py-4">
+                            <i class="bi bi-hourglass-split"></i> Carregando álbuns...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function(){
-            // remove preselected album image before form submit
-            document.querySelectorAll('.remove-preselected').forEach(function(btn){
-                btn.addEventListener('click', function(e){
-                    const wrapper = btn.closest('[data-album-image-id]');
+<script>
+    document.addEventListener('DOMContentLoaded', function(){
+        // remove preselected album image before form submit
+        document.querySelectorAll('.remove-preselected').forEach(function(btn){
+            btn.addEventListener('click', function(e){
+                const wrapper = btn.closest('[data-album-image-id]');
+                if (!wrapper) return;
+                // remove the hidden input and the preview
+                const input = wrapper.querySelector('input[name="existing_image_ids[]"]');
+                if (input) input.remove();
+                wrapper.remove();
+                // if list becomes empty hide container
+                const list = document.getElementById('preselected-images-list');
+                if (list && list.children.length === 0) {
+                    const container = document.getElementById('preselected-images');
+                    if (container) container.classList.add('d-none');
+                }
+            });
+        });
+
+        // Funcionalidade do álbum de imagens
+        const selectFromAlbumBtn = document.getElementById('select-from-album-btn');
+        const albumImagesModal = document.getElementById('albumImagesModal');
+        
+        if (selectFromAlbumBtn && albumImagesModal) {
+            selectFromAlbumBtn.addEventListener('click', function() {
+                loadAlbumImages();
+                const modal = new bootstrap.Modal(albumImagesModal);
+                modal.show();
+            });
+        }
+
+        function loadAlbumImages() {
+            const container = document.getElementById('album-images-container');
+            container.innerHTML = '<div class="col-12 text-center py-4"><i class="bi bi-hourglass-split"></i> Carregando álbuns...</div>';
+            
+            fetch('{{ route("admin.products.album-images") }}')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        renderAlbumImages(data.albums);
+                    } else {
+                        container.innerHTML = '<div class="col-12 text-center py-4 text-danger">Erro ao carregar álbuns: ' + (data.message || 'Erro desconhecido') + '</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Erro:', error);
+                    container.innerHTML = '<div class="col-12 text-center py-4 text-danger">Erro ao carregar álbuns. Verifique o console.</div>';
+                });
+        }
+
+        function renderAlbumImages(albums) {
+            const container = document.getElementById('album-images-container');
+            container.innerHTML = '';
+            
+            if (albums.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center py-4 text-muted">Nenhum álbum encontrado</div>';
+                return;
+            }
+            
+            albums.forEach(album => {
+                if (album.images.length === 0) return;
+                
+                const albumCol = document.createElement('div');
+                albumCol.className = 'col-12';
+                albumCol.innerHTML = `
+                    <h6 class="mb-3">
+                        <i class="bi bi-folder me-2"></i>${album.title}
+                        <span class="badge bg-secondary ms-2">${album.images.length} imagens</span>
+                    </h6>
+                    <div class="row g-2" id="album-${album.id}-images">
+                        ${album.images.map(image => `
+                            <div class="col-md-2 col-sm-3 col-4">
+                                <div class="position-relative album-image-item" style="cursor: pointer;" 
+                                     data-image-id="${image.id}" 
+                                     data-image-url="${image.url}" 
+                                     data-image-path="${image.path}"
+                                     onclick="selectAlbumImage(${image.id}, '${image.url}', '${image.path}')">
+                                    <img src="${image.url}" class="img-thumbnail w-100" style="height: 80px; object-fit: cover;">
+                                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 text-white" style="opacity: 0; transition: opacity 0.2s;">
+                                        <i class="bi bi-check-circle fs-4"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                container.appendChild(albumCol);
+            });
+        }
+
+        window.selectAlbumImage = function(imageId, imageUrl, imagePath) {
+            // Verificar se a imagem já foi selecionada
+            const existingImage = document.querySelector(`[data-album-image-id="${imageId}"]`);
+            if (existingImage) {
+                alert('Esta imagem já foi selecionada!');
+                return;
+            }
+            
+            // Adicionar à lista de imagens pré-selecionadas
+            const preselectedContainer = document.getElementById('preselected-images');
+            const preselectedList = document.getElementById('preselected-images-list');
+            
+            if (preselectedContainer) {
+                preselectedContainer.classList.remove('d-none');
+            }
+            
+            const imageItem = document.createElement('div');
+            imageItem.className = 'position-relative border rounded';
+            imageItem.setAttribute('data-album-image-id', imageId);
+            imageItem.style.cssText = 'width:100px; height:100px; overflow:hidden';
+            imageItem.innerHTML = `
+                <img src="${imageUrl}" class="w-100 h-100" style="object-fit:cover;" loading="lazy">
+                <button type="button" class="btn btn-sm btn-outline-danger position-absolute remove-preselected" style="top:6px; right:6px; padding:4px 6px">Remover</button>
+                <input type="hidden" name="existing_image_ids[]" value="${imageId}">
+            `;
+            
+            if (preselectedList) {
+                preselectedList.appendChild(imageItem);
+            }
+            
+            // Adicionar evento de remover ao novo botão
+            const removeBtn = imageItem.querySelector('.remove-preselected');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', function(e) {
+                    const wrapper = this.closest('[data-album-image-id]');
                     if (!wrapper) return;
-                    // remove the hidden input and the preview
                     const input = wrapper.querySelector('input[name="existing_image_ids[]"]');
                     if (input) input.remove();
                     wrapper.remove();
-                    // if list becomes empty hide container
+                    
                     const list = document.getElementById('preselected-images-list');
                     if (list && list.children.length === 0) {
                         const container = document.getElementById('preselected-images');
                         if (container) container.classList.add('d-none');
                     }
                 });
-            });
-        });
-    </script>
-    @endpush
+            }
+            
+            // Fechar modal
+            const modal = bootstrap.Modal.getInstance(albumImagesModal);
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Feedback visual
+            showToast('success', 'Imagem selecionada com sucesso!', 'Sucesso');
+        };
+    });
+</script>
+
+<script src="{{ asset('js/admin-product-edit.js') }}?v={{ filemtime(public_path('js/admin-product-edit.js')) }}"></script>
+@endpush

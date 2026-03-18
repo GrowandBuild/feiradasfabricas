@@ -48,6 +48,44 @@
             </div>
         </div>
 
+        {{-- Seção B2B - Configurações de Venda B2B --}}
+        <div class="col-lg-6 mb-4">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header d-flex align-items-center justify-content-between">
+                    <h6 class="card-title mb-0"><i class="bi bi-building me-2"></i>Venda B2B</h6>
+                    <small class="text-muted">Configurações de vendas para empresas</small>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="form-check form-switch mb-3">
+                                <input class="form-check-input" type="checkbox" id="b2b_enabled" name="b2b_enabled" {{ setting('b2b_enabled', false) ? 'checked' : '' }}>
+                                <label class="form-check-label fw-bold" for="b2b_enabled">
+                                    <i class="bi bi-toggle-on me-1"></i>Ativar Funções B2B
+                                </label>
+                                <div class="form-text text-muted">
+                                    Quando ativado, exibe campos e funcionalidades específicas para vendas B2B (Business to Business).
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12" id="b2b_settings" style="{{ setting('b2b_enabled', false) ? '' : 'display: none;' }}">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Configurações B2B:</strong>
+                                <ul class="mb-0 mt-2">
+                                    <li>Preços B2B ficam disponíveis no cadastro de produtos</li>
+                                    <li>Clientes podem ser cadastrados como pessoa jurídica</li>
+                                    <li>Descontos especiais para vendas empresariais</li>
+                                    <li>Campos adicionais no checkout para empresas</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Seção PWA - Configuração de Ícones --}}
         <div class="col-12 mt-4">
             <div class="card border-0 shadow-sm">
@@ -1577,6 +1615,20 @@ function checkSyncStatus() {
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('syncStatus')) {
         setTimeout(checkSyncStatus, 500);
+    }
+    
+    // Controle do toggle B2B
+    const b2bToggle = document.getElementById('b2b_enabled');
+    const b2bSettings = document.getElementById('b2b_settings');
+    
+    if (b2bToggle && b2bSettings) {
+        b2bToggle.addEventListener('change', function() {
+            if (this.checked) {
+                b2bSettings.style.display = 'block';
+            } else {
+                b2bSettings.style.display = 'none';
+            }
+        });
     }
 });
 </script>

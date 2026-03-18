@@ -519,21 +519,22 @@
     }
 
     .product-card-modern {
-        background: white;
-        border-radius: 16px;
+        background: #fff;
+        border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 1px solid var(--border-color, #e2e8f0);
-        display: flex;
-        flex-direction: column;
+        border: 1px solid rgba(15, 23, 42, 0.08);
+        box-shadow: 0 10px 24px rgba(2, 6, 23, 0.06);
+        transition: transform 220ms ease, box-shadow 220ms ease, border-color 220ms ease;
         height: 100%;
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        will-change: transform;
     }
 
     .product-card-modern:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        border-color: var(--secondary-color, #ff6b35);
+        transform: translateY(-6px);
+        box-shadow: 0 16px 40px rgba(2, 6, 23, 0.10);
+        border-color: rgba(255, 107, 53, 0.45);
     }
 
     .product-card-modern.product-unavailable {
@@ -543,9 +544,18 @@
     .product-image-container {
         position: relative;
         width: 100%;
-        padding-top: 100%;
-        background: #f8f9fa;
+        aspect-ratio: 1 / 1;
         overflow: hidden;
+        border-radius: var(--radius);
+        background: #f8f9fa;
+        /* Ensure proper container behavior */
+        display: block;
+        flex-shrink: 0;
+    }
+
+    /* Fallback para navegadores sem aspect-ratio */
+    @supports not (aspect-ratio: 1 / 1) {
+        .product-image-container { padding-top: 100%; }
     }
 
     .product-image-link {
@@ -555,18 +565,64 @@
         width: 100%;
         height: 100%;
         display: block;
+        line-height: 0;
+        overflow: hidden;
+        z-index: 1; /* sempre acima do fundo */
+    }
+
+    /* Preenchimento bonito sem cortar: background “blur” da própria imagem */
+    .product-image-container.has-blur-bg::before{
+        content:'';
+        position:absolute;
+        inset:-12%;
+        background-image: var(--card-img);
+        background-size: cover;
+        background-position: center;
+        filter: blur(18px) saturate(1.08);
+        transform: scale(1.06);
+        opacity: var(--blur-opacity, 0.28);
+        pointer-events: none;
+        z-index: 0; /* sempre atrás */
     }
 
     .product-image {
+        position: absolute;
+        inset: 0;
         width: 100%;
         height: 100%;
-        object-fit: cover;
-        transition: transform 0.4s ease;
+        /* Default: preenchido (tipo e-commerce) */
+        object-fit: cover !important;
+        object-position: center !important;
+        padding: 0;
+        background: transparent;
+        display: block;
+        transform: scale(1.001);
+        transition: transform 300ms ease;
+        /* Force proper image display */
+        -webkit-object-fit: cover !important;
+        -moz-object-fit: cover !important;
+        -o-object-fit: cover !important;
     }
 
-    .product-card-modern:hover .product-image {
-        transform: scale(1.05);
+    .product-card-modern:hover .product-image { transform: scale(1.02); }
+
+    /* Fit modes (definidos via JS com base na proporção da imagem) */
+    .product-image-container.fit-contain .product-image { object-fit: contain !important; }
+    .product-image-container.fit-cover .product-image { object-fit: cover !important; }
+    
+    /* Force all product images to use cover by default - override any conflicting styles */
+    .product-image-container .product-image {
+        object-fit: cover !important;
+        object-position: center !important;
+        width: 100% !important;
+        height: 100% !important;
     }
+
+    /* Ajuste do blur conforme modo */
+    .product-image-container.fit-cover { --blur-opacity: 0.12; }
+    .product-image-container.fit-contain { --blur-opacity: 0.26; }
+
+    /* Removido ::after (evita overlay/gap inesperado) */
 
     .product-unavailable-overlay {
         position: absolute;
@@ -604,6 +660,13 @@
         font-size: 0.75rem;
         z-index: 3;
         box-shadow: 0 2px 8px rgba(239, 68, 68, 0.4);
+    }
+
+    /* Small “glass” top actions */
+    .admin-actions-product a,
+    .admin-actions-product button{
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
     }
 
     .admin-actions-product {
@@ -660,21 +723,18 @@
     }
 
     .product-info {
-        padding: 1.25rem;
-        flex: 1;
+        padding: 14px 14px 10px;
         display: flex;
         flex-direction: column;
+        gap: 8px;
+        min-height: 118px;
     }
 
-    .product-title-link {
-        text-decoration: none;
-        color: inherit;
-        margin-bottom: 0.75rem;
-    }
+    .product-title-link { text-decoration: none; color: inherit; }
 
     .product-title {
-        font-size: 1rem;
-        font-weight: 600;
+        font-size: 0.98rem;
+        font-weight: 800;
         color: var(--text-dark, #1e293b);
         margin: 0;
         line-height: 1.4;
@@ -689,9 +749,7 @@
         color: var(--secondary-color, #ff6b35);
     }
 
-    .product-price-info {
-        margin-bottom: 0.75rem;
-    }
+    .product-price-info { margin: 0; }
 
     .price-row {
         display: flex;
@@ -701,7 +759,7 @@
     }
 
     .price-current {
-        font-size: 1.5rem;
+        font-size: 1.35rem;
         font-weight: 700;
         color: var(--secondary-color, #ff6b35);
     }
@@ -712,9 +770,7 @@
         text-decoration: line-through;
     }
 
-    .product-status {
-        margin-bottom: 1rem;
-    }
+    .product-status { margin: 0; }
 
     .status-badge {
         display: inline-flex;
@@ -736,18 +792,21 @@
     }
 
     .product-actions {
-        padding: 0 1.25rem 1.25rem;
-        display: flex;
-        gap: 0.75rem;
+        padding: 12px 14px 14px;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        border-top: 1px solid rgba(15, 23, 42, 0.06);
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98));
     }
 
     .btn-product-view,
     .btn-product-add,
     .btn-product-disabled {
         flex: 1;
-        padding: 0.75rem 1rem;
-        border-radius: 8px;
-        font-weight: 600;
+        padding: 10px 12px;
+        border-radius: 12px;
+        font-weight: 700;
         font-size: 0.875rem;
         text-align: center;
         text-decoration: none;
@@ -757,16 +816,17 @@
         transition: all 0.3s ease;
         border: none;
         cursor: pointer;
+        min-height: 44px;
     }
 
     .btn-product-view {
-        background: white;
+        background: #ffffff;
         color: var(--text-dark, #1e293b);
-        border: 2px solid var(--border-color, #e2e8f0);
+        border: 2px solid rgba(15, 23, 42, 0.10);
     }
 
     .btn-product-view:hover {
-        background: var(--border-color, #e2e8f0);
+        background: rgba(15, 23, 42, 0.04);
         color: var(--text-dark, #1e293b);
     }
 
@@ -945,8 +1005,8 @@
         }
 
         .product-actions {
-            padding: 0 1rem 1rem;
-            flex-direction: column;
+            padding: 10px 12px 12px;
+            grid-template-columns: 1fr;
         }
 
         .btn-product-view,
@@ -955,7 +1015,7 @@
         }
 
         .price-current {
-            font-size: 1.25rem;
+            font-size: 1.2rem;
         }
     }
 
@@ -1021,6 +1081,27 @@
             });
         });
         
+    });
+
+    // Product cards: apply blur background only - keep object-fit: cover
+    document.addEventListener('DOMContentLoaded', function() {
+        document.querySelectorAll('.product-image').forEach(function(img){
+            function applyBg(){
+                try {
+                    const container = img.closest('.product-image-container');
+                    if (!container) return;
+                    const src = img.currentSrc || img.src;
+                    if (!src) return;
+                    container.style.setProperty('--card-img', `url("${src}")`);
+                    container.classList.add('has-blur-bg');
+                    // Always use cover for consistent e-commerce display
+                    container.classList.remove('fit-contain');
+                    container.classList.add('fit-cover');
+                } catch (e) {}
+            }
+            if (img.complete) applyBg();
+            img.addEventListener('load', applyBg);
+        });
     });
     
     // Botão de excluir produto

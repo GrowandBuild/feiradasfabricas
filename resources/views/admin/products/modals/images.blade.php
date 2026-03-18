@@ -51,11 +51,19 @@
                         </div>
                         
                         <!-- Input de Nova Imagem de Destaque -->
-                        <input type="file" 
-                               class="form-control" 
-                               id="featuredImageInput" 
-                               name="featured_image" 
-                               accept="image/*">
+                        <div class="paste-zone" id="featuredPasteZone" style="border: 2px dashed #dee2e6; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 15px; transition: all 0.3s ease; cursor: pointer;">
+                            <div class="paste-content">
+                                <i class="bi bi-clipboard2-pulse" style="font-size: 2rem; color: #6c757d; margin-bottom: 10px;"></i>
+                                <p class="mb-2" style="color: #6c757d; font-weight: 500;">Arraste uma imagem aqui ou cole com Ctrl+V</p>
+                                <small class="text-muted">Ou clique para selecionar arquivo</small>
+                            </div>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="featuredImageInput" 
+                                   name="featured_image" 
+                                   accept="image/*"
+                                   style="display: none;">
+                        </div>
                         <small class="text-muted">Deixe em branco para manter a imagem atual. Formatos: JPG, PNG, GIF, WEBP, AVIF. Máximo: 10MB</small>
                         
                         <!-- Preview da Nova Imagem de Destaque -->
@@ -82,12 +90,20 @@
                         </div>
                         
                         <!-- Input de Novas Imagens Adicionais -->
-                        <input type="file" 
-                               class="form-control" 
-                               id="additionalImagesInput" 
-                               name="additional_images[]" 
-                               multiple 
-                               accept="image/*">
+                        <div class="paste-zone" id="additionalPasteZone" style="border: 2px dashed #dee2e6; border-radius: 8px; padding: 20px; text-align: center; margin-bottom: 15px; transition: all 0.3s ease; cursor: pointer;">
+                            <div class="paste-content">
+                                <i class="bi bi-clipboard2-pulse" style="font-size: 2rem; color: #6c757d; margin-bottom: 10px;"></i>
+                                <p class="mb-2" style="color: #6c757d; font-weight: 500;">Arraste imagens aqui ou cole com Ctrl+V</p>
+                                <small class="text-muted">Ou clique para selecionar arquivos (múltiplo permitido)</small>
+                            </div>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="additionalImagesInput" 
+                                   name="additional_images[]" 
+                                   multiple 
+                                   accept="image/*"
+                                   style="display: none;">
+                        </div>
                         <small class="text-muted">Você pode selecionar múltiplas imagens. Formatos aceitos: JPG, PNG, GIF, WEBP, AVIF (máx. 10MB cada)</small>
                         
                         <!-- Preview das Novas Imagens Adicionais -->
@@ -119,21 +135,48 @@ document.addEventListener('DOMContentLoaded', function() {
     // Utilitário para limpar o formulário/modal
     function resetImagesModal() {
         document.getElementById('imagesForm').reset();
-        [
+        
+        // Não limpar os previews de imagens coladas, apenas esconder os containers
+        const containersToHide = [
             'currentFeaturedImageContainer',
             'noFeaturedImageAlert',
-            'newFeaturedImagePreview',
             'currentAdditionalImagesContainer',
-            'noAdditionalImagesAlert',
-            'newAdditionalImagesPreview'
-        ].forEach(id => {
+            'noAdditionalImagesAlert'
+        ];
+        
+        containersToHide.forEach(id => {
             const el = document.getElementById(id);
             if (el) el.style.display = 'none';
         });
-        ['currentAdditionalImagesList', 'newAdditionalImagesList'].forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.innerHTML = '';
-        });
+        
+        // Limpar apenas previews de arquivos selecionados (não colados)
+        const featuredPreview = document.getElementById('newFeaturedImagePreview');
+        if (featuredPreview) {
+            // Manter se tiver imagem colada
+            const hasPastedImage = featuredPreview.querySelector('[data-pasted-image]') || 
+                                   featuredPreview.innerHTML.includes('Colada');
+            if (!hasPastedImage) {
+                featuredPreview.style.display = 'none';
+                featuredPreview.innerHTML = '';
+            }
+        }
+        
+        const additionalPreview = document.getElementById('newAdditionalImagesList');
+        if (additionalPreview) {
+            // Remover apenas previews que não são de imagens coladas
+            const allItems = additionalPreview.querySelectorAll('.col-md-3');
+            allItems.forEach(item => {
+                if (!item.hasAttribute('data-pasted-image')) {
+                    item.remove();
+                }
+            });
+            
+            // Esconder container se não tiver imagens coladas
+            const remainingItems = additionalPreview.querySelectorAll('[data-pasted-image="true"]');
+            if (remainingItems.length === 0) {
+                document.getElementById('newAdditionalImagesPreview').style.display = 'none';
+            }
+        }
     }
 
     // Preview de imagem
@@ -143,6 +186,15 @@ document.addEventListener('DOMContentLoaded', function() {
         input.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
+            
+            // Limpar previews anteriores apenas se não for imagem colada
+            const previewContainer = document.getElementById(previewContainerId);
+            const hasPastedImage = previewContainer.innerHTML.includes('Colada');
+            
+            if (!hasPastedImage) {
+                previewContainer.innerHTML = '';
+            }
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 let preview = document.getElementById(previewImgId);
@@ -177,7 +229,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const files = e.target.files;
             const previewContainer = document.getElementById(previewContainerId);
             const previewList = document.getElementById(previewListId);
+            
+            // Manter apenas imagens coladas
+            const pastedImages = previewList.querySelectorAll('[data-pasted-image="true"]');
             previewList.innerHTML = '';
+            pastedImages.forEach(item => previewList.appendChild(item));
+            
             if (files && files.length > 0) {
                 previewContainer.style.display = 'block';
                 Array.from(files).forEach((file, index) => {
@@ -189,7 +246,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             col.innerHTML = `
                                 <div class="position-relative">
                                     <img src="${e.target.result}" class="img-thumbnail" style="width: 100%; height: 100px; object-fit: cover;">
-                                    <span class="badge bg-success position-absolute top-0 start-0">Nova</span>
+                                    <span class="badge bg-info position-absolute top-0 start-0">Nova</span>
                                 </div>
                             `;
                             previewList.appendChild(col);
@@ -198,7 +255,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     }
                 });
             } else {
-                previewContainer.style.display = 'none';
+                // Esconder apenas se não tiver imagens coladas
+                const hasPastedImages = previewList.querySelectorAll('[data-pasted-image="true"]').length > 0;
+                if (!hasPastedImages) {
+                    previewContainer.style.display = 'none';
+                }
             }
         });
     }
@@ -207,20 +268,339 @@ document.addEventListener('DOMContentLoaded', function() {
     const imagesModal = document.getElementById('imagesModal');
     if (imagesModal) {
         imagesModal.addEventListener('show.bs.modal', function(event) {
+            console.log('🔍 Modal show event triggered');
             const button = event.relatedTarget;
             const productId = button.getAttribute('data-product-id');
             const productName = button.getAttribute('data-product-name');
             document.getElementById('imagesModalLabel').innerHTML = `<i class="bi bi-images me-2"></i>Gerenciar Imagens - ${productName}`;
             document.getElementById('imagesProductId').value = productId;
+            
+            // Limpar apenas containers de imagens existentes, não os previews
+            ['currentFeaturedImageContainer', 'currentAdditionalImagesContainer'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            ['noFeaturedImageAlert', 'noAdditionalImagesAlert'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            
             loadProductImages(productId);
         });
-        imagesModal.addEventListener('hidden.bs.modal', resetImagesModal);
+        
+        // Reset apenas quando o modal é fechado, não quando é aberto
+        imagesModal.addEventListener('hidden.bs.modal', function() {
+            console.log('🔍 Modal hidden event triggered - resetting');
+            resetImagesModal();
+        });
     }
 
     // Preview listeners
     previewImage('featuredImageInput', 'newFeaturedImagePreview', 'new-featured-image-preview', 'new-featured-image-success');
     previewMultipleImages('additionalImagesInput', 'newAdditionalImagesPreview', 'newAdditionalImagesList');
+
+    // Funcionalidade de colar imagens
+    initPasteFunctionality();
 });
+
+// Funcionalidade de colar imagens
+function initPasteFunctionality() {
+    // Ctrl+V GLOBAL - Prático e Rápido (funciona quando modal está aberto)
+    document.addEventListener('paste', function(e) {
+        const modal = document.getElementById('imagesModal');
+        if (modal && modal.classList.contains('show')) {
+            
+            const items = e.clipboardData.items;
+            for (let i = 0; i < items.length; i++) {
+                if (items[i].type.indexOf('image') !== -1) {
+                    e.preventDefault();
+                    
+                    const file = items[i].getAsFile();
+                    const additionalInput = document.getElementById('additionalImagesInput');
+                    
+                    if (additionalInput) {
+                        // Adicionar arquivo ao input de imagens adicionais
+                        const dt = new DataTransfer();
+                        Array.from(additionalInput.files).forEach(f => dt.items.add(f));
+                        dt.items.add(file);
+                        additionalInput.files = dt.files;
+                        
+                        // Mostrar preview
+                        handleImageFile(file, 'additional');
+                        
+                        // Feedback visual rápido
+                        const zone = document.getElementById('additionalPasteZone');
+                        if (zone) {
+                            zone.style.borderColor = '#10b981';
+                            setTimeout(() => {
+                                zone.style.borderColor = '#dee2e6';
+                            }, 1500);
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    });
+    
+    // Zona de colar para imagem de destaque
+    const featuredPasteZone = document.getElementById('featuredPasteZone');
+    const featuredInput = document.getElementById('featuredImageInput');
+    
+    if (featuredPasteZone && featuredInput) {
+        // Click para abrir o file input
+        featuredPasteZone.addEventListener('click', () => {
+            featuredInput.click();
+        });
+        
+        // Drag and drop
+        featuredPasteZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            featuredPasteZone.style.borderColor = '#667eea';
+            featuredPasteZone.style.backgroundColor = 'rgba(102, 126, 234, 0.05)';
+        });
+        
+        featuredPasteZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            featuredPasteZone.style.borderColor = '#dee2e6';
+            featuredPasteZone.style.backgroundColor = 'transparent';
+        });
+        
+        featuredPasteZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            featuredPasteZone.style.borderColor = '#dee2e6';
+            featuredPasteZone.style.backgroundColor = 'transparent';
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type.startsWith('image/')) {
+                featuredInput.files = files;
+                handleImageFile(files[0], 'featured');
+            }
+        });
+    }
+    
+    // Zona de colar para imagens adicionais
+    const additionalPasteZone = document.getElementById('additionalPasteZone');
+    const additionalInput = document.getElementById('additionalImagesInput');
+    
+    if (additionalPasteZone && additionalInput) {
+        // Click para abrir o file input
+        additionalPasteZone.addEventListener('click', () => {
+            additionalInput.click();
+        });
+        
+        // Drag and drop
+        additionalPasteZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            additionalPasteZone.style.borderColor = '#667eea';
+            additionalPasteZone.style.backgroundColor = 'rgba(102, 126, 234, 0.05)';
+        });
+        
+        additionalPasteZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            additionalPasteZone.style.borderColor = '#dee2e6';
+            additionalPasteZone.style.backgroundColor = 'transparent';
+        });
+        
+        additionalPasteZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            additionalPasteZone.style.borderColor = '#dee2e6';
+            additionalPasteZone.style.backgroundColor = 'transparent';
+            
+            const files = e.dataTransfer.files;
+            const imageFiles = Array.from(files).filter(file => file.type.startsWith('image/'));
+            if (imageFiles.length > 0) {
+                const dataTransfer = new DataTransfer();
+                imageFiles.forEach(file => dataTransfer.items.add(file));
+                additionalInput.files = dataTransfer.files;
+                
+                // Mostrar preview para cada imagem
+                imageFiles.forEach(file => handleImageFile(file, 'additional'));
+            }
+        });
+    }
+}
+
+// Função para handle paste
+function handlePaste(e, type) {
+    console.log('🔍 Paste event triggered', { type, items: e.clipboardData.items.length });
+    
+    const items = e.clipboardData.items;
+    let foundImage = false;
+    
+    for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        console.log('🔍 Item:', item.type, item.kind);
+        
+        if (item.type.indexOf('image') !== -1) {
+            foundImage = true;
+            const file = item.getAsFile();
+            console.log('🔍 Image file found:', file.name, file.size);
+            
+            if (type === 'featured') {
+                const featuredInput = document.getElementById('featuredImageInput');
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                featuredInput.files = dataTransfer.files;
+                console.log('🔍 Featured input updated');
+                handleImageFile(file, 'featured');
+            } else {
+                const additionalInput = document.getElementById('additionalImagesInput');
+                const existingFiles = Array.from(additionalInput.files || []);
+                const dataTransfer = new DataTransfer();
+                
+                // Adicionar arquivos existentes
+                existingFiles.forEach(existingFile => dataTransfer.items.add(existingFile));
+                // Adicionar novo arquivo
+                dataTransfer.items.add(file);
+                
+                additionalInput.files = dataTransfer.files;
+                console.log('🔍 Additional input updated, total files:', additionalInput.files.length);
+                handleImageFile(file, 'additional');
+            }
+            
+            // Mostrar feedback visual
+            showPasteFeedback(type === 'featured' ? 'featuredPasteZone' : 'additionalPasteZone', true);
+            
+            break;
+        }
+    }
+    
+    if (!foundImage) {
+        console.log('🔍 No image found in clipboard');
+        showPasteFeedback(type === 'featured' ? 'featuredPasteZone' : 'additionalPasteZone', false);
+    }
+}
+
+// Função para processar arquivo de imagem
+function handleImageFile(file, type) {
+    console.log('🔍 handleImageFile called', { type, fileName: file.name, fileSize: file.size });
+    
+    if (file.size > 10 * 1024 * 1024) {
+        alert('❌ A imagem é muito grande. Tamanho máximo: 10MB');
+        return;
+    }
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        console.log('🔍 FileReader loaded', { type, result: e.target.result ? 'data loaded' : 'no data' });
+        
+        if (type === 'featured') {
+            // Mostrar preview da imagem de destaque
+            const previewContainer = document.getElementById('newFeaturedImagePreview');
+            console.log('🔍 Featured preview container:', previewContainer);
+            
+            if (previewContainer) {
+                previewContainer.style.display = 'block';
+                
+                // Preservar conteúdo existente e adicionar novo
+                const existingContent = previewContainer.innerHTML;
+                console.log('🔍 Existing content length:', existingContent.length);
+                
+                previewContainer.innerHTML = `
+                    <div class="position-relative" data-pasted-image="true">
+                        <img src="${e.target.result}" class="img-thumbnail" style="max-width: 300px;">
+                        <span class="badge bg-success position-absolute top-0 start-0">Colada</span>
+                        <div class="small text-success mt-1">
+                            <i class="bi bi-check-circle"></i> Imagem colada: ${file.name}
+                        </div>
+                    </div>
+                `;
+                
+                // Garantir que o container não seja escondido
+                previewContainer.style.display = 'block';
+                previewContainer.style.visibility = 'visible';
+                console.log('🔍 Featured preview updated');
+            }
+        } else {
+            // Adicionar ao preview de imagens adicionais
+            const previewList = document.getElementById('newAdditionalImagesList');
+            const previewContainer = document.getElementById('newAdditionalImagesPreview');
+            console.log('🔍 Additional preview elements:', { previewList, previewContainer });
+            
+            if (previewList && previewContainer) {
+                // Garantir que o container esteja visível
+                previewContainer.style.display = 'block';
+                previewContainer.style.visibility = 'visible';
+                
+                const col = document.createElement('div');
+                col.className = 'col-md-3 mb-2';
+                col.setAttribute('data-pasted-image', 'true'); // Marcar como imagem colada
+                col.innerHTML = `
+                    <div class="position-relative">
+                        <img src="${e.target.result}" class="img-thumbnail" style="width: 100%; height: 100px; object-fit: cover;">
+                        <span class="badge bg-success position-absolute top-0 start-0">Colada</span>
+                        <div class="small text-success mt-1">
+                            <i class="bi bi-check-circle"></i> ${file.name}
+                        </div>
+                    </div>
+                `;
+                
+                previewList.appendChild(col);
+                console.log('🔍 Additional preview appended, total items:', previewList.children.length);
+            }
+        }
+    };
+    
+    reader.onerror = function(e) {
+        console.error('🔍 FileReader error:', e);
+    };
+    
+    reader.readAsDataURL(file);
+    console.log('🔍 FileReader started');
+}
+
+// Função para mostrar feedback visual
+function showPasteFeedback(zoneId, success) {
+    const zone = document.getElementById(zoneId);
+    
+    // Salvar o conteúdo original ANTES de modificar
+    const originalContent = zone.innerHTML;
+    
+    if (success) {
+        zone.style.borderColor = '#10b981';
+        zone.style.backgroundColor = 'rgba(16, 185, 129, 0.05)';
+        
+        // Modificar apenas o conteúdo visual, mantendo o input
+        const pasteContent = zone.querySelector('.paste-content');
+        if (pasteContent) {
+            pasteContent.innerHTML = `
+                <i class="bi bi-check-circle" style="font-size: 2rem; color: #10b981; margin-bottom: 10px;"></i>
+                <p class="mb-2" style="color: #10b981; font-weight: 500;">Imagem colada com sucesso!</p>
+                <small class="text-muted">Arraste outra imagem ou cole com Ctrl+V</small>
+            `;
+        }
+    } else {
+        zone.style.borderColor = '#ef4444';
+        zone.style.backgroundColor = 'rgba(239, 68, 68, 0.05)';
+        
+        const pasteContent = zone.querySelector('.paste-content');
+        if (pasteContent) {
+            pasteContent.innerHTML = `
+                <i class="bi bi-x-circle" style="font-size: 2rem; color: #ef4444; margin-bottom: 10px;"></i>
+                <p class="mb-2" style="color: #ef4444; font-weight: 500;">Nenhuma imagem encontrada na área de transferência</p>
+                <small class="text-muted">Copie uma imagem e tente novamente</small>
+            `;
+        }
+    }
+    
+    // Restaurar apenas o texto, sem afetar o input
+    setTimeout(() => {
+        zone.style.borderColor = '#dee2e6';
+        zone.style.backgroundColor = 'transparent';
+        
+        const pasteContent = zone.querySelector('.paste-content');
+        if (pasteContent) {
+            pasteContent.innerHTML = `
+                <i class="bi bi-clipboard2-pulse" style="font-size: 2rem; color: #6c757d; margin-bottom: 10px;"></i>
+                <p class="mb-2" style="color: #6c757d; font-weight: 500;">Arraste uma imagem aqui ou cole com Ctrl+V</p>
+                <small class="text-muted">Ou clique para selecionar arquivo</small>
+            `;
+        }
+        
+        console.log('🔍 Feedback visual restaurado, input mantido');
+    }, 2000);
+}
 
 function loadProductImages(productId) {
     fetch(`/admin/products/${productId}/images`)

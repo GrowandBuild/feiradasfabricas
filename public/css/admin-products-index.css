@@ -9,6 +9,12 @@
     --primary-gradient: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
     --primary-gradient-hover: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
     
+    /* Nova paleta de cores modernas para hero section */
+    --hero-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --hero-gradient-alt: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    --hero-gradient-dark: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+    --hero-gradient-vibrant: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+    
     --success-color: #10b981;
     --warning-color: #f59e0b;
     --danger-color: #ef4444;
@@ -42,16 +48,44 @@
 }
 
 /* ============================================
-   Hero Section
+   Hero Section - Enhanced Contrast with High Specificity
    ============================================ */
 
+.products-hero .hero-title {
+    color: white !important;
+    font-weight: 700 !important;
+    font-size: 1.75rem !important;
+    margin-bottom: 0.5rem !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
+}
+
+.products-hero .hero-subtitle {
+    color: rgba(255, 255, 255, 0.98) !important;
+    font-size: 0.95rem !important;
+    margin: 0 !important;
+    font-weight: 500 !important;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8) !important;
+}
+
+.products-hero .hero-subtitle strong {
+    color: white !important;
+    font-weight: 700 !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9) !important;
+}
+
+.products-hero .hero-subtitle i {
+    color: rgba(255, 255, 255, 0.9) !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+}
+
 .products-hero {
-    background: var(--primary-gradient);
+    background: var(--hero-gradient);
     border-radius: var(--radius-lg);
-    box-shadow: var(--shadow-lg);
+    box-shadow: var(--shadow-xl);
     position: relative;
     overflow: hidden;
     margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .products-hero::before {
@@ -61,8 +95,8 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
-    opacity: 0.3;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.15"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.15"/><circle cx="50" cy="10" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+    opacity: 0.4;
     pointer-events: none;
 }
 
@@ -102,23 +136,9 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25), 0 3px 8px rgba(0, 0, 0, 0.2);
 }
 
-.hero-title {
-    color: white;
-    font-weight: 700;
-    font-size: 1.75rem;
-    margin-bottom: 0.5rem;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.hero-subtitle {
-    color: rgba(255, 255, 255, 0.95);
-    font-size: 0.95rem;
-    margin: 0;
-}
-
 .hero-btn {
     background: white;
-    color: var(--primary-orange);
+    color: #667eea;
     border: none;
     font-weight: 600;
     padding: 0.625rem 1.5rem;
@@ -134,21 +154,154 @@
 .hero-btn:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-lg);
-    color: var(--primary-orange-dark);
+    color: #764ba2;
 }
 
-.hero-btn-outline {
-    background: rgba(255, 255, 255, 0.2);
-    color: white;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+.products-hero .hero-btn-outline {
+    background: rgba(255, 255, 255, 0.25) !important;
+    color: white !important;
+    border: 2px solid rgba(255, 255, 255, 0.5) !important;
+    backdrop-filter: blur(10px) !important;
+    font-weight: 700 !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+    transition: var(--transition) !important;
+}
+
+.products-hero .hero-btn-outline:hover {
+    background: rgba(255, 255, 255, 0.35) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.7) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: var(--shadow-lg) !important;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9) !important;
+}
+
+.products-hero .section-toggle-btn {
+    background: rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    border: 2px solid rgba(255, 255, 255, 0.6) !important;
+    font-weight: 700 !important;
+    backdrop-filter: blur(10px) !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+    transition: var(--transition) !important;
+}
+
+.products-hero .section-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.4) !important;
+    color: white !important;
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-md) !important;
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* Enhanced button layout for hero section */
+.products-hero .d-flex.gap-2 > .hero-btn,
+.products-hero .d-flex.gap-2 > .hero-btn-outline {
+    min-width: 120px;
+    max-width: fit-content;
+}
+
+.products-hero .d-flex.gap-2 > .section-toggle-btn {
+    min-width: auto;
+    max-width: fit-content;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .products-hero .d-flex.gap-2 > .hero-btn,
+    .products-hero .d-flex.gap-2 > .hero-btn-outline {
+        min-width: 100px;
+        padding: 0.5rem 1rem;
+    }
+}
+
+/* Enhanced dropdown styling for hero section */
+.products-hero .btn-white {
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: var(--gray-700) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    font-weight: 600 !important;
     backdrop-filter: blur(10px);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    transition: var(--transition);
 }
 
-.hero-btn-outline:hover {
-    background: rgba(255, 255, 255, 0.3);
+.products-hero .btn-white:hover {
+    background: white !important;
+    color: var(--gray-800) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+.products-hero .dropdown-menu {
+    background: rgba(255, 255, 255, 0.98) !important;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(102, 126, 234, 0.2);
+    box-shadow: var(--shadow-lg);
+}
+
+.products-hero .dropdown-item {
+    color: var(--gray-700);
+    font-weight: 500;
+    transition: var(--transition);
+}
+
+.products-hero .dropdown-item:hover {
+    background: #667eea;
     color: white;
 }
 
+/* ============================================
+   Opções de Temas - Descomente o tema desejado
+   ============================================ */
+
+/* Tema 1: Roxo Elegante (PADRÃO) */
+.products-hero {
+    background: var(--hero-gradient);
+}
+
+/* Tema 2: Rosa Vibrante */
+/*
+.products-hero {
+    background: var(--hero-gradient-alt);
+}
+.hero-btn {
+    color: #f093fb;
+}
+.hero-btn:hover {
+    color: #f5576c;
+}
+*/
+
+/* Tema 3: Escuro Profissional */
+/*
+.products-hero {
+    background: var(--hero-gradient-dark);
+}
+.hero-btn {
+    color: #4a5568;
+}
+.hero-btn:hover {
+    color: #2d3748;
+}
+*/
+
+/* Tema 4: Tropical Vibrante */
+/*
+.products-hero {
+    background: var(--hero-gradient-vibrant);
+}
+.hero-btn {
+    color: #ff6b6b;
+}
+.hero-btn:hover {
+    color: #4ecdc4;
+}
+*/
+
+/* Enhanced dropdown styling for hero section */
 /* ============================================
    Cards
    ============================================ */
@@ -248,18 +401,55 @@
 .modern-btn-primary {
     background: var(--primary-gradient);
     color: white;
+    font-weight: 600;
+    border: 2px solid var(--primary-orange);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .modern-btn-primary:hover {
     background: var(--primary-gradient-hover);
     transform: translateY(-1px);
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
     color: white;
+    border-color: var(--primary-orange-dark);
 }
 
 .modern-btn-sm {
     padding: 0.5rem 1rem;
     font-size: 0.875rem;
+}
+
+/* Enhanced contrast for secondary buttons */
+.modern-btn-secondary {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border: 1px solid var(--gray-300);
+    font-weight: 500;
+}
+
+.modern-btn-secondary:hover {
+    background: var(--gray-200);
+    color: var(--gray-800);
+    border-color: var(--gray-400);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+/* Enhanced form select styling for better contrast */
+.form-select.modern-form-control,
+.form-select.filter-select {
+    background-color: white;
+    border: 1px solid var(--gray-300);
+    color: var(--gray-700);
+    font-weight: 500;
+}
+
+.form-select.modern-form-control:focus,
+.form-select.filter-select:focus {
+    border-color: var(--primary-orange);
+    box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+    background-color: white;
+    color: var(--gray-800);
 }
 
 /* ============================================
@@ -618,6 +808,128 @@
 }
 
 /* ============================================
+   Mobile Responsive Styles
+   ============================================ */
+
+@media (max-width: 768px) {
+    .table-responsive thead { display: none !important; }
+    .table-responsive, .table-responsive table { display: block; width: 100%; }
+    .table-responsive tbody { display: block; }
+    .table-responsive tbody tr { display: block; margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.04); border-radius: 8px; padding: 8px; background: #fff; }
+    .table-responsive tbody tr td { display: flex; align-items: center; justify-content: space-between; padding: 8px; }
+
+    /* Keep checkbox, product and actions visible; hide detailed columns */
+    .table-responsive tbody tr td:nth-child(1),
+    .table-responsive tbody tr td:nth-child(2),
+    .table-responsive tbody tr td:last-child { display: flex; }
+
+    .table-responsive tbody tr td:nth-child(3),
+    .table-responsive tbody tr td:nth-child(4),
+    .table-responsive tbody tr td:nth-child(5),
+    .table-responsive tbody tr td:nth-child(6) { display: none !important; }
+
+    .product-thumbnail { width: 56px; height: 56px; }
+    .product-row .flex-grow-1 { min-width: 0; }
+
+    /* Actions: make touch-friendly and wrap if needed */
+    .btn-group.btn-group-sm { display: flex; gap: 6px; }
+    .btn-group.btn-group-sm .btn { padding: 8px 10px; font-size: 0.95rem; }
+
+    /* Adjust pagination and info spacing */
+    .d-flex.flex-column.flex-md-row { gap: 12px; }
+}
+
+/* ============================================
+   Modal Styles
+   ============================================ */
+
+#imagesModal .modal-body {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+/* Estilos para linhas de produtos clicáveis */
+.product-row {
+    transition: all 0.2s ease;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.product-row:hover {
+    background: linear-gradient(to right, rgba(102, 126, 234, 0.04) 0%, rgba(102, 126, 234, 0.01) 100%) !important;
+    box-shadow: 0 1px 3px rgba(102, 126, 234, 0.1);
+    transform: translateX(2px);
+}
+
+.product-row:active {
+    background-color: rgba(102, 126, 234, 0.08) !important;
+}
+
+/* Checkboxes maiores e mais clicáveis */
+.product-checkbox {
+    cursor: pointer !important;
+    width: 18px !important;
+    height: 18px !important;
+}
+
+.product-checkbox:checked {
+    background-color: #667eea !important;
+    border-color: #667eea !important;
+}
+
+/* Botões de ação com hover suave */
+.btn-group .btn {
+    transition: all 0.2s ease !important;
+}
+
+.btn-group .btn:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+}
+
+/* Cards com sombra suave */
+.card {
+    transition: box-shadow 0.3s ease !important;
+}
+
+/* Inputs com foco coordenado */
+.form-control:focus,
+.form-select:focus {
+    border-color: #667eea !important;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15) !important;
+}
+
+/* Badges modernos */
+.badge {
+    font-weight: 500 !important;
+    letter-spacing: 0.3px !important;
+    padding: 0.35em 0.65em !important;
+}
+
+/* Animação no contador de seleção */
+#selectedCount {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+/* Paginação personalizada */
+.pagination .page-link {
+    color: #667eea !important;
+    border-color: #dee2e6 !important;
+    transition: all 0.2s ease !important;
+}
+
+.pagination .page-link:hover {
+    color: #fff !important;
+    background-color: #667eea !important;
+    border-color: #667eea !important;
+    transform: translateY(-1px) !important;
+}
+
+.pagination .page-item.active .page-link {
+    background-color: #667eea !important;
+    border-color: #667eea !important;
+}
+
+/* ============================================
    Responsive
    ============================================ */
 
@@ -759,11 +1071,16 @@ html {
     border: 1px solid var(--gray-300);
     border-radius: var(--radius);
     transition: var(--transition);
+    background-color: white;
+    color: var(--gray-700);
+    font-weight: 500;
 }
 
 .form-select:focus {
     border-color: var(--primary-orange);
     box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+    background-color: white;
+    color: var(--gray-800);
 }
 
 /* Checkbox improvements */

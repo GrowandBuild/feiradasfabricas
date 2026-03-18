@@ -4,6 +4,30 @@
 
 @section('styles')
 <style>
+    /* Custom grid classes for 10 columns */
+    .col-lg-1-2 {
+        flex: 0 0 auto;
+        width: 10%;
+    }
+    
+    @media (max-width: 991.98px) {
+        .col-lg-1-2 {
+            width: 33.333333%;
+        }
+    }
+    
+    @media (max-width: 767.98px) {
+        .col-lg-1-2 {
+            width: 33.333333%;
+        }
+    }
+    
+    @media (max-width: 575.98px) {
+        .col-lg-1-2 {
+            width: 33.333333%;
+        }
+    }
+    
     /* Elegant Dark Blue Theme */
     :root {
         --elegant-dark: #0f172a;
@@ -1307,6 +1331,103 @@
      .hero-section, .hero-banner-full, .hero-banner-section { margin-bottom: 0 !important; padding-bottom: 0 !important; }
      .hero-section + .section-elegant { margin-top: -8px !important; padding-top: 6px !important; }
      .badges-wrapper { padding-top: 6px; padding-bottom: 6px; }
+
+    /* Highlight Cards Hover Effects */
+    .highlight-card {
+        transform: translateY(0);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .highlight-card:hover {
+        transform: translateY(-5px) scale(1.02);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+    }
+    
+    .highlight-card:hover .highlight-overlay {
+        opacity: 1 !important;
+    }
+    
+    .highlight-card:hover .play-button {
+        transform: scale(1);
+        background: rgba(255,255,255,1);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    
+    .highlight-card:hover video {
+        filter: brightness(0.7);
+    }
+
+    /* Video Modal Styles */
+    .video-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.95);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .video-modal.active {
+        opacity: 1;
+        visibility: visible;
+    }
+    
+    .video-modal-content {
+        position: relative;
+        max-width: 90vw;
+        max-height: 90vh;
+        background: #000;
+        border-radius: 12px;
+        overflow: hidden;
+        transform: scale(0.8);
+        transition: all 0.3s ease;
+    }
+    
+    .video-modal.active .video-modal-content {
+        transform: scale(1);
+    }
+    
+    .video-modal video {
+        width: 100%;
+        height: 100%;
+        max-width: 90vw;
+        max-height: 90vh;
+        object-fit: contain;
+    }
+    
+    .video-modal-close {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        width: 50px;
+        height: 50px;
+        background: rgba(255,255,255,0.9);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10000;
+        transition: all 0.3s ease;
+    }
+    
+    .video-modal-close:hover {
+        background: rgba(255,255,255,1);
+        transform: scale(1.1);
+    }
+    
+    .video-modal-close i {
+        color: #000;
+        font-size: 20px;
+    }
 </style>
 @endsection
 
@@ -1407,102 +1528,244 @@
 </section>
 @endif
 
-<!-- Categorias (moved here so categories appear above homepage sections) -->
-@if($categories && $categories->count() > 0)
+<!-- Destaques -->
 <section class="section-elegant" style="padding: 20px 0;">
     <div class="container">
-        <h2 class="section-title" style="font-size: 1.6rem; margin-bottom: 5px;">Nossas Categorias</h2>
+        <h2 class="section-title" style="font-size: 1.6rem; margin-bottom: 5px;">{{ setting('highlights_section_title', 'Destaques') }}</h2>
         <p class="section-subtitle" style="margin-bottom: 12px;">
-            Explore nossa ampla gama de produtos em diferentes categorias
+            {{ setting('highlights_section_subtitle', 'Conheça nossos produtos em destaque') }}
         </p>
-        <div class="row g-2">
-            @foreach($categories->take(4) as $category)
-                <div class="col-lg-3 col-md-3 col-sm-6 col-6">
-                    @php
-                        $catCoverUrl = null;
-                        if (isset($category->cover) && $category->cover) {
-                            if (\Illuminate\Support\Str::startsWith($category->cover, ['http://', 'https://'])) {
-                                $catCoverUrl = $category->cover;
-                            } else {
-                                $catCoverUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($category->cover);
-                            }
-                        }
-                        // visibility flags (defaults to true when column absent)
-                        $showAvatar = $category->show_avatar ?? true;
-                        $showCover = $category->show_cover ?? true;
-                        $showTitle = $category->show_title ?? true;
-                        $showDescription = $category->show_description ?? true;
-                        $showButton = $category->show_button ?? true;
-                    @endphp
-                    <div class="elegant-card btn-pos-{{ $category->button_position ?? 'bottom' }} @if($catCoverUrl && $showCover) has-cover @endif" @if($catCoverUrl && $showCover) style="background-image: url('{{ $catCoverUrl }}'); background-size: cover; background-position: center;" data-cover-url="{{ $catCoverUrl }}" @else data-cover-url="" @endif data-button-position="{{ $category->button_position ?? 'bottom' }}">
-                        <div class="card-icon" @if(!$showAvatar) style="display:none;" @endif>
-                            @php
-                                $iconClass = $category->icon_class ?? 'fas fa-laptop';
-                                $catImageUrl = null;
-                                if ($category->image) {
-                                    if (\Illuminate\Support\Str::startsWith($category->image, ['http://', 'https://'])) {
-                                        $catImageUrl = $category->image;
-                                    } else {
-                                        $catImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($category->image);
-                                    }
-                                }
-                            @endphp
-                            @if($showAvatar && $catImageUrl)
-                                <img src="{{ $catImageUrl ?: asset('images/no-image.svg') }}" alt="{{ $category->name }}" class="category-image-display" data-category-id="{{ $category->id }}" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;" @auth('admin') title="Clique para editar imagem" @endauth loading="lazy" decoding="async">
-                            @endif
-                            @if($showAvatar && !$catImageUrl)
-                                <i class="category-icon-display {{ $iconClass }}" data-category-id="{{ $category->id }}" @auth('admin') title="Clique para alterar ícone" style="cursor:pointer;" @endauth></i>
-                            @else
-                                {{-- If avatar is disabled, do not show icon --}}
-                                @if(!$showAvatar)
-                                    <i class="category-icon-display {{ $iconClass }}" data-category-id="{{ $category->id }}" hidden></i>
-                                @endif
-                            @endif
-                        </div>
-                        @if($showTitle)
-                        <h5 class="card-title">
-                            @auth('admin')
-                                <span class="js-edit-category-title" data-category-id="{{ $category->id }}" data-current-title="{{ $category->name }}" style="cursor: pointer;">{{ $category->name }}</span>
-                            @else
-                                {{ $category->name }}
-                            @endauth
-                        </h5>
+        
+        <!-- Grid Desktop / Carrossel Mobile -->
+        <div class="highlights-container">
+            <div class="highlights-grid d-none d-lg-block">
+                <div class="row g-3">
+                    @foreach($highlights as $highlight)
+                        @if($highlight['exists'])
+                            <div class="col-lg-1-2 col-md-4 col-sm-4">
+                                <div class="highlight-card" style="position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 9/16; cursor: pointer;" 
+                                     data-video-src="{{ $highlight['url'] }}"
+                                     data-video-title="{{ $highlight['title'] }}">
+                                    <video 
+                                        style="width: 100%; height: 100%; object-fit: cover;"
+                                        muted 
+                                        loop 
+                                        playsinline
+                                        autoplay>
+                                        <source src="{{ $highlight['url'] }}" type="video/mp4">
+                                    </video>
+                                    <div class="highlight-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, rgba(0,0,0,0.3)); display: flex; align-items: center; justify-content: center; opacity: 0; transition: all 0.3s ease;">
+                                        <div class="play-button" style="width: 60px; height: 60px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: scale(0.8); transition: all 0.3s ease;">
+                                            <i class="fas fa-play" style="color: #000; font-size: 20px; margin-left: 3px;"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         @endif
-                        @if($showDescription)
-                        <p class="card-text">
-                            @auth('admin')
-                                <span class="js-edit-category-desc" data-category-id="{{ $category->id }}" data-current-desc="{{ $category->description }}" style="cursor: pointer;">{{ $category->description ?? 'Produtos de alta qualidade para sua empresa.' }}</span>
-                            @else
-                                {{ $category->description ?? 'Produtos de alta qualidade para sua empresa.' }}
-                            @endauth
-                        </p>
-                        @endif
-                        @if($showButton)
-                        <a href="{{ route('products') }}?category={{ $category->slug }}" 
-                           class="btn btn-outline-primary w-100">
-                            Explorar Categoria
-                            <i class="fas fa-arrow-right ms-2"></i>
-                        </a>
-                        @endif
-                    </div>
+                    @endforeach
                 </div>
-            @endforeach
+            </div>
+        </div>
+    
+    <!-- Carrossel Mobile -->
+    <div class="highlights-carousel d-block d-lg-none mt-4">
+        <div id="highlightsCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                @php
+                    $existingHighlights = collect($highlights)->filter(function($h) { return $h['exists']; });
+                    $highlightsChunks = $existingHighlights->chunk(3);
+                @endphp
+                @if($existingHighlights->count() > 0)
+                    @foreach($highlightsChunks as $index => $chunk)
+                        <div class="carousel-item {{ $index === 0 ? 'active' : '' }}">
+                            <div class="row g-3">
+                                @foreach($chunk as $highlight)
+                                    <div class="col-4">
+                                        <div class="highlight-card" style="position: relative; border-radius: 12px; overflow: hidden; background: #000; aspect-ratio: 9/16; cursor: pointer;"
+                                             data-video-src="{{ $highlight['url'] }}"
+                                             data-video-title="{{ $highlight['title'] }}">
+                                            <video 
+                                                style="width: 100%; height: 100%; object-fit: cover;"
+                                                muted 
+                                                loop 
+                                                playsinline
+                                                autoplay>
+                                                <source src="{{ $highlight['url'] }}" type="video/mp4">
+                                            </video>
+                                            <div class="highlight-overlay" style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(transparent, rgba(0,0,0,0.3)); display: flex; align-items: center; justify-content: center; opacity: 0; transition: all 0.3s ease;">
+                                                <div class="play-button" style="width: 40px; height: 40px; background: rgba(255,255,255,0.9); border-radius: 50%; display: flex; align-items: center; justify-content: center; transform: scale(0.8); transition: all 0.3s ease;">
+                                                    <i class="fas fa-play" style="color: #000; font-size: 14px; margin-left: 2px;"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <!-- Mensagem quando não há vídeos -->
+                    <div class="carousel-item active">
+                        <div class="text-center py-5">
+                            <i class="fas fa-video fa-3x text-muted mb-3"></i>
+                            <p class="text-muted">Nenhum vídeo adicionado ainda</p>
+                        </div>
+                    </div>
+                @endif
+            </div>
+            
+            <!-- Controles do Carrossel Mobile -->
+            @if($highlightsChunks->count() > 1)
+                <button class="carousel-control-prev" type="button" data-bs-target="#highlightsCarousel" data-bs-slide="prev">
+                    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Anterior</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-bs-target="#highlightsCarousel" data-bs-slide="next">
+                    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                    <span class="visually-hidden">Próximo</span>
+                </button>
+                
+                <!-- Indicadores Mobile -->
+                <div class="carousel-indicators">
+                    @foreach($highlightsChunks as $index => $chunk)
+                        <button type="button" data-bs-target="#highlightsCarousel" data-bs-slide-to="{{ $index }}" 
+                                class="{{ $index === 0 ? 'active' : '' }}" aria-current="{{ $index === 0 ? 'true' : 'false' }}" 
+                                aria-label="Slide {{ $index + 1 }}"></button>
+                    @endforeach
+                </div>
+            @endif
         </div>
     </div>
 </section>
-@endif
+
+<!-- Video Modal -->
+<div id="videoModal" class="video-modal">
+    <div class="video-modal-content">
+        <video id="modalVideo" controls autoplay>
+            <source src="" type="video/mp4">
+        </video>
+        <div class="video-modal-close" onclick="closeVideoModal()">
+            <i class="fas fa-times"></i>
+        </div>
+    </div>
+</div>
 
 @foreach($homepageSections as $section)
     @include('components.homepage_section_products', ['section' => $section])
 @endforeach
-
-
 
 @auth('admin')
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     const CSRF = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Função para inicializar vídeos
+    function initializeHighlightVideos() {
+        const highlightVideos = document.querySelectorAll('.highlight-card video');
+        highlightVideos.forEach(video => {
+            // Força reload do vídeo para evitar cache
+            const currentSrc = video.querySelector('source').src;
+            video.querySelector('source').src = currentSrc + '?t=' + Date.now();
+            video.load();
+            
+            // Tenta reproduzir automaticamente
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(function(error) {
+                    console.log('Autoplay bloqueado, tentando com interação do usuário');
+                    // Adiciona listener global para primeira interação
+                    const startVideos = function() {
+                        highlightVideos.forEach(v => {
+                            v.play().catch(e => console.log('Erro ao reproduzir vídeo:', e));
+                        });
+                        document.removeEventListener('click', startVideos);
+                        document.removeEventListener('touchstart', startVideos);
+                        document.removeEventListener('scroll', startVideos);
+                    };
+                    document.addEventListener('click', startVideos, { once: true });
+                    document.addEventListener('touchstart', startVideos, { once: true });
+                    document.addEventListener('scroll', startVideos, { once: true });
+                });
+            }
+            
+            // Garante loop contínuo
+            video.addEventListener('ended', function() {
+                video.currentTime = 0;
+                video.play().catch(e => console.log('Erro ao reiniciar vídeo:', e));
+            });
+        });
+    }
+
+    // Inicializa imediatamente
+    initializeHighlightVideos();
+    
+    // Também inicializa após um pequeno delay (para navegação SPA/ajax)
+    setTimeout(initializeHighlightVideos, 500);
+    
+    // Inicializa quando a página fica visível (para quando usuário volta da aba)
+    document.addEventListener('visibilitychange', function() {
+        if (!document.hidden) {
+            setTimeout(initializeHighlightVideos, 100);
+        }
+    });
+
+    // Video Modal Functions
+    window.openVideoModal = function(videoSrc, videoTitle) {
+        const modal = document.getElementById('videoModal');
+        const modalVideo = document.getElementById('modalVideo');
+        
+        // Adiciona timestamp para evitar cache
+        modalVideo.src = videoSrc + '?t=' + Date.now();
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        
+        // Tenta reproduzir com áudio
+        modalVideo.muted = false;
+        modalVideo.play().catch(e => {
+            console.log('Erro ao reproduzir vídeo no modal:', e);
+            // Se falhar, tenta sem áudio
+            modalVideo.muted = true;
+            modalVideo.play();
+        });
+    };
+    
+    window.closeVideoModal = function() {
+        const modal = document.getElementById('videoModal');
+        const modalVideo = document.getElementById('modalVideo');
+        
+        modalVideo.pause();
+        modalVideo.src = '';
+        modal.classList.remove('active');
+        document.body.style.overflow = 'auto';
+    };
+
+    // Click em highlight cards para abrir modal
+    document.addEventListener('click', function(e) {
+        const highlightCard = e.target.closest('.highlight-card');
+        if (highlightCard && !e.target.closest('.video-modal')) {
+            e.preventDefault();
+            const videoSrc = highlightCard.getAttribute('data-video-src');
+            const videoTitle = highlightCard.getAttribute('data-video-title');
+            if (videoSrc) {
+                openVideoModal(videoSrc, videoTitle);
+            }
+        }
+    });
+
+    // Fechar modal com ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeVideoModal();
+        }
+    });
+
+    // Fechar modal clicando no fundo
+    document.getElementById('videoModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeVideoModal();
+        }
+    });
 
     // Delegated click: rename badge title
     document.addEventListener('click', function(e){
@@ -1670,6 +1933,7 @@ document.addEventListener('DOMContentLoaded', function(){
         </div>
     </div>
 </section>
+@endif
 
 <!-- Seção Produtos Apple -->
 @if($appleProducts->count() > 0)
@@ -1787,9 +2051,10 @@ document.addEventListener('DOMContentLoaded', function(){
     {{-- Motorola brand section removed per request. --}}
 @endif
 
+<!-- Seção Produtos Infinix -->
+@if(false)
+    {{-- Infinix brand section removed per request. --}}
 @endif
-
-<!-- Infinix section removed per request -->
 
 <!-- Seção Produtos JBL -->
 @if(false)

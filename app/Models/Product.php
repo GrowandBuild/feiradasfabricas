@@ -42,6 +42,7 @@ class Product extends Model
         'height',
         'sort_order',
         'department_id',
+        'homepage_section_ids',
         'product_type',
         'sell_b2b',
         'sell_b2c',
@@ -73,6 +74,7 @@ class Product extends Model
         'height' => 'decimal:2',
         'images' => 'array',
         'specifications' => 'array',
+        'homepage_section_ids' => 'array',
         'sell_b2b' => 'boolean',
         'sell_b2c' => 'boolean',
     ];
@@ -455,5 +457,24 @@ class Product extends Model
             return '📋 Lista';
         }
         return null;
+    }
+
+    /**
+     * Relacionamento com HomepageSections
+     */
+    public function homepageSections()
+    {
+        return $this->belongsToMany(HomepageSection::class, 'product_homepage_section', 'product_id', 'homepage_section_id');
+    }
+
+    /**
+     * Obtém as seções da homepage associadas a este produto
+     */
+    public function getHomepageSectionsAttribute()
+    {
+        if (!empty($this->homepage_section_ids)) {
+            return HomepageSection::whereIn('id', $this->homepage_section_ids)->get();
+        }
+        return collect();
     }
 }

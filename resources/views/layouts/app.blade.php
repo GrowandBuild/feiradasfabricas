@@ -1215,7 +1215,7 @@
                         </div>
                         @endauth
                     </div>
-                    <a href="#" class="header-icon" title="Loja">
+                    <a href="{{ route('products') }}" class="header-icon" title="Loja">
                         <i class="fas fa-store"></i>
                     </a>
                     <a href="{{ route('albums.index') }}" class="header-icon" title="Álbuns de Imagens">
