@@ -79,7 +79,7 @@ class MelhorEnvioService
                 ->withBasicAuth($clientId, $clientSecret)
                 ->post($this->getBaseUrl() . '/oauth/token', [
                     'grant_type' => 'client_credentials',
-                    'scope' => 'shipping-calculate'
+                    'scope' => 'shipping-calculate shipping-read'
                 ]);
 
             if ($response->successful()) {
@@ -144,7 +144,7 @@ class MelhorEnvioService
             'redirect_uri' => $redirectUri,
             'response_type' => 'code',
             'state' => $state,
-            'scope' => 'shipping-calculate'
+            'scope' => 'shipping-calculate shipping-read'
         ];
 
         return $this->getBaseUrl() . '/oauth/authorize?' . http_build_query($params);
