@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Log;
 class MelhorEnvioController extends Controller
 {
     private MelhorEnvioService $service;
+    private string $productionCallbackUrl = 'https://rosybrown-jackal-637541.hostingersite.com/admin/melhor-envio/callback';
 
     public function __construct(MelhorEnvioService $service)
     {
@@ -149,7 +150,8 @@ class MelhorEnvioController extends Controller
                 ->with('error', 'Configure Client ID e Client Secret primeiro');
         }
 
-        $redirectUri = route('admin.melhor-envio.callback');
+        // Força o callback URL para o ambiente de produção
+        $redirectUri = $this->productionCallbackUrl;
         $authUrl = $this->service->getAuthorizationUrl($redirectUri);
 
         return redirect()->away($authUrl);

@@ -391,6 +391,15 @@
                 </div>
             @endif
 
+            <!-- Alerta de configuração -->
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Importante:</strong> Configure o Callback URL no painel do Melhor Envio como:<br>
+                <code class="d-inline-block mt-1">https://rosybrown-jackal-637541.hostingersite.com/admin/melhor-envio/callback</code><br>
+                <small class="text-muted">Use esta URL mesmo desenvolvendo localmente - o sistema redirecionará corretamente.</small>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
             <!-- Status Card -->
             <div class="card mb-4">
                 <div class="card-body">
@@ -454,7 +463,8 @@
                                        value="{{ setting('melhor_envio_client_id', '') }}"
                                        placeholder="Seu Client ID">
                                 <small class="form-text text-muted">
-                                    Obtenha em <a href="https://melhorenvio.com.br/painel/desenvolvedor" target="_blank">melhorenvio.com.br/painel/desenvolvedor <i class="bi bi-box-arrow-up-right"></i></a>
+                                    Obtenha em <a href="https://melhorenvio.com.br/painel/desenvolvedor" target="_blank">melhorenvio.com.br/painel/desenvolvedor <i class="bi bi-box-arrow-up-right"></i></a><br>
+                                    <strong>Callback URL:</strong> <code>https://rosybrown-jackal-637541.hostingersite.com/admin/melhor-envio/callback</code>
                                 </small>
                             </div>
                             <div class="col-md-6 mb-3">

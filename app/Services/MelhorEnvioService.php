@@ -12,7 +12,6 @@ use App\Models\Setting;
  */
 class MelhorEnvioService
 {
-    private string $baseUrl = 'https://api.melhorenvio.com.br';
     private ?string $clientId;
     private ?string $clientSecret;
     private ?string $accessToken;
@@ -26,6 +25,16 @@ class MelhorEnvioService
         $this->accessToken = setting('melhor_envio_token');
         $this->refreshToken = setting('melhor_envio_refresh_token');
         $this->sandbox = setting('melhor_envio_sandbox', true);
+    }
+
+    /**
+     * Obter URL base da API conforme ambiente
+     */
+    private function getBaseUrl(): string
+    {
+        return $this->sandbox 
+            ? 'https://sandbox.melhorenvio.com.br' 
+            : 'https://api.melhorenvio.com.br';
     }
 
     /**
@@ -44,7 +53,7 @@ class MelhorEnvioService
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $clientId, // Algumas APIs usam Client ID como Bearer
                 'User-Agent' => 'EcommerceApp/1.0'
-            ])->get($this->baseUrl . '/api/v2/me');
+            ])->get($this->getBaseUrl() . '/api/v2/me');
 
             Log::info('Resposta da API de validação', [
                 'status' => $response->status(),
@@ -63,7 +72,7 @@ class MelhorEnvioService
             // Se falhou, tentar método alternativo (POST com client_credentials)
             $response = Http::asForm()
                 ->withBasicAuth($clientId, $clientSecret)
-                ->post($this->baseUrl . '/oauth/token', [
+                ->post($this->getBaseUrl() . '/oauth/token', [
                     'grant_type' => 'client_credentials',
                     'scope' => 'shipping-calculate'
                 ]);
@@ -133,7 +142,7 @@ class MelhorEnvioService
             'scope' => 'shipping-calculate'
         ];
 
-        return $this->baseUrl . '/oauth/authorize?' . http_build_query($params);
+        return $this->getBaseUrl() . '/oauth/authorize?' . http_build_query($params);
     }
 
     /**
@@ -144,7 +153,7 @@ class MelhorEnvioService
         try {
             $response = Http::asForm()
                 ->withBasicAuth($this->clientId, $this->clientSecret)
-                ->post($this->baseUrl . '/oauth/token', [
+                ->post($this->getBaseUrl() . '/oauth/token', [
                     'grant_type' => 'authorization_code',
                     'code' => $code,
                     'redirect_uri' => $redirectUri
@@ -194,7 +203,7 @@ class MelhorEnvioService
             $response = Http::withHeaders([
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $this->accessToken
-            ])->get($this->baseUrl . '/api/v2/me');
+            ])->get($this->getBaseUrl() . '/api/v2/me');
 
             if ($response->successful()) {
                 return [
@@ -268,7 +277,7 @@ class MelhorEnvioService
                 'Content-Type' => 'application/json',
                 'Authorization' => 'Bearer ' . $this->accessToken,
                 'User-Agent' => 'EcommerceApp/1.0'
-            ])->post($this->baseUrl . '/api/v2/me/shipment/calculate', [
+            ])->post($this->getBaseUrl() . '/api/v2/me/shipment/calculate', [
                 'from' => ['postal_code' => $cepOrigem],
                 'to' => ['postal_code' => $cepDestino],
                 'products' => $items,
