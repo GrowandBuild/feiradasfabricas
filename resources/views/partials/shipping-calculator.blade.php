@@ -32,14 +32,14 @@
         <!-- Abas de seleção de tipo de frete -->
         <ul class="nav nav-tabs mb-3" id="shipping-tabs" role="tablist">
             <li class="nav-item" role="presentation">
-                <button class="nav-link active" id="local-tab" data-bs-toggle="tab" data-bs-target="#local-pane" 
-                        type="button" role="tab" aria-controls="local-pane" aria-selected="true">
+                <button class="nav-link" id="local-tab" data-bs-toggle="tab" data-bs-target="#local-pane" 
+                        type="button" role="tab" aria-controls="local-pane" aria-selected="false">
                     <i class="bi bi-geo-alt me-1"></i> Entrega Local
                 </button>
             </li>
             <li class="nav-item" role="presentation">
-                <button class="nav-link" id="correios-tab" data-bs-toggle="tab" data-bs-target="#correios-pane" 
-                        type="button" role="tab" aria-controls="correios-pane" aria-selected="false">
+                <button class="nav-link active" id="correios-tab" data-bs-toggle="tab" data-bs-target="#correios-pane" 
+                        type="button" role="tab" aria-controls="correios-pane" aria-selected="true">
                     <i class="bi bi-envelope me-1"></i> Correios
                 </button>
             </li>
@@ -48,7 +48,7 @@
         <!-- Conteúdo das abas -->
         <div class="tab-content" id="shipping-tab-content">
             <!-- Aba Entrega Local/Regional -->
-            <div class="tab-pane fade show active" id="local-pane" role="tabpanel" aria-labelledby="local-tab">
+            <div class="tab-pane fade" id="local-pane" role="tabpanel" aria-labelledby="local-tab">
                 <div class="alert alert-info py-2 mb-3">
                     <small class="d-block" style="word-wrap: break-word; line-height: 1.4;">
                         <i class="bi bi-info-circle me-1"></i>Entrega realizada pela própria loja na sua região.
@@ -145,7 +145,7 @@
             </div>
 
             <!-- Aba Correios (Melhor Envio) -->
-            <div class="tab-pane fade" id="correios-pane" role="tabpanel" aria-labelledby="correios-tab">
+            <div class="tab-pane fade show active" id="correios-pane" role="tabpanel" aria-labelledby="correios-tab">
                 @php $sandbox = setting('melhor_envio_sandbox', true); @endphp
                 @if($sandbox)
                     <div class="alert alert-warning py-1 mb-2">
