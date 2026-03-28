@@ -1044,7 +1044,7 @@ class SettingController extends Controller
             Log::error('Erro de validação: ' . json_encode($e->errors()));
             return response()->json([
                 'success' => false,
-                'message' => 'Erro de validação: ' . implode(', ', array_flatten($e->errors()))
+                'message' => 'Erro de validação: ' . implode(', ', collect($e->errors())->flatten()->all())
             ], 422);
             
         } catch (\Exception $e) {
@@ -1172,7 +1172,7 @@ class SettingController extends Controller
             
             return response()->json([
                 'success' => false,
-                'message' => 'Erro de validação: ' . implode(', ', array_flatten($e->errors()))
+                'message' => 'Erro de validação: ' . implode(', ', collect($e->errors())->flatten()->all())
             ], 422);
             
         } catch (\Exception $e) {
