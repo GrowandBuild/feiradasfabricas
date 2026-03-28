@@ -156,6 +156,15 @@ class MelhorEnvioService
     public function exchangeCodeForToken(string $code, string $redirectUri): array
     {
         try {
+            Log::info('Tentando trocar código por token', [
+                'client_id' => $this->clientId,
+                'client_secret_length' => strlen($this->clientSecret),
+                'code_length' => strlen($code),
+                'redirect_uri' => $redirectUri,
+                'environment' => $this->sandbox ? 'sandbox' : 'production',
+                'api_url' => $this->getBaseUrl() . '/oauth/token'
+            ]);
+
             $response = Http::asForm()
                 ->withBasicAuth($this->clientId, $this->clientSecret)
                 ->post($this->getBaseUrl() . '/oauth/token', [
@@ -163,6 +172,12 @@ class MelhorEnvioService
                     'code' => $code,
                     'redirect_uri' => $redirectUri
                 ]);
+
+            Log::info('Resposta da API de token', [
+                'status' => $response->status(),
+                'success' => $response->successful(),
+                'response_body' => $response->body()
+            ]);
 
             if (!$response->successful()) {
                 return [
