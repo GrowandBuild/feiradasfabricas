@@ -38,43 +38,28 @@ class MelhorEnvioService
     }
 
     /**
-     * Validar credenciais sem salvar
+     * Validar credenciais sem salvar (simplificado)
      */
     public function validateCredentials(string $clientId, string $clientSecret): array
     {
         try {
-            Log::info('Tentando validar credenciais', [
+            Log::info('Validação simplificada de credenciais', [
                 'client_id' => $clientId,
                 'client_id_length' => strlen($clientId),
                 'has_secret' => !empty($clientSecret),
                 'secret_length' => strlen($clientSecret),
-                'environment' => $this->sandbox ? 'sandbox' : 'production',
-                'api_url' => $this->getBaseUrl()
+                'environment' => $this->sandbox ? 'sandbox' : 'production'
             ]);
 
-            // Tentar obter informações do usuário autenticado
-            $response = Http::withHeaders([
-                'Accept' => 'application/json',
-                'Authorization' => 'Bearer ' . $clientId, // Algumas APIs usam Client ID como Bearer
-                'User-Agent' => 'EcommerceApp/1.0'
-            ])->get($this->getBaseUrl() . '/api/v2/me');
-
-            Log::info('Resposta da API de validação', [
-                'status' => $response->status(),
-                'success' => $response->successful(),
-                'response_body' => $response->body()
-            ]);
-
-            if ($response->successful()) {
-                $data = $response->json();
+            // Validação básica - apenas verificar se os campos não estão vazios
+            if (empty($clientId) || empty($clientSecret)) {
                 return [
-                    'success' => true,
-                    'message' => 'Credenciais válidas',
-                    'data' => $data
+                    'success' => false,
+                    'message' => 'Client ID e Client Secret são obrigatórios'
                 ];
             }
 
-            // Se falhou, tentar método alternativo (POST com client_credentials)
+            // Tentar método OAuth direto
             $response = Http::asForm()
                 ->withBasicAuth($clientId, $clientSecret)
                 ->post($this->getBaseUrl() . '/oauth/token', [
@@ -82,27 +67,31 @@ class MelhorEnvioService
                     'scope' => 'shipping-calculate shipping-read'
                 ]);
 
+            Log::info('Resposta OAuth client_credentials', [
+                'status' => $response->status(),
+                'success' => $response->successful(),
+                'response_body' => $response->body()
+            ]);
+
             if ($response->successful()) {
                 return [
                     'success' => true,
-                    'message' => 'Credenciais válidas (autenticação OAuth)'
+                    'message' => 'Credenciais válidas - pronto para autorização OAuth'
                 ];
             }
 
             return [
                 'success' => false,
-                'message' => 'Credenciais inválidas ou API indisponível',
-                'debug' => $response->body()
+                'message' => 'Credenciais inválidas. Verifique o Client ID e Secret.'
             ];
-
         } catch (\Exception $e) {
-            Log::error('Erro ao validar credenciais Melhor Envio', [
+            Log::error('Erro ao validar credenciais', [
                 'error' => $e->getMessage()
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Erro ao conectar: ' . $e->getMessage()
+                'message' => 'Erro na validação: ' . $e->getMessage()
             ];
         }
     }
