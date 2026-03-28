@@ -394,13 +394,13 @@
             <!-- Alerta de configuração -->
             <div class="alert alert-info alert-dismissible fade show" role="alert">
                 <i class="bi bi-info-circle me-2"></i>
-                <strong>Configuração para Ambiente Sandbox:</strong><br>
+                <strong>Configuração do Melhor Envio:</strong><br>
                 <ul class="mb-2 mt-2">
                     <li><strong>Callback URL:</strong> <code>https://rosybrown-jackal-637541.hostingersite.com/admin/melhor-envio/callback</code></li>
+                    <li><strong>Painel Produção:</strong> <a href="https://melhorenvio.com.br/painel/desenvolvedor" target="_blank">melhorenvio.com.br/painel/desenvolvedor <i class="bi bi-box-arrow-up-right"></i></a></li>
                     <li><strong>Painel Sandbox:</strong> <a href="https://sandbox.melhorenvio.com.br/integracoes/area-dev" target="_blank">sandbox.melhorenvio.com.br/integracoes/area-dev <i class="bi bi-box-arrow-up-right"></i></a></li>
-                    <li><strong>API:</strong> <code>https://sandbox.melhorenvio.com.br</code> (automático)</li>
                 </ul>
-                <small class="text-muted">O sistema usa automaticamente o ambiente sandbox para garantir estabilidade.</small>
+                <small class="text-muted">Use credenciais do ambiente correspondente (produção ou sandbox).</small>
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
 
@@ -467,7 +467,8 @@
                                        value="{{ setting('melhor_envio_client_id', '') }}"
                                        placeholder="Seu Client ID">
                                 <small class="form-text text-muted">
-                                    Obtenha em <a href="https://melhorenvio.com.br/painel/desenvolvedor" target="_blank">melhorenvio.com.br/painel/desenvolvedor <i class="bi bi-box-arrow-up-right"></i></a><br>
+                                    <strong>Produção:</strong> <a href="https://melhorenvio.com.br/painel/desenvolvedor" target="_blank">melhorenvio.com.br/painel/desenvolvedor <i class="bi bi-box-arrow-up-right"></i><br>
+                                    <strong>Sandbox:</strong> <a href="https://sandbox.melhorenvio.com.br/integracoes/area-dev" target="_blank">sandbox.melhorenvio.com.br/integracoes/area-dev <i class="bi bi-box-arrow-up-right"></i><br>
                                     <strong>Callback URL:</strong> <code>https://rosybrown-jackal-637541.hostingersite.com/admin/melhor-envio/callback</code>
                                 </small>
                             </div>
@@ -501,12 +502,21 @@
                                 <small class="form-text text-muted">CEP da sua loja para cálculo de frete</small>
                             </div>
                             <div class="col-md-6">
-                                <label class="form-label">Ambiente</label>
-                                <div class="alert alert-info mt-2">
-                                    <i class="bi bi-info-circle me-2"></i>
-                                    <strong>Modo Sandbox (Teste)</strong><br>
-                                    <small class="text-muted">Usando ambiente de testes para garantir estabilidade</small>
+                                <label for="sandbox" class="form-label">Ambiente</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="sandbox" 
+                                           name="sandbox"
+                                           {{ setting('melhor_envio_sandbox', false) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="sandbox">
+                                        Modo Sandbox (Teste)
+                                    </label>
                                 </div>
+                                <small class="form-text text-muted">
+                                    Sandbox: https://sandbox.melhorenvio.com.br<br>
+                                    Produção: https://api.melhorenvio.com.br
+                                </small>
                             </div>
                         </div>
 
@@ -874,6 +884,7 @@ async function saveSettings() {
     const clientId = document.getElementById('client_id').value;
     const clientSecret = document.getElementById('client_secret').value;
     const cepOrigem = document.getElementById('cep_origem').value;
+    const sandbox = document.getElementById('sandbox').checked;
     
     if (!clientId || !clientSecret || !cepOrigem) {
         showAlert('Preencha todos os campos obrigatórios', 'danger');
@@ -894,7 +905,8 @@ async function saveSettings() {
             body: JSON.stringify({
                 client_id: clientId,
                 client_secret: clientSecret,
-                cep_origem: cepOrigem
+                cep_origem: cepOrigem,
+                sandbox: sandbox
             })
         });
         

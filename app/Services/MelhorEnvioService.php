@@ -24,8 +24,7 @@ class MelhorEnvioService
         $this->clientSecret = setting('melhor_envio_client_secret');
         $this->accessToken = setting('melhor_envio_token');
         $this->refreshToken = setting('melhor_envio_refresh_token');
-        // Força sandbox para garantir funcionamento em produção
-        $this->sandbox = true; // setting('melhor_envio_sandbox', true);
+        $this->sandbox = setting('melhor_envio_sandbox', false);
     }
 
     /**
@@ -44,9 +43,13 @@ class MelhorEnvioService
     public function validateCredentials(string $clientId, string $clientSecret): array
     {
         try {
-            Log::info('Validando credenciais Melhor Envio', [
+            Log::info('Tentando validar credenciais', [
+                'client_id' => $clientId,
                 'client_id_length' => strlen($clientId),
-                'has_secret' => !empty($clientSecret)
+                'has_secret' => !empty($clientSecret),
+                'secret_length' => strlen($clientSecret),
+                'environment' => $this->sandbox ? 'sandbox' : 'production',
+                'api_url' => $this->getBaseUrl()
             ]);
 
             // Tentar obter informações do usuário autenticado
@@ -58,7 +61,8 @@ class MelhorEnvioService
 
             Log::info('Resposta da API de validação', [
                 'status' => $response->status(),
-                'success' => $response->successful()
+                'success' => $response->successful(),
+                'response_body' => $response->body()
             ]);
 
             if ($response->successful()) {
