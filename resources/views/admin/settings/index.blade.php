@@ -521,7 +521,10 @@
                         </div>
 
                         <!-- Ações -->
-                        <div class="d-flex gap-2 justify-content-end">
+                        <div class="d-flex gap-2 justify-content-end flex-wrap">
+                            <button type="button" class="btn btn-outline-warning" onclick="resetSettings()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Resetar Configurações
+                            </button>
                             <button type="button" class="btn btn-outline-info" onclick="testCredentials()">
                                 <i class="bi bi-shield-check me-1"></i>Testar Credenciais
                             </button>
@@ -879,6 +882,41 @@ async function testCredentials() {
     }
 }
 
+// Resetar configurações
+async function resetSettings() {
+    if (!confirm('Tem certeza que deseja resetar todas as configurações do Melhor Envio? Isso irá limpar todos os dados salvos.')) {
+        return;
+    }
+    
+    const btn = document.querySelector('button[onclick="resetSettings()"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Resetando...';
+    
+    try {
+        const response = await fetch('{{ route("admin.melhor-envio.disconnect") }}', {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert('✅ ' + data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('❌ ' + data.message, 'danger');
+        }
+    } catch (error) {
+        showAlert('❌ Erro ao resetar: ' + error.message, 'danger');
+    }
+    
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1"></i>Resetar Configurações';
+}
+
 // Salvar configurações
 async function saveSettings() {
     const clientId = document.getElementById('client_id').value;
@@ -919,11 +957,11 @@ async function saveSettings() {
             showAlert('❌ ' + data.message, 'danger');
         }
     } catch (error) {
-        showAlert('Erro: ' + error.message, 'danger');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="bi bi-save me-1"></i>Salvar Configurações';
+        showAlert('❌ Erro ao salvar: ' + error.message, 'danger');
     }
+    
+    btn.disabled = false;
+    btn.innerHTML = '<i class="bi bi-save me-1"></i>Salvar Configurações';
 }
 
 // Desconectar
