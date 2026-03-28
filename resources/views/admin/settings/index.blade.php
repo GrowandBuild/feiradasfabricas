@@ -366,178 +366,186 @@
 
         <!-- Shipping Settings Tab -->
         <div class="tab-pane fade" id="shipping" role="tabpanel">
-            <div class="card border-0 shadow-sm">
-                <div class="card-header bg-light">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="mb-0"><i class="bi bi-truck me-2"></i>Melhor Envio</h6>
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="melhor_envio_enabled" 
-                                   {{ setting('melhor_envio_enabled', false) ? 'checked' : '' }}>
-                            <label class="form-check-label" for="melhor_envio_enabled">
-                                {{ setting('melhor_envio_enabled', false) ? 'Ativo' : 'Inativo' }}
-                            </label>
-                        </div>
-                    </div>
+            @php
+                // Usar o mesmo serviço do controller dedicado
+                $melhorEnvioService = app(\App\Services\MelhorEnvioService::class);
+                $isConfigured = $melhorEnvioService->isConfigured();
+                $isConnected = $melhorEnvioService->isConnected();
+                $hasToken = !empty(setting('melhor_envio_token'));
+                $tokenExpiresAt = setting('melhor_envio_token_expires_at');
+                $isTokenExpired = $tokenExpiresAt && \Carbon\Carbon::parse($tokenExpiresAt)->isPast();
+            @endphp
+
+            <!-- Alertas -->
+            @if(session('success'))
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <i class="bi bi-check-circle me-2"></i>{{ session('success') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
+            @endif
+
+            @if(session('error'))
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-circle me-2"></i>{{ session('error') }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            @endif
+
+            <!-- Status Card -->
+            <div class="card mb-4">
                 <div class="card-body">
-                    @php
-                        $hasToken = !empty(setting('melhor_envio_token'));
-                        $tokenExpiresAt = setting('melhor_envio_token_expires_at');
-                        $isTokenExpired = $tokenExpiresAt && \Carbon\Carbon::parse($tokenExpiresAt)->isPast();
-                    @endphp
-
-                    @if($hasToken)
-                        <div class="alert alert-{{ $isTokenExpired ? 'warning' : 'success' }} mb-3">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    <i class="bi bi-{{ $isTokenExpired ? 'exclamation-triangle' : 'check-circle' }} me-2"></i>
-                                    <strong>Conectado ao Melhor Envio</strong>
-                                    @if($tokenExpiresAt)
-                                        <br><small>Token expira em: {{ \Carbon\Carbon::parse($tokenExpiresAt)->format('d/m/Y H:i') }}</small>
-                                    @endif
-                                </div>
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="revokeMelhorEnvioTokens()">
-                                    <i class="bi bi-x-circle me-1"></i>Desconectar
-                                </button>
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-{{ $isConnected ? 'success' : ($isConfigured ? 'warning' : 'secondary') }} bg-opacity-10 p-3 rounded">
+                                <i class="bi bi-{{ $isConnected ? 'check-circle-fill' : ($isConfigured ? 'exclamation-circle-fill' : 'circle') }} text-{{ $isConnected ? 'success' : ($isConfigured ? 'warning' : 'secondary') }} fs-2"></i>
                             </div>
                         </div>
-                    @else
-                        <div class="alert alert-info mb-3">
-                            <i class="bi bi-info-circle me-2"></i>
-                            <strong>Não conectado.</strong> Configure as credenciais abaixo para autorizar.
-                        </div>
-                    @endif
-
-                    <!-- Credenciais da API -->
-                    <div class="row g-3 mb-4">
-                        <div class="col-md-6">
-                            <label for="melhor_envio_client_id" class="form-label">
-                                <i class="bi bi-key me-1"></i>Client ID <span class="text-danger">*</span>
-                            </label>
-                            <input type="text" class="form-control" id="melhor_envio_client_id" 
-                                   value="{{ setting('melhor_envio_client_id', '') }}" 
-                                   placeholder="Seu Client ID do Melhor Envio">
-                            <small class="form-text text-muted">
-                                <a href="https://melhorenvio.com.br/painel/desenvolvedor" target="_blank">
-                                    <i class="bi bi-box-arrow-up-right me-1"></i>Obter credenciais
-                                </a>
-                            </small>
-                        </div>
-                        <div class="col-md-6">
-                            <label for="melhor_envio_client_secret" class="form-label">
-                                <i class="bi bi-shield-lock me-1"></i>Client Secret <span class="text-danger">*</span>
-                            </label>
-                            <input type="password" class="form-control" id="melhor_envio_client_secret" 
-                                   value="{{ setting('melhor_envio_client_secret', '') }}" 
-                                   placeholder="Seu Client Secret do Melhor Envio">
-                            <small class="form-text text-muted">Mantenha em sigilo</small>
-                        </div>
-                    </div>
-
-                    <!-- Configurações de Envio -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="bi bi-gear me-2"></i>Configurações de Envio</h6>
-                        </div>
-                        <div class="card-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label for="melhor_envio_cep_origem" class="form-label">
-                                        <i class="bi bi-geo-alt me-1"></i>CEP de Origem <span class="text-danger">*</span>
-                                    </label>
-                                    <input type="text" class="form-control" id="melhor_envio_cep_origem" 
-                                           value="{{ setting('melhor_envio_cep_origem', '') }}" 
-                                           placeholder="00000-000" maxlength="9"
-                                           pattern="\d{5}-\d{3}"
-                                           oninput="let value = this.value.replace(/\D/g, ''); if (value.length > 5) { value = value.substring(0,5) + '-' + value.substring(5,8); } this.value = value;">
-                                    <small class="form-text text-muted">CEP da sua loja para cálculo de frete</small>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="melhor_envio_service_ids" class="form-label">
-                                        <i class="bi bi-truck me-1"></i>Serviços Habilitados
-                                    </label>
-                                    <input type="text" class="form-control" id="melhor_envio_service_ids" 
-                                           value="{{ setting('melhor_envio_service_ids', '') }}" 
-                                           placeholder="Ex: 1,2,3,4 (IDs separados por vírgula)">
-                                    <small class="form-text text-muted">
-                                        Deixe vazio para usar todos os serviços disponíveis
-                                    </small>
-                                </div>
-                            </div>
-                            
-                            <div class="row g-3 mt-2">
-                                <div class="col-md-6">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input" type="checkbox" id="melhor_envio_sandbox" 
-                                               {{ setting('melhor_envio_sandbox', true) ? 'checked' : '' }}>
-                                        <label class="form-check-label" for="melhor_envio_sandbox">
-                                            <i class="bi bi-bug me-1"></i>Modo Sandbox (Teste)
-                                        </label>
-                                    </div>
-                                    <small class="form-text text-muted">
-                                        Desmarque para usar em ambiente de produção
-                                    </small>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="melhor_envio_timeout" class="form-label">
-                                        <i class="bi bi-clock me-1"></i>Timeout (segundos)
-                                    </label>
-                                    <input type="number" class="form-control" id="melhor_envio_timeout" 
-                                           value="{{ setting('melhor_envio_timeout', 30) }}" min="10" max="120">
-                                    <small class="form-text text-muted">Tempo limite para requisições</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Status e Ações -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <div class="d-flex align-items-center gap-2">
-                                <span class="badge bg-{{ $hasToken ? ($isTokenExpired ? 'warning' : 'success') : 'secondary' }}">
-                                    <i class="bi bi-{{ $hasToken ? ($isTokenExpired ? 'exclamation-triangle' : 'check-circle') : 'circle' }} me-1"></i>
-                                    {{ $hasToken ? ($isTokenExpired ? 'Token Expirado' : 'Conectado') : 'Não Conectado' }}
-                                </span>
-                                @if($hasToken && $tokenExpiresAt)
-                                    <small class="text-muted">
-                                        Expira em: {{ \Carbon\Carbon::parse($tokenExpiresAt)->format('d/m/Y H:i') }}
-                                    </small>
+                        <div class="flex-grow-1 ms-3">
+                            <h5 class="mb-1">Status da Conexão</h5>
+                            <p class="mb-0 text-muted">
+                                @if($isConnected)
+                                    <span class="text-success">✅ Conectado e autorizado</span>
+                                @elseif($isConfigured)
+                                    <span class="text-warning">⚠️ Configurado mas não autorizado</span>
+                                    <br><small>Clique em "Autorizar" para conectar com o Melhor Envio</small>
+                                @else
+                                    <span class="text-secondary">❌ Não configurado</span>
+                                    <br><small>Preencha as credenciais abaixo para começar</small>
                                 @endif
-                            </div>
+                            </p>
                         </div>
-                        <div class="d-flex gap-2">
-                            @if($hasToken)
-                                <button type="button" class="btn btn-sm btn-outline-info" onclick="testMelhorEnvioConnection()">
-                                    <i class="bi bi-wifi me-1"></i>Testar Conexão
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-warning" onclick="refreshMelhorEnvioToken()">
-                                    <i class="bi bi-arrow-clockwise me-1"></i>Renovar Token
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="revokeMelhorEnvioTokens()">
+                        <div class="flex-shrink-0">
+                            @if($isConnected)
+                                <button class="btn btn-outline-danger" onclick="disconnectMelhorEnvio()">
                                     <i class="bi bi-x-circle me-1"></i>Desconectar
                                 </button>
-                            @else
-                                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="validateMelhorEnvioCredentials()">
-                                    <i class="bi bi-shield-check me-1"></i>Validar Credenciais
-                                </button>
-                                <button type="button" class="btn btn-primary" onclick="connectMelhorEnvio()">
-                                    <i class="bi bi-link-45deg me-1"></i>Conectar ao Melhor Envio
-                                </button>
+                            @elseif($isConfigured)
+                                <a href="{{ route('admin.melhor-envio.authorize') }}" class="btn btn-primary">
+                                    <i class="bi bi-link-45deg me-1"></i>Autorizar
+                                </a>
                             @endif
-                        </div>
-                    </div>
-
-                    <!-- Status da Conexão em Tempo Real -->
-                    <div id="melhorEnvioStatus" class="alert alert-info d-none">
-                        <div class="d-flex align-items-center">
-                            <div class="spinner-border spinner-border-sm me-2" role="status">
-                                <span class="visually-hidden">Carregando...</span>
-                            </div>
-                            <span id="melhorEnvioStatusText">Verificando conexão...</span>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Configurações -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-gear me-2"></i>Configurações</h5>
+                </div>
+                <div class="card-body">
+                    <form id="melhorEnvioForm">
+                        @csrf
+                        
+                        <!-- Credenciais -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="text-muted mb-3">Credenciais da API</h6>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="client_id" class="form-label">
+                                    Client ID <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="client_id" 
+                                       name="client_id"
+                                       value="{{ setting('melhor_envio_client_id', '') }}"
+                                       placeholder="Seu Client ID">
+                                <small class="form-text text-muted">
+                                    Obtenha em <a href="https://melhorenvio.com.br/painel/desenvolvedor" target="_blank">melhorenvio.com.br/painel/desenvolvedor <i class="bi bi-box-arrow-up-right"></i></a>
+                                </small>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="client_secret" class="form-label">
+                                    Client Secret <span class="text-danger">*</span>
+                                </label>
+                                <input type="password" 
+                                       class="form-control" 
+                                       id="client_secret" 
+                                       name="client_secret"
+                                       value="{{ setting('melhor_envio_client_secret', '') }}"
+                                       placeholder="Seu Client Secret">
+                                <small class="form-text text-muted">Mantenha em sigilo</small>
+                            </div>
+                        </div>
+
+                        <!-- CEP Origem -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="cep_origem" class="form-label">
+                                    CEP de Origem <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="cep_origem" 
+                                       name="cep_origem"
+                                       value="{{ setting('melhor_envio_cep_origem', '') }}"
+                                       placeholder="00000-000"
+                                       maxlength="9">
+                                <small class="form-text text-muted">CEP da sua loja para cálculo de frete</small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="sandbox" class="form-label">Ambiente</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="sandbox" 
+                                           name="sandbox"
+                                           {{ setting('melhor_envio_sandbox', true) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="sandbox">
+                                        Modo Sandbox (Teste)
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">Desmarque para produção</small>
+                            </div>
+                        </div>
+
+                        <!-- Ações -->
+                        <div class="d-flex gap-2 justify-content-end">
+                            <button type="button" class="btn btn-outline-info" onclick="testCredentials()">
+                                <i class="bi bi-shield-check me-1"></i>Testar Credenciais
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="saveSettings()">
+                                <i class="bi bi-save me-1"></i>Salvar Configurações
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Teste de Cálculo (só aparece se conectado) -->
+            @if($isConnected)
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="bi bi-calculator me-2"></i>Testar Cálculo de Frete</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label class="form-label">CEP Origem</label>
+                            <input type="text" class="form-control" id="test_cep_origem" 
+                                   value="{{ setting('melhor_envio_cep_origem', '') }}" readonly>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">CEP Destino</label>
+                            <input type="text" class="form-control" id="test_cep_destino" 
+                                   placeholder="00000-000" maxlength="9">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">&nbsp;</label>
+                            <button class="btn btn-outline-primary w-100" onclick="testCalculate()">
+                                <i class="bi bi-calculator me-1"></i>Calcular
+                            </button>
+                        </div>
+                    </div>
+                    <div id="calculationResult" class="mt-3 d-none">
+                        <!-- Resultado aparece aqui -->
+                    </div>
+                </div>
+            </div>
+            @endif
         </div>
 
         <!-- Social Settings Tab -->
@@ -603,275 +611,175 @@
     </div>
 </div>
 
+<!-- Modal de Status da Conexão -->
+<div class="modal fade" id="connectionModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Status da Conexão</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="connectionStatus"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
 @endsection
 
-@push('scripts')
+@section('scripts')
 <script>
-// Tab functionality handled by Bootstrap
+// Identity / Theme handlers
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips if needed
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
+    const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Logo
+    const logoFile = document.getElementById('identityLogoFile');
+    const logoPreview = document.getElementById('identityLogoPreview');
+    const logoUploadBtn = document.getElementById('identityLogoUploadBtn');
+    if (logoFile) {
+        logoFile.addEventListener('change', function() {
+            const f = this.files && this.files[0];
+            if (!f) return; const r = new FileReader(); r.onload = e => { logoPreview.src = e.target.result; }; r.readAsDataURL(f);
+        });
+    }
+    logoUploadBtn && logoUploadBtn.addEventListener('click', function() {
+        const f = logoFile.files && logoFile.files[0]; if (!f) { showAlert('Selecione um arquivo de logo.', 'danger'); return; }
+        const fd = new FormData(); fd.append('logo', f);
+        fetch('{{ route("admin.settings.upload-logo") }}', { method: 'POST', headers: { 'X-CSRF-TOKEN': token }, body: fd })
+            .then(r => r.json()).then(data => {
+                if (data && data.success) { logoPreview.src = data.url + '?v=' + Date.now(); showAlert(data.message || 'Logo enviada.', 'success'); }
+                else if (data && data.errors) showAlert(Object.values(data.errors).flat().join(' '), 'danger');
+                else showAlert(data.message || 'Erro ao enviar logo.', 'danger');
+            }).catch(err => { console.error(err); showAlert('Erro ao enviar logo.', 'danger'); });
+    });
+
+    // App Icon Upload
+    const appIconFile = document.getElementById('appIconFile');
+    const appIconPreview = document.getElementById('appIconPreview');
+    const appIconUploadBtn = document.getElementById('appIconUploadBtn');
+    if (appIconFile) {
+        appIconFile.addEventListener('change', function() {
+            const f = this.files && this.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = e => { appIconPreview.src = e.target.result; };
+            r.readAsDataURL(f);
+        });
+    }
+    appIconUploadBtn && appIconUploadBtn.addEventListener('click', function() {
+        const f = appIconFile.files && appIconFile.files[0];
+        if (!f) { showAlert('Selecione um arquivo de App Icon.', 'danger'); return; }
+        const fd = new FormData();
+        fd.append('app_icon', f);
+        fetch('{{ route("admin.settings.upload-app-icon") }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': token },
+            body: fd
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.success) {
+                appIconPreview.src = data.url + '?v=' + Date.now();
+                showAlert(data.message || 'App Icon enviado com sucesso!', 'success');
+            } else if (data && data.errors) {
+                showAlert(Object.values(data.errors).flat().join(' '), 'danger');
+            } else {
+                showAlert(data.message || 'Erro ao enviar App Icon.', 'danger');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showAlert('Erro ao enviar App Icon.', 'danger');
+        });
+    });
+
+    // Favicon Upload
+    const faviconFile = document.getElementById('faviconFile');
+    const faviconPreview = document.getElementById('faviconPreview');
+    const faviconUploadBtn = document.getElementById('faviconUploadBtn');
+    if (faviconFile) {
+        faviconFile.addEventListener('change', function() {
+            const f = this.files && this.files[0];
+            if (!f) return;
+            const r = new FileReader();
+            r.onload = e => { faviconPreview.src = e.target.result; };
+            r.readAsDataURL(f);
+        });
+    }
+    faviconUploadBtn && faviconUploadBtn.addEventListener('click', function() {
+        const f = faviconFile.files && faviconFile.files[0];
+        if (!f) { showAlert('Selecione um arquivo de Favicon.', 'danger'); return; }
+        const fd = new FormData();
+        fd.append('favicon', f);
+        fetch('{{ route("admin.settings.upload-favicon") }}', {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': token },
+            body: fd
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data && data.success) {
+                faviconPreview.src = data.url + '?v=' + Date.now();
+                showAlert(data.message || 'Favicon enviado com sucesso!', 'success');
+            } else if (data && data.errors) {
+                showAlert(Object.values(data.errors).flat().join(' '), 'danger');
+            } else {
+                showAlert(data.message || 'Erro ao enviar Favicon.', 'danger');
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showAlert('Erro ao enviar Favicon.', 'danger');
+        });
+    });
+
+    // Logo size save handler
+    const saveLogoSizeBtn = document.getElementById('saveLogoSizeBtn');
+    const logoMaxH = document.getElementById('identityLogoMaxHeight');
+    const logoMaxW = document.getElementById('identityLogoMaxWidth');
+    if (saveLogoSizeBtn) {
+        saveLogoSizeBtn.addEventListener('click', function() {
+            const h = logoMaxH && logoMaxH.value ? parseInt(logoMaxH.value, 10) : null;
+            const w = logoMaxW && logoMaxW.value ? parseInt(logoMaxW.value, 10) : null;
+            const fd = new FormData();
+            fd.append('_token', token);
+            fd.append('_method', 'PUT');
+            if (h !== null) fd.append('site_logo_max_height', h);
+            if (w !== null && w !== '') fd.append('site_logo_max_width', w);
+
+            fetch('{{ route("admin.settings.update") }}', { method: 'POST', body: fd, headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' } })
+                .then(r => r.json()).then(data => {
+                    if (data && data.success) {
+                        showAlert('Tamanho da logo salvo com sucesso! O novo tamanho será aplicado em todas as páginas do site.', 'success');
+                        const logoPreview = document.getElementById('identityLogoPreview');
+                        if (logoPreview) {
+                            if (h) logoPreview.style.maxHeight = h + 'px'; else logoPreview.style.maxHeight = '';
+                            if (w) logoPreview.style.maxWidth = w + 'px'; else logoPreview.style.maxWidth = '';
+                        }
+                        setTimeout(function() {
+                            if (confirm('Tamanho salvo! Deseja recarregar a página para ver as mudanças em todas as logos?')) {
+                                window.location.reload();
+                            }
+                        }, 1000);
+                    } else {
+                        showAlert('Erro ao salvar tamanho.', 'danger');
+                    }
+                }).catch(err => { console.error(err); showAlert('Erro ao salvar tamanho.', 'danger'); });
+        });
+    }
+
+    // B2B Toggle
+    document.getElementById('b2b_enabled')?.addEventListener('change', function() {
+        const settings = document.getElementById('b2b_settings');
+        settings.style.display = this.checked ? 'block' : 'none';
     });
 });
 
-// B2B Toggle
-document.getElementById('b2b_enabled')?.addEventListener('change', function() {
-    const settings = document.getElementById('b2b_settings');
-    settings.style.display = this.checked ? 'block' : 'none';
-});
-
-// Melhor Envio Functions
-function testMelhorEnvioConnection() {
-    const statusDiv = document.getElementById('melhorEnvioStatus');
-    const statusText = document.getElementById('melhorEnvioStatusText');
-    
-    statusDiv.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-warning');
-    statusDiv.classList.add('alert-info');
-    statusText.textContent = 'Testando conexão com Melhor Envio...';
-    
-    // Simulate API call
-    setTimeout(() => {
-        statusDiv.classList.remove('alert-info');
-        statusDiv.classList.add('alert-success');
-        statusText.textContent = '✅ Conexão bem-sucedida! API está respondendo corretamente.';
-        
-        setTimeout(() => {
-            statusDiv.classList.add('d-none');
-        }, 3000);
-    }, 2000);
-}
-
-function refreshMelhorEnvioToken() {
-    const statusDiv = document.getElementById('melhorEnvioStatus');
-    const statusText = document.getElementById('melhorEnvioStatusText');
-    
-    statusDiv.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-warning');
-    statusDiv.classList.add('alert-info');
-    statusText.textContent = 'Renovando token de acesso...';
-    
-    // Simulate token refresh
-    setTimeout(() => {
-        statusDiv.classList.remove('alert-info');
-        statusDiv.classList.add('alert-success');
-        statusText.textContent = '✅ Token renovado com sucesso! Novo token válido por 60 dias.';
-        
-        setTimeout(() => {
-            statusDiv.classList.add('d-none');
-        }, 3000);
-    }, 1500);
-}
-
-function validateMelhorEnvioCredentials() {
-    console.log('🔍 Botão Validar Credenciais clicado!');
-    
-    const clientId = document.getElementById('melhor_envio_client_id').value;
-    const clientSecret = document.getElementById('melhor_envio_client_secret').value;
-    
-    console.log('🔍 Client ID:', clientId ? '***' + clientId.slice(-4) : 'vazio');
-    console.log('🔍 Client Secret:', clientSecret ? '***' + clientSecret.slice(-4) : 'vazio');
-    
-    const statusDiv = document.getElementById('melhorEnvioStatus');
-    const statusText = document.getElementById('melhorEnvioStatusText');
-    
-    console.log('🔍 Status div encontrado:', !!statusDiv);
-    console.log('🔍 Status text encontrado:', !!statusText);
-    
-    if (!clientId || !clientSecret) {
-        console.log('🔍 Campos vazios, mostrando alerta');
-        statusDiv.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-warning');
-        statusDiv.classList.add('alert-warning');
-        statusText.textContent = '⚠️ Preencha Client ID e Client Secret para validar';
-        
-        setTimeout(() => {
-            statusDiv.classList.add('d-none');
-        }, 3000);
-        return;
-    }
-    
-    console.log('🔍 Campos preenchidos, iniciando validação');
-    statusDiv.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-warning');
-    statusDiv.classList.add('alert-info');
-    statusText.textContent = 'Validando credenciais...';
-    
-    // Validação REAL com backend
-    console.log('🔍 Iniciando validação REAL com backend...');
-    console.log('🔍 Enviando para: /admin/settings/validate-melhor-envio');
-    console.log('🔍 CSRF Token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content') ? 'OK' : 'FALTANDO');
-    
-    fetch('/admin/settings/validate-melhor-envio', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            client_id: clientId,
-            client_secret: clientSecret
-        })
-    })
-    .then(response => {
-        console.log('🔍 Response status:', response.status);
-        console.log('🔍 Response ok:', response.ok);
-        console.log('🔍 Response headers:', response.headers);
-        
-        // Tentar ler o texto primeiro para ver se há erro
-        return response.text().then(text => {
-            console.log('🔍 Response text bruto:', text);
-            try {
-                return JSON.parse(text);
-            } catch (e) {
-                console.log('🔍 Não é JSON, retornando texto bruto');
-                throw new Error('Resposta não é JSON: ' + text);
-            }
-        });
-    })
-    .then(data => {
-        console.log('🔍 Response JSON:', data);
-        statusDiv.classList.remove('alert-info');
-        
-        if (data.success) {
-            statusDiv.classList.add('alert-success');
-            statusText.textContent = '✅ ' + data.message;
-            
-            // Manter visível para permitir conexão
-            // setTimeout(() => {
-            //     statusDiv.classList.add('d-none');
-            // }, 3000);
-        } else {
-            statusDiv.classList.add('alert-danger');
-            statusText.textContent = '❌ ' + data.message;
-            if (data.debug) {
-                console.error('🔍 Debug info:', data.debug);
-            }
-            
-            setTimeout(() => {
-                statusDiv.classList.add('d-none');
-            }, 5000);
-        }
-    })
-    .catch(error => {
-        console.error('🔍 Erro completo na validação:', error);
-        console.error('🔍 Stack trace:', error.stack);
-        statusDiv.classList.remove('alert-info');
-        statusDiv.classList.add('alert-danger');
-        statusText.textContent = '❌ Erro ao validar: ' + error.message;
-        
-        setTimeout(() => {
-            statusDiv.classList.add('d-none');
-        }, 5000);
-    });
-}
-
-function connectMelhorEnvio() {
-    const clientId = document.getElementById('melhor_envio_client_id').value;
-    const clientSecret = document.getElementById('melhor_envio_client_secret').value;
-    const cepOrigem = document.getElementById('melhor_envio_cep_origem').value;
-    
-    const statusDiv = document.getElementById('melhorEnvioStatus');
-    const statusText = document.getElementById('melhorEnvioStatusText');
-    
-    if (!clientId || !clientSecret || !cepOrigem) {
-        statusDiv.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-warning');
-        statusDiv.classList.add('alert-warning');
-        statusText.textContent = '⚠️ Preencha todos os campos obrigatórios antes de conectar';
-        
-        setTimeout(() => {
-            statusDiv.classList.add('d-none');
-        }, 3000);
-        return;
-    }
-    
-    statusDiv.classList.remove('d-none', 'alert-success', 'alert-danger', 'alert-warning');
-    statusDiv.classList.add('alert-info');
-    statusText.textContent = 'Conectando ao Melhor Envio... Isso pode levar alguns segundos.';
-    
-    // Conexão REAL com backend
-    console.log('🔍 Iniciando conexão com Melhor Envio...');
-    console.log('🔍 Client ID:', clientId ? '***' + clientId.slice(-4) : 'vazio');
-    console.log('🔍 Client Secret:', clientSecret ? '***' + clientSecret.slice(-4) : 'vazio');
-    console.log('🔍 CEP Origem:', cepOrigem);
-    
-    // Testar se a rota está acessível
-    fetch('/admin/settings/connect-melhor-envio', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-        },
-        body: JSON.stringify({
-            client_id: clientId,
-            client_secret: clientSecret,
-            cep_origem: cepOrigem
-        })
-    })
-    .then(response => {
-        console.log('🔍 Response status:', response.status);
-        console.log('🔍 Response ok:', response.ok);
-        console.log('🔍 Response headers:', response.headers);
-        
-        // Tentar ler o texto primeiro para ver se há erro
-        return response.text().then(text => {
-            console.log('🔍 Response text:', text);
-            try {
-                return JSON.parse(text);
-            } catch (e) {
-                console.log('🔍 Não é JSON, retornando texto bruto');
-                throw new Error('Resposta não é JSON: ' + text);
-            }
-        });
-    })
-    .then(data => {
-        console.log('🔍 Response data:', data);
-        statusDiv.classList.remove('alert-info');
-        
-        if (data.success) {
-            statusDiv.classList.add('alert-success');
-            statusText.textContent = '✅ Conectado com sucesso! Sua integração está ativa.';
-            
-            // Show success message
-            const successAlert = document.createElement('div');
-            successAlert.className = 'alert alert-success alert-dismissible fade show mt-3';
-            successAlert.innerHTML = `
-                <i class="bi bi-check-circle me-2"></i>
-                <strong>Conexão estabelecida!</strong> 
-                Sua loja agora está conectada ao Melhor Envio e pronta para calcular fretes.
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            `;
-            
-            const cardBody = document.querySelector('#shipping .card-body');
-            cardBody.appendChild(successAlert);
-            
-            // Limpar formulário
-            document.getElementById('melhor_envio_client_id').value = '';
-            document.getElementById('melhor_envio_client_secret').value = '';
-            document.getElementById('melhor_envio_cep_origem').value = '';
-            
-        } else {
-            statusDiv.classList.add('alert-danger');
-            statusText.textContent = '❌ Falha na conexão: ' + (data.message || 'Tente novamente.');
-            console.error('🔍 Falha na conexão:', data);
-            
-            setTimeout(() => {
-                statusDiv.classList.add('d-none');
-            }, 5000);
-        }
-    })
-    .catch(error => {
-        console.error('🔍 Erro completo na conexão:', error);
-        console.error('🔍 Stack trace:', error.stack);
-        statusDiv.classList.remove('alert-info');
-        statusDiv.classList.add('alert-danger');
-        statusText.textContent = '❌ Erro ao conectar: ' + error.message;
-        
-        setTimeout(() => {
-            statusDiv.classList.add('d-none');
-        }, 5000);
-    });
-}
-
-// Placeholder functions for other operations
+// Placeholder functions for save operations
 function saveEmailConfig() {
     console.log('Saving email config...');
 }
@@ -896,8 +804,220 @@ function saveSocialConfig() {
     console.log('Saving social config...');
 }
 
-function revokeMelhorEnvioTokens() {
-    console.log('Revoking Melhor Envio tokens...');
+// Melhor Envio Functions
+// Máscara para CEP
+function maskCep(input) {
+    let value = input.value.replace(/\D/g, '');
+    if (value.length > 5) {
+        value = value.substring(0, 5) + '-' + value.substring(5, 8);
+    }
+    input.value = value;
+}
+
+document.getElementById('cep_origem')?.addEventListener('input', function() {
+    maskCep(this);
+});
+
+document.getElementById('test_cep_destino')?.addEventListener('input', function() {
+    maskCep(this);
+});
+
+// Testar credenciais
+async function testCredentials() {
+    const clientId = document.getElementById('client_id').value;
+    const clientSecret = document.getElementById('client_secret').value;
+    
+    if (!clientId || !clientSecret) {
+        showAlert('Preencha Client ID e Client Secret', 'danger');
+        return;
+    }
+    
+    const btn = document.querySelector('button[onclick="testCredentials()"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Testando...';
+    
+    try {
+        const response = await fetch('{{ route("admin.melhor-envio.validate") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({ client_id: clientId, client_secret: clientSecret })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert('✅ ' + data.message, 'success');
+        } else {
+            showAlert('❌ ' + data.message, 'danger');
+        }
+    } catch (error) {
+        showAlert('Erro: ' + error.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-shield-check me-1"></i>Testar Credenciais';
+    }
+}
+
+// Salvar configurações
+async function saveSettings() {
+    const clientId = document.getElementById('client_id').value;
+    const clientSecret = document.getElementById('client_secret').value;
+    const cepOrigem = document.getElementById('cep_origem').value;
+    const sandbox = document.getElementById('sandbox').checked;
+    
+    if (!clientId || !clientSecret || !cepOrigem) {
+        showAlert('Preencha todos os campos obrigatórios', 'danger');
+        return;
+    }
+    
+    const btn = document.querySelector('button[onclick="saveSettings()"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Salvando...';
+    
+    try {
+        const response = await fetch('{{ route("admin.melhor-envio.connect") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                client_id: clientId,
+                client_secret: clientSecret,
+                cep_origem: cepOrigem,
+                sandbox: sandbox
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert('✅ ' + data.message, 'success');
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showAlert('❌ ' + data.message, 'danger');
+        }
+    } catch (error) {
+        showAlert('Erro: ' + error.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-save me-1"></i>Salvar Configurações';
+    }
+}
+
+// Desconectar
+async function disconnectMelhorEnvio() {
+    if (!confirm('Tem certeza que deseja desconectar do Melhor Envio?')) {
+        return;
+    }
+    
+    try {
+        const response = await fetch('{{ route("admin.melhor-envio.disconnect") }}', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            showAlert('✅ ' + data.message, 'success');
+            setTimeout(() => location.reload(), 1000);
+        } else {
+            showAlert('❌ ' + data.message, 'danger');
+        }
+    } catch (error) {
+        showAlert('Erro: ' + error.message, 'danger');
+    }
+}
+
+// Testar cálculo
+async function testCalculate() {
+    const cepOrigem = document.getElementById('test_cep_origem').value;
+    const cepDestino = document.getElementById('test_cep_destino').value;
+    
+    if (!cepDestino) {
+        showAlert('Informe o CEP de destino', 'danger');
+        return;
+    }
+    
+    const btn = document.querySelector('button[onclick="testCalculate()"]');
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Calculando...';
+    
+    try {
+        const response = await fetch('{{ route("admin.melhor-envio.calculate") }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify({
+                cep_origem: cepOrigem,
+                cep_destino: cepDestino,
+                products: [{
+                    id: 'test-1',
+                    width: 11,
+                    height: 2,
+                    length: 16,
+                    weight: 0.3,
+                    price: 50.00,
+                    quantity: 1
+                }]
+            })
+        });
+        
+        const data = await response.json();
+        const resultDiv = document.getElementById('calculationResult');
+        
+        if (data.success && data.services) {
+            let html = '<div class="table-responsive"><table class="table table-sm">';
+            html += '<thead><tr><th>Serviço</th><th>Preço</th><th>Prazo</th></tr></thead><tbody>';
+            
+            data.services.forEach(service => {
+                html += `<tr>
+                    <td>${service.name}</td>
+                    <td>R$ ${service.price}</td>
+                    <td>${service.delivery_time ? service.delivery_time + ' dias' : '-'}</td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table></div>';
+            resultDiv.innerHTML = html;
+            resultDiv.classList.remove('d-none');
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+            resultDiv.classList.remove('d-none');
+        }
+    } catch (error) {
+        showAlert('Erro: ' + error.message, 'danger');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="bi bi-calculator me-1"></i>Calcular';
+    }
+}
+
+// Função para mostrar alertas
+function showAlert(message, type) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
 }
 </script>
-@endpush
+@endsection

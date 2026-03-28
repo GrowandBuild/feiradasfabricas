@@ -18,7 +18,7 @@ use App\Http\Controllers\Admin\ProductFeedbackController;
 use App\Http\Controllers\Admin\InstagramEmbedController;
 use App\Http\Controllers\Admin\HighlightsController;
 use App\Http\Controllers\Admin\MediaLibraryController;
-// use App\Http\Controllers\Admin\MelhorEnvioController; // removido (frete)
+use App\Http\Controllers\Admin\MelhorEnvioController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -185,7 +185,18 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('department-badges/{departmentBadge}/update-image', [DepartmentBadgeController::class, 'updateImage'])->name('department-badges.update-image');
     Route::post('department-badges/{departmentBadge}/remove-image', [DepartmentBadgeController::class, 'removeImage'])->name('department-badges.remove-image');
 
-        // Configurações
+    // Melhor Envio - Nova implementação
+    Route::get('melhor-envio', [MelhorEnvioController::class, 'index'])->name('melhor-envio.index');
+    Route::post('melhor-envio/validate', [MelhorEnvioController::class, 'validateCredentials'])->name('melhor-envio.validate');
+    Route::post('melhor-envio/connect', [MelhorEnvioController::class, 'connect'])->name('melhor-envio.connect');
+    Route::get('melhor-envio/authorize', [MelhorEnvioController::class, 'startAuthorization'])->name('melhor-envio.authorize');
+    Route::get('melhor-envio/callback', [MelhorEnvioController::class, 'callback'])->name('melhor-envio.callback');
+    Route::post('melhor-envio/disconnect', [MelhorEnvioController::class, 'disconnect'])->name('melhor-envio.disconnect');
+    Route::post('melhor-envio/test', [MelhorEnvioController::class, 'testConnection'])->name('melhor-envio.test');
+    Route::post('melhor-envio/calculate', [MelhorEnvioController::class, 'calculateShipping'])->name('melhor-envio.calculate');
+    Route::get('melhor-envio/status', [MelhorEnvioController::class, 'status'])->name('melhor-envio.status');
+
+    // Configurações
         Route::get('settings', [SettingController::class, 'index'])->name('settings.index');
         Route::put('settings', [SettingController::class, 'update'])->name('settings.update');
         Route::post('settings', [SettingController::class, 'store'])->name('settings.store');
