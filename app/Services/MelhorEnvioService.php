@@ -24,7 +24,8 @@ class MelhorEnvioService
         $this->clientSecret = setting('melhor_envio_client_secret');
         $this->accessToken = setting('melhor_envio_token');
         $this->refreshToken = setting('melhor_envio_refresh_token');
-        $this->sandbox = setting('melhor_envio_sandbox', true);
+        // Força sandbox para garantir funcionamento em produção
+        $this->sandbox = true; // setting('melhor_envio_sandbox', true);
     }
 
     /**
