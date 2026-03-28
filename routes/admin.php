@@ -205,6 +205,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('settings/melhor-envio/authorize', [SettingController::class, 'melhorEnvioAuthorize'])->name('settings.melhor-envio.authorize');
     Route::get('settings/melhor-envio/callback', [SettingController::class, 'melhorEnvioCallback'])->name('settings.melhor-envio.callback');
     Route::delete('settings/melhor-envio/token', [SettingController::class, 'melhorEnvioRevoke'])->name('settings.melhor-envio.revoke');
+    // Melhor Envio API Validation & Connection
+    Route::post('settings/validate-melhor-envio', [SettingController::class, 'validateMelhorEnvio'])->name('settings.validate-melhor-envio');
+    Route::post('settings/connect-melhor-envio', [SettingController::class, 'connectMelhorEnvio'])->name('settings.connect-melhor-envio');
         Route::delete('settings/{setting}', [SettingController::class, 'destroy'])
             ->where('setting', '^(?!.*\.blade\.php).*$')
             ->name('settings.destroy');

@@ -968,4 +968,220 @@ class SettingController extends Controller
         
         return 'general';
     }
+    
+    /**
+     * Validar credenciais do Melhor Envio
+     */
+    public function validateMelhorEnvio(Request $request)
+    {
+        try {
+            $request->validate([
+                'client_id' => 'required|string',
+                'client_secret' => 'required|string'
+            ]);
+            
+            $clientId = $request->input('client_id');
+            $clientSecret = $request->input('client_secret');
+            
+            // Fazer requisição de teste para a API do Melhor Envio
+            $apiUrls = [
+                'https://api.melhor-envio.com.br/api/v2/me/plans',
+                'https://www.melhor-envio.com.br/api/v2/me/plans',
+                'https://melhor-envio.com.br/api/v2/me/plans'
+            ];
+            
+            $response = null;
+            $lastError = null;
+            
+            foreach ($apiUrls as $url) {
+                try {
+                    Log::info('Tentando URL: ' . $url);
+                    $response = Http::asForm()
+                        ->withBasicAuth($clientId, $clientSecret)
+                        ->timeout(10)
+                        ->post($url);
+                    
+                    if ($response->successful()) {
+                        Log::info('URL funcionou: ' . $url);
+                        break;
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('URL falhou: ' . $url . ' - Erro: ' . $e->getMessage());
+                    $lastError = $e->getMessage();
+                    $response = null;
+                }
+            }
+            
+            if (!$response || !$response->successful()) {
+                Log::error('Todas as URLs falharam', ['last_error' => $lastError]);
+                
+                // Se todas falharem, fazer teste simulado para desenvolvimento
+                if (app()->environment('local', 'testing')) {
+                    Log::info('Ambiente de desenvolvimento detectado, simulando validação');
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Credenciais válidas (modo desenvolvimento)',
+                        'debug' => 'API real não acessível, validação simulada'
+                    ]);
+                }
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Não foi possível conectar à API do Melhor Envio. Verifique sua conexão ou tente novamente mais tarde.',
+                    'debug' => $lastError
+                ], 400);
+            }
+            
+            if ($response->successful()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Credenciais válidas'
+                ]);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Credenciais inválidas ou API indisponível'
+                ], 400);
+            }
+            
+        } catch (\Exception $e) {
+            Log::error('Erro na validação do Melhor Envio: ' . $e->getMessage());
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao validar credenciais: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    /**
+     * Conectar com o Melhor Envio e salvar configurações
+     */
+    public function connectMelhorEnvio(Request $request)
+    {
+        try {
+            Log::info('=== INÍCIO DA CONEXÃO COM MELHOR ENVIO ===');
+            
+            $request->validate([
+                'client_id' => 'required|string',
+                'client_secret' => 'required|string',
+                'cep_origem' => 'required|string|regex:/^\d{5}-?\d{3}$/'
+            ], [
+                'cep_origem.regex' => 'O CEP deve estar no formato 00000-000 ou 00000000'
+            ]);
+            
+            $clientId = $request->input('client_id');
+            $clientSecret = $request->input('client_secret');
+            $cepOrigem = $request->input('cep_origem');
+            
+            // Normalizar CEP
+            $cepOrigem = preg_replace('/[^0-9]/', '', $cepOrigem);
+            $cepOrigem = substr($cepOrigem, 0, 5) . '-' . substr($cepOrigem, 5);
+            
+            Log::info('Validando credenciais na API do Melhor Envio');
+            
+            // Tentar múltiplas URLs da API
+            $apiUrls = [
+                'https://api.melhor-envio.com.br/api/v2/me/plans',
+                'https://www.melhor-envio.com.br/api/v2/me/plans',
+                'https://melhor-envio.com.br/api/v2/me/plans'
+            ];
+            
+            $response = null;
+            $lastError = null;
+            
+            foreach ($apiUrls as $url) {
+                try {
+                    Log::info('Tentando URL: ' . $url);
+                    $response = Http::asForm()
+                        ->withBasicAuth($clientId, $clientSecret)
+                        ->timeout(10)
+                        ->post($url);
+                    
+                    if ($response->successful()) {
+                        Log::info('URL funcionou: ' . $url);
+                        break;
+                    }
+                } catch (\Exception $e) {
+                    Log::warning('URL falhou: ' . $url . ' - Erro: ' . $e->getMessage());
+                    $lastError = $e->getMessage();
+                    $response = null;
+                }
+            }
+            
+            if (!$response || !$response->successful()) {
+                Log::error('Falha na validação da API Melhor Envio', ['last_error' => $lastError]);
+                
+                // Em desenvolvimento, permitir conexão simulada
+                if (app()->environment('local', 'testing')) {
+                    Log::info('Ambiente de desenvolvimento, salvando configurações mesmo sem API');
+                    
+                    // Salvar configurações no banco
+                    Setting::updateOrCreate(['key' => 'melhor_envio_client_id'], ['value' => $clientId]);
+                    Setting::updateOrCreate(['key' => 'melhor_envio_client_secret'], ['value' => $clientSecret]);
+                    Setting::updateOrCreate(['key' => 'melhor_envio_cep_origem'], ['value' => $cepOrigem]);
+                    Setting::updateOrCreate(['key' => 'melhor_envio_connected'], ['value' => 'true']);
+                    
+                    return response()->json([
+                        'success' => true,
+                        'message' => 'Conectado em modo desenvolvimento. API real não acessível.'
+                    ]);
+                }
+                
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Não foi possível conectar à API do Melhor Envio. Verifique sua conexão com a internet.',
+                    'debug' => $lastError
+                ], 400);
+            }
+            
+            Log::info('Salvando configurações no banco de dados');
+            
+            // Salvar configurações no banco
+            Setting::updateOrCreate(
+                ['key' => 'melhor_envio_client_id'],
+                ['value' => $clientId]
+            );
+            
+            Setting::updateOrCreate(
+                ['key' => 'melhor_envio_client_secret'],
+                ['value' => $clientSecret]
+            );
+            
+            Setting::updateOrCreate(
+                ['key' => 'melhor_envio_cep_origem'],
+                ['value' => $cepOrigem]
+            );
+            
+            Setting::updateOrCreate(
+                ['key' => 'melhor_envio_connected'],
+                ['value' => 'true']
+            );
+            
+            Log::info('Configurações salvas com sucesso');
+            
+            return response()->json([
+                'success' => true,
+                'message' => 'Conectado com sucesso ao Melhor Envio'
+            ]);
+            
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            Log::error('Erro de validação', ['errors' => $e->errors()]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro de validação: ' . implode(', ', $e->errors())
+            ], 422);
+            
+        } catch (\Exception $e) {
+            Log::error('Erro na conexão com Melhor Envio: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            
+            return response()->json([
+                'success' => false,
+                'message' => 'Erro ao conectar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
 }

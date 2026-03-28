@@ -683,35 +683,38 @@ textarea.form-control:focus {
                 
                 const albumCol = document.createElement('div');
                 albumCol.className = 'col-12';
-                albumCol.innerHTML = `
-                    <h6 class="mb-3">
-                        <i class="bi bi-folder me-2"></i>${album.title}
-                        <span class="badge bg-secondary ms-2">${album.images.length} imagens</span>
-                    </h6>
-                    <div class="row g-2" id="album-${album.id}-images">
-                        ${album.images.map(image => `
-                            <div class="col-md-2 col-sm-3 col-4">
-                                <div class="position-relative album-image-item" style="cursor: pointer;" 
-                                     data-image-id="${image.id}" 
-                                     data-image-url="${image.url}" 
-                                     data-image-path="${image.path}"
-                                     onclick="selectAlbumImage(${image.id}, '${image.url}', '${image.path}')">
-                                    <img src="${image.url}" class="img-thumbnail w-100" style="height: 80px; object-fit: cover;">
-                                    <div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 text-white" style="opacity: 0; transition: opacity 0.2s;">
-                                        <i class="bi bi-check-circle fs-4"></i>
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                `;
+                
+                let imagesHtml = '';
+                album.images.forEach(image => {
+                    imagesHtml += '<div class="col-md-2 col-sm-3 col-4">' +
+                        '<div class="position-relative album-image-item" style="cursor: pointer;" ' +
+                             'data-image-id="' + image.id + '" ' +
+                             'data-image-url="' + image.url + '" ' +
+                             'data-image-path="' + image.path + '" ' +
+                             'onclick="selectAlbumImage(' + image.id + ', \'' + image.url + '\', \'' + image.path + '\')">' +
+                            '<img src="' + image.url + '" class="img-thumbnail w-100" style="height: 80px; object-fit: cover;">' +
+                            '<div class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50 text-white" style="opacity: 0; transition: opacity 0.2s;">' +
+                                '<i class="bi bi-check-circle fs-4"></i>' +
+                            '</div>' +
+                        '</div>' +
+                    '</div>';
+                });
+                
+                albumCol.innerHTML = 
+                    '<h6 class="mb-3">' +
+                        '<i class="bi bi-folder me-2"></i>' + album.title +
+                        '<span class="badge bg-secondary ms-2">' + album.images.length + ' imagens</span>' +
+                    '</h6>' +
+                    '<div class="row g-2" id="album-' + album.id + '-images">' +
+                        imagesHtml +
+                    '</div>';
                 container.appendChild(albumCol);
             });
         }
 
         window.selectAlbumImage = function(imageId, imageUrl, imagePath) {
             // Verificar se a imagem já foi selecionada
-            const existingImage = document.querySelector(`[data-album-image-id="${imageId}"]`);
+            const existingImage = document.querySelector('[data-album-image-id="' + imageId + '"]');
             if (existingImage) {
                 alert('Esta imagem já foi selecionada!');
                 return;
@@ -729,11 +732,10 @@ textarea.form-control:focus {
             imageItem.className = 'position-relative border rounded';
             imageItem.setAttribute('data-album-image-id', imageId);
             imageItem.style.cssText = 'width:100px; height:100px; overflow:hidden';
-            imageItem.innerHTML = `
-                <img src="${imageUrl}" class="w-100 h-100" style="object-fit:cover;" loading="lazy">
-                <button type="button" class="btn btn-sm btn-outline-danger position-absolute remove-preselected" style="top:6px; right:6px; padding:4px 6px">Remover</button>
-                <input type="hidden" name="existing_image_ids[]" value="${imageId}">
-            `;
+            imageItem.innerHTML = 
+                '<img src="' + imageUrl + '" class="w-100 h-100" style="object-fit:cover;" loading="lazy">' +
+                '<button type="button" class="btn btn-sm btn-outline-danger position-absolute remove-preselected" style="top:6px; right:6px; padding:4px 6px">Remover</button>' +
+                '<input type="hidden" name="existing_image_ids[]" value="' + imageId + '">';
             
             if (preselectedList) {
                 preselectedList.appendChild(imageItem);
@@ -764,7 +766,16 @@ textarea.form-control:focus {
             }
             
             // Feedback visual
-            showToast('success', 'Imagem selecionada com sucesso!', 'Sucesso');
+            try {
+                if (typeof showToast === 'function') {
+                    showToast('success', 'Imagem selecionada com sucesso!', 'Sucesso');
+                } else {
+                    // Fallback se showToast não existir
+                    console.log('Imagem selecionada com sucesso!');
+                }
+            } catch(e) {
+                console.log('Imagem selecionada com sucesso!');
+            }
         };
     });
 </script>
