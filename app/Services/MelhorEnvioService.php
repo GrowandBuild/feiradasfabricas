@@ -25,6 +25,14 @@ class MelhorEnvioService
         $this->accessToken = setting('melhor_envio_token');
         $this->refreshToken = setting('melhor_envio_refresh_token');
         $this->sandbox = setting('melhor_envio_sandbox', false);
+        
+        // Debug log para verificar credenciais carregadas
+        Log::info('MelhorEnvioService initialized', [
+            'client_id' => $this->clientId,
+            'has_client_secret' => !empty($this->clientSecret),
+            'environment' => $this->sandbox ? 'sandbox' : 'production',
+            'has_access_token' => !empty($this->accessToken)
+        ]);
     }
 
     /**
