@@ -183,7 +183,7 @@ class MelhorEnvioController extends Controller
                 ->with('error', 'Código de autorização não recebido');
         }
 
-        $redirectUri = route('admin.melhor-envio.callback');
+        $redirectUri = $this->productionCallbackUrl;
         $result = $this->service->exchangeCodeForToken($code, $redirectUri);
 
         if ($result['success']) {
