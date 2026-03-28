@@ -696,6 +696,10 @@ function validateMelhorEnvioCredentials() {
     statusText.textContent = 'Validando credenciais...';
     
     // Validação REAL com backend
+    console.log('🔍 Iniciando validação REAL com backend...');
+    console.log('🔍 Enviando para: /admin/settings/validate-melhor-envio');
+    console.log('🔍 CSRF Token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content') ? 'OK' : 'FALTANDO');
+    
     fetch('/admin/settings/validate-melhor-envio', {
         method: 'POST',
         headers: {
@@ -707,13 +711,29 @@ function validateMelhorEnvioCredentials() {
             client_secret: clientSecret
         })
     })
-    .then(response => response.json())
+    .then(response => {
+        console.log('🔍 Response status:', response.status);
+        console.log('🔍 Response ok:', response.ok);
+        console.log('🔍 Response headers:', response.headers);
+        
+        // Tentar ler o texto primeiro para ver se há erro
+        return response.text().then(text => {
+            console.log('🔍 Response text bruto:', text);
+            try {
+                return JSON.parse(text);
+            } catch (e) {
+                console.log('🔍 Não é JSON, retornando texto bruto');
+                throw new Error('Resposta não é JSON: ' + text);
+            }
+        });
+    })
     .then(data => {
+        console.log('🔍 Response JSON:', data);
         statusDiv.classList.remove('alert-info');
         
         if (data.success) {
             statusDiv.classList.add('alert-success');
-            statusText.textContent = '✅ Credenciais válidas! Pronto para conectar com o Melhor Envio.';
+            statusText.textContent = '✅ ' + data.message;
             
             // Manter visível para permitir conexão
             // setTimeout(() => {
@@ -721,7 +741,10 @@ function validateMelhorEnvioCredentials() {
             // }, 3000);
         } else {
             statusDiv.classList.add('alert-danger');
-            statusText.textContent = '❌ Credenciais inválidas: ' + (data.message || 'Verifique seus dados');
+            statusText.textContent = '❌ ' + data.message;
+            if (data.debug) {
+                console.error('🔍 Debug info:', data.debug);
+            }
             
             setTimeout(() => {
                 statusDiv.classList.add('d-none');
@@ -729,10 +752,11 @@ function validateMelhorEnvioCredentials() {
         }
     })
     .catch(error => {
-        console.error('Erro na validação:', error);
+        console.error('🔍 Erro completo na validação:', error);
+        console.error('🔍 Stack trace:', error.stack);
         statusDiv.classList.remove('alert-info');
         statusDiv.classList.add('alert-danger');
-        statusText.textContent = '❌ Erro ao validar credenciais. Tente novamente.';
+        statusText.textContent = '❌ Erro ao validar: ' + error.message;
         
         setTimeout(() => {
             statusDiv.classList.add('d-none');

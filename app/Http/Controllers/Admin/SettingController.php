@@ -984,10 +984,11 @@ class SettingController extends Controller
             $clientSecret = $request->input('client_secret');
             
             // Fazer requisição de teste para a API do Melhor Envio
+            // Endpoint correto para validar credenciais
             $apiUrls = [
-                'https://api.melhor-envio.com.br/api/v2/me/plans',
-                'https://www.melhor-envio.com.br/api/v2/me/plans',
-                'https://melhor-envio.com.br/api/v2/me/plans'
+                'https://api.melhor-envio.com.br/api/v2/me',
+                'https://www.melhor-envio.com.br/api/v2/me',
+                'https://melhor-envio.com.br/api/v2/me'
             ];
             
             $response = null;
@@ -996,10 +997,16 @@ class SettingController extends Controller
             foreach ($apiUrls as $url) {
                 try {
                     Log::info('Tentando URL: ' . $url);
+                    Log::info('Client ID: ' . substr($clientId, 0, 8) . '...');
+                    Log::info('Client Secret: ' . substr($clientSecret, 0, 8) . '...');
+                    
                     $response = Http::asForm()
                         ->withBasicAuth($clientId, $clientSecret)
-                        ->timeout(10)
+                        ->timeout(15)
                         ->post($url);
+                    
+                    Log::info('Response Status: ' . $response->status());
+                    Log::info('Response Body: ' . $response->body());
                     
                     if ($response->successful()) {
                         Log::info('URL funcionou: ' . $url);
@@ -1027,7 +1034,7 @@ class SettingController extends Controller
                 
                 return response()->json([
                     'success' => false,
-                    'message' => 'Não foi possível conectar à API do Melhor Envio. Verifique sua conexão ou tente novamente mais tarde.',
+                    'message' => 'Não foi possível conectar à API do Melhor Envio. Verifique suas credenciais e conexão.',
                     'debug' => $lastError
                 ], 400);
             }
@@ -1082,9 +1089,9 @@ class SettingController extends Controller
             
             // Tentar múltiplas URLs da API
             $apiUrls = [
-                'https://api.melhor-envio.com.br/api/v2/me/plans',
-                'https://www.melhor-envio.com.br/api/v2/me/plans',
-                'https://melhor-envio.com.br/api/v2/me/plans'
+                'https://api.melhor-envio.com.br/api/v2/me',
+                'https://www.melhor-envio.com.br/api/v2/me',
+                'https://melhor-envio.com.br/api/v2/me'
             ];
             
             $response = null;
