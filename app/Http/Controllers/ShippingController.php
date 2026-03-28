@@ -38,10 +38,10 @@ class ShippingController extends Controller
             $sandbox = setting('melhor_envio_sandbox', true);
             $env = $sandbox ? \MelhorEnvio\Enums\Environment::SANDBOX : \MelhorEnvio\Enums\Environment::PRODUCTION;
 
-            if (empty($clientId) || empty($clientSecret) || empty($token)) {
+            if (empty($clientId) || empty($clientSecret) || empty($token) || trim($token) === '') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Integração com Melhor Envio não configurada.'
+                    'message' => 'Integração com Melhor Envio não configurada ou tokens inválidos.'
                 ], 400);
             }
 
@@ -425,10 +425,10 @@ class ShippingController extends Controller
             $sandbox = setting('melhor_envio_sandbox', true);
             $env = $sandbox ? \MelhorEnvio\Enums\Environment::SANDBOX : \MelhorEnvio\Enums\Environment::PRODUCTION;
 
-            if (empty($clientId) || empty($clientSecret) || empty($token)) {
+            if (empty($clientId) || empty($clientSecret) || empty($token) || trim($token) === '') {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Integração com Melhor Envio não configurada.'
+                    'message' => 'Integração com Melhor Envio não configurada ou tokens inválidos.'
                 ], 400);
             }
 
