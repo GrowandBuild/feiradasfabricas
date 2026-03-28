@@ -999,10 +999,22 @@
                 const configEl = Utils.$(CONFIG.SELECTORS.pdpConfig);
                 const config = JSON.parse(configEl?.textContent || '{}');
                 
+                // Debug: verificar se config está correto
+                console.log('PDP Config:', config);
+                console.log('Product ID:', config.product?.id);
+                console.log('Routes:', config.routes);
+                
                 // Escolher endpoint baseado no tipo
                 const endpoint = isLocal 
-                    ? (config.routes?.shippingQuoteRegional || '/frete/calcular-regional')
-                    : (config.routes?.shippingQuote || '/frete/calcular');
+                    ? (config.routes?.shippingQuoteRegional || '/shipping/quote-regional')
+                    : (config.routes?.shippingQuote || '/shipping/quote');
+                
+                console.log('Endpoint:', endpoint);
+                console.log('Request data:', {
+                    product_id: config.product?.id,
+                    cep: cep,
+                    quantity: qty
+                });
                 
                 const response = await fetch(endpoint, {
                     method: 'POST',
@@ -1020,9 +1032,13 @@
 
                 const data = await response.json();
                 
+                console.log('API Response:', data);
+                console.log('Response status:', response.status);
+                
                 if (data.success) {
                     this.renderShippingQuotes(data.quotes || [], type);
                 } else {
+                    console.log('API Error:', data.message);
                     this.showShippingMessage(data.message || 'Erro ao calcular frete', 'danger');
                 }
             } catch (error) {
