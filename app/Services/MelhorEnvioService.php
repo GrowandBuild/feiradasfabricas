@@ -107,7 +107,7 @@ class MelhorEnvioService
     /**
      * Conectar e salvar configurações
      */
-    public function connect(string $clientId, string $clientSecret, string $cepOrigem): array
+    public function connect(string $clientId, string $clientSecret, string $cepOrigem, array $packageConfig = []): array
     {
         // Validar primeiro
         $validation = $this->validateCredentials($clientId, $clientSecret);
@@ -116,11 +116,20 @@ class MelhorEnvioService
             return $validation;
         }
 
-        // Salvar configurações
+        // Salvar configurações básicas
         Setting::set('melhor_envio_client_id', $clientId, 'string', 'delivery');
         Setting::set('melhor_envio_client_secret', $clientSecret, 'string', 'delivery');
         Setting::set('melhor_envio_cep_origem', $cepOrigem, 'string', 'delivery');
         Setting::set('melhor_envio_connected', true, 'boolean', 'delivery');
+
+        // Salvar configurações do pacote (com valores padrão)
+        Setting::set('melhor_envio_pkg_weight', $packageConfig['weight'] ?? '0.5', 'string', 'delivery');
+        Setting::set('melhor_envio_pkg_length', $packageConfig['length'] ?? '16', 'string', 'delivery');
+        Setting::set('melhor_envio_pkg_width', $packageConfig['width'] ?? '11', 'string', 'delivery');
+        Setting::set('melhor_envio_pkg_height', $packageConfig['height'] ?? '2', 'string', 'delivery');
+        Setting::set('melhor_envio_pkg_insurance', $packageConfig['insurance'] ?? true, 'boolean', 'delivery');
+        Setting::set('melhor_envio_pkg_receipt', $packageConfig['receipt'] ?? false, 'boolean', 'delivery');
+        Setting::set('melhor_envio_pkg_own_hand', $packageConfig['own_hand'] ?? false, 'boolean', 'delivery');
 
         return [
             'success' => true,

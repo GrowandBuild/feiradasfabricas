@@ -95,12 +95,24 @@ class MelhorEnvioController extends Controller
             $validated = $request->validate([
                 'client_id' => 'required|string|min:3',
                 'client_secret' => 'required|string|min:3',
-                'cep_origem' => 'required|string|regex:/^\d{5}-?\d{3}$/'
+                'cep_origem' => 'required|string|regex:/^\d{5}-?\d{3}$/',
+                'sandbox' => 'sometimes|boolean',
+                'pkg_weight' => 'sometimes|numeric|min:0.1',
+                'pkg_length' => 'sometimes|numeric|min:1',
+                'pkg_width' => 'sometimes|numeric|min:1',
+                'pkg_height' => 'sometimes|numeric|min:1',
+                'pkg_insurance' => 'sometimes|boolean',
+                'pkg_receipt' => 'sometimes|boolean',
+                'pkg_own_hand' => 'sometimes|boolean'
             ], [
                 'client_id.required' => 'Client ID é obrigatório',
                 'client_secret.required' => 'Client Secret é obrigatório',
                 'cep_origem.required' => 'CEP de origem é obrigatório',
-                'cep_origem.regex' => 'CEP deve estar no formato 00000-000 ou 00000000'
+                'cep_origem.regex' => 'CEP deve estar no formato 00000-000 ou 00000000',
+                'pkg_weight.min' => 'Peso deve ser maior que 0',
+                'pkg_length.min' => 'Comprimento deve ser maior que 0',
+                'pkg_width.min' => 'Largura deve ser maior que 0',
+                'pkg_height.min' => 'Altura deve ser maior que 0'
             ]);
 
             // Normalizar CEP
@@ -112,10 +124,22 @@ class MelhorEnvioController extends Controller
                 'cep_origem' => $cepOrigem
             ]);
 
+            // Preparar configurações do pacote
+            $packageConfig = [
+                'weight' => $validated['pkg_weight'] ?? '0.5',
+                'length' => $validated['pkg_length'] ?? '16',
+                'width' => $validated['pkg_width'] ?? '11',
+                'height' => $validated['pkg_height'] ?? '2',
+                'insurance' => $validated['pkg_insurance'] ?? true,
+                'receipt' => $validated['pkg_receipt'] ?? false,
+                'own_hand' => $validated['pkg_own_hand'] ?? false
+            ];
+
             $result = $this->service->connect(
                 $validated['client_id'],
                 $validated['client_secret'],
-                $cepOrigem
+                $cepOrigem,
+                $packageConfig
             );
 
             Log::info('Resultado da conexão', $result);

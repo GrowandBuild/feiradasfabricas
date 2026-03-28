@@ -520,6 +520,106 @@
                             </div>
                         </div>
 
+                        <!-- Configurações de Pacote Padrão -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <h6 class="mb-3">
+                                    <i class="bi bi-box-seam me-2"></i>Dimensões Padrão do Pacote
+                                </h6>
+                                <p class="text-muted small mb-3">Usado quando o produto não tem dimensões definidas</p>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="pkg_weight" class="form-label">Peso (kg)</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="pkg_weight" 
+                                       name="pkg_weight"
+                                       value="{{ setting('melhor_envio_pkg_weight', '0.5') }}"
+                                       step="0.1"
+                                       min="0.1"
+                                       placeholder="0.5">
+                                <small class="form-text text-muted">Peso em kg</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="pkg_length" class="form-label">Comprimento (cm)</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="pkg_length" 
+                                       name="pkg_length"
+                                       value="{{ setting('melhor_envio_pkg_length', '16') }}"
+                                       min="1"
+                                       placeholder="16">
+                                <small class="form-text text-muted">Em cm</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="pkg_width" class="form-label">Largura (cm)</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="pkg_width" 
+                                       name="pkg_width"
+                                       value="{{ setting('melhor_envio_pkg_width', '11') }}"
+                                       min="1"
+                                       placeholder="11">
+                                <small class="form-text text-muted">Em cm</small>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="pkg_height" class="form-label">Altura (cm)</label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="pkg_height" 
+                                       name="pkg_height"
+                                       value="{{ setting('melhor_envio_pkg_height', '2') }}"
+                                       min="1"
+                                       placeholder="2">
+                                <small class="form-text text-muted">Em cm</small>
+                            </div>
+                        </div>
+
+                        <!-- Configurações Adicionais -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label for="pkg_insurance" class="form-label">Seguro Automático</label>
+                                <div class="form-check form-switch mt-2">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="pkg_insurance" 
+                                           name="pkg_insurance"
+                                           {{ setting('melhor_envio_pkg_insurance', true) ? 'checked' : '' }}>
+                                    <label class="form-check-label" for="pkg_insurance">
+                                        Ativar seguro nos pacotes
+                                    </label>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Seguro baseado no valor do produto
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="pkg_receipt" class="form-label">Opções Adicionais</label>
+                                <div class="mt-2">
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="pkg_receipt" 
+                                               name="pkg_receipt"
+                                               {{ setting('melhor_envio_pkg_receipt', false) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="pkg_receipt">
+                                            Aviso de recebimento
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" 
+                                               type="checkbox" 
+                                               id="pkg_own_hand" 
+                                               name="pkg_own_hand"
+                                               {{ setting('melhor_envio_pkg_own_hand', false) ? 'checked' : '' }}>
+                                        <label class="form-check-label" for="pkg_own_hand">
+                                            Mão própria
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Ações -->
                         <div class="d-flex gap-2 justify-content-end flex-wrap">
                             <button type="button" class="btn btn-outline-warning" onclick="resetSettings()">
@@ -924,6 +1024,15 @@ async function saveSettings() {
     const cepOrigem = document.getElementById('cep_origem').value;
     const sandbox = document.getElementById('sandbox').checked;
     
+    // Configurações de pacote
+    const pkgWeight = document.getElementById('pkg_weight').value;
+    const pkgLength = document.getElementById('pkg_length').value;
+    const pkgWidth = document.getElementById('pkg_width').value;
+    const pkgHeight = document.getElementById('pkg_height').value;
+    const pkgInsurance = document.getElementById('pkg_insurance').checked;
+    const pkgReceipt = document.getElementById('pkg_receipt').checked;
+    const pkgOwnHand = document.getElementById('pkg_own_hand').checked;
+    
     if (!clientId || !clientSecret || !cepOrigem) {
         showAlert('Preencha todos os campos obrigatórios', 'danger');
         return;
@@ -944,7 +1053,14 @@ async function saveSettings() {
                 client_id: clientId,
                 client_secret: clientSecret,
                 cep_origem: cepOrigem,
-                sandbox: sandbox
+                sandbox: sandbox,
+                pkg_weight: pkgWeight,
+                pkg_length: pkgLength,
+                pkg_width: pkgWidth,
+                pkg_height: pkgHeight,
+                pkg_insurance: pkgInsurance,
+                pkg_receipt: pkgReceipt,
+                pkg_own_hand: pkgOwnHand
             })
         });
         
