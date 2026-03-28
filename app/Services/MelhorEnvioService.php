@@ -34,7 +34,7 @@ class MelhorEnvioService
     {
         return $this->sandbox 
             ? 'https://sandbox.melhorenvio.com.br' 
-            : 'https://api.melhorenvio.com.br';
+            : 'https://www.melhorenvio.com.br';
     }
 
     /**

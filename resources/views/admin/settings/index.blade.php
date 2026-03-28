@@ -515,7 +515,7 @@
                                 </div>
                                 <small class="form-text text-muted">
                                     Sandbox: https://sandbox.melhorenvio.com.br<br>
-                                    Produção: https://api.melhorenvio.com.br
+                                    Produção: https://www.melhorenvio.com.br
                                 </small>
                             </div>
                         </div>
